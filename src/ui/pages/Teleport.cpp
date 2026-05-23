@@ -92,12 +92,21 @@ namespace Pages::Teleport {
 
 #ifdef GTASA
                 if (MenuState::QuickTeleport && ImGui::CollapsingHeader((const char*)u8"自定义地图尺寸")) {
+                    static float mapWidthDraft = MenuState::TeleportMapWidth;
+                    static float mapHeightDraft = MenuState::TeleportMapHeight;
                     ImGui::TextWrapped((const char*)u8"如果快速地图传送位置偏移，可以在这里调整地图宽高。默认值是 6000 x 6000。");
-                    ImGui::InputFloat((const char*)u8"宽度", &MenuState::TeleportMapWidth, 1.0f, 100.0f, "%.1f");
-                    ImGui::InputFloat((const char*)u8"高度", &MenuState::TeleportMapHeight, 1.0f, 100.0f, "%.1f");
-                    if (UI::Button((const char*)u8"恢复默认")) {
-                        MenuState::TeleportMapWidth = 6000.0f;
-                        MenuState::TeleportMapHeight = 6000.0f;
+                    ImGui::InputFloat((const char*)u8"宽度", &mapWidthDraft, 1.0f, 100.0f, "%.1f");
+                    ImGui::InputFloat((const char*)u8"高度", &mapHeightDraft, 1.0f, 100.0f, "%.1f");
+                    if (UI::Button((const char*)u8"应用地图尺寸", 2)) {
+                        MenuState::TeleportMapWidth = mapWidthDraft;
+                        MenuState::TeleportMapHeight = mapHeightDraft;
+                    }
+                    ImGui::SameLine();
+                    if (UI::Button((const char*)u8"恢复默认", 2)) {
+                        mapWidthDraft = 6000.0f;
+                        mapHeightDraft = 6000.0f;
+                        MenuState::TeleportMapWidth = mapWidthDraft;
+                        MenuState::TeleportMapHeight = mapHeightDraft;
                     }
                 }
 #endif

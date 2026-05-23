@@ -55,6 +55,9 @@ if not exist "%PLUGIN_SDK_DIR%" (
     goto fail
 )
 
+if not exist "build" mkdir "build"
+call :write_payloads_rc_placeholder
+
 echo Generating Visual Studio 2022 project files...
 tools\premake5.exe vs2022
 if errorlevel 1 (
@@ -76,18 +79,58 @@ if not defined MSBUILD_EXE (
 
 echo.
 echo Using MSBuild: !MSBUILD_EXE!
-echo Building build\XMenu.sln...
-"!MSBUILD_EXE!" "build\XMenu.sln" /m /p:Configuration=%CONFIG% /p:Platform=Win32 /verbosity:minimal
+echo Building embedded payloads...
+"!MSBUILD_EXE!" "build\XMenu.sln" /m /t:XMenuPayloadSA;XMenuPayloadVC;XMenuPayloadIII /p:Configuration=%CONFIG% /p:Platform=Win32 /verbosity:minimal
 if errorlevel 1 (
     echo.
-    echo [Error] Build failed.
+    echo [Error] Payload build failed.
+    goto fail
+)
+
+call :write_payloads_rc
+if errorlevel 1 goto fail
+
+echo.
+echo Building unified build\bin\XMenu.asi...
+"!MSBUILD_EXE!" "build\XMenu.sln" /m /t:XMenu /p:Configuration=%CONFIG% /p:Platform=Win32 /verbosity:minimal
+if errorlevel 1 (
+    echo.
+    echo [Error] Unified ASI build failed.
+    goto fail
+)
+
+if not exist "build\bin\XMenu.asi" (
+    echo [Error] build\bin\XMenu.asi was not produced.
     goto fail
 )
 
 echo.
 echo Build completed successfully.
-echo Output directory: build\bin
+echo Output file: build\bin\XMenu.asi
 goto success
+
+:write_payloads_rc_placeholder
+> "build\Payloads.rc" echo #include "../src/loader/PayloadResources.h"
+exit /b 0
+
+:write_payloads_rc
+if not exist "build\bin\XMenuSA.dll" (
+    echo [Error] Missing payload: build\bin\XMenuSA.dll
+    exit /b 1
+)
+if not exist "build\bin\XMenuVC.dll" (
+    echo [Error] Missing payload: build\bin\XMenuVC.dll
+    exit /b 1
+)
+if not exist "build\bin\XMenuIII.dll" (
+    echo [Error] Missing payload: build\bin\XMenuIII.dll
+    exit /b 1
+)
+> "build\Payloads.rc" echo #include "../src/loader/PayloadResources.h"
+>> "build\Payloads.rc" echo IDR_XMENU_SA RCDATA "bin/XMenuSA.dll"
+>> "build\Payloads.rc" echo IDR_XMENU_VC RCDATA "bin/XMenuVC.dll"
+>> "build\Payloads.rc" echo IDR_XMENU_III RCDATA "bin/XMenuIII.dll"
+exit /b 0
 
 :find_msbuild
 set "MSBUILD_EXE="

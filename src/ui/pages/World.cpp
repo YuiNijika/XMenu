@@ -69,12 +69,19 @@ namespace Pages::World {
             }
 #endif
             ImGui::Columns(1);
-            ImGui::Spacing();            int days = Controllers::World::GetDaysPassed();
+            ImGui::Spacing();
             ImGui::PushItemWidth(150);
-            if (ImGui::InputInt((const char*)u8"经过天数", &days)) {
-                if (days < 0) days = 0;
-                if (days > 9999) days = 9999;
-                Controllers::World::SetDaysPassed(days);
+
+            ImGui::InputInt((const char*)u8"经过天数", &MenuState::DaysPassed);
+            ImGui::SameLine();
+            if (UI::Button((const char*)u8"设置天数", 4)) {
+                if (MenuState::DaysPassed < 0) MenuState::DaysPassed = 0;
+                if (MenuState::DaysPassed > 9999) MenuState::DaysPassed = 9999;
+                Controllers::World::SetDaysPassed(MenuState::DaysPassed);
+            }
+            ImGui::SameLine();
+            if (UI::Button((const char*)u8"读取天数", 4)) {
+                MenuState::DaysPassed = Controllers::World::GetDaysPassed();
             }
 
             float gravity = Controllers::World::GetGravity();
@@ -82,11 +89,16 @@ namespace Pages::World {
                 Controllers::World::SetGravity(gravity);
             }
 
-            int fpsLimit = Controllers::World::GetFpsLimit();
-            if (ImGui::InputInt((const char*)u8"FPS 限制", &fpsLimit)) {
-                if (fpsLimit < 1) fpsLimit = 1;
-                if (fpsLimit > 999) fpsLimit = 999;
-                Controllers::World::SetFpsLimit(fpsLimit);
+            ImGui::InputInt((const char*)u8"FPS 限制", &MenuState::FpsLimit);
+            ImGui::SameLine();
+            if (UI::Button((const char*)u8"设置 FPS", 4)) {
+                if (MenuState::FpsLimit < 1) MenuState::FpsLimit = 1;
+                if (MenuState::FpsLimit > 999) MenuState::FpsLimit = 999;
+                Controllers::World::SetFpsLimit(MenuState::FpsLimit);
+            }
+            ImGui::SameLine();
+            if (UI::Button((const char*)u8"读取 FPS", 4)) {
+                MenuState::FpsLimit = Controllers::World::GetFpsLimit();
             }
             ImGui::PopItemWidth();
         }

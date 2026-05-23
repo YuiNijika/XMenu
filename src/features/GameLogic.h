@@ -46,7 +46,7 @@ namespace GameLogic {
     int GetWantedLevel(CPlayerPed* player);
     void ProcessHardMode(CPlayerPed* player, bool enable);
     void ProcessRespawnAtDeathPosition(CPlayerPed* player, bool enable);
-    void ProcessFreezeWantedLevel(CPlayerPed* player, bool enable);
+    void ProcessFreezeWantedLevel(CPlayerPed* player, bool enable, int level);
     void SetManualPlayerProof(CPlayerPed* player, const ProofState& state);
 
     // 载具

@@ -13,8 +13,11 @@ namespace {
     bool hasSavedPlayerProofs = false;
 
     int ClampWantedLevel(int level) {
-        if (level < 0 || level > 6) {
+        if (level < 0) {
             return 0;
+        }
+        if (level > 6) {
+            return 6;
         }
         return level;
     }
@@ -74,7 +77,7 @@ namespace Controllers::Player {
         GameLogic::ProcessAutoHeal(player, MenuState::AutoHeal);
         GameLogic::ProcessHardMode(player, MenuState::HardMode);
         GameLogic::ProcessRespawnAtDeathPosition(player, MenuState::RespawnAtDeathPosition);
-        GameLogic::ProcessFreezeWantedLevel(player, MenuState::FreezeWantedLevel);
+        GameLogic::ProcessFreezeWantedLevel(player, MenuState::FreezeWantedLevel, ClampWantedLevel(MenuState::WantedLevel));
     }
 
     void Heal() {

@@ -186,21 +186,9 @@ void ProcessRespawnAtDeathPosition(CPlayerPed* player, bool enable) {
     }
 }
 
-void ProcessFreezeWantedLevel(CPlayerPed* player, bool enable) {
-    static int frozenLevel = 0;
-    static bool wasEnabled = false;
-    if (!player) return;
-
-    if (!enable) {
-        wasEnabled = false;
-        return;
-    }
-
-    if (!wasEnabled) {
-        frozenLevel = GetWantedLevel(player);
-        wasEnabled = true;
-    }
-    SetWantedLevel(player, frozenLevel);
+void ProcessFreezeWantedLevel(CPlayerPed* player, bool enable, int level) {
+    if (!enable || !player) return;
+    SetWantedLevel(player, level);
 }
 
 void SetManualPlayerProof(CPlayerPed* player, const ProofState& state) {

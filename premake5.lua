@@ -4,8 +4,7 @@ PSDK_DIR = os.getenv("PLUGIN_SDK_DIR")
 if (PSDK_DIR == nil or PSDK_DIR == "") then
     print("WARNING: PLUGIN_SDK_DIR environment variable not set in system.")
     print("Falling back to local path relative check...")
-    
-    -- 尝试猜测上级目录是否有 plugin-sdk
+
     if os.isdir("../plugin-sdk") then
         PSDK_DIR = "../plugin-sdk"
     elseif os.isdir("../../plugin-sdk") then
@@ -27,22 +26,21 @@ workspace "XMenu"
     staticruntime "On"
     location "build"
     targetdir "build/bin"
-    
-    -- 让 Visual Studio 根据本地安装环境自动选择最新版的生成工具
+
     toolset "msc"
     buildoptions { "/utf-8" }
 
-    links { 
+    links {
         "d3d9",
         "Pdh",
         "urlmon"
     }
 
-    defines { 
+    defines {
         "IS_PLATFORM_WIN",
         "_CRT_SECURE_NO_WARNINGS",
         "_CRT_NON_CONFORMING_SWPRINTFS",
-        "_GTA_",      -- plugin-sdk internal define
+        "_GTA_",
         "RW"
     }
 
@@ -51,17 +49,18 @@ workspace "XMenu"
         "src/",
     }
 
-function createProject(projectID)
+function createPayloadProject(projectID)
     upperID = string.upper(projectID)
     pathExt = ""
     if (projectID ~= "sa") then
-        pathExt = "_" .. projectID 
+        pathExt = "_" .. projectID
     end
 
-    project ("XMenu" .. upperID)
+    project ("XMenuPayload" .. upperID)
         kind "SharedLib"
-        targetextension ".asi"
-        
+        targetname ("XMenu" .. upperID)
+        targetextension ".dll"
+
         includedirs {
             PSDK_DIR .. "/plugin_" .. projectID .. "/",
             PSDK_DIR .. "/plugin_" .. projectID .. "/game_" .. projectID .. "/",
@@ -75,61 +74,92 @@ function createProject(projectID)
             PSDK_DIR .. "/output/lib",
             PSDK_DIR .. "/shared/dxsdk",
         }
-        
-        files { 
-            "src/**.h", 
-            "src/**.hpp", 
-            "src/**.c", 
+
+        files {
+            "src/**.h",
+            "src/**.hpp",
+            "src/**.c",
             "src/**.cpp",
             "include/**.h",
             "include/**.cpp",
             "include/**.c"
         }
 
+        removefiles {
+            "src/loader/**.h",
+            "src/loader/**.cpp"
+        }
+
         if (upperID ~= "SA") then
-            removefiles { 
-                "src/**_sa.c", 
+            removefiles {
+                "src/**_sa.c",
                 "src/**_sa.hpp",
                 "src/**_sa.cpp"
             }
         end
         if (upperID ~= "VC") then
-            removefiles { 
-                "src/**_vc.c", 
+            removefiles {
+                "src/**_vc.c",
                 "src/**_vc.hpp",
                 "src/**_vc.cpp"
             }
         end
         if (upperID ~= "III") then
-            removefiles { 
-                "src/**_iii.c", 
+            removefiles {
+                "src/**_iii.c",
                 "src/**_iii.hpp",
                 "src/**_iii.cpp"
             }
         end
-        
-        if upperID == "III" then 
-            upperID = "3" 
+
+        if upperID == "III" then
+            upperID = "3"
         end
-        defines { 
+        defines {
             "GTA" .. upperID,
         }
 
         filter "configurations:Debug"
             symbols "On"
             defines { "DEBUG" }
-            links { 
+            links {
                 "plugin" .. pathExt .. "_d.lib"
             }
 
         filter "configurations:Release"
             optimize "On"
             defines { "NDEBUG" }
-            links { 
+            links {
                 "plugin" .. pathExt .. ".lib"
             }
 end
 
-createProject("sa")
-createProject("vc")
-createProject("iii")
+function createUnifiedProject()
+    project "XMenu"
+        kind "SharedLib"
+        targetname "XMenu"
+        targetextension ".asi"
+
+        files {
+            "src/loader/**.h",
+            "src/loader/**.cpp",
+            "build/Payloads.rc"
+        }
+
+        includedirs {
+            "src/loader/"
+        }
+
+        filter "configurations:Debug"
+            symbols "On"
+            defines { "DEBUG" }
+
+        filter "configurations:Release"
+            optimize "On"
+            defines { "NDEBUG" }
+end
+
+createPayloadProject("sa")
+createPayloadProject("vc")
+createPayloadProject("iii")
+createUnifiedProject()

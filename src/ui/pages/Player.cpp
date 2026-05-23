@@ -104,31 +104,52 @@ namespace Pages::Player {
             }
 
             if (ImGui::BeginTabItem((const char*)u8"数值调整")) {
-                MenuState::PlayerHealth = Controllers::Player::GetHealth();
+                static bool valuesInitialized = false;
+                if (!valuesInitialized) {
+                    MenuState::PlayerHealth = Controllers::Player::GetHealth();
+                    MenuState::PlayerArmour = Controllers::Player::GetArmour();
+                    MenuState::PlayerMoney = Controllers::Player::GetMoney();
+                    MenuState::WantedLevel = Controllers::Player::GetWantedLevel();
+                    valuesInitialized = true;
+                }
+
                 ImGui::PushItemWidth(180);
-                if (ImGui::InputFloat((const char*)u8"血量", &MenuState::PlayerHealth, 1.0f, 10.0f, "%.1f")) {
+                ImGui::InputFloat((const char*)u8"血量", &MenuState::PlayerHealth, 1.0f, 10.0f, "%.1f");
+                ImGui::SameLine();
+                if (UI::Button((const char*)u8"设置血量", 4)) {
                     if (MenuState::PlayerHealth > 0.0f && MenuState::PlayerHealth < 2.0f) {
                         MenuState::PlayerHealth = 2.0f;
                     }
                     Controllers::Player::SetHealth(MenuState::PlayerHealth);
                 }
 
-                MenuState::PlayerArmour = Controllers::Player::GetArmour();
-                if (ImGui::InputFloat((const char*)u8"护甲", &MenuState::PlayerArmour, 1.0f, 10.0f, "%.1f")) {
+                ImGui::InputFloat((const char*)u8"护甲", &MenuState::PlayerArmour, 1.0f, 10.0f, "%.1f");
+                ImGui::SameLine();
+                if (UI::Button((const char*)u8"设置护甲", 4)) {
                     Controllers::Player::SetArmour(MenuState::PlayerArmour);
                 }
 
-                MenuState::PlayerMoney = Controllers::Player::GetMoney();
-                if (ImGui::InputInt((const char*)u8"现金", &MenuState::PlayerMoney, 1000, 10000)) {
+                ImGui::InputInt((const char*)u8"现金", &MenuState::PlayerMoney, 1000, 10000);
+                ImGui::SameLine();
+                if (UI::Button((const char*)u8"设置现金", 4)) {
                     Controllers::Player::SetMoney(MenuState::PlayerMoney);
                 }
 
-                MenuState::WantedLevel = Controllers::Player::GetWantedLevel();
-                if (ImGui::SliderInt((const char*)u8"通缉星级", &MenuState::WantedLevel, 0, 6)) {
+                ImGui::SliderInt((const char*)u8"通缉星级", &MenuState::WantedLevel, 0, 6);
+                ImGui::SameLine();
+                if (UI::Button((const char*)u8"设置通缉", 4)) {
                     Controllers::Player::SetWantedLevel(MenuState::WantedLevel);
                 }
                 ImGui::PopItemWidth();
-                if (UI::Button((const char*)u8"消除通缉")) {
+
+                if (UI::Button((const char*)u8"读取当前数值", 2)) {
+                    MenuState::PlayerHealth = Controllers::Player::GetHealth();
+                    MenuState::PlayerArmour = Controllers::Player::GetArmour();
+                    MenuState::PlayerMoney = Controllers::Player::GetMoney();
+                    MenuState::WantedLevel = Controllers::Player::GetWantedLevel();
+                }
+                ImGui::SameLine();
+                if (UI::Button((const char*)u8"消除通缉", 2)) {
                     MenuState::WantedLevel = 0;
                     Controllers::Player::ClearWantedLevel();
                 }
