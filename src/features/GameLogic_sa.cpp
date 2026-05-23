@@ -8,6 +8,7 @@
 #include "CVehicle.h"
 #include "CAutomobile.h"
 #include "CBike.h"
+#include "CPools.h"
 #include "CModelInfo.h"
 #include "CWeaponInfo.h"
 #include "CPools.h"
@@ -15,6 +16,7 @@
 #include "Patch.h"
 #include "CTimer.h"
 #include "CClock.h"
+#include "rw/skeleton.h"
 #include <ctime>
 #include <string>
 
@@ -281,6 +283,117 @@ void SetVehicleHeavy(CVehicle* vehicle, bool enable) {
 void SetVehicleWatertight(CVehicle* vehicle, bool enable) {
     if (!vehicle) return;
     plugin::Command<plugin::Commands::SET_CAR_WATERTIGHT>(CPools::GetVehicleRef(vehicle), enable);
+}
+
+float GetVehicleHealth(CVehicle* vehicle) {
+    return vehicle ? vehicle->m_fHealth : 0.0f;
+}
+
+void SetVehicleHealth(CVehicle* vehicle, float health) {
+    if (!vehicle) return;
+    vehicle->m_fHealth = health;
+}
+
+bool GetVehicleLights(CVehicle* vehicle) {
+    return vehicle ? vehicle->bLightsOn : false;
+}
+
+void SetVehicleLights(CVehicle* vehicle, bool enable) {
+    if (!vehicle) return;
+    vehicle->bLightsOn = enable;
+    vehicle->m_nOverrideLights = enable ? 2 : 1;
+}
+
+bool GetVehicleLocked(CVehicle* vehicle) {
+    return vehicle ? vehicle->m_eDoorLock == DOORLOCK_LOCKED_PLAYER_INSIDE : false;
+}
+
+void SetVehicleLocked(CVehicle* vehicle, bool enable) {
+    if (!vehicle) return;
+    vehicle->m_eDoorLock = enable ? DOORLOCK_LOCKED_PLAYER_INSIDE : DOORLOCK_UNLOCKED;
+}
+
+bool GetVehicleVisible(CVehicle* vehicle) {
+    return vehicle ? vehicle->bIsVisible : false;
+}
+
+void SetVehicleVisible(CVehicle* vehicle, bool enable) {
+    if (!vehicle) return;
+    vehicle->bIsVisible = enable;
+}
+
+bool GetVehicleAlwaysSkidMarks(CVehicle* vehicle) {
+    return vehicle ? vehicle->bAlwaysSkidMarks : false;
+}
+
+void SetVehicleAlwaysSkidMarks(CVehicle* vehicle, bool enable) {
+    if (!vehicle) return;
+    vehicle->bAlwaysSkidMarks = enable;
+}
+
+bool GetVehicleDisableParticles(CVehicle* vehicle) {
+    return vehicle ? vehicle->bDisableParticles : false;
+}
+
+void SetVehicleDisableParticles(CVehicle* vehicle, bool enable) {
+    if (!vehicle) return;
+    vehicle->bDisableParticles = enable;
+}
+
+bool GetVehicleDriverTargetable(CVehicle* vehicle) {
+    return vehicle ? vehicle->bVehicleCanBeTargetted : false;
+}
+
+void SetVehicleDriverTargetable(CVehicle* vehicle, bool enable) {
+    if (!vehicle) return;
+    vehicle->bVehicleCanBeTargetted = enable;
+}
+
+bool GetVehicleHeatSeekingTargetable(CVehicle* vehicle) {
+    return vehicle ? vehicle->bVehicleCanBeTargettedByHS : false;
+}
+
+void SetVehicleHeatSeekingTargetable(CVehicle* vehicle, bool enable) {
+    if (!vehicle) return;
+    vehicle->bVehicleCanBeTargettedByHS = enable;
+}
+
+bool GetVehiclePetrolTankWeakPoint(CVehicle* vehicle) {
+    return vehicle ? vehicle->bPetrolTankIsWeakPoint : false;
+}
+
+void SetVehiclePetrolTankWeakPoint(CVehicle* vehicle, bool enable) {
+    if (!vehicle) return;
+    vehicle->bPetrolTankIsWeakPoint = enable;
+}
+
+bool GetVehicleSirenOrAlarm(CVehicle* vehicle) {
+    return vehicle ? vehicle->bSirenOrAlarm : false;
+}
+
+void SetVehicleSirenOrAlarm(CVehicle* vehicle, bool enable) {
+    if (!vehicle) return;
+    vehicle->bSirenOrAlarm = enable;
+}
+
+bool GetVehicleTakeLessDamage(CVehicle* vehicle) {
+    return vehicle ? vehicle->bTakeLessDamage : false;
+}
+
+void SetVehicleTakeLessDamage(CVehicle* vehicle, bool enable) {
+    if (!vehicle) return;
+    vehicle->bTakeLessDamage = enable;
+}
+
+void BlowUpAllVehicles() {
+    CPlayerPed* player = FindPlayerPed();
+    if (!player) return;
+
+    for (CVehicle* vehicle : CPools::ms_pVehiclePool) {
+        if (vehicle) {
+            vehicle->BlowUpCar(player, false);
+        }
+    }
 }
 
 bool IsAircraftModel(int model) {
@@ -593,6 +706,14 @@ void SetGameSpeed(float speed) {
 
 float GetGameSpeed() {
     return CTimer::ms_fTimeScale;
+}
+
+int GetFpsLimit() {
+    return RsGlobal.maxFPS;
+}
+
+void SetFpsLimit(int limit) {
+    RsGlobal.maxFPS = limit;
 }
 
 void SetDisableReplay(bool enable) {

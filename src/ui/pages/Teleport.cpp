@@ -2,6 +2,7 @@
 #include "controllers/Teleport.h"
 #include "ui/MenuState.h"
 #include "resources/ResourceData.h"
+#include "ui/Widget.h"
 #include "imgui/imgui.h"
 #include <cstdio>
 #include <cstring>
@@ -21,13 +22,10 @@ namespace {
                 ImGui::SeparatorText(currentCategory);
             }
 
-            if (ImGui::Button(location.label)) {
+            if (UI::Button(location.label, 2)) {
                 Controllers::Teleport::To(location.x, location.y, location.z, location.interior);
             }
-            if ((index + 1) % 2 != 0) {
-                ImGui::SameLine();
-            }
-            ++index;
+            UI::SameLineEvery(index++, 2);
         }
     }
 }
@@ -37,7 +35,7 @@ namespace Pages::Teleport {
         static char coordInput[128] = "0, 0, 10";
         static char locationName[128] = "";
 
-        if (ImGui::BeginTabBar("TeleportTabs", ImGuiTabBarFlags_NoTooltip | ImGuiTabBarFlags_FittingPolicyScroll)) {
+        if (UI::BeginTabBar("TeleportTabs")) {
             if (ImGui::BeginTabItem((const char*)u8"传送")) {
 #ifdef GTASA
                 ImGui::Columns(2, nullptr, false);
@@ -60,7 +58,7 @@ namespace Pages::Teleport {
                 ImGui::InputTextWithHint((const char*)u8"坐标", "x, y, z", coordInput, sizeof(coordInput));
                 ImGui::Spacing();
 
-                if (ImGui::Button((const char*)u8"传送到坐标")) {
+                if (UI::Button((const char*)u8"传送到坐标", 4)) {
                     float x = 0.0f;
                     float y = 0.0f;
                     float z = 10.0f;
@@ -70,7 +68,7 @@ namespace Pages::Teleport {
                 }
                 ImGui::SameLine();
 #ifdef GTASA
-                if (ImGui::Button((const char*)u8"按地图位置传送")) {
+                if (UI::Button((const char*)u8"按地图位置传送", 4)) {
                     float x = 0.0f;
                     float y = 0.0f;
                     float z = 10.0f;
@@ -79,16 +77,16 @@ namespace Pages::Teleport {
                     }
                 }
                 ImGui::SameLine();
-                if (ImGui::Button((const char*)u8"传送到标记点")) {
+                if (UI::Button((const char*)u8"传送到标记点", 4)) {
                     Controllers::Teleport::Marker(MenuState::SpawnUnderwater);
                 }
 #else
-                if (ImGui::Button((const char*)u8"地图中心")) {
+                if (UI::Button((const char*)u8"地图中心", 4)) {
                     Controllers::Teleport::Center();
                 }
 #endif
                 ImGui::SameLine();
-                if (ImGui::Button((const char*)u8"向前挪 5 米")) {
+                if (UI::Button((const char*)u8"向前挪 5 米", 4)) {
                     Controllers::Teleport::Forward(5.0f);
                 }
 
@@ -97,7 +95,7 @@ namespace Pages::Teleport {
                     ImGui::TextWrapped((const char*)u8"如果快速地图传送位置偏移，可以在这里调整地图宽高。默认值是 6000 x 6000。");
                     ImGui::InputFloat((const char*)u8"宽度", &MenuState::TeleportMapWidth, 1.0f, 100.0f, "%.1f");
                     ImGui::InputFloat((const char*)u8"高度", &MenuState::TeleportMapHeight, 1.0f, 100.0f, "%.1f");
-                    if (ImGui::Button((const char*)u8"恢复默认")) {
+                    if (UI::Button((const char*)u8"恢复默认")) {
                         MenuState::TeleportMapWidth = 6000.0f;
                         MenuState::TeleportMapHeight = 6000.0f;
                     }
@@ -109,11 +107,11 @@ namespace Pages::Teleport {
             if (ImGui::BeginTabItem((const char*)u8"地点")) {
                 ImGui::InputTextWithHint((const char*)u8"地点名称", (const char*)u8"自定义地点", locationName, sizeof(locationName));
                 ImGui::InputTextWithHint((const char*)u8"地点坐标", "x, y, z", coordInput, sizeof(coordInput));
-                if (ImGui::Button((const char*)u8"添加地点")) {
+                if (UI::Button((const char*)u8"添加地点")) {
                     locationName[0] = '\0';
                 }
 
-                ImGui::Separator();
+                UI::SpacingSeparator();
                 DrawLocationList();
                 ImGui::EndTabItem();
             }

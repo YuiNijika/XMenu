@@ -133,6 +133,106 @@ namespace Controllers::Vehicle {
         GameLogic::SetVehicleWatertight(GetCurrentVehicle(), enable);
     }
 
+    float GetHealth() {
+        return GameLogic::GetVehicleHealth(GetCurrentVehicle());
+    }
+
+    void SetHealth(float health) {
+        GameLogic::SetVehicleHealth(GetCurrentVehicle(), health);
+    }
+
+    bool GetLights() {
+        return GameLogic::GetVehicleLights(GetCurrentVehicle());
+    }
+
+    void SetLights(bool enable) {
+        GameLogic::SetVehicleLights(GetCurrentVehicle(), enable);
+    }
+
+    bool GetLocked() {
+        return GameLogic::GetVehicleLocked(GetCurrentVehicle());
+    }
+
+    void SetLocked(bool enable) {
+        GameLogic::SetVehicleLocked(GetCurrentVehicle(), enable);
+    }
+
+    GameLogic::ProofState GetProofState() {
+        return GameLogic::GetVehicleProofState(GetCurrentVehicle());
+    }
+
+    void SetProofState(const GameLogic::ProofState& state) {
+        GameLogic::SetVehicleProofState(GetCurrentVehicle(), state);
+    }
+
+    bool GetVisible() {
+        return GameLogic::GetVehicleVisible(GetCurrentVehicle());
+    }
+
+    void SetVisible(bool enable) {
+        GameLogic::SetVehicleVisible(GetCurrentVehicle(), enable);
+    }
+
+    bool GetAlwaysSkidMarks() {
+        return GameLogic::GetVehicleAlwaysSkidMarks(GetCurrentVehicle());
+    }
+
+    void SetAlwaysSkidMarks(bool enable) {
+        GameLogic::SetVehicleAlwaysSkidMarks(GetCurrentVehicle(), enable);
+    }
+
+    bool GetDisableParticles() {
+        return GameLogic::GetVehicleDisableParticles(GetCurrentVehicle());
+    }
+
+    void SetDisableParticles(bool enable) {
+        GameLogic::SetVehicleDisableParticles(GetCurrentVehicle(), enable);
+    }
+
+    bool GetDriverTargetable() {
+        return GameLogic::GetVehicleDriverTargetable(GetCurrentVehicle());
+    }
+
+    void SetDriverTargetable(bool enable) {
+        GameLogic::SetVehicleDriverTargetable(GetCurrentVehicle(), enable);
+    }
+
+    bool GetHeatSeekingTargetable() {
+        return GameLogic::GetVehicleHeatSeekingTargetable(GetCurrentVehicle());
+    }
+
+    void SetHeatSeekingTargetable(bool enable) {
+        GameLogic::SetVehicleHeatSeekingTargetable(GetCurrentVehicle(), enable);
+    }
+
+    bool GetPetrolTankWeakPoint() {
+        return GameLogic::GetVehiclePetrolTankWeakPoint(GetCurrentVehicle());
+    }
+
+    void SetPetrolTankWeakPoint(bool enable) {
+        GameLogic::SetVehiclePetrolTankWeakPoint(GetCurrentVehicle(), enable);
+    }
+
+    bool GetSirenOrAlarm() {
+        return GameLogic::GetVehicleSirenOrAlarm(GetCurrentVehicle());
+    }
+
+    void SetSirenOrAlarm(bool enable) {
+        GameLogic::SetVehicleSirenOrAlarm(GetCurrentVehicle(), enable);
+    }
+
+    bool GetTakeLessDamage() {
+        return GameLogic::GetVehicleTakeLessDamage(GetCurrentVehicle());
+    }
+
+    void SetTakeLessDamage(bool enable) {
+        GameLogic::SetVehicleTakeLessDamage(GetCurrentVehicle(), enable);
+    }
+
+    void BlowUpAll() {
+        GameLogic::BlowUpAllVehicles();
+    }
+
     bool Spawn(unsigned int modelId) {
         GameLogic::SpawnVehicleOptions options;
         options.asDriver = MenuState::VehicleSpawnAsDriver;

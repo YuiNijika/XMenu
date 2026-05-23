@@ -12,6 +12,20 @@ namespace {
     GameLogic::ProofState savedPlayerProofs;
     bool hasSavedPlayerProofs = false;
 
+    int ClampWantedLevel(int level) {
+        if (level < 0 || level > 6) {
+            return 0;
+        }
+        return level;
+    }
+
+    float ClampHealth(float value) {
+        if (value <= 0.0f) {
+            return 0.0f;
+        }
+        return value < 2.0f ? 2.0f : value;
+    }
+
     void RestoreGodModeState() {
         if (!hasSavedPlayerProofs || !godModePlayer) {
             return;
@@ -83,11 +97,11 @@ namespace Controllers::Player {
     }
 
     int GetWantedLevel() {
-        return GameLogic::GetWantedLevel(GetPlayer());
+        return ClampWantedLevel(GameLogic::GetWantedLevel(GetPlayer()));
     }
 
     void SetWantedLevel(int level) {
-        GameLogic::SetWantedLevel(GetPlayer(), level);
+        GameLogic::SetWantedLevel(GetPlayer(), ClampWantedLevel(level));
     }
 
     void ClearWantedLevel() {
@@ -107,7 +121,7 @@ namespace Controllers::Player {
     }
 
     void SetHealth(float value) {
-        GameLogic::SetHealth(GetPlayer(), value);
+        GameLogic::SetHealth(GetPlayer(), ClampHealth(value));
     }
 
     float GetArmour() {

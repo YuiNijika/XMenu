@@ -51,4 +51,5 @@ namespace MenuState {
     inline bool FreezeTime = false;
     inline int DaysPassed = 0;
     inline float Gravity = 0.008f;
+    inline int FpsLimit = 30;
 }

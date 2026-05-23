@@ -9,6 +9,8 @@ namespace Controllers::World {
     void DrawWeatherButtons();
     void SetGameSpeed(float speed);
     float GetGameSpeed();
+    int GetFpsLimit();
+    void SetFpsLimit(int limit);
     void SetDisableReplay(bool enable);
     void SetDisableCheats(bool enable);
     void SetForbiddenAreaWanted(bool enable);

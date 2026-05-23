@@ -54,6 +54,15 @@ namespace Controllers::World {
         return GameLogic::GetGameSpeed();
     }
 
+    int GetFpsLimit() {
+        return GameLogic::GetFpsLimit();
+    }
+
+    void SetFpsLimit(int limit) {
+        GameLogic::SetFpsLimit(limit);
+        Log::Info("FPS 限制已设置为 " + std::to_string(limit));
+    }
+
     void SetDisableReplay(bool enable) {
         GameLogic::SetDisableReplay(enable);
         Log::Info(std::string("禁用回放：") + (enable ? "开启" : "关闭"));

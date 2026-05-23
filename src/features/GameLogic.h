@@ -61,6 +61,29 @@ namespace GameLogic {
     void UnflipVehicle(CVehicle* vehicle);
     void SetVehicleHeavy(CVehicle* vehicle, bool enable);
     void SetVehicleWatertight(CVehicle* vehicle, bool enable);
+    float GetVehicleHealth(CVehicle* vehicle);
+    void SetVehicleHealth(CVehicle* vehicle, float health);
+    bool GetVehicleLights(CVehicle* vehicle);
+    void SetVehicleLights(CVehicle* vehicle, bool enable);
+    bool GetVehicleLocked(CVehicle* vehicle);
+    void SetVehicleLocked(CVehicle* vehicle, bool enable);
+    bool GetVehicleVisible(CVehicle* vehicle);
+    void SetVehicleVisible(CVehicle* vehicle, bool enable);
+    bool GetVehicleAlwaysSkidMarks(CVehicle* vehicle);
+    void SetVehicleAlwaysSkidMarks(CVehicle* vehicle, bool enable);
+    bool GetVehicleDisableParticles(CVehicle* vehicle);
+    void SetVehicleDisableParticles(CVehicle* vehicle, bool enable);
+    bool GetVehicleDriverTargetable(CVehicle* vehicle);
+    void SetVehicleDriverTargetable(CVehicle* vehicle, bool enable);
+    bool GetVehicleHeatSeekingTargetable(CVehicle* vehicle);
+    void SetVehicleHeatSeekingTargetable(CVehicle* vehicle, bool enable);
+    bool GetVehiclePetrolTankWeakPoint(CVehicle* vehicle);
+    void SetVehiclePetrolTankWeakPoint(CVehicle* vehicle, bool enable);
+    bool GetVehicleSirenOrAlarm(CVehicle* vehicle);
+    void SetVehicleSirenOrAlarm(CVehicle* vehicle, bool enable);
+    bool GetVehicleTakeLessDamage(CVehicle* vehicle);
+    void SetVehicleTakeLessDamage(CVehicle* vehicle, bool enable);
+    void BlowUpAllVehicles();
     bool IsValidVehicleModel(unsigned int modelId);
     CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options);
     
@@ -88,6 +111,8 @@ namespace GameLogic {
     void SyncTimeWithSystemClock();
     void SetGameSpeed(float speed);
     float GetGameSpeed();
+    int GetFpsLimit();
+    void SetFpsLimit(int limit);
     void SetDisableReplay(bool enable);
     void SetDisableCheats(bool enable);
     void SetForbiddenAreaWanted(bool enable);

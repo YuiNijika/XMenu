@@ -1,6 +1,7 @@
 #include "Player.h"
 #include "controllers/Player.h"
 #include "ui/MenuState.h"
+#include "ui/Widget.h"
 #include "imgui/imgui.h"
 
 namespace Pages::Player {
@@ -9,64 +10,63 @@ namespace Pages::Player {
     }
 
     void Draw() {
-        if (ImGui::Button((const char*)u8"复制坐标")) {
+        if (UI::Button((const char*)u8"复制坐标", 3)) {
             Controllers::Player::CopyCoordinates();
         }
         ImGui::SameLine();
-        if (ImGui::Button((const char*)u8"回满血量")) {
+        if (UI::Button((const char*)u8"回满血量", 3)) {
             Controllers::Player::Heal();
         }
         ImGui::SameLine();
-        if (ImGui::Button((const char*)u8"补满护甲")) {
+        if (UI::Button((const char*)u8"补满护甲", 3)) {
             Controllers::Player::GiveArmour();
         }
-        ImGui::SameLine();
-        if (ImGui::Button((const char*)u8"加 25 万现金")) {
+        if (UI::Button((const char*)u8"加 25 万现金", 2)) {
             Controllers::Player::GiveMoney();
         }
         ImGui::SameLine();
-        if (ImGui::Button((const char*)u8"立即倒地")) {
+        if (UI::Button((const char*)u8"立即倒地", 2)) {
             Controllers::Player::Kill();
         }
 
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
+        UI::SpacingSeparator();
 
-        if (ImGui::BeginTabBar("PlayerTabs", ImGuiTabBarFlags_NoTooltip | ImGuiTabBarFlags_FittingPolicyScroll)) {
+        if (UI::BeginTabBar("PlayerTabs")) {
             if (ImGui::BeginTabItem((const char*)u8"状态开关")) {
+                ImGui::Columns(3, nullptr, false);
                 ImGui::Checkbox((const char*)u8"无敌", &MenuState::GodMode);
-                ImGui::SameLine();
+                ImGui::NextColumn();
                 ImGui::Checkbox((const char*)u8"自动回血", &MenuState::AutoHeal);
-                ImGui::SameLine();
+                ImGui::NextColumn();
                 ImGui::Checkbox((const char*)u8"50 血量", &MenuState::HardMode);
+                ImGui::NextColumn();
 
                 if (ImGui::Checkbox((const char*)u8"无限冲刺", &MenuState::InfiniteSprint)) {
                     Controllers::Player::SetInfiniteSprint(MenuState::InfiniteSprint);
                 }
-                ImGui::SameLine();
-                if (ImGui::Checkbox((const char*)u8"死亡后回到原地", &MenuState::RespawnAtDeathPosition)) {
-                }
-                ImGui::SameLine();
-                if (ImGui::Checkbox((const char*)u8"冻结通缉", &MenuState::FreezeWantedLevel)) {
-                }
+                ImGui::NextColumn();
+                ImGui::Checkbox((const char*)u8"死亡后回到原地", &MenuState::RespawnAtDeathPosition);
+                ImGui::NextColumn();
+                ImGui::Checkbox((const char*)u8"冻结通缉", &MenuState::FreezeWantedLevel);
+                ImGui::NextColumn();
 
                 if (ImGui::Checkbox((const char*)u8"住院/被捕保留装备", &MenuState::KeepStuff)) {
                     Controllers::Player::SetKeepStuff(MenuState::KeepStuff);
                 }
+                ImGui::NextColumn();
 
                 bool freeHealth = Controllers::Player::GetFreeHealthcare();
                 if (ImGui::Checkbox((const char*)u8"住院不扣钱", &freeHealth)) {
                     Controllers::Player::SetFreeHealthcare(freeHealth);
                 }
-                ImGui::SameLine();
+                ImGui::NextColumn();
                 bool freeJail = Controllers::Player::GetFreeJail();
                 if (ImGui::Checkbox((const char*)u8"被捕不扣钱", &freeJail)) {
                     Controllers::Player::SetFreeJail(freeJail);
                 }
+                ImGui::Columns(1);
 
-                ImGui::Spacing();
-                ImGui::Separator();
+                UI::SpacingSeparator();
                 ImGui::TextUnformatted((const char*)u8"单项防护");
 
                 GameLogic::ProofState proofs = Controllers::Player::GetProofState();
@@ -77,15 +77,18 @@ namespace Pages::Player {
                 MenuState::MeleeProof = proofs.melee;
 
                 ImGui::BeginDisabled(MenuState::GodMode);
+                ImGui::Columns(3, nullptr, false);
                 bool changedProof = false;
                 changedProof |= ImGui::Checkbox((const char*)u8"防弹", &MenuState::BulletProof);
-                ImGui::SameLine();
+                ImGui::NextColumn();
                 changedProof |= ImGui::Checkbox((const char*)u8"防撞", &MenuState::CollisionProof);
-                ImGui::SameLine();
+                ImGui::NextColumn();
                 changedProof |= ImGui::Checkbox((const char*)u8"防爆", &MenuState::ExplosionProof);
+                ImGui::NextColumn();
                 changedProof |= ImGui::Checkbox((const char*)u8"防火", &MenuState::FireProof);
-                ImGui::SameLine();
+                ImGui::NextColumn();
                 changedProof |= ImGui::Checkbox((const char*)u8"防近战", &MenuState::MeleeProof);
+                ImGui::Columns(1);
                 ImGui::EndDisabled();
 
                 if (changedProof) {
@@ -104,6 +107,9 @@ namespace Pages::Player {
                 MenuState::PlayerHealth = Controllers::Player::GetHealth();
                 ImGui::PushItemWidth(180);
                 if (ImGui::InputFloat((const char*)u8"血量", &MenuState::PlayerHealth, 1.0f, 10.0f, "%.1f")) {
+                    if (MenuState::PlayerHealth > 0.0f && MenuState::PlayerHealth < 2.0f) {
+                        MenuState::PlayerHealth = 2.0f;
+                    }
                     Controllers::Player::SetHealth(MenuState::PlayerHealth);
                 }
 
@@ -122,8 +128,7 @@ namespace Pages::Player {
                     Controllers::Player::SetWantedLevel(MenuState::WantedLevel);
                 }
                 ImGui::PopItemWidth();
-                ImGui::SameLine();
-                if (ImGui::Button((const char*)u8"消除通缉")) {
+                if (UI::Button((const char*)u8"消除通缉")) {
                     MenuState::WantedLevel = 0;
                     Controllers::Player::ClearWantedLevel();
                 }
