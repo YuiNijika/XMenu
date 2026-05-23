@@ -17,8 +17,50 @@
 #include "CTimer.h"
 #include "CClock.h"
 #include "rw/skeleton.h"
+#include <array>
+#include <cstdint>
+#include <windows.h>
 #include <ctime>
 #include <string>
+
+namespace {
+template <std::size_t Size>
+bool PatchBytesIfExpected(const char* label, std::uintptr_t address, const std::array<unsigned char, Size>& original, const std::array<unsigned char, Size>& patched, bool enable) {
+    auto* target = reinterpret_cast<unsigned char*>(address);
+
+    MEMORY_BASIC_INFORMATION memoryInfo{};
+    if (VirtualQuery(target, &memoryInfo, sizeof(memoryInfo)) == 0 || memoryInfo.State != MEM_COMMIT ||
+        (memoryInfo.Protect & (PAGE_NOACCESS | PAGE_GUARD)) != 0 ||
+        reinterpret_cast<std::uintptr_t>(target) + Size > reinterpret_cast<std::uintptr_t>(memoryInfo.BaseAddress) + memoryInfo.RegionSize) {
+        Log::Warn(std::string(label) + " 回放补丁地址不可用，已跳过");
+        return false;
+    }
+
+    const auto& desired = enable ? patched : original;
+    if (std::memcmp(target, desired.data(), Size) == 0) {
+        return true;
+    }
+
+    const auto& acceptableCurrent = enable ? original : patched;
+    if (std::memcmp(target, acceptableCurrent.data(), Size) != 0) {
+        Log::Warn(std::string(label) + " 回放补丁位置与预期不符，已跳过");
+        return false;
+    }
+
+    DWORD oldProtect = 0;
+    if (!VirtualProtect(target, Size, PAGE_EXECUTE_READWRITE, &oldProtect)) {
+        Log::Warn(std::string(label) + " 回放补丁无法修改内存权限，已跳过");
+        return false;
+    }
+
+    std::memcpy(target, desired.data(), Size);
+    FlushInstructionCache(GetCurrentProcess(), target, Size);
+
+    DWORD unusedProtect = 0;
+    VirtualProtect(target, Size, oldProtect, &unusedProtect);
+    return true;
+}
+}
 
 namespace GameLogic {
 
@@ -705,7 +747,9 @@ void SetFpsLimit(int limit) {
 }
 
 void SetDisableReplay(bool enable) {
-    plugin::patch::Set<unsigned char>(0x460500, enable ? 0xC3 : 0x80, false);
+    static constexpr std::array<unsigned char, 1> original = { 0x80 };
+    static constexpr std::array<unsigned char, 1> patched = { 0xC3 };
+    PatchBytesIfExpected("SA", 0x460500, original, patched, enable);
 }
 
 void SetDisableCheats(bool enable) {
