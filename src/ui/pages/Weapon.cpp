@@ -27,5 +27,15 @@ namespace Pages::Weapon {
         ImGui::Spacing();
 
         ImGui::Checkbox((const char*)u8"无限弹药", &MenuState::InfiniteAmmo);
+        ImGui::SameLine();
+        ImGui::Checkbox((const char*)u8"快速换弹", &MenuState::FastReload);
+
+        bool weaponStatsChanged = false;
+        weaponStatsChanged |= ImGui::Checkbox((const char*)u8"伤害拉满", &MenuState::HugeWeaponDamage);
+        ImGui::SameLine();
+        weaponStatsChanged |= ImGui::Checkbox((const char*)u8"超远射程", &MenuState::LongWeaponRange);
+        if (weaponStatsChanged && !MenuState::HugeWeaponDamage && !MenuState::LongWeaponRange) {
+            Controllers::Weapon::ResetStats();
+        }
     }
 }

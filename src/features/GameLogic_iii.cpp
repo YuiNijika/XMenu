@@ -4,6 +4,8 @@
 #include "CStreaming.h"
 #include "CVehicle.h"
 #include "CAutomobile.h"
+#include "CWeaponInfo.h"
+#include "CPools.h"
 #include "Patch.h"
 #include "CTimer.h"
 #include "CClock.h"
@@ -175,6 +177,16 @@ void SetVehicleInvincible(CVehicle* vehicle, bool enable) {
     vehicle->bMeleeProof = enable;
 }
 
+void SetVehicleHeavy(CVehicle* vehicle, bool enable) {
+    if (!vehicle) return;
+    Command<Commands::SET_CAR_HEAVY>(CPools::GetVehicleRef(vehicle), enable);
+}
+
+void SetVehicleWatertight(CVehicle* vehicle, bool enable) {
+    if (!vehicle) return;
+    Command<Commands::SET_CAR_WATERTIGHT>(CPools::GetVehicleRef(vehicle), enable);
+}
+
 void TeleportPlayer(CVector pos) {
     CPlayerPed* pPlayer = FindPlayerPed();
     if (!pPlayer) return;
@@ -223,6 +235,30 @@ void ProcessInfiniteAmmo(CPlayerPed* player, bool enable) {
     for (int i = 0; i < 13; i++) {
         player->m_aWeapons[i].m_nAmmoTotal = 9999;
     }
+}
+
+void SetFastReload(CPlayerPed* player, bool enable) {
+    if (!player) return;
+    Command<Commands::SET_PLAYER_FAST_RELOAD>(CPools::GetPedRef(player), enable);
+}
+
+void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange) {
+    if (!player || (!hugeDamage && !longRange)) return;
+
+    CWeapon& weapon = player->m_aWeapons[player->m_nSelectedWepSlot];
+    CWeaponInfo* info = CWeaponInfo::GetWeaponInfo(weapon.m_eWeaponType);
+    if (!info) return;
+
+    if (hugeDamage) {
+        info->m_nDamage = 1000;
+    }
+    if (longRange) {
+        info->m_fRange = 1000.0f;
+    }
+}
+
+void ResetWeaponStats() {
+    CWeaponInfo::LoadWeaponData();
 }
 
 void SetTime(int hour, int minute) {

@@ -36,6 +36,10 @@ namespace Pages::Vehicle {
 
         ImGui::Checkbox((const char*)u8"载具防炸防撞", &MenuState::VehicleNoDamage);
         ImGui::SameLine();
+        ImGui::Checkbox((const char*)u8"车身加重", &MenuState::VehicleHeavy);
+        ImGui::SameLine();
+        ImGui::Checkbox((const char*)u8"落水不熄火", &MenuState::VehicleWatertight);
+
         ImGui::Checkbox((const char*)u8"锁住当前车速", &MenuState::VehicleSpeedLock);
         ImGui::PushItemWidth(150);
         ImGui::SliderFloat((const char*)u8"目标速度", &MenuState::VehicleSpeed, 5.0f, 300.0f, "%.0f");

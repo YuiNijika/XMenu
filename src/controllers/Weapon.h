@@ -5,4 +5,5 @@ namespace Controllers::Weapon {
     bool HasPlayer();
     void GiveAll();
     void ClearAll();
+    void ResetStats();
 }

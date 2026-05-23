@@ -60,6 +60,8 @@ namespace Controllers::Vehicle {
         }
 
         GameLogic::SetVehicleSpeedLock(vehicle, MenuState::VehicleSpeedLock, MenuState::VehicleSpeed);
+        GameLogic::SetVehicleHeavy(vehicle, MenuState::VehicleHeavy);
+        GameLogic::SetVehicleWatertight(vehicle, MenuState::VehicleWatertight);
     }
 
     void Repair() {
@@ -72,5 +74,13 @@ namespace Controllers::Vehicle {
 
     void SetEngine(bool enable) {
         GameLogic::SetVehicleEngine(GetCurrentVehicle(), enable);
+    }
+
+    void SetHeavy(bool enable) {
+        GameLogic::SetVehicleHeavy(GetCurrentVehicle(), enable);
+    }
+
+    void SetWatertight(bool enable) {
+        GameLogic::SetVehicleWatertight(GetCurrentVehicle(), enable);
     }
 }

@@ -8,4 +8,6 @@ namespace Controllers::Vehicle {
     void Repair();
     void Stop();
     void SetEngine(bool enable);
+    void SetHeavy(bool enable);
+    void SetWatertight(bool enable);
 }

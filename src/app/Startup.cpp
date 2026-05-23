@@ -2,6 +2,7 @@
 #include "defines.h"
 #include "plugin.h"
 #include "GameVersion.h"
+#include "utils/Log.h"
 #include <windows.h>
 
 namespace {
@@ -29,6 +30,7 @@ namespace {
 namespace Startup {
     bool Validate() {
         if (!IsSupportedGameVersion()) {
+            Log::Error("启动校验失败：当前游戏版本不受支持");
             MessageBoxA(
                 HWND_DESKTOP,
                 "Unknown game version. GTA " BY_GAME("SA v1.0 US Hoodlum or Compact", "VC v1.0 EN", "III v1.0 EN") " is required.",
@@ -39,10 +41,12 @@ namespace Startup {
         }
 
         if (IsUnsupportedOnlineRuntimeLoaded()) {
+            Log::Error("启动校验失败：检测到联机运行时");
             MessageBoxA(HWND_DESKTOP, "Online multiplayer runtime detected. XMenu is disabled for this session.", "XMenu", MB_ICONERROR);
             return false;
         }
 
+        Log::Info("启动校验完成：当前环境可用");
         return true;
     }
 }

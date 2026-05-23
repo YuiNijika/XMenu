@@ -5,14 +5,23 @@
 #include "ui/Menu.h"
 #include "features/GameLogic.h"
 #include "CPad.h"
+#include "utils/Log.h"
 
 namespace {
     void InitXMenu() {
+        Log::Info("注册游戏初始化与脚本循环事件");
         plugin::Events::initGameEvent.after += []() {
+            Log::Info("游戏初始化事件触发，开始初始化功能模块");
             GameLogic::Init();
-            D3DHook::Init([]() {
+            const bool hookReady = D3DHook::Init([]() {
                 Menu::Draw();
             });
+
+            if (hookReady) {
+                Log::Info("D3D Hook 初始化成功");
+            } else {
+                Log::Error("D3D Hook 初始化失败，菜单不会显示");
+            }
         };
 
         plugin::Events::processScriptsEvent += []() {
@@ -38,11 +47,17 @@ namespace {
 BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved) {
     if (nReason == DLL_PROCESS_ATTACH) {
         DisableThreadLibraryCalls(hDllHandle);
+        Log::Init();
+        Log::Info("DLL 已加载，开始启动校验");
         if (Startup::Validate()) {
+            Log::Info("启动校验通过");
             InitXMenu();
+        } else {
+            Log::Error("启动校验失败，XMenu 已停止初始化");
         }
     } else if (nReason == DLL_PROCESS_DETACH) {
         D3DHook::Shutdown();
+        Log::Shutdown();
     }
     return TRUE;
 }

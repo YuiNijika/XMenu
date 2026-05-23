@@ -1,4 +1,6 @@
 #include "Menu.h"
+#include <windows.h>
+#include "utils/Log.h"
 #include "imgui/imgui.h"
 #include "ui/pages/Player.h"
 #include "ui/pages/Vehicle.h"
@@ -37,6 +39,15 @@ void Menu::Draw() {
             }
             if (ImGui::BeginTabItem((const char*)u8"世界")) {
                 Pages::World::Draw();
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem((const char*)u8"加群")) {
+                ImGui::TextWrapped((const char*)u8"加入交流群，获取更新、反馈问题和查看使用说明。");
+                ImGui::Spacing();
+                if (ImGui::Button((const char*)u8"打开加群页面")) {
+                    Log::Info("用户点击加群页面跳转");
+                    ShellExecuteA(nullptr, "open", "https://gtamodx.com/qqun", nullptr, nullptr, SW_SHOWNORMAL);
+                }
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();

@@ -8,6 +8,9 @@
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_dx9.h"
 #include "kiero/kiero.h"
+#include "utils/Log.h"
+#include <array>
+#include <string>
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -18,6 +21,47 @@ typedef HRESULT(__stdcall* Present_t)(LPDIRECT3DDEVICE9, const RECT*, const RECT
 static EndScene_t oEndScene = NULL;
 static Reset_t oReset = NULL;
 static Present_t oPresent = NULL;
+
+namespace {
+    bool FileExists(const std::string& path) {
+        const DWORD attributes = GetFileAttributesA(path.c_str());
+        return attributes != INVALID_FILE_ATTRIBUTES && !(attributes & FILE_ATTRIBUTE_DIRECTORY);
+    }
+
+    bool LoadChineseFont(ImGuiIO& io) {
+        char windowsPath[MAX_PATH] = {};
+        GetWindowsDirectoryA(windowsPath, MAX_PATH);
+        const std::string fontsDir = std::string(windowsPath) + "\\Fonts\\";
+
+        // 按中文显示效果和常见程度排序，雅黑不存在时继续尝试其它系统字体。
+        const std::array<const char*, 8> fontNames = {
+            "msyh.ttc",
+            "msyh.ttf",
+            "msyhbd.ttc",
+            "simhei.ttf",
+            "simsun.ttc",
+            "Deng.ttf",
+            "Dengb.ttf",
+            "NotoSansCJK-Regular.ttc",
+        };
+
+        for (const char* fontName : fontNames) {
+            const std::string fontPath = fontsDir + fontName;
+            if (!FileExists(fontPath)) {
+                continue;
+            }
+
+            if (io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 18.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull())) {
+                Log::Info(std::string("中文字体加载成功: ") + fontPath);
+                return true;
+            }
+
+            Log::Warn(std::string("中文字体文件存在但加载失败: ") + fontPath);
+        }
+
+        return false;
+    }
+}
 
 HWND D3DHook::window = NULL;
 WNDPROC D3DHook::oWndProc = NULL;
@@ -87,16 +131,15 @@ void D3DHook::InitImGui(LPDIRECT3DDEVICE9 pDevice) {
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
     
-    // 加载中文字体
-    char windowsPath[MAX_PATH];
-    GetWindowsDirectoryA(windowsPath, MAX_PATH);
-    std::string fontPath = std::string(windowsPath) + "\\Fonts\\msyh.ttc";
-    io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesChineseFull());
+    if (!LoadChineseFont(io)) {
+        Log::Warn("没有找到可用中文字体，将使用 ImGui 默认字体");
+    }
     
     ImGui_ImplWin32_Init(window);
     ImGui_ImplDX9_Init(pDevice);
     
     isInitialized = true;
+    Log::Info("ImGui 初始化完成");
 }
 
 HRESULT __stdcall D3DHook::hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
@@ -140,17 +183,29 @@ HRESULT __stdcall D3DHook::hkPresent(LPDIRECT3DDEVICE9 pDevice, const RECT* pSou
 
 bool D3DHook::Init(std::function<void()> onRender) {
     renderCallback = onRender;
-    if (kiero::init(kiero::RenderType::D3D9) == kiero::Status::Success) {
-        kiero::bind(42, (void**)&oEndScene, (void*)hkEndScene);
-        kiero::bind(16, (void**)&oReset, (void*)hkReset);
-        kiero::bind(17, (void**)&oPresent, (void*)hkPresent);
-        return true;
+    const auto initStatus = kiero::init(kiero::RenderType::D3D9);
+    if (initStatus == kiero::Status::Success) {
+        const auto endSceneStatus = kiero::bind(42, (void**)&oEndScene, (void*)hkEndScene);
+        const auto resetStatus = kiero::bind(16, (void**)&oReset, (void*)hkReset);
+        const auto presentStatus = kiero::bind(17, (void**)&oPresent, (void*)hkPresent);
+
+        if (endSceneStatus == kiero::Status::Success && resetStatus == kiero::Status::Success && presentStatus == kiero::Status::Success) {
+            Log::Info("D3D9 Hook 绑定完成");
+            return true;
+        }
+
+        Log::Error("D3D9 Hook 绑定失败");
+        kiero::shutdown();
+        return false;
     }
+
+    Log::Error("kiero D3D9 初始化失败");
     return false;
 }
 
 void D3DHook::Shutdown() {
     if (isInitialized) {
+        Log::Info("关闭 D3D Hook 与 ImGui");
         SetWindowLongPtr(window, GWL_WNDPROC, (LONG_PTR)oWndProc);
         ImGui_ImplDX9_Shutdown();
         ImGui_ImplWin32_Shutdown();

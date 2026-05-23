@@ -16,6 +16,8 @@ namespace Controllers::Weapon {
         }
 
         GameLogic::ProcessInfiniteAmmo(player, MenuState::InfiniteAmmo);
+        GameLogic::SetFastReload(player, MenuState::FastReload);
+        GameLogic::ProcessWeaponTweaks(player, MenuState::HugeWeaponDamage, MenuState::LongWeaponRange);
     }
 
     void GiveAll() {
@@ -24,5 +26,9 @@ namespace Controllers::Weapon {
 
     void ClearAll() {
         GameLogic::ClearWeapons(FindPlayerPed());
+    }
+
+    void ResetStats() {
+        GameLogic::ResetWeaponStats();
     }
 }

@@ -40,6 +40,8 @@ namespace GameLogic {
     void SetVehicleSpeedLock(CVehicle* vehicle, bool enable, float speed);
     void SetVehicleEngine(CVehicle* vehicle, bool enable);
     void SetVehicleInvincible(CVehicle* vehicle, bool enable);
+    void SetVehicleHeavy(CVehicle* vehicle, bool enable);
+    void SetVehicleWatertight(CVehicle* vehicle, bool enable);
     
     // 传送
     void TeleportPlayer(CVector pos);
@@ -49,6 +51,9 @@ namespace GameLogic {
     void GiveAllWeapons(CPlayerPed* player);
     void ClearWeapons(CPlayerPed* player);
     void ProcessInfiniteAmmo(CPlayerPed* player, bool enable);
+    void SetFastReload(CPlayerPed* player, bool enable);
+    void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange);
+    void ResetWeaponStats();
     
     // 世界
     void SetTime(int hour, int minute);
