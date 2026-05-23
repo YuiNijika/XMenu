@@ -139,12 +139,12 @@ namespace Controllers::Vehicle {
         options.aircraftInAir = MenuState::VehicleSpawnAircraftInAir;
 
         if (!Resources::IsKnownVehicleModel(modelId)) {
-            Log::Warn("Vehicle spawn rejected unknown model for current game: " + std::to_string(modelId));
+            Log::Error("载具生成失败：当前游戏未支持模型 ID " + std::to_string(modelId));
             return false;
         }
 
         if (!GameLogic::IsValidVehicleModel(modelId)) {
-            Log::Warn("Vehicle spawn rejected by controller: " + std::to_string(modelId));
+            Log::Error("载具生成失败：底层校验拒绝模型 ID " + std::to_string(modelId));
             return false;
         }
 

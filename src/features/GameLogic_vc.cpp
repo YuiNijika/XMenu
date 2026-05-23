@@ -311,7 +311,7 @@ CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options)
 
     const int model = static_cast<int>(modelId);
     if (!IsValidVehicleModel(modelId)) {
-        Log::Warn("VC vehicle spawn rejected invalid model: " + std::to_string(model));
+        Log::Warn("VC 载具生成被拒绝：无效模型 ID " + std::to_string(model));
         return nullptr;
     }
 
@@ -353,7 +353,7 @@ CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options)
     CVehicle* vehicle = CPools::GetVehicle(hveh);
     if (!vehicle) {
         CStreaming::SetModelIsDeletable(model);
-        Log::Error("VC vehicle spawn failed after CREATE_CAR: " + std::to_string(model));
+        Log::Error("VC 载具生成失败：脚本命令 CREATE_CAR 未返回有效载具，模型 ID " + std::to_string(model));
         return nullptr;
     }
 
@@ -472,7 +472,7 @@ void GiveWeaponModel(CPlayerPed* player, unsigned int weaponModel, unsigned int 
 
     const eWeaponType weaponType = GetWeaponTypeFromModel(model);
     if (weaponType == WEAPONTYPE_UNARMED) {
-        Log::Warn("VC weapon model is not mapped to a valid weapon type: " + std::to_string(model));
+        Log::Warn("VC 武器发放被拒绝：模型未映射到有效武器类型，模型 ID " + std::to_string(model));
         plugin::Command<plugin::Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(model);
         return;
     }
@@ -584,11 +584,11 @@ void SetDisableCheats(bool enable) {
 }
 
 void SetForbiddenAreaWanted(bool enable) {
-    Log::Warn(std::string("VC does not support forbidden area wanted toggle: ") + (enable ? "on" : "off"));
+    Log::Warn(std::string("VC 不支持禁止通缉区域开关：") + (enable ? "开启" : "关闭"));
 }
 
 void SetFreePayNSpray(bool enable) {
-    Log::Warn(std::string("VC does not support free Pay 'n' Spray toggle: ") + (enable ? "on" : "off"));
+    Log::Warn(std::string("VC 不支持免费喷漆店开关：") + (enable ? "开启" : "关闭"));
 }
 
 void SetFasterClock(bool enable) {
@@ -596,7 +596,7 @@ void SetFasterClock(bool enable) {
 }
 
 void SetFreezeTime(bool enable) {
-    Log::Info(std::string("VC freeze time uses controller time lock: ") + (enable ? "on" : "off"));
+    Log::Info(std::string("VC 冻结时间使用控制器锁定：") + (enable ? "开启" : "关闭"));
 }
 
 int GetDaysPassed() {

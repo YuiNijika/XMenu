@@ -305,7 +305,7 @@ CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options)
 
     const int model = static_cast<int>(modelId);
     if (!IsValidVehicleModel(modelId)) {
-        Log::Warn("SA vehicle spawn rejected invalid model: " + std::to_string(model));
+        Log::Warn("SA 载具生成被拒绝：无效模型 ID " + std::to_string(model));
         return nullptr;
     }
 
@@ -346,7 +346,7 @@ CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options)
     CVehicle* vehicle = CPools::GetVehicle(hveh);
     if (!vehicle) {
         CStreaming::SetModelIsDeletable(model);
-        Log::Error("SA vehicle spawn failed after CREATE_CAR: " + std::to_string(model));
+        Log::Error("SA 载具生成失败：脚本命令 CREATE_CAR 未返回有效载具，模型 ID " + std::to_string(model));
         return nullptr;
     }
 
@@ -625,7 +625,7 @@ void SetFasterClock(bool enable) {
 }
 
 void SetFreezeTime(bool enable) {
-    Log::Info(std::string("SA freeze time uses controller time lock: ") + (enable ? "on" : "off"));
+    Log::Info(std::string("SA 冻结时间使用控制器锁定：") + (enable ? "开启" : "关闭"));
 }
 
 int GetDaysPassed() {
