@@ -66,11 +66,23 @@ namespace Log {
         WriteLine("INFO", message);
     }
 
+    void Info(const std::string& message) {
+        WriteLine("INFO", message.c_str());
+    }
+
     void Warn(const char* message) {
         WriteLine("WARN", message);
     }
 
+    void Warn(const std::string& message) {
+        WriteLine("WARN", message.c_str());
+    }
+
     void Error(const char* message) {
         WriteLine("ERROR", message);
+    }
+
+    void Error(const std::string& message) {
+        WriteLine("ERROR", message.c_str());
     }
 }

@@ -30,35 +30,54 @@ namespace {
 
     bool LoadChineseFont(ImGuiIO& io) {
         char windowsPath[MAX_PATH] = {};
-        GetWindowsDirectoryA(windowsPath, MAX_PATH);
+        const UINT pathSize = GetWindowsDirectoryA(windowsPath, MAX_PATH);
+        if (pathSize == 0 || pathSize >= MAX_PATH) {
+            Log::Warn("获取 Windows 字体目录失败，将使用 ImGui 默认字体");
+            return false;
+        }
+
         const std::string fontsDir = std::string(windowsPath) + "\\Fonts\\";
 
-        // 按中文显示效果和常见程度排序，雅黑不存在时继续尝试其它系统字体。
-        const std::array<const char*, 8> fontNames = {
-            "msyh.ttc",
-            "msyh.ttf",
-            "msyhbd.ttc",
-            "simhei.ttf",
-            "simsun.ttc",
-            "Deng.ttf",
-            "Dengb.ttf",
-            "NotoSansCJK-Regular.ttc",
+        struct FontCandidate {
+            const char* fileName;
+            const char* displayName;
         };
 
-        for (const char* fontName : fontNames) {
-            const std::string fontPath = fontsDir + fontName;
+        // 从常见中文字体一路兜底，尽量保证精简系统或定制系统也能正常显示中文。
+        const std::array<FontCandidate, 16> fontCandidates = {{
+            {"msyh.ttc", "微软雅黑"},
+            {"msyh.ttf", "微软雅黑"},
+            {"msyhbd.ttc", "微软雅黑 Bold"},
+            {"simhei.ttf", "黑体"},
+            {"simsun.ttc", "宋体"},
+            {"simfang.ttf", "仿宋"},
+            {"simkai.ttf", "楷体"},
+            {"Deng.ttf", "等线"},
+            {"Dengb.ttf", "等线 Bold"},
+            {"STZHONGS.TTF", "华文中宋"},
+            {"STSONG.TTF", "华文宋体"},
+            {"STXIHEI.TTF", "华文细黑"},
+            {"NotoSansCJK-Regular.ttc", "Noto Sans CJK"},
+            {"SourceHanSansCN-Regular.otf", "思源黑体"},
+            {"SourceHanSerifCN-Regular.otf", "思源宋体"},
+            {"arialuni.ttf", "Arial Unicode MS"},
+        }};
+
+        for (const auto& font : fontCandidates) {
+            const std::string fontPath = fontsDir + font.fileName;
             if (!FileExists(fontPath)) {
                 continue;
             }
 
             if (io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 18.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull())) {
-                Log::Info(std::string("中文字体加载成功: ") + fontPath);
+                Log::Info(std::string("中文字体加载成功: ") + font.displayName + " (" + fontPath + ")");
                 return true;
             }
 
-            Log::Warn(std::string("中文字体文件存在但加载失败: ") + fontPath);
+            Log::Warn(std::string("中文字体文件存在但加载失败: ") + font.displayName + " (" + fontPath + ")");
         }
 
+        Log::Warn(std::string("未找到可用中文字体目录候选: ") + fontsDir);
         return false;
     }
 }
