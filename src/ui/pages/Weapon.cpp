@@ -59,7 +59,7 @@ namespace Pages::Weapon {
             return;
         }
 
-        if (ImGui::Button((const char*)u8"丢到地上")) {
+        if (ImGui::Button((const char*)u8"丢出当前武器")) {
             Controllers::Weapon::DropWeapon();
         }
         ImGui::SameLine();
@@ -77,7 +77,7 @@ namespace Pages::Weapon {
             if (ImGui::BeginTabItem((const char*)u8"功能开关")) {
                 bool weaponStatsChanged = false;
 
-                weaponStatsChanged |= ImGui::Checkbox((const char*)u8"伤害拉满", &MenuState::HugeWeaponDamage);
+                weaponStatsChanged |= ImGui::Checkbox((const char*)u8"高伤害", &MenuState::HugeWeaponDamage);
                 if (ImGui::Checkbox((const char*)u8"快速换弹", &MenuState::FastReload)) {
                     Controllers::Weapon::ResetStats();
                 }
@@ -88,14 +88,14 @@ namespace Pages::Weapon {
                 ImGui::SameLine();
                 ImGui::Checkbox((const char*)u8"无限弹药", &MenuState::InfiniteAmmo);
 #endif
-                weaponStatsChanged |= ImGui::Checkbox((const char*)u8"超远射程", &MenuState::LongWeaponRange);
+                weaponStatsChanged |= ImGui::Checkbox((const char*)u8"远射程", &MenuState::LongWeaponRange);
 #ifdef GTASA
                 ImGui::SameLine();
                 weaponStatsChanged |= ImGui::Checkbox((const char*)u8"瞄准时可移动", &MenuState::MoveAim);
                 weaponStatsChanged |= ImGui::Checkbox((const char*)u8"开火时可移动", &MenuState::MoveFire);
                 ImGui::SameLine();
                 weaponStatsChanged |= ImGui::Checkbox((const char*)u8"零散射", &MenuState::NoSpread);
-                weaponStatsChanged |= ImGui::Checkbox((const char*)u8"连续开火", &MenuState::RapidFire);
+                weaponStatsChanged |= ImGui::Checkbox((const char*)u8"快速连射", &MenuState::RapidFire);
                 ImGui::SameLine();
                 weaponStatsChanged |= ImGui::Checkbox((const char*)u8"双持", &MenuState::DualWield);
 #else
@@ -110,7 +110,7 @@ namespace Pages::Weapon {
                 ImGui::EndTabItem();
             }
 
-            if (ImGui::BeginTabItem((const char*)u8"发放武器")) {
+            if (ImGui::BeginTabItem((const char*)u8"获取武器")) {
                 ImGui::PushItemWidth(160);
                 ImGui::InputInt((const char*)u8"弹药", &MenuState::WeaponAmmo);
                 if (MenuState::WeaponAmmo < 0) MenuState::WeaponAmmo = 0;

@@ -33,6 +33,9 @@ namespace MenuState {
     inline bool VehicleWatertight = false;
     inline bool VehicleSpeedLock = false;
     inline float VehicleSpeed = 60.0f;
+    inline bool VehicleSpawnAsDriver = true;
+    inline bool VehicleSpawnAircraftInAir = true;
+    inline int VehicleSpawnModel = 0;
     inline bool TeleportInsertCoord = false;
     inline bool TeleportMarker = false;
     inline bool QuickTeleport = false;

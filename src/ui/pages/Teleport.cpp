@@ -44,8 +44,8 @@ namespace Pages::Teleport {
                 ImGui::Checkbox((const char*)u8"插入当前坐标", &MenuState::TeleportInsertCoord);
                 ImGui::Checkbox((const char*)u8"快速地图传送", &MenuState::QuickTeleport);
                 ImGui::NextColumn();
-                ImGui::Checkbox((const char*)u8"允许生成在水下", &MenuState::SpawnUnderwater);
-                ImGui::Checkbox((const char*)u8"快捷键传送到标记点", &MenuState::TeleportMarker);
+                ImGui::Checkbox((const char*)u8"允许水下落点", &MenuState::SpawnUnderwater);
+                ImGui::Checkbox((const char*)u8"标记点快捷传送", &MenuState::TeleportMarker);
                 ImGui::Columns(1);
 #else
                 ImGui::Checkbox((const char*)u8"插入当前坐标", &MenuState::TeleportInsertCoord);

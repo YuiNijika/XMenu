@@ -15,6 +15,11 @@ namespace GameLogic {
         bool nonPlayer = false;
     };
 
+    struct SpawnVehicleOptions {
+        bool asDriver = true;
+        bool aircraftInAir = true;
+    };
+
     // 玩家
     ProofState GetPlayerProofState(CPlayerPed* player);
     void SetPlayerProofState(CPlayerPed* player, const ProofState& state);
@@ -50,11 +55,14 @@ namespace GameLogic {
     void RepairVehicle(CVehicle* vehicle);
     void StopVehicle(CVehicle* vehicle);
     void SetVehicleSpeedLock(CVehicle* vehicle, bool enable, float speed);
+    void SetVehicleForwardSpeed(CVehicle* vehicle, float speed);
     void SetVehicleEngine(CVehicle* vehicle, bool enable);
     void SetVehicleInvincible(CVehicle* vehicle, bool enable);
     void UnflipVehicle(CVehicle* vehicle);
     void SetVehicleHeavy(CVehicle* vehicle, bool enable);
     void SetVehicleWatertight(CVehicle* vehicle, bool enable);
+    bool IsValidVehicleModel(unsigned int modelId);
+    CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options);
     
     // 传送
     void TeleportPlayer(CVector pos, int interiorID = 0);

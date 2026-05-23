@@ -1,4 +1,5 @@
 #include "GameLogic.h"
+#include "utils/Log.h"
 #include "CMenuManager.h"
 #include "CRadar.h"
 #include "CPlayerPed.h"
@@ -15,6 +16,7 @@
 #include "CTimer.h"
 #include "CClock.h"
 #include <ctime>
+#include <string>
 
 namespace GameLogic {
 
@@ -246,13 +248,14 @@ void UnflipVehicle(CVehicle* vehicle) {
     StopVehicle(vehicle);
 }
 
+void SetVehicleForwardSpeed(CVehicle* vehicle, float speed) {
+    if (!vehicle) return;
+    plugin::Command<plugin::Commands::SET_CAR_FORWARD_SPEED>(CPools::GetVehicleRef(vehicle), speed);
+}
+
 void SetVehicleSpeedLock(CVehicle* vehicle, bool enable, float speed) {
     if (!enable || !vehicle) return;
-    const float current = vehicle->m_vecMoveSpeed.Magnitude();
-    if (current <= 0.001f) return;
-
-    const float target = speed / 50.0f;
-    vehicle->m_vecMoveSpeed *= target / current;
+    SetVehicleForwardSpeed(vehicle, speed);
 }
 
 void SetVehicleEngine(CVehicle* vehicle, bool enable) {
@@ -276,6 +279,81 @@ void SetVehicleHeavy(CVehicle* vehicle, bool enable) {
 void SetVehicleWatertight(CVehicle* vehicle, bool enable) {
     if (!vehicle) return;
     plugin::Command<plugin::Commands::SET_CAR_WATERTIGHT>(CPools::GetVehicleRef(vehicle), enable);
+}
+
+bool IsValidVehicleModel(unsigned int modelId) {
+    return CModelInfo::IsCarModel(static_cast<int>(modelId));
+}
+
+CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options) {
+    CPlayerPed* player = FindPlayerPed();
+    if (!player) return nullptr;
+
+    const int model = static_cast<int>(modelId);
+    if (!CModelInfo::IsCarModel(model)) {
+        Log::Warn("SA vehicle spawn rejected invalid model: " + std::to_string(model));
+        return nullptr;
+    }
+
+    if (CModelInfo::IsTrainModel(model)) {
+        Log::Warn("SA vehicle spawn rejected train model: " + std::to_string(model));
+        return nullptr;
+    }
+
+    const int hplayer = CPools::GetPedRef(player);
+    CVector pos = player->GetPosition();
+    float speed = 0.0f;
+
+    if (options.asDriver && plugin::Command<plugin::Commands::IS_CHAR_IN_ANY_CAR>(hplayer)) {
+        CVehicle* currentVehicle = player->m_pVehicle;
+        if (currentVehicle) {
+            const int hveh = CPools::GetVehicleRef(currentVehicle);
+            pos = currentVehicle->GetPosition();
+            plugin::Command<plugin::Commands::GET_CAR_SPEED>(hveh, &speed);
+            plugin::Command<plugin::Commands::WARP_CHAR_FROM_CAR_TO_COORD>(hplayer, pos.x, pos.y, pos.z);
+            plugin::Command<plugin::Commands::DELETE_CAR>(hveh);
+        }
+    }
+
+    if (player->m_nAreaCode == 0) {
+        if (options.aircraftInAir && (CModelInfo::IsHeliModel(model) || CModelInfo::IsPlaneModel(model))) {
+            pos.z = 400.0f;
+        } else {
+            pos.z -= 5.0f;
+        }
+    }
+
+    CStreaming::RequestModel(model, PRIORITY_REQUEST);
+    CStreaming::LoadAllRequestedModels(false);
+
+    int hveh = 0;
+    if (options.asDriver) {
+        plugin::Command<plugin::Commands::CREATE_CAR>(model, pos.x, pos.y, pos.z + 4.0f, &hveh);
+    } else {
+        player->TransformFromObjectSpace(pos, CVector(0.0f, 10.0f, 0.0f));
+        plugin::Command<plugin::Commands::CREATE_CAR>(model, pos.x, pos.y, pos.z + 3.0f, &hveh);
+    }
+
+    CVehicle* vehicle = CPools::GetVehicle(hveh);
+    if (!vehicle) {
+        CStreaming::SetModelIsDeletable(model);
+        Log::Error("SA vehicle spawn failed after CREATE_CAR: " + std::to_string(model));
+        return nullptr;
+    }
+
+    vehicle->SetHeading(player->GetHeading() + (options.asDriver ? 0.0f : 55.0f));
+    vehicle->m_eDoorLock = DOORLOCK_UNLOCKED;
+    vehicle->m_nAreaCode = player->m_nAreaCode;
+    vehicle->bHasBeenOwnedByPlayer = true;
+
+    if (options.asDriver) {
+        plugin::Command<plugin::Commands::WARP_CHAR_INTO_CAR>(hplayer, hveh);
+        SetVehicleForwardSpeed(vehicle, speed);
+    }
+
+    plugin::Command<plugin::Commands::MARK_CAR_AS_NO_LONGER_NEEDED>(hveh);
+    CStreaming::SetModelIsDeletable(model);
+    return vehicle;
 }
 
 void TeleportPlayer(CVector pos, int interiorID) {

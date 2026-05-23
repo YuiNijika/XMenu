@@ -1,5 +1,6 @@
 #include "Menu.h"
 #include <windows.h>
+#include <cstdio>
 #include "utils/Log.h"
 #include "utils/D3DHook.h"
 #include "imgui/imgui.h"
@@ -23,9 +24,11 @@ void Menu::Process() {
 
 void Menu::Draw() {
     bool menuVisible = true;
+    char windowTitle[160] = {};
 
+    std::snprintf(windowTitle, sizeof(windowTitle), "XMenu %s 作者：%s [www.gtamodx.com]", XMENU_VERSION, XMENU_AUTHOR);
     ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin((const char*)u8"XMenu " XMENU_VERSION " by " XMENU_AUTHOR " [www.gtamodx.com]", &menuVisible, ImGuiWindowFlags_NoCollapse)) {
+    if (ImGui::Begin(windowTitle, &menuVisible, ImGuiWindowFlags_NoCollapse)) {
         if (ImGui::BeginTabBar("XMenuTabs")) {
             if (ImGui::BeginTabItem((const char*)u8"玩家")) {
                 Pages::Player::Draw();
@@ -58,13 +61,13 @@ void Menu::Draw() {
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem((const char*)u8"关于")) {
-                ImGui::TextWrapped((const char*)u8"XMenu%s", XMENU_VERSION);
+                ImGui::TextWrapped((const char*)u8"XMenu %s", XMENU_VERSION);
                 ImGui::TextWrapped((const char*)u8"作者：%s", XMENU_AUTHOR);
                 ImGui::Spacing();
                 if (ImGui::Button((const char*)u8"加群")) {
                     ShellExecuteA(nullptr, "open", XMENU_QQ_GROUP, nullptr, nullptr, SW_SHOWNORMAL);
                 }
-                if (ImGui::Button((const char*)u8"GitHub")) {
+                if (ImGui::Button((const char*)u8"项目主页")) {
                     ShellExecuteA(nullptr, "open", XMENU_GITHUB, nullptr, nullptr, SW_SHOWNORMAL);
                 }
                 ImGui::EndTabItem();

@@ -39,7 +39,7 @@ namespace Pages::Player {
                 ImGui::SameLine();
                 ImGui::Checkbox((const char*)u8"自动回血", &MenuState::AutoHeal);
                 ImGui::SameLine();
-                ImGui::Checkbox((const char*)u8"低血挑战", &MenuState::HardMode);
+                ImGui::Checkbox((const char*)u8"50 血量", &MenuState::HardMode);
 
                 if (ImGui::Checkbox((const char*)u8"无限冲刺", &MenuState::InfiniteSprint)) {
                     Controllers::Player::SetInfiniteSprint(MenuState::InfiniteSprint);
@@ -61,7 +61,7 @@ namespace Pages::Player {
                 }
                 ImGui::SameLine();
                 bool freeJail = Controllers::Player::GetFreeJail();
-                if (ImGui::Checkbox((const char*)u8"进局子不扣钱", &freeJail)) {
+                if (ImGui::Checkbox((const char*)u8"被捕不扣钱", &freeJail)) {
                     Controllers::Player::SetFreeJail(freeJail);
                 }
 
