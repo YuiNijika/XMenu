@@ -1,5 +1,6 @@
 #include "GameLogic.h"
 #include "utils/Log.h"
+#include "resources/ResourceData.h"
 #include "CMenuManager.h"
 #include "CRadar.h"
 #include "CPlayerPed.h"
@@ -436,6 +437,10 @@ bool IsAircraftModel(int model) {
 }
 
 bool IsValidVehicleModel(unsigned int modelId) {
+    if (!Resources::IsKnownVehicleModel(modelId)) {
+        return false;
+    }
+
     const int model = static_cast<int>(modelId);
     return CModelInfo::IsVehicleModel(model) && !CModelInfo::IsTrailerModel(model);
 }

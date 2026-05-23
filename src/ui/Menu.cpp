@@ -13,8 +13,11 @@
 
 extern const char* XMENU_VERSION;
 extern const char* XMENU_AUTHOR;
+extern const char* XMENU_AUTHOR_TEST;
 extern const char* XMENU_GITHUB;
 extern const char* XMENU_QQ_GROUP;
+extern const char* XMENU_TECH_STACK;
+extern const char* XMENU_OPEN_SOURCE_LIBS;
 
 void Menu::Process() {
     Pages::Player::Process();
@@ -24,7 +27,7 @@ void Menu::Process() {
 }
 
 void Menu::Draw() {
-    bool menuVisible = true;
+    bool menuVisible = D3DHook::IsMenuVisible();
     char windowTitle[160] = {};
 
     std::snprintf(windowTitle, sizeof(windowTitle), "XMenu %s 作者：%s - GTAMODX", XMENU_VERSION, XMENU_AUTHOR);
@@ -55,6 +58,9 @@ void Menu::Draw() {
                 UI::TextCentered((const char*)u8"XMenu");
                 ImGui::TextWrapped((const char*)u8"版本：%s", XMENU_VERSION);
                 ImGui::TextWrapped((const char*)u8"作者：%s", XMENU_AUTHOR);
+                ImGui::TextWrapped((const char*)u8"测试：%s", XMENU_AUTHOR_TEST);
+                ImGui::TextWrapped((const char*)u8"技术栈：%s", XMENU_TECH_STACK);
+                ImGui::TextWrapped((const char*)u8"开源库：%s", XMENU_OPEN_SOURCE_LIBS);
                 UI::SpacingSeparator();
                 ImGui::TextWrapped((const char*)u8"1. 永久免费，禁止倒卖，禁止用于商业用途。");
                 ImGui::TextWrapped((const char*)u8"2. 遇到问题可以加群或前往项目主页反馈。");
@@ -72,4 +78,8 @@ void Menu::Draw() {
         }
     }
     ImGui::End();
+
+    if (!menuVisible) {
+        D3DHook::SetMenuVisible(false);
+    }
 }

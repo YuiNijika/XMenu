@@ -1,6 +1,7 @@
 /**
  * XMenu
  * 作者：鼠子(YuiNijika)
+ * 测试：枫林、狂风晨、IIScar
  * 版本：v0.0.1-alpha1
  * 网站：https://gtamodx.com/mods/xmenu
  * GitHub：https://github.com/YuiNijika/XMenu
@@ -21,9 +22,12 @@
 
 const char* XMENU_VERSION = "v0.0.1-alpha1";
 const char* XMENU_AUTHOR = "鼠子(YuiNijika)";
+const char* XMENU_AUTHOR_TEST = "枫林、狂风晨、IIScar";
 const char* XMENU_URL = "https://gtamodx.com/mods/xmenu";
 const char* XMENU_GITHUB = "https://github.com/YuiNijika/XMenu";
 const char* XMENU_QQ_GROUP = "https://gtamodx.com/qqun";
+const char* XMENU_TECH_STACK = "C++ / DirectX 9 / Windows API";
+const char* XMENU_OPEN_SOURCE_LIBS = "Dear ImGui, kiero, MinHook, plugin-sdk";
 
 namespace {
     bool xMenuActive = false;
@@ -32,10 +36,10 @@ namespace {
 #ifdef GTASA
         CHud::SetHelpMessage("XMenu: D3D Hook 初始化失败, 菜单已禁用", true, false, false);
 #elif GTAVC
-        static const wchar_t message[] = L"XMenu: D3D Hook 初始化失败, 菜单已禁用";
+        static const wchar_t message[] = L"XMenu: D3D9 Hook 初始化失败, 请安装 D3D8to9 wrapper";
         CHud::SetHelpMessage(message, true, false);
 #else
-        static wchar_t message[] = L"XMenu: D3D Hook 初始化失败, 菜单已禁用";
+        static wchar_t message[] = L"XMenu: D3D9 Hook 初始化失败, 请安装 D3D8to9 wrapper";
         CHud::SetHelpMessage(message, true);
 #endif
     }
@@ -56,7 +60,7 @@ namespace {
                 xMenuActive = false;
                 D3DHook::SetMenuVisible(false);
                 ShowD3DHookFailedMessage();
-                Log::Error("D3D Hook 初始化失败, XMenu 已停止初始化");
+                Log::Error("D3D9 Hook 初始化失败，GTA III/VC 请确认已安装 D3D8to9 wrapper；XMenu 已停止初始化");
                 return;
             }
         };

@@ -1,5 +1,6 @@
 #include "GameLogic.h"
 #include "utils/Log.h"
+#include "resources/ResourceData.h"
 #include "CPlayerPed.h"
 #include "CWorld.h"
 #include "CStreaming.h"
@@ -423,9 +424,12 @@ bool IsAircraftModel(int model) {
 }
 
 bool IsValidVehicleModel(unsigned int modelId) {
+    if (!Resources::IsKnownVehicleModel(modelId)) {
+        return false;
+    }
+
     const int model = static_cast<int>(modelId);
-    return model >= 90 && model <= 151
-        && (CModelInfo::IsCarModel(model) || CModelInfo::IsBoatModel(model) || IsAircraftModel(model));
+    return model >= 90 && model <= 150 && CModelInfo::IsVehicleModel(model);
 }
 
 CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options) {
@@ -466,7 +470,7 @@ CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options)
     if (options.asDriver) {
         plugin::Command<plugin::Commands::CREATE_CAR>(model, pos.x, pos.y, pos.z + 4.0f, &hveh);
     } else {
-        player->TransformFromObjectSpace(pos);
+        pos = player->TransformFromObjectSpace(CVector(0.0f, 10.0f, 0.0f));
         plugin::Command<plugin::Commands::CREATE_CAR>(model, pos.x, pos.y, pos.z + 4.0f, &hveh);
     }
 

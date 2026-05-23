@@ -1,14 +1,23 @@
 #include "Log.h"
+#include <windows.h>
 #include <chrono>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <ctime>
+#include <exception>
 #include <fstream>
 #include <iomanip>
 #include <mutex>
 #include <sstream>
+#include <string>
 
 namespace {
     std::ofstream logFile;
     std::mutex logMutex;
+    LPTOP_LEVEL_EXCEPTION_FILTER previousExceptionFilter = nullptr;
+    std::terminate_handler previousTerminateHandler = nullptr;
+    bool crashHandlersInstalled = false;
 
     const char* LogPath() {
         return "XMenu.log";
@@ -25,8 +34,56 @@ namespace {
         return stream.str();
     }
 
-    void WriteLine(const char* level, const char* message) {
-        std::lock_guard<std::mutex> lock(logMutex);
+    std::string HexValue(std::uintptr_t value) {
+        std::ostringstream stream;
+        stream << "0x" << std::uppercase << std::hex << value;
+        return stream.str();
+    }
+
+    std::string GetCurrentProcessPath() {
+        char path[MAX_PATH] = {};
+        const DWORD size = GetModuleFileNameA(nullptr, path, MAX_PATH);
+        return size > 0 ? std::string(path, size) : std::string("<unknown>");
+    }
+
+    std::string GetModulePathFromAddress(void* address) {
+        MEMORY_BASIC_INFORMATION info{};
+        if (VirtualQuery(address, &info, sizeof(info)) == 0 || !info.AllocationBase) {
+            return "<unknown>";
+        }
+
+        char path[MAX_PATH] = {};
+        const DWORD size = GetModuleFileNameA(static_cast<HMODULE>(info.AllocationBase), path, MAX_PATH);
+        return size > 0 ? std::string(path, size) : std::string("<unknown>");
+    }
+
+    const char* ExceptionCodeName(DWORD code) {
+        switch (code) {
+        case EXCEPTION_ACCESS_VIOLATION: return "EXCEPTION_ACCESS_VIOLATION";
+        case EXCEPTION_ARRAY_BOUNDS_EXCEEDED: return "EXCEPTION_ARRAY_BOUNDS_EXCEEDED";
+        case EXCEPTION_BREAKPOINT: return "EXCEPTION_BREAKPOINT";
+        case EXCEPTION_DATATYPE_MISALIGNMENT: return "EXCEPTION_DATATYPE_MISALIGNMENT";
+        case EXCEPTION_FLT_DENORMAL_OPERAND: return "EXCEPTION_FLT_DENORMAL_OPERAND";
+        case EXCEPTION_FLT_DIVIDE_BY_ZERO: return "EXCEPTION_FLT_DIVIDE_BY_ZERO";
+        case EXCEPTION_FLT_INEXACT_RESULT: return "EXCEPTION_FLT_INEXACT_RESULT";
+        case EXCEPTION_FLT_INVALID_OPERATION: return "EXCEPTION_FLT_INVALID_OPERATION";
+        case EXCEPTION_FLT_OVERFLOW: return "EXCEPTION_FLT_OVERFLOW";
+        case EXCEPTION_FLT_STACK_CHECK: return "EXCEPTION_FLT_STACK_CHECK";
+        case EXCEPTION_FLT_UNDERFLOW: return "EXCEPTION_FLT_UNDERFLOW";
+        case EXCEPTION_ILLEGAL_INSTRUCTION: return "EXCEPTION_ILLEGAL_INSTRUCTION";
+        case EXCEPTION_IN_PAGE_ERROR: return "EXCEPTION_IN_PAGE_ERROR";
+        case EXCEPTION_INT_DIVIDE_BY_ZERO: return "EXCEPTION_INT_DIVIDE_BY_ZERO";
+        case EXCEPTION_INT_OVERFLOW: return "EXCEPTION_INT_OVERFLOW";
+        case EXCEPTION_INVALID_DISPOSITION: return "EXCEPTION_INVALID_DISPOSITION";
+        case EXCEPTION_NONCONTINUABLE_EXCEPTION: return "EXCEPTION_NONCONTINUABLE_EXCEPTION";
+        case EXCEPTION_PRIV_INSTRUCTION: return "EXCEPTION_PRIV_INSTRUCTION";
+        case EXCEPTION_SINGLE_STEP: return "EXCEPTION_SINGLE_STEP";
+        case EXCEPTION_STACK_OVERFLOW: return "EXCEPTION_STACK_OVERFLOW";
+        default: return "UNKNOWN_EXCEPTION";
+        }
+    }
+
+    void WriteLineUnlocked(const char* level, const char* message) {
         if (!logFile.is_open()) {
             logFile.open(LogPath(), std::ios::app);
         }
@@ -38,6 +95,95 @@ namespace {
         logFile << "[" << BuildTimestamp() << "] [" << level << "] " << message << '\n';
         logFile.flush();
     }
+
+    void WriteLine(const char* level, const char* message) {
+        std::lock_guard<std::mutex> lock(logMutex);
+        WriteLineUnlocked(level, message);
+    }
+
+    void WriteCrashLine(const std::string& message) {
+        std::ofstream crashLog(LogPath(), std::ios::app);
+        if (!crashLog.is_open()) {
+            return;
+        }
+
+        crashLog << "[" << BuildTimestamp() << "] [CRASH] " << message << '\n';
+        crashLog.flush();
+    }
+
+    std::string BuildExceptionSummary(EXCEPTION_POINTERS* exceptionInfo) {
+        if (!exceptionInfo || !exceptionInfo->ExceptionRecord) {
+            return "异常信息为空";
+        }
+
+        const EXCEPTION_RECORD* record = exceptionInfo->ExceptionRecord;
+        void* address = record->ExceptionAddress;
+
+        std::ostringstream stream;
+        stream << ExceptionCodeName(record->ExceptionCode)
+               << " code=" << HexValue(record->ExceptionCode)
+               << " address=" << HexValue(reinterpret_cast<std::uintptr_t>(address))
+               << " module=" << GetModulePathFromAddress(address)
+               << " thread=" << GetCurrentThreadId();
+
+        if (record->ExceptionCode == EXCEPTION_ACCESS_VIOLATION && record->NumberParameters >= 2) {
+            const ULONG_PTR operation = record->ExceptionInformation[0];
+            const ULONG_PTR target = record->ExceptionInformation[1];
+            stream << " access=" << (operation == 0 ? "read" : operation == 1 ? "write" : operation == 8 ? "execute" : "unknown")
+                   << " target=" << HexValue(static_cast<std::uintptr_t>(target));
+        }
+
+        if (record->ExceptionCode == EXCEPTION_IN_PAGE_ERROR && record->NumberParameters >= 3) {
+            stream << " ntstatus=" << HexValue(static_cast<std::uintptr_t>(record->ExceptionInformation[2]));
+        }
+
+#if defined(_M_IX86)
+        if (exceptionInfo->ContextRecord) {
+            const CONTEXT* context = exceptionInfo->ContextRecord;
+            stream << " eax=" << HexValue(context->Eax)
+                   << " ebx=" << HexValue(context->Ebx)
+                   << " ecx=" << HexValue(context->Ecx)
+                   << " edx=" << HexValue(context->Edx)
+                   << " esi=" << HexValue(context->Esi)
+                   << " edi=" << HexValue(context->Edi)
+                   << " ebp=" << HexValue(context->Ebp)
+                   << " esp=" << HexValue(context->Esp)
+                   << " eip=" << HexValue(context->Eip);
+        }
+#endif
+
+        return stream.str();
+    }
+
+    LONG WINAPI XMenuUnhandledExceptionFilter(EXCEPTION_POINTERS* exceptionInfo) {
+        WriteCrashLine("捕获到未处理异常，游戏可能即将崩溃");
+        WriteCrashLine(BuildExceptionSummary(exceptionInfo));
+
+        if (previousExceptionFilter) {
+            return previousExceptionFilter(exceptionInfo);
+        }
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+
+    void XMenuTerminateHandler() {
+        WriteCrashLine("捕获到 std::terminate，通常来自未捕获 C++ 异常或运行库终止");
+        if (previousTerminateHandler) {
+            previousTerminateHandler();
+            return;
+        }
+        std::abort();
+    }
+
+    void InstallCrashHandlers() {
+        if (crashHandlersInstalled) {
+            return;
+        }
+
+        previousExceptionFilter = SetUnhandledExceptionFilter(XMenuUnhandledExceptionFilter);
+        previousTerminateHandler = std::set_terminate(XMenuTerminateHandler);
+        crashHandlersInstalled = true;
+        WriteLineUnlocked("INFO", "崩溃日志捕获已启用");
+    }
 }
 
 namespace Log {
@@ -47,10 +193,14 @@ namespace Log {
             return;
         }
 
-        logFile.open(LogPath(), std::ios::app);
+        logFile.open(LogPath(), std::ios::out | std::ios::trunc);
         if (logFile.is_open()) {
-            logFile << "\n[" << BuildTimestamp() << "] [INFO] XMenu 日志启动" << '\n';
+            logFile << "[" << BuildTimestamp() << "] [INFO] XMenu 日志启动" << '\n';
+            logFile << "[" << BuildTimestamp() << "] [INFO] 进程: " << GetCurrentProcessPath()
+                    << " pid=" << GetCurrentProcessId()
+                    << " thread=" << GetCurrentThreadId() << '\n';
             logFile.flush();
+            InstallCrashHandlers();
         }
     }
 

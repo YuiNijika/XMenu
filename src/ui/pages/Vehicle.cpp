@@ -6,6 +6,7 @@
 #include "ui/Widget.h"
 #include "imgui/imgui.h"
 #include <cstring>
+#include <cstdio>
 
 namespace {
     void DrawVehicleList() {
@@ -26,7 +27,9 @@ namespace {
                 ImGui::SeparatorText(currentCategory);
             }
 
-            if (UI::Button(vehicle.label, 3)) {
+            char buttonLabel[96];
+            std::snprintf(buttonLabel, sizeof(buttonLabel), "%s (%u)", vehicle.label, vehicle.model);
+            if (UI::Button(buttonLabel, 3)) {
                 Controllers::Vehicle::Spawn(vehicle.model);
             }
             UI::SameLineEvery(index++, 3);
@@ -195,6 +198,7 @@ namespace Pages::Vehicle {
                 ImGui::SameLine();
                 ImGui::Checkbox((const char*)u8"飞机/直升机生成在空中", &MenuState::VehicleSpawnAircraftInAir);
 
+                ImGui::TextWrapped((const char*)u8"提示：手输 ID 只允许当前游戏已知载具模型，避免不存在的 ID 进入创建流程导致崩溃。");
                 ImGui::PushItemWidth(160);
                 ImGui::InputInt((const char*)u8"模型 ID", &MenuState::VehicleSpawnModel);
                 ImGui::PopItemWidth();
