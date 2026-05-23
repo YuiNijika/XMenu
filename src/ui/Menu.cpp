@@ -17,7 +17,7 @@ void Menu::Draw() {
     bool menuVisible = true;
 
     ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin((const char*)u8"XMenu 极简中文菜单", &menuVisible, ImGuiWindowFlags_NoCollapse)) {
+    if (ImGui::Begin((const char*)u8"XMenu [www.gtamodx.com]", &menuVisible, ImGuiWindowFlags_NoCollapse)) {
         if (ImGui::BeginTabBar("XMenuTabs")) {
             if (ImGui::BeginTabItem((const char*)u8"玩家")) {
                 Pages::Player::Draw();
