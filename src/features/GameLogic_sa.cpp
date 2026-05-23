@@ -5,6 +5,7 @@
 #include "CVehicle.h"
 #include "CWeaponInfo.h"
 #include "CPools.h"
+#include "extensions/ScriptCommands.h"
 #include "Patch.h"
 #include "CTimer.h"
 #include "CClock.h"
@@ -172,12 +173,12 @@ void SetVehicleInvincible(CVehicle* vehicle, bool enable) {
 
 void SetVehicleHeavy(CVehicle* vehicle, bool enable) {
     if (!vehicle) return;
-    Command<Commands::SET_CAR_HEAVY>(CPools::GetVehicleRef(vehicle), enable);
+    plugin::Command<plugin::Commands::SET_CAR_HEAVY>(CPools::GetVehicleRef(vehicle), enable);
 }
 
 void SetVehicleWatertight(CVehicle* vehicle, bool enable) {
     if (!vehicle) return;
-    Command<Commands::SET_CAR_WATERTIGHT>(CPools::GetVehicleRef(vehicle), enable);
+    plugin::Command<plugin::Commands::SET_CAR_WATERTIGHT>(CPools::GetVehicleRef(vehicle), enable);
 }
 
 void TeleportPlayer(CVector pos) {
@@ -232,7 +233,7 @@ void ProcessInfiniteAmmo(CPlayerPed* player, bool enable) {
 
 void SetFastReload(CPlayerPed* player, bool enable) {
     if (!player) return;
-    Command<Commands::SET_PLAYER_FAST_RELOAD>(CPools::GetPedRef(player), enable);
+    plugin::Command<plugin::Commands::SET_PLAYER_FAST_RELOAD>(CPools::GetPedRef(player), enable);
 }
 
 void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange) {
