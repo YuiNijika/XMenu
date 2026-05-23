@@ -60,9 +60,7 @@ function createProject(projectID)
 
     project ("XMenu" .. upperID)
         kind "SharedLib"
-        targetname "XMenu"
         targetextension ".asi"
-        targetdir ("build/bin/" .. projectID)
         
         includedirs {
             PSDK_DIR .. "/plugin_" .. projectID .. "/",
