@@ -117,6 +117,23 @@ namespace Pages::Weapon {
                 if (MenuState::WeaponAmmo > 99999) MenuState::WeaponAmmo = 99999;
                 ImGui::PopItemWidth();
 
+                ImGui::PushItemWidth(160);
+#ifdef GTASA
+                ImGui::InputInt((const char*)u8"武器类型 ID", &MenuState::WeaponSpawnId);
+#else
+                ImGui::InputInt((const char*)u8"武器模型 ID", &MenuState::WeaponSpawnId);
+#endif
+                if (MenuState::WeaponSpawnId < 0) MenuState::WeaponSpawnId = 0;
+                ImGui::PopItemWidth();
+                ImGui::SameLine();
+                if (UI::Button((const char*)u8"按 ID 获取", 2)) {
+#ifdef GTASA
+                    Controllers::Weapon::Give(static_cast<unsigned int>(MenuState::WeaponSpawnId), static_cast<unsigned int>(MenuState::WeaponAmmo));
+#else
+                    Controllers::Weapon::GiveModel(static_cast<unsigned int>(MenuState::WeaponSpawnId), static_cast<unsigned int>(MenuState::WeaponAmmo));
+#endif
+                }
+
                 ImGui::Spacing();
                 DrawWeaponList();
                 ImGui::EndTabItem();

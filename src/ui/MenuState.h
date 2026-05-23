@@ -27,6 +27,7 @@ namespace MenuState {
     inline bool MoveFire = false;
     inline bool NoSpread = false;
     inline int WeaponAmmo = 9999;
+    inline int WeaponSpawnId = 0;
     inline bool VehicleNoDamage = false;
     inline bool VehicleAutoUnflip = false;
     inline bool VehicleHeavy = false;
