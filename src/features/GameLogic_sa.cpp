@@ -259,7 +259,9 @@ void SetVehicleSpeedLock(CVehicle* vehicle, bool enable, float speed) {
 }
 
 void SetVehicleEngine(CVehicle* vehicle, bool enable) {
-    if (vehicle) vehicle->bEngineOn = enable;
+    if (!vehicle) return;
+    vehicle->bEngineBroken = !enable;
+    vehicle->bEngineOn = enable;
 }
 
 void SetVehicleInvincible(CVehicle* vehicle, bool enable) {
@@ -281,8 +283,20 @@ void SetVehicleWatertight(CVehicle* vehicle, bool enable) {
     plugin::Command<plugin::Commands::SET_CAR_WATERTIGHT>(CPools::GetVehicleRef(vehicle), enable);
 }
 
+bool IsAircraftModel(int model) {
+    return CModelInfo::IsHeliModel(model) || CModelInfo::IsPlaneModel(model)
+        || model == 417 || model == 425 || model == 447 || model == 460 || model == 476
+        || model == 487 || model == 488 || model == 511 || model == 512 || model == 513
+        || model == 519 || model == 520 || model == 548 || model == 553 || model == 563
+        || model == 577 || model == 592 || model == 593;
+}
+
 bool IsValidVehicleModel(unsigned int modelId) {
-    return CModelInfo::IsCarModel(static_cast<int>(modelId));
+    const int model = static_cast<int>(modelId);
+    return model >= 400 && model <= 611
+        && (CModelInfo::IsCarModel(model) || CModelInfo::IsBoatModel(model) || IsAircraftModel(model))
+        && !CModelInfo::IsTrainModel(model)
+        && !CModelInfo::IsTrailerModel(model);
 }
 
 CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options) {
@@ -290,13 +304,8 @@ CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options)
     if (!player) return nullptr;
 
     const int model = static_cast<int>(modelId);
-    if (!CModelInfo::IsCarModel(model)) {
+    if (!IsValidVehicleModel(modelId)) {
         Log::Warn("SA vehicle spawn rejected invalid model: " + std::to_string(model));
-        return nullptr;
-    }
-
-    if (CModelInfo::IsTrainModel(model)) {
-        Log::Warn("SA vehicle spawn rejected train model: " + std::to_string(model));
         return nullptr;
     }
 
@@ -316,7 +325,7 @@ CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options)
     }
 
     if (player->m_nAreaCode == 0) {
-        if (options.aircraftInAir && (CModelInfo::IsHeliModel(model) || CModelInfo::IsPlaneModel(model))) {
+        if (options.aircraftInAir && IsAircraftModel(model)) {
             pos.z = 400.0f;
         } else {
             pos.z -= 5.0f;
@@ -584,6 +593,55 @@ void SetGameSpeed(float speed) {
 
 float GetGameSpeed() {
     return CTimer::ms_fTimeScale;
+}
+
+void SetDisableReplay(bool enable) {
+    plugin::patch::Set<unsigned char>(0x460500, enable ? 0xC3 : 0x80, false);
+}
+
+void SetDisableCheats(bool enable) {
+    if (enable) {
+        plugin::patch::Set<unsigned char>(0x4384D0, 0xE9, false);
+        plugin::patch::SetInt(0x4384D1, 0xD0, false);
+        plugin::patch::Nop(0x4384D5, 4, false);
+        return;
+    }
+
+    plugin::patch::Set<unsigned char>(0x4384D0, 0x83, false);
+    plugin::patch::SetInt(0x4384D1, -0x7DF0F908, false);
+    plugin::patch::SetInt(0x4384D5, 0xCC, false);
+}
+
+void SetForbiddenAreaWanted(bool enable) {
+    plugin::patch::Set<unsigned char>(0x441770, enable ? 0x83 : 0xC3, false);
+}
+
+void SetFreePayNSpray(bool enable) {
+    plugin::patch::Set<bool>(0x96C009, enable, false);
+}
+
+void SetFasterClock(bool enable) {
+    plugin::patch::Set<bool>(0x96913B, enable, false);
+}
+
+void SetFreezeTime(bool enable) {
+    Log::Info(std::string("SA freeze time uses controller time lock: ") + (enable ? "on" : "off"));
+}
+
+int GetDaysPassed() {
+    return *reinterpret_cast<int*>(0xB79038);
+}
+
+void SetDaysPassed(int days) {
+    *reinterpret_cast<int*>(0xB79038) = days;
+}
+
+float GetGravity() {
+    return *reinterpret_cast<float*>(0x863984);
+}
+
+void SetGravity(float gravity) {
+    *reinterpret_cast<float*>(0x863984) = gravity;
 }
 
 } // namespace GameLogic

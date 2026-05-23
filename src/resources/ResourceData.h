@@ -42,4 +42,5 @@ namespace Resources {
     WeaponTable GetWeapons();
     LocationTable GetLocations();
     VehicleTable GetVehicles();
+    bool IsKnownVehicleModel(unsigned int model);
 }

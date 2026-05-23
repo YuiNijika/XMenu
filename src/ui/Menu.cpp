@@ -26,7 +26,7 @@ void Menu::Draw() {
     bool menuVisible = true;
     char windowTitle[160] = {};
 
-    std::snprintf(windowTitle, sizeof(windowTitle), "XMenu %s 作者：%s [www.gtamodx.com]", XMENU_VERSION, XMENU_AUTHOR);
+    std::snprintf(windowTitle, sizeof(windowTitle), "XMenu %s 作者：%s", XMENU_VERSION, XMENU_AUTHOR);
     ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(windowTitle, &menuVisible, ImGuiWindowFlags_NoCollapse)) {
         if (ImGui::BeginTabBar("XMenuTabs")) {
@@ -63,11 +63,13 @@ void Menu::Draw() {
             if (ImGui::BeginTabItem((const char*)u8"关于")) {
                 ImGui::TextWrapped((const char*)u8"XMenu %s", XMENU_VERSION);
                 ImGui::TextWrapped((const char*)u8"作者：%s", XMENU_AUTHOR);
+                ImGui::TextWrapped((const char*)u8"1. 永久免费禁止倒卖，禁止用于商业用途。");
+                ImGui::TextWrapped((const char*)u8"2. 若有任何问题, 请加入QQ群或前往GitHub发布issue反馈。");
                 ImGui::Spacing();
                 if (ImGui::Button((const char*)u8"加群")) {
                     ShellExecuteA(nullptr, "open", XMENU_QQ_GROUP, nullptr, nullptr, SW_SHOWNORMAL);
                 }
-                if (ImGui::Button((const char*)u8"项目主页")) {
+                if (ImGui::Button((const char*)u8"GitHub")) {
                     ShellExecuteA(nullptr, "open", XMENU_GITHUB, nullptr, nullptr, SW_SHOWNORMAL);
                 }
                 ImGui::EndTabItem();

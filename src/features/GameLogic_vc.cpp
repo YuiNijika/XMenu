@@ -12,6 +12,7 @@
 #include "Patch.h"
 #include "CTimer.h"
 #include "CClock.h"
+#include <string>
 #include <ctime>
 #include <string>
 
@@ -292,8 +293,16 @@ void SetVehicleWatertight(CVehicle* vehicle, bool enable) {
     plugin::Command<plugin::Commands::SET_CAR_WATERTIGHT>(CPools::GetVehicleRef(vehicle), enable);
 }
 
+bool IsAircraftModel(int model) {
+    return CModelInfo::IsHeliModel(model) || CModelInfo::IsPlaneModel(model)
+        || model == 155 || model == 165 || model == 177 || model == 180 || model == 181
+        || model == 190 || model == 199 || model == 217 || model == 218 || model == 227;
+}
+
 bool IsValidVehicleModel(unsigned int modelId) {
-    return CModelInfo::IsCarModel(static_cast<int>(modelId));
+    const int model = static_cast<int>(modelId);
+    return model >= 130 && model <= 236
+        && (CModelInfo::IsCarModel(model) || CModelInfo::IsBoatModel(model) || IsAircraftModel(model));
 }
 
 CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options) {
@@ -301,7 +310,7 @@ CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options)
     if (!player) return nullptr;
 
     const int model = static_cast<int>(modelId);
-    if (!CModelInfo::IsCarModel(model)) {
+    if (!IsValidVehicleModel(modelId)) {
         Log::Warn("VC vehicle spawn rejected invalid model: " + std::to_string(model));
         return nullptr;
     }
@@ -323,7 +332,7 @@ CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options)
     }
 
     if (interior == 0) {
-        if (options.aircraftInAir && (CModelInfo::IsHeliModel(model) || CModelInfo::IsPlaneModel(model))) {
+        if (options.aircraftInAir && IsAircraftModel(model)) {
             pos.z = 400.0f;
         } else {
             pos.z -= 5.0f;
@@ -557,6 +566,53 @@ void SetGameSpeed(float speed) {
 
 float GetGameSpeed() {
     return CTimer::ms_fTimeScale;
+}
+
+void SetDisableReplay(bool enable) {
+    plugin::patch::Set<unsigned char>(0x624EC0, enable ? 0xC3 : 0x80, false);
+}
+
+void SetDisableCheats(bool enable) {
+    if (enable) {
+        plugin::patch::Nop(0x602BD8, 5, false);
+        plugin::patch::Nop(0x602BE7, 5, false);
+        return;
+    }
+
+    plugin::patch::SetRaw(0x602BD8, (void*)"\x88\xD8\x89\xF1\x50", 5, false);
+    plugin::patch::SetRaw(0x602BE7, (void*)"\xE8\x34\x91\xEA\xFF", 5, false);
+}
+
+void SetForbiddenAreaWanted(bool enable) {
+    Log::Warn(std::string("VC does not support forbidden area wanted toggle: ") + (enable ? "on" : "off"));
+}
+
+void SetFreePayNSpray(bool enable) {
+    Log::Warn(std::string("VC does not support free Pay 'n' Spray toggle: ") + (enable ? "on" : "off"));
+}
+
+void SetFasterClock(bool enable) {
+    plugin::patch::Set<bool>(0xA10B87, enable, false);
+}
+
+void SetFreezeTime(bool enable) {
+    Log::Info(std::string("VC freeze time uses controller time lock: ") + (enable ? "on" : "off"));
+}
+
+int GetDaysPassed() {
+    return *reinterpret_cast<int*>(0x97F1F4);
+}
+
+void SetDaysPassed(int days) {
+    *reinterpret_cast<int*>(0x97F1F4) = days;
+}
+
+float GetGravity() {
+    return *reinterpret_cast<float*>(0x68F5F0);
+}
+
+void SetGravity(float gravity) {
+    *reinterpret_cast<float*>(0x68F5F0) = gravity;
 }
 
 } // namespace GameLogic

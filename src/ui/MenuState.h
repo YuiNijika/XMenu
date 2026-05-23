@@ -43,4 +43,12 @@ namespace MenuState {
     inline float TeleportMapWidth = 6000.0f;
     inline float TeleportMapHeight = 6000.0f;
     inline bool LockWeather = false;
+    inline bool DisableReplay = false;
+    inline bool DisableCheats = false;
+    inline bool ForbiddenAreaWanted = false;
+    inline bool FreePayNSpray = false;
+    inline bool FasterClock = false;
+    inline bool FreezeTime = false;
+    inline int DaysPassed = 0;
+    inline float Gravity = 0.008f;
 }

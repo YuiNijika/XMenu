@@ -1,6 +1,7 @@
 #include "Vehicle.h"
 #include "features/GameLogic.h"
 #include "utils/Log.h"
+#include "resources/ResourceData.h"
 #include "ui/MenuState.h"
 #include "plugin.h"
 #include "CPlayerPed.h"
@@ -136,6 +137,11 @@ namespace Controllers::Vehicle {
         GameLogic::SpawnVehicleOptions options;
         options.asDriver = MenuState::VehicleSpawnAsDriver;
         options.aircraftInAir = MenuState::VehicleSpawnAircraftInAir;
+
+        if (!Resources::IsKnownVehicleModel(modelId)) {
+            Log::Warn("Vehicle spawn rejected unknown model for current game: " + std::to_string(modelId));
+            return false;
+        }
 
         if (!GameLogic::IsValidVehicleModel(modelId)) {
             Log::Warn("Vehicle spawn rejected by controller: " + std::to_string(modelId));

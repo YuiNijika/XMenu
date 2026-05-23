@@ -88,6 +88,16 @@ namespace GameLogic {
     void SyncTimeWithSystemClock();
     void SetGameSpeed(float speed);
     float GetGameSpeed();
+    void SetDisableReplay(bool enable);
+    void SetDisableCheats(bool enable);
+    void SetForbiddenAreaWanted(bool enable);
+    void SetFreePayNSpray(bool enable);
+    void SetFasterClock(bool enable);
+    void SetFreezeTime(bool enable);
+    int GetDaysPassed();
+    void SetDaysPassed(int days);
+    float GetGravity();
+    void SetGravity(float gravity);
 
     // 通用
     void Init();

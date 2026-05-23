@@ -40,6 +40,46 @@ namespace Pages::World {
             Controllers::World::DrawWeatherButtons();
         }
 
+        if (ImGui::CollapsingHeader((const char*)u8"游戏规则", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::Checkbox((const char*)u8"禁用回放", &MenuState::DisableReplay)) {
+                Controllers::World::SetDisableReplay(MenuState::DisableReplay);
+            }
+            ImGui::SameLine();
+            if (ImGui::Checkbox((const char*)u8"禁用作弊码", &MenuState::DisableCheats)) {
+                Controllers::World::SetDisableCheats(MenuState::DisableCheats);
+            }
+            if (ImGui::Checkbox((const char*)u8"加快时钟", &MenuState::FasterClock)) {
+                Controllers::World::SetFasterClock(MenuState::FasterClock);
+            }
+            ImGui::SameLine();
+            if (ImGui::Checkbox((const char*)u8"冻结时间", &MenuState::FreezeTime)) {
+                Controllers::World::SetFreezeTime(MenuState::FreezeTime);
+            }
+#ifdef GTASA
+            if (ImGui::Checkbox((const char*)u8"禁止通缉区域", &MenuState::ForbiddenAreaWanted)) {
+                Controllers::World::SetForbiddenAreaWanted(MenuState::ForbiddenAreaWanted);
+            }
+            ImGui::SameLine();
+            if (ImGui::Checkbox((const char*)u8"免费喷漆店", &MenuState::FreePayNSpray)) {
+                Controllers::World::SetFreePayNSpray(MenuState::FreePayNSpray);
+            }
+#endif
+
+            int days = Controllers::World::GetDaysPassed();
+            ImGui::PushItemWidth(150);
+            if (ImGui::InputInt((const char*)u8"经过天数", &days)) {
+                if (days < 0) days = 0;
+                if (days > 9999) days = 9999;
+                Controllers::World::SetDaysPassed(days);
+            }
+
+            float gravity = Controllers::World::GetGravity();
+            if (ImGui::SliderFloat((const char*)u8"重力", &gravity, -1.0f, 1.0f, "%.3f")) {
+                Controllers::World::SetGravity(gravity);
+            }
+            ImGui::PopItemWidth();
+        }
+
         if (ImGui::CollapsingHeader((const char*)u8"游戏节奏", ImGuiTreeNodeFlags_DefaultOpen)) {
             float speed = Controllers::World::GetGameSpeed();
             if (ImGui::SliderFloat((const char*)u8"倍率", &speed, 0.1f, 5.0f, "%.1fx")) {

@@ -1,3 +1,14 @@
+/**
+ * XMenu
+ * 作者：鼠子(YuiNijika)
+ * 版本：v0.0.1-alpha1
+ * 网站：https://gtamodx.com/mods/xmenu
+ * GitHub：https://github.com/YuiNijika/XMenu
+ * QQ群：https://gtamodx.com/qqun
+ * 声明：永久免费禁止倒卖，禁止用于商业用途。
+ * 若有任何问题, 请加入QQ群或前往GitHub发布issue反馈。
+ */
+
 #include <windows.h>
 #include "plugin.h"
 #include "app/Startup.h"
@@ -9,7 +20,7 @@
 
 const char* XMENU_VERSION = "v0.0.1-alpha1";
 const char* XMENU_AUTHOR = "鼠子(YuiNijika)";
-const char* XMENU_URL = "https://gtamodx.com/mods/XMenu";
+const char* XMENU_URL = "https://gtamodx.com/mods/xmenu";
 const char* XMENU_GITHUB = "https://github.com/YuiNijika/XMenu";
 const char* XMENU_QQ_GROUP = "https://gtamodx.com/qqun";
 
@@ -22,7 +33,7 @@ namespace {
             const bool hookReady = D3DHook::Init([]() {
                 Menu::Draw();
             });
-
+ 
             if (hookReady) {
                 Log::Info("D3D Hook 初始化成功");
             } else {
