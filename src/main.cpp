@@ -17,6 +17,7 @@
 #include "features/GameLogic.h"
 #include "CPad.h"
 #include "utils/Log.h"
+#include "CHud.h"
 
 const char* XMENU_VERSION = "v0.0.1-alpha1";
 const char* XMENU_AUTHOR = "鼠子(YuiNijika)";
@@ -25,6 +26,20 @@ const char* XMENU_GITHUB = "https://github.com/YuiNijika/XMenu";
 const char* XMENU_QQ_GROUP = "https://gtamodx.com/qqun";
 
 namespace {
+    bool xMenuActive = false;
+
+    void ShowD3DHookFailedMessage() {
+#ifdef GTASA
+        CHud::SetHelpMessage("XMenu: D3D Hook 初始化失败, 菜单已禁用", true, false, false);
+#elif GTAVC
+        static const wchar_t message[] = L"XMenu: D3D Hook 初始化失败, 菜单已禁用";
+        CHud::SetHelpMessage(message, true, false);
+#else
+        static wchar_t message[] = L"XMenu: D3D Hook 初始化失败, 菜单已禁用";
+        CHud::SetHelpMessage(message, true);
+#endif
+    }
+
     void InitXMenu() {
         Log::Info("注册游戏初始化与脚本循环事件");
         plugin::Events::initGameEvent.after += []() {
@@ -35,13 +50,22 @@ namespace {
             });
  
             if (hookReady) {
+                xMenuActive = true;
                 Log::Info("D3D Hook 初始化成功");
             } else {
-                Log::Error("D3D Hook 初始化失败，菜单不会显示");
+                xMenuActive = false;
+                D3DHook::SetMenuVisible(false);
+                ShowD3DHookFailedMessage();
+                Log::Error("D3D Hook 初始化失败, XMenu 已停止初始化");
+                return;
             }
         };
 
         plugin::Events::processScriptsEvent += []() {
+            if (!xMenuActive) {
+                return;
+            }
+
             GameLogic::Process();
             Menu::Process();
 
@@ -70,7 +94,7 @@ BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved) {
             Log::Info("启动校验通过");
             InitXMenu();
         } else {
-            Log::Error("启动校验失败，XMenu 已停止初始化");
+            Log::Error("启动校验失败, XMenu 已停止初始化");
         }
     } else if (nReason == DLL_PROCESS_DETACH) {
         D3DHook::Shutdown();
