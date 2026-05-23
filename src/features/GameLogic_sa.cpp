@@ -8,6 +8,7 @@
 #include "CVehicle.h"
 #include "CAutomobile.h"
 #include "CBike.h"
+#include "CTrain.h"
 #include "CPools.h"
 #include "CModelInfo.h"
 #include "CWeaponInfo.h"
@@ -436,10 +437,24 @@ bool IsAircraftModel(int model) {
 
 bool IsValidVehicleModel(unsigned int modelId) {
     const int model = static_cast<int>(modelId);
-    return model >= 400 && model <= 611
-        && (CModelInfo::IsCarModel(model) || CModelInfo::IsBoatModel(model) || IsAircraftModel(model))
-        && !CModelInfo::IsTrainModel(model)
-        && !CModelInfo::IsTrailerModel(model);
+    return CModelInfo::IsVehicleModel(model) && !CModelInfo::IsTrailerModel(model);
+}
+
+int GetTrainConfigForModel(int model) {
+    static constexpr int freightConfigs[] = { 8, 9 };
+    static constexpr int freightBoxConfigs[] = { 1, 5, 15 };
+    static constexpr int streakConfigs[] = { 0, 3, 6, 10, 12, 13 };
+
+    switch (model) {
+    case 449:
+        return freightConfigs[CTimer::m_snTimeInMilliseconds % (sizeof(freightConfigs) / sizeof(freightConfigs[0]))];
+    case 537:
+        return streakConfigs[CTimer::m_snTimeInMilliseconds % (sizeof(streakConfigs) / sizeof(streakConfigs[0]))];
+    case 538:
+        return freightBoxConfigs[CTimer::m_snTimeInMilliseconds % (sizeof(freightBoxConfigs) / sizeof(freightBoxConfigs[0]))];
+    default:
+        return -1;
+    }
 }
 
 CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options) {
@@ -463,7 +478,11 @@ CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options)
             pos = currentVehicle->GetPosition();
             plugin::Command<plugin::Commands::GET_CAR_SPEED>(hveh, &speed);
             plugin::Command<plugin::Commands::WARP_CHAR_FROM_CAR_TO_COORD>(hplayer, pos.x, pos.y, pos.z);
-            plugin::Command<plugin::Commands::DELETE_CAR>(hveh);
+            if (CModelInfo::IsTrainModel(currentVehicle->m_nModelIndex)) {
+                plugin::Command<plugin::Commands::DELETE_MISSION_TRAIN>(hveh);
+            } else {
+                plugin::Command<plugin::Commands::DELETE_CAR>(hveh);
+            }
         }
     }
 
@@ -473,6 +492,55 @@ CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options)
         } else {
             pos.z -= 5.0f;
         }
+    }
+
+    if (CModelInfo::IsTrainModel(model)) {
+        const int trainConfig = GetTrainConfigForModel(model);
+        if (trainConfig == -1) {
+            Log::Warn("SA 火车生成被拒绝：未知火车型号 " + std::to_string(model));
+            return nullptr;
+        }
+
+        CStreaming::RequestModel(590, PRIORITY_REQUEST);
+        CStreaming::RequestModel(538, PRIORITY_REQUEST);
+        CStreaming::RequestModel(570, PRIORITY_REQUEST);
+        CStreaming::RequestModel(569, PRIORITY_REQUEST);
+        CStreaming::RequestModel(537, PRIORITY_REQUEST);
+        CStreaming::RequestModel(449, PRIORITY_REQUEST);
+        CStreaming::LoadAllRequestedModels(false);
+
+        int track = CTimer::m_snTimeInMilliseconds % 2;
+        const int node = CTrain::FindClosestTrackNode(pos, &track);
+        CTrain* train = nullptr;
+        CTrain* carriage = nullptr;
+        CTrain::CreateMissionTrain(pos, (CTimer::m_snTimeInMilliseconds & 1) != 0, trainConfig, &train, &carriage, node, track, false);
+
+        auto* vehicle = reinterpret_cast<CVehicle*>(train);
+        if (!vehicle) {
+            Log::Error("SA 火车生成失败：CreateMissionTrain 未返回有效载具，模型 ID " + std::to_string(model));
+            return nullptr;
+        }
+
+        const int hveh = CPools::GetVehicleRef(vehicle);
+        if (vehicle->m_pDriver) {
+            plugin::Command<plugin::Commands::DELETE_CHAR>(CPools::GetPedRef(vehicle->m_pDriver));
+        }
+
+        if (options.asDriver) {
+            plugin::Command<plugin::Commands::WARP_CHAR_INTO_CAR>(hplayer, hveh);
+            SetVehicleForwardSpeed(vehicle, speed);
+        }
+
+        plugin::Command<plugin::Commands::MARK_MISSION_TRAIN_AS_NO_LONGER_NEEDED>(hveh);
+        plugin::Command<plugin::Commands::MARK_CAR_AS_NO_LONGER_NEEDED>(hveh);
+        CStreaming::SetModelIsDeletable(590);
+        CStreaming::SetModelIsDeletable(538);
+        CStreaming::SetModelIsDeletable(570);
+        CStreaming::SetModelIsDeletable(569);
+        CStreaming::SetModelIsDeletable(537);
+        CStreaming::SetModelIsDeletable(449);
+        vehicle->bHasBeenOwnedByPlayer = true;
+        return vehicle;
     }
 
     CStreaming::RequestModel(model, PRIORITY_REQUEST);
@@ -523,6 +591,9 @@ void TeleportPlayer(CVector pos, int interiorID) {
         if (CModelInfo::IsTrainModel(pVeh->m_nModelIndex)) {
             const CVector vehPos = pVeh->GetPosition();
             plugin::Command<plugin::Commands::WARP_CHAR_FROM_CAR_TO_COORD>(hplayer, vehPos.x, vehPos.y, vehPos.z + 2.0f);
+            if ((pos - vehPos).Magnitude() > 100.0f) {
+                plugin::Command<plugin::Commands::DELETE_ALL_TRAINS>();
+            }
             pPlayer->Teleport(pos, false);
         } else {
             pVeh->Teleport(pos, false);

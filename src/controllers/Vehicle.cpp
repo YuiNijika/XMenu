@@ -4,6 +4,8 @@
 #include "resources/ResourceData.h"
 #include "ui/MenuState.h"
 #include "plugin.h"
+#include "extensions/ScriptCommands.h"
+#include "CPools.h"
 #include "CPlayerPed.h"
 #include "CVehicle.h"
 #include <string>
@@ -14,12 +16,27 @@ namespace {
     GameLogic::ProofState savedVehicleProofs;
     bool hasSavedVehicleProofs = false;
 
+    bool IsVehicleInPool(CVehicle* vehicle) {
+        if (!vehicle) {
+            return false;
+        }
+
+        for (CVehicle* poolVehicle : CPools::ms_pVehiclePool) {
+            if (poolVehicle == vehicle) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     void RestoreVehicleProofs() {
         if (!hasSavedVehicleProofs || !savedVehicle) {
             return;
         }
 
-        GameLogic::SetVehicleProofState(savedVehicle, savedVehicleProofs);
+        if (IsVehicleInPool(savedVehicle)) {
+            GameLogic::SetVehicleProofState(savedVehicle, savedVehicleProofs);
+        }
         savedVehicle = nullptr;
         hasSavedVehicleProofs = false;
     }
@@ -50,6 +67,11 @@ namespace {
             return;
         }
 
+        if (!IsVehicleInPool(effectVehicle)) {
+            effectVehicle = nullptr;
+            return;
+        }
+
         if (!MenuState::VehicleHeavy) {
             GameLogic::SetVehicleHeavy(effectVehicle, false);
         }
@@ -68,8 +90,11 @@ namespace {
         }
 
         if (effectVehicle && effectVehicle != vehicle) {
-            GameLogic::SetVehicleHeavy(effectVehicle, false);
-            GameLogic::SetVehicleWatertight(effectVehicle, false);
+            if (IsVehicleInPool(effectVehicle)) {
+                GameLogic::SetVehicleHeavy(effectVehicle, false);
+                GameLogic::SetVehicleWatertight(effectVehicle, false);
+            }
+            effectVehicle = nullptr;
         }
 
         effectVehicle = vehicle;
@@ -85,7 +110,14 @@ namespace Controllers::Vehicle {
         if (!player) {
             return nullptr;
         }
-        return player->m_pVehicle;
+
+        const int hplayer = CPools::GetPedRef(player);
+        if (!plugin::Command<plugin::Commands::IS_CHAR_IN_ANY_CAR>(hplayer)) {
+            return nullptr;
+        }
+
+        CVehicle* vehicle = player->m_pVehicle;
+        return IsVehicleInPool(vehicle) ? vehicle : nullptr;
     }
 
     void Process() {
@@ -237,11 +269,6 @@ namespace Controllers::Vehicle {
         GameLogic::SpawnVehicleOptions options;
         options.asDriver = MenuState::VehicleSpawnAsDriver;
         options.aircraftInAir = MenuState::VehicleSpawnAircraftInAir;
-
-        if (!Resources::IsKnownVehicleModel(modelId)) {
-            Log::Error("载具生成失败：当前游戏未支持模型 ID " + std::to_string(modelId));
-            return false;
-        }
 
         if (!GameLogic::IsValidVehicleModel(modelId)) {
             Log::Error("载具生成失败：底层校验拒绝模型 ID " + std::to_string(modelId));

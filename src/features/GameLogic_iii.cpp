@@ -424,7 +424,7 @@ bool IsAircraftModel(int model) {
 
 bool IsValidVehicleModel(unsigned int modelId) {
     const int model = static_cast<int>(modelId);
-    return model >= 90 && model <= 150
+    return model >= 90 && model <= 151
         && (CModelInfo::IsCarModel(model) || CModelInfo::IsBoatModel(model) || IsAircraftModel(model));
 }
 
@@ -485,7 +485,8 @@ CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options)
     vehicle->m_eDoorLock = CARLOCK_UNLOCKED;
 
     if (options.asDriver) {
-        plugin::Command<plugin::Commands::WARP_CHAR_INTO_CAR>(hplayer, hveh);
+        player->SetObjective(OBJECTIVE_ENTER_CAR_AS_DRIVER);
+        player->WarpPedIntoCar(vehicle);
         SetVehicleForwardSpeed(vehicle, speed);
     }
 
