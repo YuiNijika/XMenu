@@ -1,12 +1,18 @@
 #include "Menu.h"
 #include <windows.h>
 #include "utils/Log.h"
+#include "utils/D3DHook.h"
 #include "imgui/imgui.h"
 #include "ui/pages/Player.h"
 #include "ui/pages/Vehicle.h"
 #include "ui/pages/Teleport.h"
 #include "ui/pages/Weapon.h"
 #include "ui/pages/World.h"
+
+extern const char* XMENU_VERSION;
+extern const char* XMENU_AUTHOR;
+extern const char* XMENU_GITHUB;
+extern const char* XMENU_QQ_GROUP;
 
 void Menu::Process() {
     Pages::Player::Process();
@@ -19,7 +25,7 @@ void Menu::Draw() {
     bool menuVisible = true;
 
     ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin((const char*)u8"XMenu [www.gtamodx.com]", &menuVisible, ImGuiWindowFlags_NoCollapse)) {
+    if (ImGui::Begin((const char*)u8"XMenu " XMENU_VERSION " by " XMENU_AUTHOR " [www.gtamodx.com]", &menuVisible, ImGuiWindowFlags_NoCollapse)) {
         if (ImGui::BeginTabBar("XMenuTabs")) {
             if (ImGui::BeginTabItem((const char*)u8"玩家")) {
                 Pages::Player::Draw();
@@ -41,12 +47,25 @@ void Menu::Draw() {
                 Pages::World::Draw();
                 ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem((const char*)u8"加群")) {
-                ImGui::TextWrapped((const char*)u8"加入交流群，获取更新、反馈问题和查看使用说明。");
+            if (ImGui::BeginTabItem((const char*)u8"菜单")) {
                 ImGui::Spacing();
-                if (ImGui::Button((const char*)u8"打开加群页面")) {
-                    Log::Info("用户点击加群页面跳转");
-                    ShellExecuteA(nullptr, "open", "https://gtamodx.com/qqun", nullptr, nullptr, SW_SHOWNORMAL);
+                if (ImGui::Button((const char*)u8"关闭菜单")) {
+                    Log::Info("用户从菜单页关闭菜单");
+                    D3DHook::SetMenuVisible(false);
+                }
+                ImGui::Spacing();
+                ImGui::Separator();
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem((const char*)u8"关于")) {
+                ImGui::TextWrapped((const char*)u8"XMenu%s", XMENU_VERSION);
+                ImGui::TextWrapped((const char*)u8"作者：%s", XMENU_AUTHOR);
+                ImGui::Spacing();
+                if (ImGui::Button((const char*)u8"加群")) {
+                    ShellExecuteA(nullptr, "open", XMENU_QQ_GROUP, nullptr, nullptr, SW_SHOWNORMAL);
+                }
+                if (ImGui::Button((const char*)u8"GitHub")) {
+                    ShellExecuteA(nullptr, "open", XMENU_GITHUB, nullptr, nullptr, SW_SHOWNORMAL);
                 }
                 ImGui::EndTabItem();
             }

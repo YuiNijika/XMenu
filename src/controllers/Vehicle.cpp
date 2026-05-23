@@ -59,6 +59,10 @@ namespace Controllers::Vehicle {
             return;
         }
 
+        if (MenuState::VehicleAutoUnflip && vehicle->IsUpsideDown()) {
+            GameLogic::UnflipVehicle(vehicle);
+        }
+
         GameLogic::SetVehicleSpeedLock(vehicle, MenuState::VehicleSpeedLock, MenuState::VehicleSpeed);
         GameLogic::SetVehicleHeavy(vehicle, MenuState::VehicleHeavy);
         GameLogic::SetVehicleWatertight(vehicle, MenuState::VehicleWatertight);
@@ -74,6 +78,10 @@ namespace Controllers::Vehicle {
 
     void SetEngine(bool enable) {
         GameLogic::SetVehicleEngine(GetCurrentVehicle(), enable);
+    }
+
+    void Unflip() {
+        GameLogic::UnflipVehicle(GetCurrentVehicle());
     }
 
     void SetHeavy(bool enable) {

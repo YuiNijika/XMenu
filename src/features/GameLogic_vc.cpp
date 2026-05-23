@@ -1,4 +1,5 @@
 #include "GameLogic.h"
+#include "utils/Log.h"
 #include "CPlayerPed.h"
 #include "CWorld.h"
 #include "CStreaming.h"
@@ -11,6 +12,7 @@
 #include "CTimer.h"
 #include "CClock.h"
 #include <ctime>
+#include <string>
 
 namespace GameLogic {
 
@@ -83,6 +85,53 @@ void GiveMoney(int amount) {
     pInfo->m_nDisplayMoney += amount;
 }
 
+int GetMoney() {
+    CPlayerInfo* pInfo = &CWorld::Players[CWorld::PlayerInFocus];
+    return pInfo->m_nMoney;
+}
+
+void SetMoney(int amount) {
+    CPlayerInfo* pInfo = &CWorld::Players[CWorld::PlayerInFocus];
+    pInfo->m_nMoney = amount;
+    pInfo->m_nDisplayMoney = amount;
+}
+
+float GetHealth(CPlayerPed* player) {
+    return player ? player->m_fHealth : 0.0f;
+}
+
+void SetHealth(CPlayerPed* player, float value) {
+    if (player) player->m_fHealth = value;
+}
+
+float GetArmour(CPlayerPed* player) {
+    return player ? player->m_fArmour : 0.0f;
+}
+
+void SetArmour(CPlayerPed* player, float value) {
+    if (player) player->m_fArmour = value;
+}
+
+CVector GetPlayerPosition(CPlayerPed* player) {
+    return player ? player->GetPosition() : CVector(0.0f, 0.0f, 0.0f);
+}
+
+bool IsPlayerDead(CPlayerPed* player) {
+    return player ? player->m_fHealth <= 0.0f : false;
+}
+
+void SetKeepStuff(bool enable) {
+    if (enable) {
+        plugin::patch::Nop(0x42C184, 5);
+        plugin::patch::Nop(0x42C068, 5);
+        plugin::patch::Nop(0x42BC7B, 5);
+    } else {
+        plugin::patch::SetRaw(0x42C184, (void*)"\xE8\xB7\x35\x0D\x00", 5);
+        plugin::patch::SetRaw(0x42C068, (void*)"\xE8\xD3\x36\x0D\x00", 5);
+        plugin::patch::SetRaw(0x42BC7B, (void*)"\xE8\xC0\x3A\x0D\x00", 5);
+    }
+}
+
 void HealPlayer(CPlayerPed* player) {
     if (player) player->m_fHealth = 100.0f;
 }
@@ -121,6 +170,48 @@ void ProcessHardMode(CPlayerPed* player, bool enable) {
     player->m_fArmour = 0.0f;
 }
 
+void ProcessRespawnAtDeathPosition(CPlayerPed* player, bool enable) {
+    static CVector deathPos(0.0f, 0.0f, 0.0f);
+    static bool hasDeathPos = false;
+    if (!enable || !player) {
+        hasDeathPos = false;
+        return;
+    }
+
+    if (IsPlayerDead(player)) {
+        deathPos = player->GetPosition();
+        hasDeathPos = true;
+        return;
+    }
+
+    const CVector current = player->GetPosition();
+    if (hasDeathPos && deathPos.x != 0.0f && deathPos.y != 0.0f && (deathPos.x != current.x || deathPos.y != current.y)) {
+        player->Teleport(deathPos);
+        hasDeathPos = false;
+    }
+}
+
+void ProcessFreezeWantedLevel(CPlayerPed* player, bool enable) {
+    static int frozenLevel = 0;
+    static bool wasEnabled = false;
+    if (!player) return;
+
+    if (!enable) {
+        wasEnabled = false;
+        return;
+    }
+
+    if (!wasEnabled) {
+        frozenLevel = GetWantedLevel(player);
+        wasEnabled = true;
+    }
+    SetWantedLevel(player, frozenLevel);
+}
+
+void SetManualPlayerProof(CPlayerPed* player, const ProofState& state) {
+    SetPlayerProofState(player, state);
+}
+
 ProofState GetVehicleProofState(CVehicle* vehicle) {
     ProofState state;
     if (!vehicle) return state;
@@ -157,6 +248,16 @@ void StopVehicle(CVehicle* vehicle) {
     vehicle->m_vecTurnSpeed = CVector(0.0f, 0.0f, 0.0f);
 }
 
+void UnflipVehicle(CVehicle* vehicle) {
+    if (!vehicle) return;
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+    vehicle->GetOrientation(x, y, z);
+    vehicle->SetOrientation(x, y + 135.0f, z);
+    StopVehicle(vehicle);
+}
+
 void SetVehicleSpeedLock(CVehicle* vehicle, bool enable, float speed) {
     if (!enable || !vehicle) return;
     const float current = vehicle->m_vecMoveSpeed.Magnitude();
@@ -189,7 +290,7 @@ void SetVehicleWatertight(CVehicle* vehicle, bool enable) {
     plugin::Command<plugin::Commands::SET_CAR_WATERTIGHT>(CPools::GetVehicleRef(vehicle), enable);
 }
 
-void TeleportPlayer(CVector pos) {
+void TeleportPlayer(CVector pos, int interiorID) {
     CPlayerPed* pPlayer = FindPlayerPed();
     if (!pPlayer) return;
     CVehicle* pVeh = pPlayer->m_pVehicle;
@@ -199,10 +300,22 @@ void TeleportPlayer(CVector pos) {
     CStreaming::LoadAllRequestedModels(false);
 
     if (pVeh && pPlayer->m_bInVehicle) {
+        pVeh->m_nAreaCode = interiorID;
         pVeh->Teleport(pos);
     } else {
         pPlayer->Teleport(pos);
     }
+
+    pPlayer->m_nAreaCode = interiorID;
+    plugin::Command<plugin::Commands::SET_AREA_VISIBLE>(interiorID);
+}
+
+void TeleportMapPosition(CVector pos, bool spawnUnderwater) {
+    TeleportPlayer(pos);
+}
+
+bool TeleportMarker(bool spawnUnderwater) {
+    return false;
 }
 
 void TeleportForward(float distance) {
@@ -215,17 +328,92 @@ void TeleportForward(float distance) {
     TeleportPlayer(pos);
 }
 
+namespace {
+    int GetWeaponModel(eWeaponType weaponType) {
+        return plugin::CallAndReturnDynGlobal<int, int>(0x4418B0, static_cast<int>(weaponType));
+    }
+
+    eWeaponType GetWeaponTypeFromModel(int model) {
+        for (int i = 0; i < 37; ++i) {
+            const auto weaponType = static_cast<eWeaponType>(i);
+            if (GetWeaponModel(weaponType) == model) {
+                return weaponType;
+            }
+        }
+        return WEAPONTYPE_UNARMED;
+    }
+
+    void ClearPlayerWeapon(CPlayerPed* player, eWeaponType weaponType) {
+        if (!player) return;
+        const CWeaponInfo* weaponInfo = CWeaponInfo::GetWeaponInfo(weaponType);
+        if (!weaponInfo) return;
+
+        const int weaponSlot = weaponInfo->m_WeaponSlot;
+        if (weaponSlot == -1) return;
+
+        CWeapon* weapon = &player->m_aWeapons[weaponSlot];
+        if (weapon->m_eWeaponType != weaponType) return;
+
+        if (player->m_nCurrentWeapon == weaponSlot) {
+            CWeaponInfo* unarmedInfo = CWeaponInfo::GetWeaponInfo(WEAPONTYPE_UNARMED);
+            if (unarmedInfo) {
+                player->SetCurrentWeapon(unarmedInfo->m_WeaponSlot);
+            }
+        }
+        weapon->Shutdown();
+    }
+}
+
 void GiveAllWeapons(CPlayerPed* player) {
     if (!player) return;
-    player->GiveWeapon(WEAPONTYPE_BRASSKNUCKLE, 1, true);
-    player->GiveWeapon(WEAPONTYPE_PYTHON, 9999, true);
-    player->GiveWeapon(WEAPONTYPE_SPAS12_SHOTGUN, 9999, true);
-    player->GiveWeapon(WEAPONTYPE_MP5, 9999, true);
-    player->GiveWeapon(WEAPONTYPE_M4, 9999, true);
-    player->GiveWeapon(WEAPONTYPE_SNIPERRIFLE, 9999, true);
-    player->GiveWeapon(WEAPONTYPE_MINIGUN, 9999, true);
-    player->GiveWeapon(WEAPONTYPE_GRENADE, 9999, true);
-    player->SetCurrentWeapon(WEAPONTYPE_M4);
+    const unsigned int models[] = { 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 287, 288, 279, 278, 280, 281, 282, 274, 285, 286, 283, 284, 290, 289, 258, 275, 276, 277, 291, 292, 293 };
+    for (const unsigned int model : models) {
+        GiveWeaponModel(player, model, 99999);
+    }
+}
+
+void GiveWeapon(CPlayerPed* player, unsigned int weaponType, unsigned int ammo) {
+    if (!player) return;
+    GiveWeaponModel(player, static_cast<unsigned int>(GetWeaponModel(static_cast<eWeaponType>(weaponType))), ammo);
+}
+
+void GiveWeaponModel(CPlayerPed* player, unsigned int weaponModel, unsigned int ammo) {
+    if (!player) return;
+    const int hplayer = CPools::GetPedRef(player);
+    const int model = static_cast<int>(weaponModel);
+    CStreaming::RequestModel(model, PRIORITY_REQUEST);
+    CStreaming::LoadAllRequestedModels(false);
+
+    const eWeaponType weaponType = GetWeaponTypeFromModel(model);
+    if (weaponType == WEAPONTYPE_UNARMED) {
+        Log::Warn("VC weapon model is not mapped to a valid weapon type: " + std::to_string(model));
+        plugin::Command<plugin::Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(model);
+        return;
+    }
+    plugin::Command<plugin::Commands::GIVE_WEAPON_TO_CHAR>(hplayer, weaponType, ammo);
+    plugin::Command<plugin::Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(model);
+}
+
+void DropWeapon(CPlayerPed* player) {
+    if (!player) return;
+    const int hplayer = CPools::GetPedRef(player);
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+    plugin::Command<plugin::Commands::GET_OFFSET_FROM_CHAR_IN_WORLD_COORDS>(hplayer, 0.0f, 3.0f, 0.0f, &x, &y, &z);
+
+    const eWeaponType weaponType = player->m_aWeapons[player->m_nSelectedWepSlot].m_eWeaponType;
+    if (weaponType == WEAPONTYPE_UNARMED) return;
+
+    const int model = GetWeaponModel(weaponType);
+    int pickup = 0;
+    plugin::Command<plugin::Commands::CREATE_PICKUP_WITH_AMMO>(model, 3, 999, x, y, z, &pickup);
+    ClearPlayerWeapon(player, weaponType);
+}
+
+void DropCurrentWeapon(CPlayerPed* player) {
+    if (!player) return;
+    ClearPlayerWeapon(player, player->m_aWeapons[player->m_nCurrentWeapon].m_eWeaponType);
 }
 
 void ClearWeapons(CPlayerPed* player) {
@@ -244,10 +432,10 @@ void SetFastReload(CPlayerPed* player, bool enable) {
     plugin::Command<plugin::Commands::SET_PLAYER_FAST_RELOAD>(CPools::GetPedRef(player), enable);
 }
 
-void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange) {
-    if (!player || (!hugeDamage && !longRange)) return;
+void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange, bool rapidFire, bool dualWield, bool moveAim, bool moveFire, bool noSpread) {
+    if (!player || (!hugeDamage && !longRange && !noSpread)) return;
 
-    CWeapon& weapon = player->m_aWeapons[player->m_nSelectedWepSlot];
+    CWeapon& weapon = player->m_aWeapons[player->m_nCurrentWeapon];
     CWeaponInfo* info = CWeaponInfo::GetWeaponInfo(weapon.m_eWeaponType);
     if (!info) return;
 
@@ -256,6 +444,9 @@ void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange) {
     }
     if (longRange) {
         info->m_fRange = 1000.0f;
+    }
+    if (noSpread) {
+        info->m_fSpread = 0.0f;
     }
 }
 

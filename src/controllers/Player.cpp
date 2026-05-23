@@ -3,6 +3,9 @@
 #include "ui/MenuState.h"
 #include "plugin.h"
 #include "CPlayerPed.h"
+#include <cstdio>
+#include <cstring>
+#include <windows.h>
 
 namespace {
     CPlayerPed* godModePlayer = nullptr;
@@ -56,6 +59,8 @@ namespace Controllers::Player {
 
         GameLogic::ProcessAutoHeal(player, MenuState::AutoHeal);
         GameLogic::ProcessHardMode(player, MenuState::HardMode);
+        GameLogic::ProcessRespawnAtDeathPosition(player, MenuState::RespawnAtDeathPosition);
+        GameLogic::ProcessFreezeWantedLevel(player, MenuState::FreezeWantedLevel);
     }
 
     void Heal() {
@@ -89,8 +94,74 @@ namespace Controllers::Player {
         SetWantedLevel(0);
     }
 
+    int GetMoney() {
+        return GameLogic::GetMoney();
+    }
+
+    void SetMoney(int amount) {
+        GameLogic::SetMoney(amount);
+    }
+
+    float GetHealth() {
+        return GameLogic::GetHealth(GetPlayer());
+    }
+
+    void SetHealth(float value) {
+        GameLogic::SetHealth(GetPlayer(), value);
+    }
+
+    float GetArmour() {
+        return GameLogic::GetArmour(GetPlayer());
+    }
+
+    void SetArmour(float value) {
+        GameLogic::SetArmour(GetPlayer(), value);
+    }
+
+    GameLogic::ProofState GetProofState() {
+        return GameLogic::GetPlayerProofState(GetPlayer());
+    }
+
+    void SetProofState(const GameLogic::ProofState& state) {
+        if (!MenuState::GodMode) {
+            GameLogic::SetManualPlayerProof(GetPlayer(), state);
+        }
+    }
+
+    void CopyCoordinates() {
+        const CVector pos = GameLogic::GetPlayerPosition(GetPlayer());
+        char text[128];
+        std::snprintf(text, sizeof(text), "%.3f, %.3f, %.3f", pos.x, pos.y, pos.z);
+        const size_t length = std::strlen(text) + 1;
+        HGLOBAL memory = GlobalAlloc(GMEM_MOVEABLE, length);
+        if (!memory) {
+            return;
+        }
+
+        void* locked = GlobalLock(memory);
+        if (!locked) {
+            GlobalFree(memory);
+            return;
+        }
+
+        std::memcpy(locked, text, length);
+        GlobalUnlock(memory);
+
+        if (OpenClipboard(nullptr)) {
+            EmptyClipboard();
+            SetClipboardData(CF_TEXT, memory);
+            CloseClipboard();
+        } else {
+            GlobalFree(memory);
+        }
+    }
+
     void SetInfiniteSprint(bool enable) {
         GameLogic::SetInfiniteSprint(enable);
+    }
+
+    void SetKeepStuff(bool enable) {
+        GameLogic::SetKeepStuff(enable);
     }
 
     bool GetFreeHealthcare() {

@@ -5,5 +5,9 @@ namespace Controllers::Weapon {
     bool HasPlayer();
     void GiveAll();
     void ClearAll();
+    void DropWeapon();
+    void DropCurrent();
+    void Give(unsigned int weaponType, unsigned int ammo);
+    void GiveModel(unsigned int weaponModel, unsigned int ammo);
     void ResetStats();
 }

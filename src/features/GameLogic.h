@@ -25,13 +25,25 @@ namespace GameLogic {
     void SetFreeJail(bool enable);
     bool GetFreeJail();
     void GiveMoney(int amount);
+    int GetMoney();
+    void SetMoney(int amount);
+    float GetHealth(CPlayerPed* player);
+    void SetHealth(CPlayerPed* player, float value);
+    float GetArmour(CPlayerPed* player);
+    void SetArmour(CPlayerPed* player, float value);
+    CVector GetPlayerPosition(CPlayerPed* player);
+    bool IsPlayerDead(CPlayerPed* player);
+    void SetKeepStuff(bool enable);
     void HealPlayer(CPlayerPed* player);
     void GiveArmour(CPlayerPed* player);
     void ProcessAutoHeal(CPlayerPed* player, bool enable);
     void SetWantedLevel(CPlayerPed* player, int level);
     int GetWantedLevel(CPlayerPed* player);
     void ProcessHardMode(CPlayerPed* player, bool enable);
-    
+    void ProcessRespawnAtDeathPosition(CPlayerPed* player, bool enable);
+    void ProcessFreezeWantedLevel(CPlayerPed* player, bool enable);
+    void SetManualPlayerProof(CPlayerPed* player, const ProofState& state);
+
     // 载具
     ProofState GetVehicleProofState(CVehicle* vehicle);
     void SetVehicleProofState(CVehicle* vehicle, const ProofState& state);
@@ -40,19 +52,26 @@ namespace GameLogic {
     void SetVehicleSpeedLock(CVehicle* vehicle, bool enable, float speed);
     void SetVehicleEngine(CVehicle* vehicle, bool enable);
     void SetVehicleInvincible(CVehicle* vehicle, bool enable);
+    void UnflipVehicle(CVehicle* vehicle);
     void SetVehicleHeavy(CVehicle* vehicle, bool enable);
     void SetVehicleWatertight(CVehicle* vehicle, bool enable);
     
     // 传送
-    void TeleportPlayer(CVector pos);
+    void TeleportPlayer(CVector pos, int interiorID = 0);
+    void TeleportMapPosition(CVector pos, bool spawnUnderwater);
+    bool TeleportMarker(bool spawnUnderwater);
     void TeleportForward(float distance);
     
     // 武器
     void GiveAllWeapons(CPlayerPed* player);
+    void GiveWeapon(CPlayerPed* player, unsigned int weaponType, unsigned int ammo);
+    void GiveWeaponModel(CPlayerPed* player, unsigned int weaponModel, unsigned int ammo);
+    void DropWeapon(CPlayerPed* player);
+    void DropCurrentWeapon(CPlayerPed* player);
     void ClearWeapons(CPlayerPed* player);
     void ProcessInfiniteAmmo(CPlayerPed* player, bool enable);
     void SetFastReload(CPlayerPed* player, bool enable);
-    void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange);
+    void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange, bool rapidFire, bool dualWield, bool moveAim, bool moveFire, bool noSpread);
     void ResetWeaponStats();
     
     // 世界

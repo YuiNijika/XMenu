@@ -7,6 +7,12 @@
 #include "CPad.h"
 #include "utils/Log.h"
 
+const char* XMENU_VERSION = "v0.0.1-alpha1";
+const char* XMENU_AUTHOR = "鼠子(YuiNijika)";
+const char* XMENU_URL = "https://gtamodx.com/mods/XMenu";
+const char* XMENU_GITHUB = "https://github.com/YuiNijika/XMenu";
+const char* XMENU_QQ_GROUP = "https://gtamodx.com/qqun";
+
 namespace {
     void InitXMenu() {
         Log::Info("注册游戏初始化与脚本循环事件");

@@ -22,6 +22,10 @@ namespace Pages::Vehicle {
             Controllers::Vehicle::Stop();
         }
         ImGui::SameLine();
+        if (ImGui::Button((const char*)u8"扶正载具")) {
+            Controllers::Vehicle::Unflip();
+        }
+        ImGui::SameLine();
         if (ImGui::Button((const char*)u8"点火")) {
             Controllers::Vehicle::SetEngine(true);
         }
