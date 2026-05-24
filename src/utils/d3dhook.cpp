@@ -114,6 +114,17 @@ namespace {
             ImGui::GetIO().MouseDrawCursor = false;
         }
     }
+
+    void ReleaseWindowCaptureOnly() {
+        ClipCursor(nullptr);
+        if (GetCapture()) {
+            ReleaseCapture();
+        }
+    }
+
+    bool IsWindowUsable(HWND hwnd) {
+        return hwnd && IsWindow(hwnd);
+    }
 }
 
 HWND D3DHook::window = NULL;
@@ -164,11 +175,16 @@ void D3DHook::SetMenuVisible(bool visible) {
         ReleaseWindowInput();
         return;
     }
-    if (menuVisible == visible) return;
+
+    const bool changed = menuVisible != visible;
     menuVisible = visible;
+
     if (isInitialized) {
         ProcessMouse();
-    } else if (!menuVisible) {
+        return;
+    }
+
+    if (!menuVisible || changed) {
         ReleaseWindowInput();
     }
 }
@@ -182,6 +198,7 @@ void D3DHook::ProcessMouse() {
     }
 
     ImGui::GetIO().MouseDrawCursor = menuVisible;
+    ReleaseWindowCaptureOnly();
 
     if (menuVisible) {
         plugin::patch::SetUChar((uintptr_t)BY_GAME(0x6194A0, 0x6020A0, 0x580D20), 0xC3); // psSetMousePos
@@ -222,10 +239,16 @@ void D3DHook::ProcessMouse() {
 }
 
 LRESULT __stdcall D3DHook::hkWndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    if (uMsg == WM_KILLFOCUS || uMsg == WM_CANCELMODE || uMsg == WM_ACTIVATEAPP) {
-        if (uMsg != WM_ACTIVATEAPP || wParam == FALSE) {
-            menuVisible = false;
-            ReleaseWindowInput();
+    if (uMsg == WM_KILLFOCUS || uMsg == WM_CANCELMODE || uMsg == WM_CAPTURECHANGED || uMsg == WM_ACTIVATE || uMsg == WM_ACTIVATEAPP) {
+        const bool inactive =
+            uMsg == WM_KILLFOCUS ||
+            uMsg == WM_CANCELMODE ||
+            uMsg == WM_CAPTURECHANGED ||
+            (uMsg == WM_ACTIVATE && LOWORD(wParam) == WA_INACTIVE) ||
+            (uMsg == WM_ACTIVATEAPP && wParam == FALSE);
+
+        if (inactive) {
+            SetMenuVisible(false);
         }
     }
 
@@ -280,12 +303,24 @@ HRESULT __stdcall D3DHook::hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
     if (!isInitialized) {
         D3DDEVICE_CREATION_PARAMETERS params;
         pDevice->GetCreationParameters(&params);
-        window = params.hFocusWindow;
+        window = params.hFocusWindow ? params.hFocusWindow : params.hDeviceWindow;
+        if (!IsWindowUsable(window)) {
+            window = GetForegroundWindow();
+        }
+        if (!IsWindowUsable(window)) {
+            initFailed = true;
+            initStatus = "D3D9 Hook failed: invalid game window";
+            Log::Error("D3D Hook 初始化失败：无法获取有效游戏窗口");
+            menuVisible = false;
+            ReleaseWindowInput();
+            return oEndScene(pDevice);
+        }
         oWndProc = (WNDPROC)SetWindowLongPtr(window, GWL_WNDPROC, (LONG_PTR)hkWndProc);
         InitImGui(pDevice);
     }
     
     if (isInitialized && menuVisible) {
+        ReleaseWindowCaptureOnly();
         ImGui_ImplDX9_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
