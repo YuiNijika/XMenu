@@ -14,4 +14,5 @@ namespace I18n {
     const char* GetLanguageCode(Language language);
     const char* GetLanguageName(Language language);
     const char* T(const char* key);
+    const char* T(Language language, const char* key);
 }

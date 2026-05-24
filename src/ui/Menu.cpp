@@ -5,6 +5,7 @@
 #include "utils/Log.h"
 #include "utils/D3DHook.h"
 #include "utils/I18n.h"
+#include "utils/UpdateChecker.h"
 #include "ui/Widget.h"
 #include "imgui/imgui.h"
 #include "ui/pages/Player.h"
@@ -17,6 +18,7 @@ extern const char* XMENU_VERSION;
 extern const char* XMENU_AUTHOR;
 extern const char* XMENU_AUTHOR_TEST;
 extern const char* XMENU_GITHUB;
+extern const char* XMENU_URL;
 extern const char* XMENU_QQ_GROUP;
 extern const char* XMENU_TECH_STACK;
 extern const char* XMENU_OPEN_SOURCE_LIBS;
@@ -60,6 +62,7 @@ namespace {
 
     void DrawSettings();
     void DrawAbout();
+    void DrawUpdateDialog();
 
     void DrawPageHeader(const char* titleKey) {
         ImGui::TextUnformatted(T(titleKey));
@@ -161,6 +164,35 @@ namespace {
             ShellExecuteA(nullptr, "open", XMENU_GITHUB, nullptr, nullptr, SW_SHOWNORMAL);
         }
     }
+
+    void DrawUpdateDialog() {
+        if (UpdateChecker::HasUpdate()) {
+            ImGui::OpenPopup("XMenuUpdateDialog");
+        }
+
+        if (ImGui::BeginPopupModal("XMenuUpdateDialog", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            const UpdateChecker::UpdateInfo info = UpdateChecker::GetUpdateInfo();
+            ImGui::TextUnformatted(T("update.availableTitle"));
+            ImGui::Separator();
+            ImGui::Spacing();
+            ImGui::TextWrapped(T("update.availableMessage"), info.currentVersion.c_str(), info.latestVersion.c_str());
+            ImGui::Spacing();
+
+            if (ImGui::Button(T("update.openGitHub"), ImVec2(130.0f, 0.0f))) {
+                ShellExecuteA(nullptr, "open", info.releaseUrl.empty() ? XMENU_GITHUB : info.releaseUrl.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                UpdateChecker::Dismiss();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button(T("update.openGTAMODX"), ImVec2(130.0f, 0.0f))) {
+                ShellExecuteA(nullptr, "open", XMENU_URL, nullptr, nullptr, SW_SHOWNORMAL);
+                UpdateChecker::Dismiss();
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+    }
 }
 
 void Menu::Process() {
@@ -200,6 +232,8 @@ void Menu::Draw() {
         ImGui::BeginChild("XMenuContent", ImVec2(0.0f, 0.0f), true);
         DrawActivePage();
         ImGui::EndChild();
+
+        DrawUpdateDialog();
     }
     ImGui::End();
 

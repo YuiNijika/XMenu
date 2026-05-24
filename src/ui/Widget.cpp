@@ -4,23 +4,21 @@ namespace {
     float ContentWidth() {
         return ImGui::GetContentRegionAvail().x;
     }
+
+    float RowWidth() {
+        return ImGui::GetContentRegionAvail().x + ImGui::GetCursorPosX() - ImGui::GetCursorStartPos().x;
+    }
 }
 
 namespace UI {
     ImVec2 CalcSize(short count, bool spacing) {
-        const float contentWidth = ContentWidth();
         if (count <= 1) {
-            return ImVec2(contentWidth, ImGui::GetFrameHeight() * 1.3f);
+            return ImVec2(ContentWidth(), ImGui::GetFrameHeight() * 1.3f);
         }
 
-        float factor = ImGui::GetStyle().ItemSpacing.x / 2.0f;
-        if (count == 3) {
-            factor = ImGui::GetStyle().ItemSpacing.x / 1.403f;
-        }
-
-        const float width = spacing
-            ? contentWidth / count - factor
-            : contentWidth / count;
+        const float rowWidth = RowWidth();
+        const float spacingWidth = spacing ? ImGui::GetStyle().ItemSpacing.x * (count - 1) : 0.0f;
+        const float width = (rowWidth - spacingWidth) / count;
 
         return ImVec2(width, ImGui::GetFrameHeight() * 1.3f);
     }

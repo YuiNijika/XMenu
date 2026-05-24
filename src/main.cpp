@@ -20,6 +20,7 @@
 #include "CPad.h"
 #include "utils/Log.h"
 #include "utils/I18n.h"
+#include "utils/UpdateChecker.h"
 #include "CHud.h"
 
 const char* XMENU_VERSION = "v0.0.1-alpha2";
@@ -27,6 +28,7 @@ const char* XMENU_AUTHOR = "鼠子(YuiNijika)";
 const char* XMENU_AUTHOR_TEST = "枫林、狂风晨、IIScar";
 const char* XMENU_URL = "https://gtamodx.com/mods/xmenu";
 const char* XMENU_GITHUB = "https://github.com/YuiNijika/XMenu";
+const char* XMENU_GITHUB_API = "https://api.github.com/repos/YuiNijika/XMenu/releases/latest";
 const char* XMENU_QQ_GROUP = "https://gtamodx.com/qqun";
 const char* XMENU_TECH_STACK = "C++ / DirectX 9 / Windows API";
 const char* XMENU_OPEN_SOURCE_LIBS = "Dear ImGui, kiero, MinHook, plugin-sdk";
@@ -52,6 +54,7 @@ namespace {
             Log::Info("游戏初始化事件触发，开始初始化功能模块");
             I18n::Init();
             Resources::InitData();  // 初始化游戏数据
+            UpdateChecker::Start(XMENU_GITHUB_API, XMENU_VERSION);
             GameLogic::Init();
             const bool hookReady = D3DHook::Init([]() {
                 Menu::Draw();

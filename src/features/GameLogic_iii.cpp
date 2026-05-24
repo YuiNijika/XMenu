@@ -291,7 +291,9 @@ void UnflipVehicle(CVehicle* vehicle) {
 
 void SetVehicleForwardSpeed(CVehicle* vehicle, float speed) {
     if (!vehicle) return;
-    plugin::Command<plugin::Commands::SET_CAR_FORWARD_SPEED>(CPools::GetVehicleRef(vehicle), speed);
+    const CVector forward = vehicle->GetForward();
+    const float velocity = speed / 50.0f;
+    vehicle->m_vecMoveSpeed = CVector(forward.x * velocity, forward.y * velocity, forward.z * velocity);
 }
 
 void SetVehicleSpeedLock(CVehicle* vehicle, bool enable, float speed) {

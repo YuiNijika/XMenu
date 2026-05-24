@@ -171,7 +171,8 @@ namespace {
             {"weapon.playerNotReady", (const char*)u8"玩家还没准备好，稍等进档后再用。"}, {"weapon.getAll", (const char*)u8"获取所有武器"}, {"weapon.dropWeapon", (const char*)u8"丢出当前武器"}, {"weapon.clearWeapons", (const char*)u8"清空武器"}, {"weapon.removeCurrent", (const char*)u8"移除当前武器"}, {"weapon.highDamage", (const char*)u8"高伤害"}, {"weapon.fastReload", (const char*)u8"快速换弹"}, {"weapon.infiniteAmmo", (const char*)u8"无限弹药"}, {"weapon.longRange", (const char*)u8"远射程"}, {"weapon.moveWhileAiming", (const char*)u8"瞄准时可移动"}, {"weapon.moveWhileFiring", (const char*)u8"开火时可移动"}, {"weapon.noSpread", (const char*)u8"零散射"}, {"weapon.rapidFire", (const char*)u8"快速连射"}, {"weapon.dualWield", (const char*)u8"双持"}, {"weapon.getWeapon", (const char*)u8"获取武器"}, {"weapon.ammo", (const char*)u8"弹药"}, {"weapon.typeId", (const char*)u8"武器类型 ID"}, {"weapon.modelId", (const char*)u8"武器模型 ID"}, {"weapon.getById", (const char*)u8"按 ID 获取"},
             {"teleport.insertCurrentCoordinates", (const char*)u8"插入当前坐标"}, {"teleport.quickMapTeleport", (const char*)u8"快速地图传送"}, {"teleport.allowUnderwaterLanding", (const char*)u8"允许水下落点"}, {"teleport.quickMarkerTeleport", (const char*)u8"标记点快捷传送"}, {"teleport.coordinates", (const char*)u8"坐标"}, {"teleport.toCoordinates", (const char*)u8"传送到坐标"}, {"teleport.byMapPosition", (const char*)u8"按地图位置传送"}, {"teleport.toMarker", (const char*)u8"传送到标记点"}, {"teleport.mapCenter", (const char*)u8"地图中心"}, {"teleport.moveForward5m", (const char*)u8"向前挪 5 米"}, {"teleport.customMapSize", (const char*)u8"自定义地图尺寸"}, {"teleport.customMapSizeHint", (const char*)u8"如果快速地图传送位置偏移，可以在这里调整地图宽高。默认值是 6000 x 6000。"}, {"teleport.width", (const char*)u8"宽度"}, {"teleport.height", (const char*)u8"高度"}, {"teleport.applyMapSize", (const char*)u8"应用地图尺寸"}, {"teleport.restoreDefault", (const char*)u8"恢复默认"}, {"teleport.locations", (const char*)u8"地点"}, {"teleport.locationName", (const char*)u8"地点名称"}, {"teleport.customLocation", (const char*)u8"自定义地点"}, {"teleport.locationCoordinates", (const char*)u8"地点坐标"}, {"teleport.addLocation", (const char*)u8"添加地点"},
             {"world.time", (const char*)u8"时间"}, {"world.hour", (const char*)u8"小时"}, {"world.minute", (const char*)u8"分钟"}, {"world.syncRealTime", (const char*)u8"同步现实时间"}, {"world.weather", (const char*)u8"天气"}, {"world.lockCurrentWeather", (const char*)u8"锁住当前天气"}, {"world.gameRules", (const char*)u8"游戏规则"}, {"world.disableReplay", (const char*)u8"禁用回放"}, {"world.disableCheats", (const char*)u8"禁用作弊码"}, {"world.fasterClock", (const char*)u8"加快时钟"}, {"world.freezeTime", (const char*)u8"冻结时间"}, {"world.disableForbiddenAreaWanted", (const char*)u8"禁止通缉区域"}, {"world.freePayNSpray", (const char*)u8"免费喷漆店"}, {"world.daysPassed", (const char*)u8"经过天数"}, {"world.setDays", (const char*)u8"设置天数"}, {"world.readDays", (const char*)u8"读取天数"}, {"world.gravity", (const char*)u8"重力"}, {"world.fpsLimit", (const char*)u8"FPS 限制"}, {"world.setFps", (const char*)u8"设置 FPS"}, {"world.readFps", (const char*)u8"读取 FPS"}, {"world.gameSpeed", (const char*)u8"游戏节奏"}, {"world.multiplier", (const char*)u8"倍率"}, {"world.restoreSpeed", (const char*)u8"恢复原速"}, {"weather.sunny", (const char*)u8"晴天"}, {"weather.cloudy", (const char*)u8"多云"}, {"weather.rainy", (const char*)u8"下雨"}, {"weather.foggy", (const char*)u8"起雾"},
-            {"about.version", (const char*)u8"版本：%s"}, {"about.author", (const char*)u8"作者：%s"}, {"about.testing", (const char*)u8"测试：%s"}, {"about.techStack", (const char*)u8"技术栈：%s"}, {"about.openSourceLibs", (const char*)u8"开源库：%s"}, {"about.notice1", (const char*)u8"1. 永久免费，禁止倒卖，禁止用于商业用途。"}, {"about.notice2", (const char*)u8"2. 遇到问题可以加群或前往项目主页反馈。"}, {"about.joinGroup", (const char*)u8"加群"}, {"about.projectPage", (const char*)u8"项目主页"}
+            {"about.version", (const char*)u8"版本：%s"}, {"about.author", (const char*)u8"作者：%s"}, {"about.testing", (const char*)u8"测试：%s"}, {"about.techStack", (const char*)u8"技术栈：%s"}, {"about.openSourceLibs", (const char*)u8"开源库：%s"}, {"about.notice1", (const char*)u8"1. 永久免费，禁止倒卖，禁止用于商业用途。"}, {"about.notice2", (const char*)u8"2. 遇到问题可以加群或前往项目主页反馈。"}, {"about.joinGroup", (const char*)u8"加群"}, {"about.projectPage", (const char*)u8"项目主页"},
+            {"update.availableTitle", (const char*)u8"发现新版本"}, {"update.availableMessage", (const char*)u8"当前版本：%s\n最新版本：%s\n请选择更新来源。"}, {"update.openGitHub", "GitHub"}, {"update.openGTAMODX", "GTAMODX"}
         };
 
         for (const auto& item : fallback) {
@@ -264,6 +265,22 @@ namespace I18n {
         case Language::Zh:
         default: return (const char*)u8"简体中文";
         }
+    }
+
+    const char* T(Language language, const char* key) {
+        const Dictionary& dictionary = dictionaries[LanguageIndex(language)];
+        const auto translated = dictionary.find(key);
+        if (translated != dictionary.end()) {
+            return translated->second.c_str();
+        }
+
+        const Dictionary& zh = dictionaries[LanguageIndex(Language::Zh)];
+        const auto fallback = zh.find(key);
+        if (fallback != zh.end()) {
+            return fallback->second.c_str();
+        }
+
+        return key;
     }
 
     const char* T(const char* key) {

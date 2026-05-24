@@ -36,9 +36,9 @@ namespace {
                 ImGui::SeparatorText(translatedCategory);
             }
 
-            const char* translatedName = I18n::T(vehicle.name.c_str());
+            const char* englishName = I18n::T(I18n::Language::En, vehicle.name.c_str());
             char buttonLabel[96];
-            std::snprintf(buttonLabel, sizeof(buttonLabel), "%s (%d)", translatedName, vehicle.id);
+            std::snprintf(buttonLabel, sizeof(buttonLabel), "%s (%d)", englishName, vehicle.id);
             if (UI::Button(buttonLabel, 3)) {
                 Controllers::Vehicle::Spawn(static_cast<unsigned int>(vehicle.id));
             }
