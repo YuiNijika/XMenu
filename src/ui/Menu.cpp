@@ -48,6 +48,11 @@ namespace {
     };
 
     Page activePage = Page::Player;
+    int configTransferScope = 1;
+    char configImportText[65536] = "";
+    char configStatus[256] = "";
+    bool openConfigImportPopup = false;
+    constexpr const char* ConfigImportPopupId = "ConfigImportTextPopup";
 
     const NavItem navItems[] = {
         {Page::Player, "tab.player", "player"},
@@ -65,6 +70,7 @@ namespace {
 
     void DrawSettings();
     void DrawConfigSettings();
+    void DrawConfigImportPopup();
     void DrawUpdateSettings();
     void DrawLogViewer();
     void DrawDebugSettings();
@@ -220,15 +226,7 @@ namespace {
     }
 
     void DrawConfigSettings() {
-        static char configPathInput[MAX_PATH] = "";
-        static char configStatus[128] = "";
-        static int configTransferScope = 0;
-        if (configPathInput[0] == '\0') {
-            std::snprintf(configPathInput, sizeof(configPathInput), "%s", AppConfig::GetConfigPath().c_str());
-        }
-
         ImGui::TextUnformatted(T("settings.config"));
-        ImGui::InputTextWithHint(T("settings.configPath"), "XMenu.json", configPathInput, sizeof(configPathInput));
         ImGui::TextDisabled(T("settings.defaultConfigPath"), AppConfig::GetConfigPath().c_str());
         ImGui::TextUnformatted(T("settings.transferScope"));
         ImGui::RadioButton(T("settings.transferAll"), &configTransferScope, 0);
@@ -240,17 +238,13 @@ namespace {
             : AppConfig::TransferScope::All;
 
         if (ImGui::Button(T("settings.importConfig"), ImVec2(130.0f, 0.0f))) {
-            if (AppConfig::ImportFrom(configPathInput, scope)) {
-                Resources::ReloadLocations();
-                std::snprintf(configStatus, sizeof(configStatus), "%s", configTransferScope == 1 ? T("settings.importPartialSuccess") : T("settings.importSuccess"));
-            } else {
-                std::snprintf(configStatus, sizeof(configStatus), "%s", T("settings.importFailed"));
-            }
+            configImportText[0] = '\0';
+            openConfigImportPopup = true;
         }
         ImGui::SameLine();
         if (ImGui::Button(T("settings.exportConfig"), ImVec2(130.0f, 0.0f))) {
-            if (AppConfig::ExportTo(configPathInput, scope)) {
-                std::snprintf(configStatus, sizeof(configStatus), "%s", configTransferScope == 1 ? T("settings.exportPartialSuccess") : T("settings.exportSuccess"));
+            if (AppConfig::ExportTo(AppConfig::GetConfigPath(), AppConfig::TransferScope::All)) {
+                std::snprintf(configStatus, sizeof(configStatus), "%s", T("settings.exportSuccess"));
             } else {
                 std::snprintf(configStatus, sizeof(configStatus), "%s", T("settings.exportFailed"));
             }
@@ -258,6 +252,40 @@ namespace {
 
         if (configStatus[0] != '\0') {
             ImGui::TextDisabled("%s", configStatus);
+        }
+    }
+
+    void DrawConfigImportPopup() {
+        char popupTitle[128] = {};
+        std::snprintf(popupTitle, sizeof(popupTitle), "%s###%s", T("settings.importTextTitle"), ConfigImportPopupId);
+
+        if (openConfigImportPopup) {
+            ImGui::OpenPopup(popupTitle);
+            openConfigImportPopup = false;
+        }
+
+        const AppConfig::TransferScope scope = configTransferScope == 1
+            ? AppConfig::TransferScope::CustomLocations
+            : AppConfig::TransferScope::All;
+
+        if (ImGui::BeginPopupModal(popupTitle, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::TextUnformatted(T("settings.importTextTitle"));
+            ImGui::TextUnformatted(T("settings.importTextHint"));
+            ImGui::InputTextMultiline("##ConfigImportText", configImportText, sizeof(configImportText), ImVec2(620.0f, 300.0f));
+            if (ImGui::Button(T("settings.importTextApply"), ImVec2(130.0f, 0.0f))) {
+                if (AppConfig::ImportFromText(configImportText, scope)) {
+                    Resources::ReloadLocations();
+                    std::snprintf(configStatus, sizeof(configStatus), "%s", configTransferScope == 1 ? T("settings.importPartialSuccess") : T("settings.importSuccess"));
+                    ImGui::CloseCurrentPopup();
+                } else {
+                    std::snprintf(configStatus, sizeof(configStatus), "%s", T("settings.importFailed"));
+                }
+            }
+            ImGui::SameLine();
+            if (ImGui::Button(T("settings.close"), ImVec2(130.0f, 0.0f))) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
         }
     }
 
@@ -453,6 +481,7 @@ void Menu::Draw() {
         ImGui::EndChild();
 
         DrawUpdateDialog();
+        DrawConfigImportPopup();
     }
     ImGui::End();
 

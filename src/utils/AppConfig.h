@@ -21,6 +21,7 @@ namespace AppConfig {
     void Save();
     std::string GetConfigPath();
     bool ImportFrom(const std::string& path, TransferScope scope = TransferScope::All);
+    bool ImportFromText(const std::string& text, TransferScope scope = TransferScope::All);
     bool ExportTo(const std::string& path, TransferScope scope = TransferScope::All);
 
     const Hotkey& GetMenuHotkey();

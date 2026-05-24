@@ -431,6 +431,11 @@ bool IsValidVehicleModel(unsigned int modelId) {
     }
 
     const int model = static_cast<int>(modelId);
+    if (model == 217) {
+        Log::Warn("VC 载具生成被拒绝：Maverick(217) 会导致游戏崩溃，请使用 VCN Maverick(218)");
+        return false;
+    }
+
     return model >= 130 && model <= 236 && CModelInfo::IsVehicleModel(model);
 }
 

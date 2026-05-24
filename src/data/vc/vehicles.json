@@ -30,7 +30,6 @@
     {
       "category": "heli",
       "entries": [
-        {"name": "vehicle.maverick", "id": 217},
         {"name": "vehicle.vcnmav", "id": 218}
       ]
     },

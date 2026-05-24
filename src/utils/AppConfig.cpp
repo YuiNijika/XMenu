@@ -341,7 +341,7 @@ namespace {
         customLocations.insert(customLocations.end(), locations.begin(), locations.end());
     }
 
-    void WriteLocationArray(std::ofstream& file, const char* key, const std::vector<DataManager::LocationData>& locations, bool trailingComma) {
+    void WriteLocationArray(std::ostream& file, const char* key, const std::vector<DataManager::LocationData>& locations, bool trailingComma) {
         file << "  \"" << key << "\": [\n";
         for (std::size_t i = 0; i < locations.size(); ++i) {
             const DataManager::LocationData& location = locations[i];
@@ -370,7 +370,7 @@ namespace {
         LoadLocationsFromArray(legacyLocations, customLocations);
     }
 
-    bool SaveToPath(const std::string& path, const JsonLoader::JsonValue* sourceRoot = nullptr, AppConfig::TransferScope scope = AppConfig::TransferScope::All) {
+    bool WriteConfigData(std::ostream& file, const JsonLoader::JsonValue* sourceRoot = nullptr, AppConfig::TransferScope scope = AppConfig::TransferScope::All) {
         std::vector<DataManager::LocationData> iiiLocations;
         std::vector<DataManager::LocationData> vcLocations;
         std::vector<DataManager::LocationData> saLocations;
@@ -391,17 +391,11 @@ namespace {
             saLocations = customLocations;
         }
 
-        std::ofstream file(path, std::ios::binary | std::ios::trunc);
-        if (!file.is_open()) {
-            Log::Warn(std::string("配置文件写入失败: ") + path);
-            return false;
-        }
-
         file << "{\n";
         if (scope == AppConfig::TransferScope::CustomLocations) {
             WriteLocationArray(file, currentGame.c_str(), currentGame == "iii" ? iiiLocations : currentGame == "vc" ? vcLocations : saLocations, false);
             file << "}\n";
-            return true;
+            return !file.fail();
         }
 
         file << "  \"XMenu\": {\n";
@@ -422,7 +416,19 @@ namespace {
         WriteLocationArray(file, "vc", vcLocations, true);
         WriteLocationArray(file, "sa", saLocations, false);
         file << "}\n";
-        return true;
+        return !file.fail();
+    }
+
+    bool SaveToPath(const std::string& path, const JsonLoader::JsonValue* sourceRoot = nullptr, AppConfig::TransferScope scope = AppConfig::TransferScope::All) {
+        const JsonLoader::JsonValue existingRoot = sourceRoot ? *sourceRoot : JsonLoader::LoadFromFile(ConfigPath());
+
+        std::ofstream file(path, std::ios::binary | std::ios::trunc);
+        if (!file.is_open()) {
+            Log::Warn(std::string("配置文件写入失败: ") + path);
+            return false;
+        }
+
+        return WriteConfigData(file, &existingRoot, scope);
     }
 
     void ApplyMenuKey(const std::string& keyName) {
@@ -466,10 +472,9 @@ namespace AppConfig {
         return ConfigPath();
     }
 
-    bool ImportFrom(const std::string& path, TransferScope scope) {
-        const JsonLoader::JsonValue root = JsonLoader::LoadFromFile(path);
+    bool ApplyImportRoot(const JsonLoader::JsonValue& root, TransferScope scope, const std::string& sourceLabel) {
         if (root.type != JsonLoader::JsonValue::OBJECT) {
-            Log::Warn(std::string("配置导入失败，文件无效: ") + path);
+            Log::Warn(std::string("配置导入失败，内容无效: ") + sourceLabel);
             return false;
         }
 
@@ -477,7 +482,7 @@ namespace AppConfig {
             const std::vector<DataManager::LocationData> importedLocations = ReadCurrentGameLocations(root);
             AppendLocations(importedLocations);
             SaveToPath(ConfigPath());
-            Log::Info(std::string("自定义地点导入完成: ") + path + "，追加数量=" + std::to_string(importedLocations.size()));
+            Log::Info(std::string("自定义地点导入完成: ") + sourceLabel + "，追加数量=" + std::to_string(importedLocations.size()));
             return true;
         }
 
@@ -485,8 +490,18 @@ namespace AppConfig {
         ApplyMenuKey(DefaultMenuKey);
         LoadConfigData(root);
         SaveToPath(ConfigPath(), &root);
-        Log::Info(std::string("配置导入完成: ") + path);
+        Log::Info(std::string("配置导入完成: ") + sourceLabel);
         return true;
+    }
+
+    bool ImportFrom(const std::string& path, TransferScope scope) {
+        const JsonLoader::JsonValue root = JsonLoader::LoadFromFile(path);
+        return ApplyImportRoot(root, scope, path);
+    }
+
+    bool ImportFromText(const std::string& text, TransferScope scope) {
+        const JsonLoader::JsonValue root = JsonLoader::Parse(text);
+        return ApplyImportRoot(root, scope, "text");
     }
 
     bool ExportTo(const std::string& path, TransferScope scope) {
