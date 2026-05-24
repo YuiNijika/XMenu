@@ -23,19 +23,13 @@ namespace {
     std::terminate_handler previousTerminateHandler = nullptr;
     bool crashHandlersInstalled = false;
 
-    std::string ModuleDirectory() {
-        HMODULE module = nullptr;
-        GetModuleHandleExA(
-            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-            reinterpret_cast<LPCSTR>(&ModuleDirectory),
-            &module
-        );
+    std::string DirectoryFromModule(HMODULE module) {
+        if (!module) {
+            return "";
+        }
 
         char path[MAX_PATH] = {};
-        DWORD size = 0;
-        if (module) {
-            size = GetModuleFileNameA(module, path, MAX_PATH);
-        }
+        const DWORD size = GetModuleFileNameA(module, path, MAX_PATH);
         if (size == 0) {
             return "";
         }
@@ -46,6 +40,22 @@ namespace {
             return directory.substr(0, slash + 1);
         }
         return "";
+    }
+
+    std::string ModuleDirectory() {
+        const std::string asiDirectory = DirectoryFromModule(GetModuleHandleA("XMenu.asi"));
+        if (!asiDirectory.empty()) {
+            return asiDirectory;
+        }
+
+        HMODULE module = nullptr;
+        GetModuleHandleExA(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            reinterpret_cast<LPCSTR>(&ModuleDirectory),
+            &module
+        );
+
+        return DirectoryFromModule(module);
     }
 
     std::string LogPath() {
