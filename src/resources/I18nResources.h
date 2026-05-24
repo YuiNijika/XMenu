@@ -10,6 +10,7 @@
 // game data resource IDs
 #define IDR_DATA_SA_MAPS 301
 #define IDR_DATA_SA_WEAPONS 302
+#define IDR_DATA_SA_VEHICLES 303
 #define IDR_DATA_VC_MAPS 311
 #define IDR_DATA_VC_WEAPONS 312
 #define IDR_DATA_VC_VEHICLES 313

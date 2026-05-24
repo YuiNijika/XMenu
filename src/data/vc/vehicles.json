@@ -6,6 +6,7 @@
         {"name": "vehicle.rio", "id": 136},
         {"name": "vehicle.predator", "id": 160},
         {"name": "vehicle.squalo", "id": 176},
+        {"name": "vehicle.seaspar", "id": 177},
         {"name": "vehicle.speeder", "id": 182},
         {"name": "vehicle.reefer", "id": 183},
         {"name": "vehicle.tropic", "id": 184},
@@ -30,7 +31,11 @@
     {
       "category": "heli",
       "entries": [
-        {"name": "vehicle.vcnmav", "id": 218}
+        {"name": "vehicle.hunter", "id": 155},
+        {"name": "vehicle.chopper", "id": 165},
+        {"name": "vehicle.sparrow", "id": 199},
+        {"name": "vehicle.vcnmav", "id": 218},
+        {"name": "vehicle.polmav", "id": 227}
       ]
     },
     {
@@ -42,15 +47,22 @@
         {"name": "vehicle.zebra", "id": 188},
         {"name": "vehicle.bus", "id": 161},
         {"name": "vehicle.coach", "id": 167},
-        {"name": "vehicle.kaufman", "id": 216}
+        {"name": "vehicle.kaufman", "id": 216},
+        {"name": "vehicle.baggage", "id": 215}
       ]
     },
     {
       "category": "worker",
       "entries": [
+        {"name": "vehicle.linerun", "id": 133},
+        {"name": "vehicle.trash", "id": 138},
         {"name": "vehicle.pony", "id": 143},
         {"name": "vehicle.mule", "id": 144},
         {"name": "vehicle.bobcat", "id": 152},
+        {"name": "vehicle.barracks", "id": 163},
+        {"name": "vehicle.rumpo", "id": 170},
+        {"name": "vehicle.packer", "id": 173},
+        {"name": "vehicle.flatbed", "id": 185},
         {"name": "vehicle.yankee", "id": 186},
         {"name": "vehicle.walton", "id": 208},
         {"name": "vehicle.boxville", "id": 228},
@@ -60,55 +72,88 @@
     {
       "category": "sport",
       "entries": [
-        {"name": "vehicle.landstalker", "id": 130},
-        {"name": "vehicle.idaho", "id": 131},
         {"name": "vehicle.stinger", "id": 132},
-        {"name": "vehicle.hummer", "id": 133},
-        {"name": "vehicle.glendale", "id": 134},
-        {"name": "vehicle.oceanic", "id": 135},
-        {"name": "vehicle.comet", "id": 137},
-        {"name": "vehicle.deluxo", "id": 138},
-        {"name": "vehicle.infernus", "id": 139},
-        {"name": "vehicle.cheetah", "id": 140},
-        {"name": "vehicle.banshee", "id": 141}
+        {"name": "vehicle.infernus", "id": 141},
+        {"name": "vehicle.cheetah", "id": 145},
+        {"name": "vehicle.banshee", "id": 159},
+        {"name": "vehicle.bfinject", "id": 154},
+        {"name": "vehicle.hermes", "id": 204},
+        {"name": "vehicle.sabre", "id": 205},
+        {"name": "vehicle.sabretur", "id": 206},
+        {"name": "vehicle.phoenix", "id": 207},
+        {"name": "vehicle.comet", "id": 210},
+        {"name": "vehicle.deluxo", "id": 211},
+        {"name": "vehicle.hotring", "id": 224},
+        {"name": "vehicle.sandking", "id": 225},
+        {"name": "vehicle.hotrina", "id": 232},
+        {"name": "vehicle.hotrinb", "id": 233},
+        {"name": "vehicle.bloodra", "id": 234},
+        {"name": "vehicle.bloodrb", "id": 235},
+        {"name": "vehicle.vicechee", "id": 236}
       ]
     },
     {
       "category": "sedan",
       "entries": [
-        {"name": "vehicle.perennial", "id": 142},
-        {"name": "vehicle.sentinel", "id": 145},
-        {"name": "vehicle.admiral", "id": 146},
-        {"name": "vehicle.greenwood", "id": 147},
-        {"name": "vehicle.voodoo", "id": 148},
+        {"name": "vehicle.landstalker", "id": 130},
+        {"name": "vehicle.idaho", "id": 131},
+        {"name": "vehicle.perennial", "id": 134},
+        {"name": "vehicle.sentinel", "id": 135},
+        {"name": "vehicle.stretch", "id": 139},
+        {"name": "vehicle.manana", "id": 140},
+        {"name": "vehicle.voodoo", "id": 142},
+        {"name": "vehicle.moonbeam", "id": 148},
         {"name": "vehicle.esperanto", "id": 149},
         {"name": "vehicle.washington", "id": 151},
-        {"name": "vehicle.regina", "id": 153}
+        {"name": "vehicle.stallion", "id": 169},
+        {"name": "vehicle.sentxs", "id": 174},
+        {"name": "vehicle.admiral", "id": 175},
+        {"name": "vehicle.glendale", "id": 196},
+        {"name": "vehicle.oceanic", "id": 197},
+        {"name": "vehicle.regina", "id": 209},
+        {"name": "vehicle.burrito", "id": 212},
+        {"name": "vehicle.rancher", "id": 219},
+        {"name": "vehicle.virgo", "id": 221},
+        {"name": "vehicle.greenwood", "id": 222},
+        {"name": "vehicle.blistac", "id": 226},
+        {"name": "vehicle.mesa", "id": 230}
       ]
     },
     {
       "category": "emergency",
       "entries": [
-        {"name": "vehicle.police", "id": 154},
-        {"name": "vehicle.enforcer", "id": 155},
-        {"name": "vehicle.firetruk", "id": 156},
-        {"name": "vehicle.ambulan", "id": 157},
-        {"name": "vehicle.fbirancher", "id": 158},
-        {"name": "vehicle.rhino", "id": 159}
+        {"name": "vehicle.firetruk", "id": 137},
+        {"name": "vehicle.ambulan", "id": 146},
+        {"name": "vehicle.fbicar", "id": 147},
+        {"name": "vehicle.police", "id": 156},
+        {"name": "vehicle.enforcer", "id": 157},
+        {"name": "vehicle.securicar", "id": 158},
+        {"name": "vehicle.rhino", "id": 162},
+        {"name": "vehicle.fbirancher", "id": 220}
       ]
     },
     {
-      "category": "unique",
+      "category": "rc",
       "entries": [
-        {"name": "vehicle.cuban", "id": 220},
-        {"name": "vehicle.cubanj", "id": 221},
-        {"name": "vehicle.bloodra", "id": 222},
-        {"name": "vehicle.topfun", "id": 224},
-        {"name": "vehicle.phoenix", "id": 225},
-        {"name": "vehicle.hermes", "id": 226},
-        {"name": "vehicle.sabre", "id": 227},
-        {"name": "vehicle.virgo", "id": 230},
-        {"name": "vehicle.gangburrito", "id": 231}
+        {"name": "vehicle.rcbandit", "id": 171},
+        {"name": "vehicle.rcbaron", "id": 194},
+        {"name": "vehicle.rcraider", "id": 195},
+        {"name": "vehicle.rcgoblin", "id": 231}
+      ]
+    },
+    {
+      "category": "special",
+      "entries": [
+        {"name": "vehicle.cuban", "id": 164},
+        {"name": "vehicle.romero", "id": 172},
+        {"name": "vehicle.gangburrito", "id": 179},
+        {"name": "vehicle.airtrain", "id": 180},
+        {"name": "vehicle.deaddodo", "id": 181},
+        {"name": "vehicle.topfun", "id": 189},
+        {"name": "vehicle.patriot", "id": 200},
+        {"name": "vehicle.lovefist", "id": 201},
+        {"name": "vehicle.spand", "id": 213},
+        {"name": "vehicle.rancher", "id": 219}
       ]
     }
   ]

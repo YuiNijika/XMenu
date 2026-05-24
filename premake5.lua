@@ -94,6 +94,7 @@ function createPayloadProject(projectID)
             "src/data/i18n/ru.json",
             "src/data/sa/maps.json",
             "src/data/sa/weapons.json",
+            "src/data/sa/vehicles.json",
             "src/data/vc/maps.json",
             "src/data/vc/weapons.json",
             "src/data/vc/vehicles.json",
