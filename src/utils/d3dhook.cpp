@@ -346,17 +346,20 @@ void D3DHook::MaintainInputState() {
 }
 
 LRESULT __stdcall D3DHook::hkWndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    if (uMsg == WM_KILLFOCUS || uMsg == WM_CANCELMODE || uMsg == WM_CAPTURECHANGED || uMsg == WM_ACTIVATE || uMsg == WM_ACTIVATEAPP) {
+    if (uMsg == WM_KILLFOCUS || uMsg == WM_CANCELMODE || uMsg == WM_ACTIVATE || uMsg == WM_ACTIVATEAPP) {
         const bool inactive =
             uMsg == WM_KILLFOCUS ||
             uMsg == WM_CANCELMODE ||
-            uMsg == WM_CAPTURECHANGED ||
             (uMsg == WM_ACTIVATE && LOWORD(wParam) == WA_INACTIVE) ||
             (uMsg == WM_ACTIVATEAPP && wParam == FALSE);
 
         if (inactive) {
             SetMenuVisible(false);
         }
+    }
+
+    if (uMsg == WM_CAPTURECHANGED) {
+        ClipCursor(nullptr);
     }
 
     if (menuVisible) {

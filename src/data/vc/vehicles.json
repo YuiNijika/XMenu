@@ -148,8 +148,6 @@
         {"name": "vehicle.cuban", "id": 164},
         {"name": "vehicle.romero", "id": 172},
         {"name": "vehicle.gangburrito", "id": 179},
-        {"name": "vehicle.airtrain", "id": 180},
-        {"name": "vehicle.deaddodo", "id": 181},
         {"name": "vehicle.topfun", "id": 189},
         {"name": "vehicle.patriot", "id": 200},
         {"name": "vehicle.lovefist", "id": 201},

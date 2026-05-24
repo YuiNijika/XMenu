@@ -74,8 +74,7 @@
         {"name": "vehicle.baggage", "id": 485},
         {"name": "vehicle.tram", "id": 449},
         {"name": "vehicle.freight", "id": 537},
-        {"name": "vehicle.streak", "id": 538},
-        {"name": "vehicle.streakc", "id": 570}
+        {"name": "vehicle.streak", "id": 538}
       ]
     },
     {
@@ -111,8 +110,7 @@
         {"name": "vehicle.dft30", "id": 578},
         {"name": "vehicle.newsvan", "id": 582},
         {"name": "vehicle.mower", "id": 572},
-        {"name": "vehicle.sweeper", "id": 574},
-        {"name": "vehicle.freibox", "id": 590}
+        {"name": "vehicle.sweeper", "id": 574}
       ]
     },
     {
@@ -254,7 +252,6 @@
       "entries": [
         {"name": "vehicle.topfun", "id": 459},
         {"name": "vehicle.quad", "id": 471},
-        {"name": "vehicle.freiflat", "id": 569},
         {"name": "vehicle.boxburg", "id": 609}
       ]
     }

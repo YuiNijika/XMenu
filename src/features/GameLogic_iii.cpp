@@ -437,6 +437,20 @@ bool IsValidVehicleModel(unsigned int modelId) {
     }
 
     const int model = static_cast<int>(modelId);
+    switch (model) {
+    case 124: // Train
+    case 125: // Chopper
+    case 126: // Dodo
+    case 140: // Airtrain
+    case 141: // Dead Dodo
+    case 147: // Escape helicopter
+    case 150: // Ghost
+        Log::Warn("III 载具生成被拒绝：模型 ID " + std::to_string(model) + " 不适合通过普通刷车入口生成");
+        return false;
+    default:
+        break;
+    }
+
     return model >= 90 && model <= 150 && CModelInfo::IsVehicleModel(model);
 }
 

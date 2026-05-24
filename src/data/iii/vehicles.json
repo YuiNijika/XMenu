@@ -4,7 +4,6 @@
       "category": "boat",
       "entries": [
         {"name": "vehicle.predator", "id": 120},
-        {"name": "vehicle.deaddodo", "id": 141},
         {"name": "vehicle.speeder", "id": 142},
         {"name": "vehicle.reefer", "id": 143}
       ]
@@ -81,9 +80,6 @@
     {
       "category": "special",
       "entries": [
-        {"name": "vehicle.train", "id": 124},
-        {"name": "vehicle.chopper", "id": 125},
-        {"name": "vehicle.dodo", "id": 126},
         {"name": "vehicle.bellyup", "id": 132},
         {"name": "vehicle.mrwongs", "id": 133},
         {"name": "vehicle.mafia", "id": 134},
@@ -92,9 +88,7 @@
         {"name": "vehicle.diablo", "id": 137},
         {"name": "vehicle.columbian", "id": 138},
         {"name": "vehicle.hoods", "id": 139},
-        {"name": "vehicle.airtrain", "id": 140},
         {"name": "vehicle.panlantic", "id": 144},
-        {"name": "vehicle.escape", "id": 147},
         {"name": "vehicle.borgnine", "id": 148},
         {"name": "vehicle.toyz", "id": 149}
       ]

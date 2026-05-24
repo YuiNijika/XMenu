@@ -448,6 +448,25 @@ bool IsValidVehicleModel(unsigned int modelId) {
     }
 
     const int model = static_cast<int>(modelId);
+    switch (model) {
+    case 435: // Articulated trailer
+    case 450: // Articulated trailer
+    case 569: // Freight flatbed carriage
+    case 570: // Streak carriage
+    case 584: // Petrol trailer
+    case 590: // Freight boxcar
+    case 591: // Articulated trailer
+    case 606: // Baggage box
+    case 607: // Baggage box
+    case 608: // Tug stairs
+    case 610: // Farm trailer
+    case 611: // Utility trailer
+        Log::Warn("SA 载具生成被拒绝：模型 ID " + std::to_string(model) + " 不适合通过普通刷车入口生成");
+        return false;
+    default:
+        break;
+    }
+
     return CModelInfo::IsVehicleModel(model) && !CModelInfo::IsTrailerModel(model);
 }
 
