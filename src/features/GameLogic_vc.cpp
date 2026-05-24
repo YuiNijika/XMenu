@@ -425,6 +425,25 @@ void BlowUpAllVehicles() {
     }
 }
 
+void DeleteVehicle(CVehicle* vehicle) {
+    if (!vehicle) return;
+
+    CPlayerPed* player = FindPlayerPed();
+    if (player) {
+        const int hplayer = CPools::GetPedRef(player);
+        if (plugin::Command<plugin::Commands::IS_CHAR_IN_ANY_CAR>(hplayer) && player->m_pVehicle == vehicle) {
+            Log::Warn("VC 载具清理跳过：玩家正在使用目标载具");
+            return;
+        }
+    }
+
+    const int hveh = CPools::GetVehicleRef(vehicle);
+    if (hveh == 0) return;
+
+    plugin::Command<plugin::Commands::MARK_CAR_AS_NO_LONGER_NEEDED>(hveh);
+    plugin::Command<plugin::Commands::DELETE_CAR>(hveh);
+}
+
 bool IsAircraftModel(int model) {
     return CModelInfo::IsHeliModel(model) || CModelInfo::IsPlaneModel(model)
         || model == 155 || model == 165 || model == 177 || model == 180 || model == 181

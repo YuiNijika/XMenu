@@ -87,6 +87,7 @@ namespace GameLogic {
     void BlowUpAllVehicles();
     bool IsValidVehicleModel(unsigned int modelId);
     CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options);
+    void DeleteVehicle(CVehicle* vehicle);
     
     // 传送
     void TeleportPlayer(CVector pos, int interiorID = 0);

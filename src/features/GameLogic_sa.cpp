@@ -434,6 +434,30 @@ void BlowUpAllVehicles() {
     }
 }
 
+void DeleteVehicle(CVehicle* vehicle) {
+    if (!vehicle) return;
+
+    CPlayerPed* player = FindPlayerPed();
+    if (player) {
+        const int hplayer = CPools::GetPedRef(player);
+        if (plugin::Command<plugin::Commands::IS_CHAR_IN_ANY_CAR>(hplayer) && player->m_pVehicle == vehicle) {
+            Log::Warn("SA 载具清理跳过：玩家正在使用目标载具");
+            return;
+        }
+    }
+
+    const int hveh = CPools::GetVehicleRef(vehicle);
+    if (hveh == 0) return;
+
+    if (CModelInfo::IsTrainModel(vehicle->m_nModelIndex)) {
+        plugin::Command<plugin::Commands::MARK_MISSION_TRAIN_AS_NO_LONGER_NEEDED>(hveh);
+        plugin::Command<plugin::Commands::DELETE_MISSION_TRAIN>(hveh);
+    } else {
+        plugin::Command<plugin::Commands::MARK_CAR_AS_NO_LONGER_NEEDED>(hveh);
+        plugin::Command<plugin::Commands::DELETE_CAR>(hveh);
+    }
+}
+
 bool IsAircraftModel(int model) {
     return CModelInfo::IsHeliModel(model) || CModelInfo::IsPlaneModel(model)
         || model == 417 || model == 425 || model == 447 || model == 460 || model == 476
@@ -509,9 +533,9 @@ CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options)
             plugin::Command<plugin::Commands::GET_CAR_SPEED>(hveh, &speed);
             plugin::Command<plugin::Commands::WARP_CHAR_FROM_CAR_TO_COORD>(hplayer, pos.x, pos.y, pos.z);
             if (CModelInfo::IsTrainModel(currentVehicle->m_nModelIndex)) {
-                plugin::Command<plugin::Commands::DELETE_MISSION_TRAIN>(hveh);
+                plugin::Command<plugin::Commands::MARK_MISSION_TRAIN_AS_NO_LONGER_NEEDED>(hveh);
             } else {
-                plugin::Command<plugin::Commands::DELETE_CAR>(hveh);
+                plugin::Command<plugin::Commands::MARK_CAR_AS_NO_LONGER_NEEDED>(hveh);
             }
         }
     }

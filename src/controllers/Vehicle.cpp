@@ -18,12 +18,16 @@ namespace {
     GameLogic::ProofState savedVehicleProofs;
     bool hasSavedVehicleProofs = false;
     bool spawnInProgress = false;
+    CVehicle* trackedSpawnedVehicle = nullptr;
+    CVehicle* pendingCleanupVehicle = nullptr;
+    DWORD pendingCleanupReadyTick = 0;
     DWORD spawnWindowStartTick = 0;
     unsigned int spawnWindowCount = 0;
     DWORD lastLimitMessageTick = 0;
     constexpr DWORD SpawnRateWindowMs = 3000;
     constexpr unsigned int MaxSpawnsPerWindow = 2;
     constexpr DWORD LimitMessageCooldownMs = 1000;
+    constexpr DWORD SpawnedVehicleCleanupDelayMs = 1500;
 
     GameLogic::SpawnVehicleOptions GetCurrentSpawnOptions() {
         GameLogic::SpawnVehicleOptions options;
@@ -61,6 +65,78 @@ namespace {
         return true;
     }
 
+    bool ExecuteSpawnNow(unsigned int modelId, const GameLogic::SpawnVehicleOptions& options);
+
+    bool IsVehicleInPool(CVehicle* vehicle) {
+        if (!vehicle) {
+            return false;
+        }
+
+        for (CVehicle* poolVehicle : CPools::ms_pVehiclePool) {
+            if (poolVehicle == vehicle) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool IsPlayerUsingVehicle(CVehicle* vehicle) {
+        if (!vehicle || !IsVehicleInPool(vehicle)) {
+            return false;
+        }
+
+        CPlayerPed* player = FindPlayerPed();
+        if (!player) {
+            return false;
+        }
+
+        const int hplayer = CPools::GetPedRef(player);
+        return plugin::Command<plugin::Commands::IS_CHAR_IN_ANY_CAR>(hplayer) && player->m_pVehicle == vehicle;
+    }
+
+    void TrackSpawnedVehicle(CVehicle* vehicle) {
+        if (!vehicle || !IsVehicleInPool(vehicle)) {
+            return;
+        }
+
+        if (trackedSpawnedVehicle && trackedSpawnedVehicle != vehicle && IsVehicleInPool(trackedSpawnedVehicle)) {
+            pendingCleanupVehicle = trackedSpawnedVehicle;
+            pendingCleanupReadyTick = GetTickCount() + SpawnedVehicleCleanupDelayMs;
+            Log::Info("旧 XMenu 载具进入延迟清理");
+        }
+
+        trackedSpawnedVehicle = vehicle;
+        Log::Info("已追踪 XMenu 生成载具");
+    }
+
+    void ProcessSpawnedVehicleCleanup() {
+        if (!pendingCleanupVehicle) {
+            return;
+        }
+
+        if (!IsVehicleInPool(pendingCleanupVehicle)) {
+            pendingCleanupVehicle = nullptr;
+            pendingCleanupReadyTick = 0;
+            return;
+        }
+
+        const DWORD now = GetTickCount();
+        if (pendingCleanupReadyTick != 0 && now < pendingCleanupReadyTick) {
+            return;
+        }
+
+        if (IsPlayerUsingVehicle(pendingCleanupVehicle)) {
+            pendingCleanupReadyTick = now + SpawnedVehicleCleanupDelayMs;
+            Log::Warn("跳过清理旧 XMenu 载具：玩家正在使用");
+            return;
+        }
+
+        GameLogic::DeleteVehicle(pendingCleanupVehicle);
+        Log::Info("旧 XMenu 载具已清理");
+        pendingCleanupVehicle = nullptr;
+        pendingCleanupReadyTick = 0;
+    }
+
     bool ExecuteSpawnNow(unsigned int modelId, const GameLogic::SpawnVehicleOptions& options) {
         if (spawnInProgress) {
             Log::Warn("载具生成被拒绝：已有生成流程正在执行，模型 ID " + std::to_string(modelId));
@@ -81,22 +157,13 @@ namespace {
             return false;
         }
 
-        const bool ok = GameLogic::SpawnVehicle(modelId, options) != nullptr;
+        CVehicle* spawnedVehicle = GameLogic::SpawnVehicle(modelId, options);
+        const bool ok = spawnedVehicle != nullptr;
+        if (ok) {
+            TrackSpawnedVehicle(spawnedVehicle);
+        }
         spawnInProgress = false;
         return ok;
-    }
-
-    bool IsVehicleInPool(CVehicle* vehicle) {
-        if (!vehicle) {
-            return false;
-        }
-
-        for (CVehicle* poolVehicle : CPools::ms_pVehiclePool) {
-            if (poolVehicle == vehicle) {
-                return true;
-            }
-        }
-        return false;
     }
 
     void RestoreVehicleProofs() {
@@ -191,6 +258,8 @@ namespace Controllers::Vehicle {
     }
 
     void Process() {
+        ProcessSpawnedVehicleCleanup();
+
         CVehicle* vehicle = GetCurrentVehicle();
         ProcessNoDamage(vehicle);
 
