@@ -1,5 +1,5 @@
 {
-  "window.title": "XMenu %s 作者：%s - GTAMODX",
+  "window.title": "XMenu | 作者：%s - GTAMODX",
   "tab.player": "プレイヤー",
   "tab.vehicle": "車両",
   "tab.teleport": "テレポート",
@@ -233,6 +233,10 @@
   "update.availableMessage": "現在のバージョン：%s\n最新バージョン：%s\n更新元を選択してください。",
   "update.openGitHub": "GitHub",
   "update.openGTAMODX": "GTAMODX",
+  "status.language": "言語",
+  "status.localVersion": "ローカル：%s",
+  "status.remoteVersion": "リモート：%s",
+  "status.remoteUnknown": "不明",
   "teleport.category.hospital": "病院",
   "teleport.category.police": "警察署",
   "teleport.category.safehouse": "セーフハウス",

@@ -63,6 +63,7 @@ namespace {
     void DrawSettings();
     void DrawAbout();
     void DrawUpdateDialog();
+    void DrawVersionStatus();
 
     void DrawPageHeader(const char* titleKey) {
         ImGui::TextUnformatted(T(titleKey));
@@ -70,9 +71,28 @@ namespace {
         ImGui::Spacing();
     }
 
+    void DrawVersionStatus() {
+        const UpdateChecker::UpdateInfo info = UpdateChecker::GetUpdateInfo();
+        const char* remoteVersion = info.latestVersion.empty() ? T("status.remoteUnknown") : info.latestVersion.c_str();
+
+        ImVec4 versionColor = ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
+        if (info.status == UpdateChecker::VersionStatus::Equal) {
+            versionColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+        } else if (info.status == UpdateChecker::VersionStatus::LocalNewer) {
+            versionColor = ImVec4(1.0f, 0.30f, 0.25f, 1.0f);
+        } else if (info.status == UpdateChecker::VersionStatus::RemoteNewer) {
+            versionColor = ImVec4(1.0f, 0.82f, 0.20f, 1.0f);
+        }
+
+        ImGui::TextDisabled("%s: %s", T("status.language"), I18n::GetLanguageName(I18n::GetLanguage()));
+        ImGui::PushStyleColor(ImGuiCol_Text, versionColor);
+        ImGui::TextWrapped(T("status.localVersion"), XMENU_VERSION);
+        ImGui::TextWrapped(T("status.remoteVersion"), remoteVersion);
+        ImGui::PopStyleColor();
+    }
+
     void DrawNavigation() {
         ImGui::TextUnformatted("XMenu");
-        ImGui::TextDisabled("%s", XMENU_VERSION);
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
@@ -86,9 +106,9 @@ namespace {
             }
         }
 
-        ImGui::SetCursorPosY(ImGui::GetWindowHeight() - 42.0f);
+        ImGui::SetCursorPosY(ImGui::GetWindowHeight() - 86.0f);
         ImGui::Separator();
-        ImGui::TextDisabled("%s", I18n::GetLanguageName(I18n::GetLanguage()));
+        DrawVersionStatus();
     }
 
     void DrawActivePage() {
@@ -206,8 +226,9 @@ void Menu::Draw() {
     bool menuVisible = D3DHook::IsMenuVisible();
     char windowTitle[160] = {};
 
-    std::snprintf(windowTitle, sizeof(windowTitle), T("window.title"), XMENU_VERSION, XMENU_AUTHOR);
-    std::snprintf(windowTitle + std::strlen(windowTitle), sizeof(windowTitle) - std::strlen(windowTitle), "###XMenuMainWindow");
+    char visibleTitle[128] = {};
+    std::snprintf(visibleTitle, sizeof(visibleTitle), T("window.title"), XMENU_AUTHOR);
+    std::snprintf(windowTitle, sizeof(windowTitle), "%s###XMenuMainWindow", visibleTitle);
 
     ImGui::SetNextWindowSize(ImVec2(780.0f, 520.0f), ImGuiCond_FirstUseEver);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);

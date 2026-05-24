@@ -1,5 +1,5 @@
 {
-  "window.title": "XMenu %s Автор: %s - GTAMODX",
+  "window.title": "XMenu | Автор: %s - GTAMODX",
   "tab.player": "Игрок",
   "tab.vehicle": "Транспорт",
   "tab.teleport": "Телепорт",
@@ -233,6 +233,10 @@
   "update.availableMessage": "Текущая версия: %s\nПоследняя версия: %s\nВыберите источник обновления.",
   "update.openGitHub": "GitHub",
   "update.openGTAMODX": "GTAMODX",
+  "status.language": "Язык",
+  "status.localVersion": "Локальная: %s",
+  "status.remoteVersion": "Удаленная: %s",
+  "status.remoteUnknown": "Неизвестно",
   "teleport.category.hospital": "Больницы",
   "teleport.category.police": "Полицейские участки",
   "teleport.category.safehouse": "Убежища",

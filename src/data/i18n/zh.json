@@ -1,5 +1,5 @@
 {
-  "window.title": "XMenu %s 作者：%s - GTAMODX",
+  "window.title": "XMenu | 作者：%s - GTAMODX",
   "tab.player": "玩家",
   "tab.vehicle": "载具",
   "tab.teleport": "传送",
@@ -233,6 +233,10 @@
   "update.availableMessage": "当前版本：%s\n最新版本：%s\n请选择更新来源。",
   "update.openGitHub": "GitHub",
   "update.openGTAMODX": "GTAMODX",
+  "status.language": "语言",
+  "status.localVersion": "本地：%s",
+  "status.remoteVersion": "云端：%s",
+  "status.remoteUnknown": "未知",
   "teleport.category.hospital": "医院",
   "teleport.category.police": "警局",
   "teleport.category.safehouse": "安全屋",
