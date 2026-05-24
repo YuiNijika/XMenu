@@ -7,6 +7,8 @@ A lightweight ASI menu for GTA III, GTA Vice City, and GTA San Andreas.
 
 ## 中文
 
+> 默认快捷键为 `M` 呼出菜单
+
 ### 功能
 
 - 玩家：血量、护甲、金钱、通缉、无敌与状态开关
@@ -50,6 +52,8 @@ Build.bat Release --no-pause
 ---
 
 ## English
+
+> The default shortcut key is `M` to bring up the menu
 
 ### Features
 
