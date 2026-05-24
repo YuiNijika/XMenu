@@ -9,6 +9,7 @@
 #include "utils/AppConfig.h"
 #include "resources/ResourceData.h"
 #include "ui/Widget.h"
+#include "ui/MenuState.h"
 #include "imgui/imgui.h"
 #include "ui/pages/Player.h"
 #include "ui/pages/Vehicle.h"
@@ -102,6 +103,15 @@ namespace {
         ImGui::TextUnformatted(T(titleKey));
         ImGui::Separator();
         ImGui::Spacing();
+
+        if (MenuState::HasNotice()) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.78f, 0.25f, 1.0f));
+            ImGui::TextWrapped("%s", MenuState::NoticeText);
+            ImGui::PopStyleColor();
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+        }
     }
 
     void DrawVersionBadge() {

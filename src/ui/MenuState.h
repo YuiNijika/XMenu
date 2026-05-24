@@ -1,4 +1,6 @@
 #pragma once
+#include <chrono>
+#include <cstdio>
 
 namespace MenuState {
     inline bool GodMode = false;
@@ -53,4 +55,32 @@ namespace MenuState {
     inline int DaysPassed = 0;
     inline float Gravity = 0.008f;
     inline int FpsLimit = 30;
+    inline char NoticeText[256] = "";
+    inline double NoticeExpireTime = 0.0;
+
+    inline void ShowNotice(const char* text, double durationSeconds = 2.0) {
+        std::snprintf(NoticeText, sizeof(NoticeText), "%s", text ? text : "");
+        const auto now = std::chrono::steady_clock::now().time_since_epoch();
+        const double nowSeconds = std::chrono::duration<double>(now).count();
+        NoticeExpireTime = nowSeconds + (durationSeconds > 0.0 ? durationSeconds : 0.0);
+    }
+
+    inline void ClearNotice() {
+        NoticeText[0] = '\0';
+        NoticeExpireTime = 0.0;
+    }
+
+    inline bool HasNotice() {
+        if (NoticeText[0] == '\0') {
+            return false;
+        }
+
+        const auto now = std::chrono::steady_clock::now().time_since_epoch();
+        const double nowSeconds = std::chrono::duration<double>(now).count();
+        if (nowSeconds >= NoticeExpireTime) {
+            ClearNotice();
+            return false;
+        }
+        return true;
+    }
 }

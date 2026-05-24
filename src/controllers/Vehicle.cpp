@@ -8,6 +8,7 @@
 #include "CPools.h"
 #include "CPlayerPed.h"
 #include "CVehicle.h"
+#include "CMessages.h"
 #include <windows.h>
 #include <string>
 
@@ -17,35 +18,72 @@ namespace {
     GameLogic::ProofState savedVehicleProofs;
     bool hasSavedVehicleProofs = false;
     bool spawnInProgress = false;
-    DWORD lastSpawnTick = 0;
-    constexpr DWORD SpawnCooldownMs = 650;
+    DWORD spawnWindowStartTick = 0;
+    unsigned int spawnWindowCount = 0;
+    DWORD lastLimitMessageTick = 0;
+    constexpr DWORD SpawnRateWindowMs = 3000;
+    constexpr unsigned int MaxSpawnsPerWindow = 2;
+    constexpr DWORD LimitMessageCooldownMs = 1000;
 
-    bool CanStartSpawn(unsigned int modelId) {
+    GameLogic::SpawnVehicleOptions GetCurrentSpawnOptions() {
+        GameLogic::SpawnVehicleOptions options;
+        options.asDriver = MenuState::VehicleSpawnAsDriver;
+        options.aircraftInAir = MenuState::VehicleSpawnAircraftInAir;
+        return options;
+    }
+
+    void ShowSpawnLimitMessage() {
         const DWORD now = GetTickCount();
-        if (spawnInProgress) {
-            Log::Warn("载具生成被跳过：已有生成流程正在执行，模型 ID " + std::to_string(modelId));
+        if (lastLimitMessageTick != 0 && now - lastLimitMessageTick < LimitMessageCooldownMs) {
+            return;
+        }
+
+        lastLimitMessageTick = now;
+        CMessages::AddMessageJumpQ("XMenu: Vehicle spawn is too frequent", 1200, 0);
+        MenuState::ShowNotice("载具生成过于频繁，请稍后再试", 2.0);
+    }
+
+    bool CanConsumeSpawnQuota(unsigned int modelId) {
+        const DWORD now = GetTickCount();
+        if (spawnWindowStartTick == 0 || now - spawnWindowStartTick >= SpawnRateWindowMs) {
+            spawnWindowStartTick = now;
+            spawnWindowCount = 0;
+        }
+
+        if (spawnWindowCount >= MaxSpawnsPerWindow) {
+            Log::Warn("载具生成被限流：" + std::to_string(SpawnRateWindowMs) + "ms 内最多允许 "
+                + std::to_string(MaxSpawnsPerWindow) + " 次，模型 ID " + std::to_string(modelId));
+            ShowSpawnLimitMessage();
             return false;
         }
 
-        if (lastSpawnTick != 0 && now - lastSpawnTick < SpawnCooldownMs) {
-            Log::Warn("载具生成被节流：请求过于频繁，模型 ID " + std::to_string(modelId));
+        ++spawnWindowCount;
+        return true;
+    }
+
+    bool ExecuteSpawnNow(unsigned int modelId, const GameLogic::SpawnVehicleOptions& options) {
+        if (spawnInProgress) {
+            Log::Warn("载具生成被拒绝：已有生成流程正在执行，模型 ID " + std::to_string(modelId));
+            ShowSpawnLimitMessage();
+            return false;
+        }
+
+        if (!CanConsumeSpawnQuota(modelId)) {
             return false;
         }
 
         spawnInProgress = true;
-        lastSpawnTick = now;
-        return true;
-    }
 
-    void FinishSpawn() {
-        spawnInProgress = false;
-    }
-
-    struct SpawnGuard {
-        ~SpawnGuard() {
-            FinishSpawn();
+        if (!GameLogic::IsValidVehicleModel(modelId)) {
+            spawnInProgress = false;
+            Log::Error("载具生成失败：底层校验拒绝模型 ID " + std::to_string(modelId));
+            return false;
         }
-    };
+
+        const bool ok = GameLogic::SpawnVehicle(modelId, options) != nullptr;
+        spawnInProgress = false;
+        return ok;
+    }
 
     bool IsVehicleInPool(CVehicle* vehicle) {
         if (!vehicle) {
@@ -297,20 +335,7 @@ namespace Controllers::Vehicle {
     }
 
     bool Spawn(unsigned int modelId) {
-        if (!CanStartSpawn(modelId)) {
-            return false;
-        }
-        SpawnGuard spawnGuard;
-
-        GameLogic::SpawnVehicleOptions options;
-        options.asDriver = MenuState::VehicleSpawnAsDriver;
-        options.aircraftInAir = MenuState::VehicleSpawnAircraftInAir;
-
-        if (!GameLogic::IsValidVehicleModel(modelId)) {
-            Log::Error("载具生成失败：底层校验拒绝模型 ID " + std::to_string(modelId));
-            return false;
-        }
-
-        return GameLogic::SpawnVehicle(modelId, options) != nullptr;
+        const GameLogic::SpawnVehicleOptions options = GetCurrentSpawnOptions();
+        return ExecuteSpawnNow(modelId, options);
     }
 }
