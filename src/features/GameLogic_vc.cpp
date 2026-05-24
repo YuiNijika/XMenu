@@ -465,14 +465,16 @@ CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options)
     CVector pos = player->GetPosition();
     float speed = 0.0f;
 
+    CVehicle* previousVehicle = nullptr;
+    int previousVehicleHandle = 0;
+
     if (options.asDriver && plugin::Command<plugin::Commands::IS_CHAR_IN_ANY_CAR>(hplayer)) {
-        CVehicle* currentVehicle = player->m_pVehicle;
-        if (currentVehicle) {
-            const int hveh = CPools::GetVehicleRef(currentVehicle);
-            pos = currentVehicle->GetPosition();
-            plugin::Command<plugin::Commands::GET_CAR_SPEED>(hveh, &speed);
+        previousVehicle = player->m_pVehicle;
+        if (previousVehicle) {
+            previousVehicleHandle = CPools::GetVehicleRef(previousVehicle);
+            pos = previousVehicle->GetPosition();
+            plugin::Command<plugin::Commands::GET_CAR_SPEED>(previousVehicleHandle, &speed);
             plugin::Command<plugin::Commands::WARP_CHAR_FROM_CAR_TO_COORD>(hplayer, pos.x, pos.y, pos.z);
-            plugin::Command<plugin::Commands::DELETE_CAR>(hveh);
         }
     }
 
@@ -515,7 +517,13 @@ CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options)
         SetVehicleForwardSpeed(vehicle, speed);
     }
 
-    plugin::Command<plugin::Commands::MARK_CAR_AS_NO_LONGER_NEEDED>(hveh);
+    if (previousVehicleHandle != 0 && previousVehicleHandle != hveh) {
+        plugin::Command<plugin::Commands::MARK_CAR_AS_NO_LONGER_NEEDED>(previousVehicleHandle);
+    }
+
+    if (!options.asDriver) {
+        plugin::Command<plugin::Commands::MARK_CAR_AS_NO_LONGER_NEEDED>(hveh);
+    }
     CStreaming::SetModelIsDeletable(model);
     plugin::Command<plugin::Commands::RESTORE_CAMERA_JUMPCUT>();
     return vehicle;

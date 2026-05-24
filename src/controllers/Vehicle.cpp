@@ -73,6 +73,7 @@ namespace {
         }
 
         spawnInProgress = true;
+        Log::Info("载具生成开始：模型 ID " + std::to_string(modelId));
 
         if (!GameLogic::IsValidVehicleModel(modelId)) {
             spawnInProgress = false;
