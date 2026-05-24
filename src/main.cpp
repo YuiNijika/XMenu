@@ -77,6 +77,7 @@ namespace {
         plugin::Events::processScriptsEvent += []() {
             GameLogic::Process();
             Menu::Process();
+            D3DHook::MaintainInputState();
 
             if (!xMenuActive) {
                 CPad* pad = CPad::GetPad(0);

@@ -11,6 +11,7 @@ public:
     static bool IsMenuVisible();
     static void ToggleMenu();
     static void ProcessMouse();
+    static void MaintainInputState();
     static LPDIRECT3DDEVICE9 GetDevice();
     static bool IsInitialized();
     static bool IsReady();

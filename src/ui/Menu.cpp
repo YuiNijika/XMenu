@@ -500,7 +500,7 @@ void Menu::Draw() {
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.220f, 0.350f, 0.540f, 1.00f));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.260f, 0.420f, 0.650f, 1.00f));
 
-    if (ImGui::Begin(windowTitle, &menuVisible, ImGuiWindowFlags_NoCollapse)) {
+    if (ImGui::Begin(windowTitle, &menuVisible, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove)) {
         ImGui::BeginChild("XMenuSidebar", ImVec2(170.0f, 0.0f), true);
         DrawNavigation();
         ImGui::EndChild();

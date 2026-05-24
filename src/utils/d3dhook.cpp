@@ -125,6 +125,103 @@ namespace {
     bool IsWindowUsable(HWND hwnd) {
         return hwnd && IsWindow(hwnd);
     }
+
+    bool IsGameWindowActive(HWND hwnd) {
+        if (!IsWindowUsable(hwnd)) {
+            return false;
+        }
+
+        const HWND foreground = GetForegroundWindow();
+        return foreground == hwnd || IsChild(hwnd, foreground) || IsChild(foreground, hwnd);
+    }
+
+    void ClearGameMouseState() {
+        CPad::NewMouseControllerState.x = 0;
+        CPad::NewMouseControllerState.y = 0;
+#ifdef GTASA
+        CPad::OldMouseControllerState.x = 0;
+        CPad::OldMouseControllerState.y = 0;
+#endif
+    }
+
+    void ApplyMousePatch(bool menuActive) {
+        if (menuActive) {
+            plugin::patch::SetUChar((uintptr_t)BY_GAME(0x6194A0, 0x6020A0, 0x580D20), 0xC3);
+            plugin::patch::Nop((uintptr_t)BY_GAME(0x541DD7, 0x4AB6CA, 0x49272F), 5);
+            return;
+        }
+
+        plugin::patch::SetUChar((uintptr_t)BY_GAME(0x6194A0, 0x6020A0, 0x580D20), BY_GAME(0xE9, 0x53, 0x53));
+#ifdef GTASA
+        plugin::patch::SetRaw(0x541DD7, (void*)"\xE8\xE4\xD5\xFF\xFF", 5);
+#elif GTAVC
+        plugin::patch::SetRaw(0x4AB6CA, (void*)"\xE8\x51\x21\x00\x00", 5);
+#else
+        plugin::patch::SetRaw(0x49272F, (void*)"\xE8\x6C\xF5\xFF\xFF", 5);
+#endif
+    }
+
+    float ClampFloat(float value, float minValue, float maxValue) {
+        if (value < minValue) {
+            return minValue;
+        }
+        if (value > maxValue) {
+            return maxValue;
+        }
+        return value;
+    }
+
+    void SyncImGuiMousePosition(HWND hwnd) {
+        if (!ImGui::GetCurrentContext() || !IsWindowUsable(hwnd)) {
+            return;
+        }
+
+        RECT clientRect = {};
+        if (!GetClientRect(hwnd, &clientRect)) {
+            return;
+        }
+
+#ifdef GTASA
+        static bool virtualMouseReady = false;
+        static ImVec2 virtualMousePos(0.0f, 0.0f);
+
+        const float width = static_cast<float>(clientRect.right - clientRect.left);
+        const float height = static_cast<float>(clientRect.bottom - clientRect.top);
+        if (width <= 0.0f || height <= 0.0f) {
+            return;
+        }
+
+        if (!virtualMouseReady) {
+            POINT cursor = {};
+            if (GetCursorPos(&cursor) && ScreenToClient(hwnd, &cursor)
+                && cursor.x >= 0 && cursor.y >= 0
+                && cursor.x < static_cast<int>(width)
+                && cursor.y < static_cast<int>(height)) {
+                virtualMousePos = ImVec2(static_cast<float>(cursor.x), static_cast<float>(cursor.y));
+            } else {
+                virtualMousePos = ImVec2(width * 0.5f, height * 0.5f);
+            }
+            virtualMouseReady = true;
+        }
+
+        const float dx = static_cast<float>(CPad::NewMouseControllerState.x);
+        const float dy = static_cast<float>(CPad::NewMouseControllerState.y);
+        if (dx != 0.0f || dy != 0.0f) {
+            virtualMousePos.x = ClampFloat(virtualMousePos.x + dx, 0.0f, width - 1.0f);
+            virtualMousePos.y = ClampFloat(virtualMousePos.y + dy, 0.0f, height - 1.0f);
+        }
+
+        ImGui::GetIO().MousePos = virtualMousePos;
+#else
+        POINT cursor = {};
+        if (!GetCursorPos(&cursor)) {
+            return;
+        }
+
+        ScreenToClient(hwnd, &cursor);
+        ImGui::GetIO().MousePos = ImVec2(static_cast<float>(cursor.x), static_cast<float>(cursor.y));
+#endif
+    }
 }
 
 HWND D3DHook::window = NULL;
@@ -198,30 +295,15 @@ void D3DHook::ProcessMouse() {
     }
 
     ImGui::GetIO().MouseDrawCursor = menuVisible;
-    ReleaseWindowCaptureOnly();
 
     if (menuVisible) {
-        plugin::patch::SetUChar((uintptr_t)BY_GAME(0x6194A0, 0x6020A0, 0x580D20), 0xC3); // psSetMousePos
-        plugin::patch::Nop((uintptr_t)BY_GAME(0x541DD7, 0x4AB6CA, 0x49272F), 5); // don't call CPad::UpdateMouse()
-#ifdef GTASA
-        plugin::patch::SetUChar(0x4EB731, 0xEB); // jz -> jmp, skip mouse checks
-        plugin::patch::SetUChar(0x4EB75A, 0xEB); // jz -> jmp, skip mouse checks
-#endif
+        ApplyMousePatch(true);
+        ClearGameMouseState();
     } else {
-        plugin::patch::SetUChar((uintptr_t)BY_GAME(0x6194A0, 0x6020A0, 0x580D20), BY_GAME(0xE9, 0x53, 0x53));
-#ifdef GTASA
-        plugin::patch::SetRaw(0x541DD7, (void*)"\xE8\xE4\xD5\xFF\xFF", 5);
-        plugin::patch::SetUChar(0x4EB731, 0x74); // jz
-        plugin::patch::SetUChar(0x4EB75A, 0x74); // jz
-#elif GTAVC
-        plugin::patch::SetRaw(0x4AB6CA, (void*)"\xE8\x51\x21\x00\x00", 5);
-#else
-        plugin::patch::SetRaw(0x49272F, (void*)"\xE8\x6C\xF5\xFF\xFF", 5);
-#endif
+        ApplyMousePatch(false);
         // 清除鼠标历史记录防止视角跳变
         CPad::UpdatePads();
-        CPad::NewMouseControllerState.x = 0;
-        CPad::NewMouseControllerState.y = 0;
+        ClearGameMouseState();
         ReleaseWindowInput();
 #ifdef GTA3
         // CPad::GetPad(0)->ClearMouseHistory(); // Disabled to prevent camera reset
@@ -235,6 +317,31 @@ void D3DHook::ProcessMouse() {
             pad->OldState.DPadDown = 0;
         }
 #endif
+    }
+}
+
+void D3DHook::MaintainInputState() {
+    const bool active = IsGameWindowActive(window);
+
+    if (hookInstalled && isInitialized && menuVisible && active) {
+        ApplyMousePatch(true);
+        if (ImGui::GetCurrentContext()) {
+            ImGui::GetIO().MouseDrawCursor = true;
+            SyncImGuiMousePosition(window);
+        }
+        ClearGameMouseState();
+        return;
+    }
+
+    if (!hookInstalled || !isInitialized || !menuVisible || !active) {
+        if (menuVisible && !active) {
+            menuVisible = false;
+            ProcessMouse();
+            DebugD3D("窗口失焦，已关闭菜单并释放鼠标状态");
+            return;
+        }
+
+        ReleaseWindowInput();
     }
 }
 
@@ -320,9 +427,10 @@ HRESULT __stdcall D3DHook::hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
     }
     
     if (isInitialized && menuVisible) {
-        ReleaseWindowCaptureOnly();
+        ApplyMousePatch(true);
         ImGui_ImplDX9_NewFrame();
         ImGui_ImplWin32_NewFrame();
+        SyncImGuiMousePosition(window);
         ImGui::NewFrame();
         
         if (renderCallback) {
