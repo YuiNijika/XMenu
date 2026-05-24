@@ -243,6 +243,12 @@ void SetManualPlayerProof(CPlayerPed* player, const ProofState& state) {
     SetPlayerProofState(player, state);
 }
 
+bool RequestSaveGame() {
+    plugin::Command<plugin::Commands::ACTIVATE_SAVE_MENU>();
+    Log::Info("已请求打开存档菜单");
+    return true;
+}
+
 ProofState GetVehicleProofState(CVehicle* vehicle) {
     ProofState state;
     if (!vehicle) return state;

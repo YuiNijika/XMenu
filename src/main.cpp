@@ -79,6 +79,11 @@ namespace {
             Menu::Process();
 
             if (!xMenuActive) {
+                CPad* pad = CPad::GetPad(0);
+                if (pad) {
+                    pad->DisablePlayerControls = false;
+                }
+
                 if (XMENU_DEBUG_MODE && D3DHook::HadInitFailure()) {
                     static unsigned int hintCooldown = 0;
                     if (hintCooldown++ % 1800 == 0) {
@@ -98,7 +103,7 @@ namespace {
 
             CPad* pad = CPad::GetPad(0);
             if (pad) {
-                pad->DisablePlayerControls = D3DHook::IsMenuVisible();
+                pad->DisablePlayerControls = D3DHook::IsInitialized() && D3DHook::IsMenuVisible();
             }
         };
     }

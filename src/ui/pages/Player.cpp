@@ -2,6 +2,7 @@
 #include "controllers/Player.h"
 #include "ui/MenuState.h"
 #include "ui/Widget.h"
+#include "utils/D3DHook.h"
 #include "utils/I18n.h"
 #include "imgui/imgui.h"
 
@@ -28,11 +29,17 @@ namespace Pages::Player {
         if (UI::Button(T("player.refillArmor"), 3)) {
             Controllers::Player::GiveArmour();
         }
-        if (UI::Button(T("player.addMoney"), 2)) {
+        if (UI::Button(T("player.saveAnywhere"), 3)) {
+            if (Controllers::Player::RequestSaveGame()) {
+                D3DHook::SetMenuVisible(false);
+            }
+        }
+        ImGui::SameLine();
+        if (UI::Button(T("player.addMoney"), 3)) {
             Controllers::Player::GiveMoney();
         }
         ImGui::SameLine();
-        if (UI::Button(T("player.kill"), 2)) {
+        if (UI::Button(T("player.kill"), 3)) {
             Controllers::Player::Kill();
         }
 

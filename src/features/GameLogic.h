@@ -48,6 +48,7 @@ namespace GameLogic {
     void ProcessRespawnAtDeathPosition(CPlayerPed* player, bool enable);
     void ProcessFreezeWantedLevel(CPlayerPed* player, bool enable, int level);
     void SetManualPlayerProof(CPlayerPed* player, const ProofState& state);
+    bool RequestSaveGame();
 
     // 载具
     ProofState GetVehicleProofState(CVehicle* vehicle);

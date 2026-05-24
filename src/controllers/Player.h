@@ -22,6 +22,7 @@ namespace Controllers::Player {
     GameLogic::ProofState GetProofState();
     void SetProofState(const GameLogic::ProofState& state);
     void CopyCoordinates();
+    bool RequestSaveGame();
     void SetInfiniteSprint(bool enable);
     void SetKeepStuff(bool enable);
     bool GetFreeHealthcare();

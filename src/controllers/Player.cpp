@@ -177,6 +177,10 @@ namespace Controllers::Player {
         GameLogic::SetInfiniteSprint(enable);
     }
 
+    bool RequestSaveGame() {
+        return GameLogic::RequestSaveGame();
+    }
+
     void SetKeepStuff(bool enable) {
         GameLogic::SetKeepStuff(enable);
     }

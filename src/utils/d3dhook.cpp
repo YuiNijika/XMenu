@@ -106,6 +106,14 @@ namespace {
         Log::Warn(std::string("未找到可用字体候选: ") + fontsDir);
         return false;
     }
+
+    void ReleaseWindowInput() {
+        ClipCursor(nullptr);
+        ReleaseCapture();
+        if (ImGui::GetCurrentContext()) {
+            ImGui::GetIO().MouseDrawCursor = false;
+        }
+    }
 }
 
 HWND D3DHook::window = NULL;
@@ -153,16 +161,26 @@ const char* D3DHook::GetStatusText() {
 void D3DHook::SetMenuVisible(bool visible) {
     if (!hookInstalled) {
         menuVisible = false;
+        ReleaseWindowInput();
         return;
     }
     if (menuVisible == visible) return;
     menuVisible = visible;
     if (isInitialized) {
         ProcessMouse();
+    } else if (!menuVisible) {
+        ReleaseWindowInput();
     }
 }
 
 void D3DHook::ProcessMouse() {
+    if (!ImGui::GetCurrentContext()) {
+        if (!menuVisible) {
+            ReleaseWindowInput();
+        }
+        return;
+    }
+
     ImGui::GetIO().MouseDrawCursor = menuVisible;
 
     if (menuVisible) {
@@ -187,19 +205,30 @@ void D3DHook::ProcessMouse() {
         CPad::UpdatePads();
         CPad::NewMouseControllerState.x = 0;
         CPad::NewMouseControllerState.y = 0;
+        ReleaseWindowInput();
 #ifdef GTA3
         // CPad::GetPad(0)->ClearMouseHistory(); // Disabled to prevent camera reset
 #else
         // CPad::ClearMouseHistory(); // Disabled to prevent camera reset
-        CPad::GetPad(0)->NewState.DPadUp = 0;
-        CPad::GetPad(0)->OldState.DPadUp = 0;
-        CPad::GetPad(0)->NewState.DPadDown = 0;
-        CPad::GetPad(0)->OldState.DPadDown = 0;
+        CPad* pad = CPad::GetPad(0);
+        if (pad) {
+            pad->NewState.DPadUp = 0;
+            pad->OldState.DPadUp = 0;
+            pad->NewState.DPadDown = 0;
+            pad->OldState.DPadDown = 0;
+        }
 #endif
     }
 }
 
 LRESULT __stdcall D3DHook::hkWndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    if (uMsg == WM_KILLFOCUS || uMsg == WM_CANCELMODE || uMsg == WM_ACTIVATEAPP) {
+        if (uMsg != WM_ACTIVATEAPP || wParam == FALSE) {
+            menuVisible = false;
+            ReleaseWindowInput();
+        }
+    }
+
     if (menuVisible) {
         if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) {
             return true;
@@ -242,6 +271,7 @@ void D3DHook::InitImGui(LPDIRECT3DDEVICE9 pDevice) {
     ImGui_ImplDX9_Init(pDevice);
     
     isInitialized = true;
+    ProcessMouse();
     Log::Info("ImGui 初始化完成");
 }
 
@@ -310,6 +340,8 @@ bool D3DHook::Init(std::function<void()> onRender) {
 
         hookInstalled = false;
         initFailed = true;
+        menuVisible = false;
+        ReleaseWindowInput();
         initStatus = "D3D9 Hook binding failed";
         Log::Error("D3D9 Hook 绑定失败");
         DebugD3D("绑定失败，已执行 kiero::shutdown");
@@ -319,6 +351,8 @@ bool D3DHook::Init(std::function<void()> onRender) {
 
     hookInstalled = false;
     initFailed = true;
+    menuVisible = false;
+    ReleaseWindowInput();
     initStatus = "D3D9 Hook init failed: GTA III/VC need D3D8to9; SA needs D3D9 render path";
     Log::Error("kiero D3D9 初始化失败：GTA III/VC 请确认已安装 D3D8to9 wrapper；SA 请确认当前渲染路径为 D3D9。菜单渲染不可用，但脚本逻辑继续执行");
     DebugD3D("初始化失败：GTA III/VC 通常需要 D3D8to9 wrapper；SA 需要确认当前渲染路径为 D3D9");
@@ -326,6 +360,9 @@ bool D3DHook::Init(std::function<void()> onRender) {
 }
 
 void D3DHook::Shutdown() {
+    menuVisible = false;
+    ReleaseWindowInput();
+
     if (isInitialized) {
         Log::Info("关闭 D3D Hook 与 ImGui");
         SetWindowLongPtr(window, GWL_WNDPROC, (LONG_PTR)oWndProc);
