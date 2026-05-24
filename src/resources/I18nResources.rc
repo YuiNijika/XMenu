@@ -14,3 +14,4 @@ IDR_DATA_VC_VEHICLES RCDATA "../data/vc/vehicles.json"
 
 IDR_DATA_III_MAPS RCDATA "../data/iii/maps.json"
 IDR_DATA_III_WEAPONS RCDATA "../data/iii/weapons.json"
+IDR_DATA_III_VEHICLES RCDATA "../data/iii/vehicles.json"

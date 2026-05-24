@@ -98,7 +98,8 @@ function createPayloadProject(projectID)
             "src/data/vc/weapons.json",
             "src/data/vc/vehicles.json",
             "src/data/iii/maps.json",
-            "src/data/iii/weapons.json"
+            "src/data/iii/weapons.json",
+            "src/data/iii/vehicles.json"
         }
 
         removefiles {

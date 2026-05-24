@@ -17,29 +17,53 @@
     #define GAME_DIR "iii"
     #define MAPS_RESOURCE_ID IDR_DATA_III_MAPS
     #define WEAPONS_RESOURCE_ID IDR_DATA_III_WEAPONS
-    #define VEHICLES_RESOURCE_ID 0
+    #define VEHICLES_RESOURCE_ID IDR_DATA_III_VEHICLES
 #endif
+
+namespace {
+    std::string DirectoryFromModule(HMODULE module) {
+        if (!module) {
+            return "";
+        }
+
+        char path[MAX_PATH] = {};
+        const DWORD size = GetModuleFileNameA(module, path, MAX_PATH);
+        if (size == 0) {
+            return "";
+        }
+
+        std::string directory(path, size);
+        const std::size_t slash = directory.find_last_of("\\/");
+        if (slash != std::string::npos) {
+            return directory.substr(0, slash + 1);
+        }
+        return "";
+    }
+
+    std::string XMenuModuleDirectory() {
+        const std::string asiDirectory = DirectoryFromModule(GetModuleHandleA("XMenu.asi"));
+        if (!asiDirectory.empty()) {
+            return asiDirectory;
+        }
+
+        HMODULE module = nullptr;
+        GetModuleHandleExA(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            reinterpret_cast<LPCSTR>(&XMenuModuleDirectory),
+            &module
+        );
+        return DirectoryFromModule(module);
+    }
+}
 
 namespace DataManager {
 
 std::string GetDataFilePath(const std::string& filename) {
-    // 首先尝试从DLL目录加载
-    char modulePath[MAX_PATH];
-    HMODULE hModule = nullptr;
-    GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                      (LPCSTR)&GetDataFilePath, &hModule);
-    
-    if (hModule) {
-        GetModuleFileNameA(hModule, modulePath, MAX_PATH);
-        std::string moduleDir(modulePath);
-        size_t lastSlash = moduleDir.find_last_of("\\/");
-        if (lastSlash != std::string::npos) {
-            moduleDir = moduleDir.substr(0, lastSlash + 1);
-            return moduleDir + "data/" GAME_DIR "/" + filename;
-        }
+    const std::string directory = XMenuModuleDirectory();
+    if (!directory.empty()) {
+        return directory + "data/" GAME_DIR "/" + filename;
     }
-    
-    // 回退到相对路径
+
     return std::string("data/") + GAME_DIR + "/" + filename;
 }
 

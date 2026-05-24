@@ -24,31 +24,46 @@ namespace {
     AppConfig::UpdateCache updateCache;
     std::vector<DataManager::LocationData> customLocations;
 
-    std::string ConfigPath() {
-        HMODULE module = nullptr;
-        GetModuleHandleExA(
-            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-            reinterpret_cast<LPCSTR>(&ConfigPath),
-            &module
-        );
+    std::string DirectoryFromModule(HMODULE module) {
+        if (!module) {
+            return "";
+        }
 
         char path[MAX_PATH] = {};
-        DWORD size = 0;
-        if (module) {
-            size = GetModuleFileNameA(module, path, MAX_PATH);
-        }
+        const DWORD size = GetModuleFileNameA(module, path, MAX_PATH);
         if (size == 0) {
-            return "XMenu.json";
+            return "";
         }
 
         std::string directory(path, size);
         const std::size_t slash = directory.find_last_of("\\/");
         if (slash != std::string::npos) {
-            directory = directory.substr(0, slash + 1);
-        } else {
-            directory.clear();
+            return directory.substr(0, slash + 1);
         }
-        return directory + "XMenu.json";
+        return "";
+    }
+
+    std::string XMenuModuleDirectory() {
+        const std::string asiDirectory = DirectoryFromModule(GetModuleHandleA("XMenu.asi"));
+        if (!asiDirectory.empty()) {
+            return asiDirectory;
+        }
+
+        HMODULE module = nullptr;
+        GetModuleHandleExA(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            reinterpret_cast<LPCSTR>(&XMenuModuleDirectory),
+            &module
+        );
+        return DirectoryFromModule(module);
+    }
+
+    std::string ConfigPath() {
+        const std::string directory = XMenuModuleDirectory();
+        if (!directory.empty()) {
+            return directory + "XMenu.json";
+        }
+        return "XMenu.json";
     }
 
     std::string Trim(std::string value) {

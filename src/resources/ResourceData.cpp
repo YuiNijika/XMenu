@@ -78,6 +78,9 @@ VehicleTable GetVehicles() {
 
 bool IsKnownVehicleModel(unsigned int model) {
     if (!dataInitialized) InitData();
+    if (cachedVehicles.empty()) {
+        return true;
+    }
     for (const auto& v : cachedVehicles) {
         if (static_cast<unsigned int>(v.id) == model) return true;
     }

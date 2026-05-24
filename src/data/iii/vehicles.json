@@ -1,0 +1,73 @@
+{
+  "vehicles": [
+    {
+      "category": "emergency",
+      "entries": [
+        {"name": "vehicle.firetruk", "id": 97},
+        {"name": "vehicle.ambulan", "id": 106},
+        {"name": "vehicle.police", "id": 116},
+        {"name": "vehicle.enforcer", "id": 117},
+        {"name": "vehicle.fbirancher", "id": 107},
+        {"name": "vehicle.rhino", "id": 122}
+      ]
+    },
+    {
+      "category": "transport",
+      "entries": [
+        {"name": "vehicle.taxi", "id": 110},
+        {"name": "vehicle.cabbie", "id": 128},
+        {"name": "vehicle.bus", "id": 121},
+        {"name": "vehicle.coach", "id": 127},
+        {"name": "vehicle.mrwhoopee", "id": 153},
+        {"name": "vehicle.trash", "id": 138}
+      ]
+    },
+    {
+      "category": "worker",
+      "entries": [
+        {"name": "vehicle.pony", "id": 143},
+        {"name": "vehicle.mule", "id": 144},
+        {"name": "vehicle.yankee", "id": 103},
+        {"name": "vehicle.bobcat", "id": 112},
+        {"name": "vehicle.flatbed", "id": 145},
+        {"name": "vehicle.barracks", "id": 123},
+        {"name": "vehicle.mrwhoopee", "id": 153}
+      ]
+    },
+    {
+      "category": "sport",
+      "entries": [
+        {"name": "vehicle.stinger", "id": 132},
+        {"name": "vehicle.infernus", "id": 101},
+        {"name": "vehicle.cheetah", "id": 105},
+        {"name": "vehicle.banshee", "id": 119}
+      ]
+    },
+    {
+      "category": "sedan",
+      "entries": [
+        {"name": "vehicle.landstalker", "id": 130},
+        {"name": "vehicle.idaho", "id": 131},
+        {"name": "vehicle.perennial", "id": 94},
+        {"name": "vehicle.sentinel", "id": 95},
+        {"name": "vehicle.patriot", "id": 96},
+        {"name": "vehicle.stallion", "id": 129},
+        {"name": "vehicle.manana", "id": 102},
+        {"name": "vehicle.moonbeam", "id": 148},
+        {"name": "vehicle.esperanto", "id": 149},
+        {"name": "vehicle.kuruma", "id": 150}
+      ]
+    },
+    {
+      "category": "unique",
+      "entries": [
+        {"name": "vehicle.securicar", "id": 93},
+        {"name": "vehicle.blista", "id": 113},
+        {"name": "vehicle.diablo", "id": 114},
+        {"name": "vehicle.columbian", "id": 115},
+        {"name": "vehicle.yardie", "id": 118},
+        {"name": "vehicle.borgnine", "id": 141}
+      ]
+    }
+  ]
+}
