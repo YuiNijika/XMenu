@@ -82,6 +82,22 @@ namespace {
     void DrawUpdateDialog();
     void DrawVersionBadge();
 
+    void HandleMainWindowDrag() {
+        ImGuiIO& io = ImGui::GetIO();
+        const ImVec2 windowPos = ImGui::GetWindowPos();
+        const ImVec2 windowSize = ImGui::GetWindowSize();
+        const float titleHeight = ImGui::GetFrameHeight();
+        const ImVec2 mouse = io.MousePos;
+
+        const bool inTitleBar =
+            mouse.x >= windowPos.x && mouse.x <= windowPos.x + windowSize.x &&
+            mouse.y >= windowPos.y && mouse.y <= windowPos.y + titleHeight;
+
+        if (inTitleBar && ImGui::IsMouseDown(0) && (io.MouseDelta.x != 0.0f || io.MouseDelta.y != 0.0f)) {
+            ImGui::SetWindowPos(ImVec2(windowPos.x + io.MouseDelta.x, windowPos.y + io.MouseDelta.y));
+        }
+    }
+
     void DrawPageHeader(const char* titleKey) {
         ImGui::TextUnformatted(T(titleKey));
         ImGui::Separator();
@@ -501,6 +517,7 @@ void Menu::Draw() {
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.260f, 0.420f, 0.650f, 1.00f));
 
     if (ImGui::Begin(windowTitle, &menuVisible, ImGuiWindowFlags_NoCollapse)) {
+        HandleMainWindowDrag();
         ImGui::BeginChild("XMenuSidebar", ImVec2(170.0f, 0.0f), true);
         DrawNavigation();
         ImGui::EndChild();
