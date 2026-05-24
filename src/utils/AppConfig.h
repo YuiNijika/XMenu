@@ -12,6 +12,12 @@ namespace AppConfig {
         bool shift = false;
     };
 
+    struct UpdateCache {
+        long long timestamp = 0;
+        std::string tagName;
+        std::string htmlUrl;
+    };
+
     enum class TransferScope {
         All,
         CustomLocations
@@ -23,6 +29,10 @@ namespace AppConfig {
     bool ImportFrom(const std::string& path, TransferScope scope = TransferScope::All);
     bool ImportFromText(const std::string& text, TransferScope scope = TransferScope::All);
     bool ExportTo(const std::string& path, TransferScope scope = TransferScope::All);
+    std::string ExportToText(TransferScope scope = TransferScope::All);
+
+    bool LoadUpdateCache(UpdateCache& cache);
+    void SaveUpdateCache(const UpdateCache& cache);
 
     const Hotkey& GetMenuHotkey();
     bool IsMenuHotkeyPressed();

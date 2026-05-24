@@ -23,8 +23,33 @@ namespace {
     std::terminate_handler previousTerminateHandler = nullptr;
     bool crashHandlersInstalled = false;
 
-    const char* LogPath() {
-        return "XMenu.log";
+    std::string ModuleDirectory() {
+        HMODULE module = nullptr;
+        GetModuleHandleExA(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            reinterpret_cast<LPCSTR>(&ModuleDirectory),
+            &module
+        );
+
+        char path[MAX_PATH] = {};
+        DWORD size = 0;
+        if (module) {
+            size = GetModuleFileNameA(module, path, MAX_PATH);
+        }
+        if (size == 0) {
+            return "";
+        }
+
+        std::string directory(path, size);
+        const std::size_t slash = directory.find_last_of("\\/");
+        if (slash != std::string::npos) {
+            return directory.substr(0, slash + 1);
+        }
+        return "";
+    }
+
+    std::string LogPath() {
+        return ModuleDirectory() + "XMenu.log";
     }
 
     std::string BuildTimestamp() {

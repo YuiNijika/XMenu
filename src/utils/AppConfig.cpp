@@ -21,6 +21,7 @@ namespace {
 
     std::string menuKeyName = DefaultMenuKey;
     AppConfig::Hotkey menuHotkey;
+    AppConfig::UpdateCache updateCache;
     std::vector<DataManager::LocationData> customLocations;
 
     std::string ConfigPath() {
@@ -356,7 +357,24 @@ namespace {
         file << "  ]" << (trailingComma ? "," : "") << "\n";
     }
 
+    void LoadUpdateCacheData(const JsonLoader::JsonValue& root) {
+        const JsonLoader::JsonValue& cache = ObjectOrNull(root, "updateCache");
+        updateCache.timestamp = static_cast<long long>(JsonLoader::GetNumber(cache, "timestamp", 0.0));
+        updateCache.tagName = JsonLoader::GetString(cache, "tagName", "");
+        updateCache.htmlUrl = JsonLoader::GetString(cache, "htmlUrl", "");
+    }
+
+    void WriteUpdateCache(std::ostream& file, bool trailingComma) {
+        file << "  \"updateCache\": {\n";
+        file << "    \"timestamp\": " << updateCache.timestamp << ",\n";
+        file << "    \"tagName\": \"" << EscapeJson(updateCache.tagName) << "\",\n";
+        file << "    \"htmlUrl\": \"" << EscapeJson(updateCache.htmlUrl) << "\"\n";
+        file << "  }" << (trailingComma ? "," : "") << "\n";
+    }
+
     void LoadConfigData(const JsonLoader::JsonValue& root) {
+        LoadUpdateCacheData(root);
+
         const JsonLoader::JsonValue& menu = ObjectOrNull(root, "menu");
         ApplyMenuKey(JsonLoader::GetString(menu, "toggleKey", DefaultMenuKey));
 
@@ -412,6 +430,7 @@ namespace {
         file << "      \"shift\": " << (menuHotkey.shift ? "true" : "false") << "\n";
         file << "    }\n";
         file << "  },\n";
+        WriteUpdateCache(file, true);
         WriteLocationArray(file, "iii", iiiLocations, true);
         WriteLocationArray(file, "vc", vcLocations, true);
         WriteLocationArray(file, "sa", saLocations, false);
@@ -472,6 +491,22 @@ namespace AppConfig {
         return ConfigPath();
     }
 
+    bool LoadUpdateCache(UpdateCache& cache) {
+        const JsonLoader::JsonValue root = JsonLoader::LoadFromFile(ConfigPath());
+        if (root.type != JsonLoader::JsonValue::OBJECT) {
+            return false;
+        }
+
+        LoadUpdateCacheData(root);
+        cache = updateCache;
+        return cache.timestamp > 0 && !cache.tagName.empty();
+    }
+
+    void SaveUpdateCache(const UpdateCache& cache) {
+        updateCache = cache;
+        SaveToPath(ConfigPath());
+    }
+
     bool ApplyImportRoot(const JsonLoader::JsonValue& root, TransferScope scope, const std::string& sourceLabel) {
         if (root.type != JsonLoader::JsonValue::OBJECT) {
             Log::Warn(std::string("配置导入失败，内容无效: ") + sourceLabel);
@@ -510,6 +545,15 @@ namespace AppConfig {
         }
         Log::Info(std::string(scope == TransferScope::CustomLocations ? "自定义地点导出完成: " : "配置导出完成: ") + path);
         return true;
+    }
+
+    std::string ExportToText(TransferScope scope) {
+        std::ostringstream output;
+        if (!WriteConfigData(output, nullptr, scope)) {
+            return "";
+        }
+        Log::Info(scope == TransferScope::CustomLocations ? "自定义地点已导出到文本" : "配置已导出到文本");
+        return output.str();
     }
 
     const Hotkey& GetMenuHotkey() {

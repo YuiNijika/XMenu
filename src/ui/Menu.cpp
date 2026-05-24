@@ -50,9 +50,12 @@ namespace {
     Page activePage = Page::Player;
     int configTransferScope = 1;
     char configImportText[65536] = "";
+    char configExportText[65536] = "";
     char configStatus[256] = "";
     bool openConfigImportPopup = false;
+    bool openConfigExportPopup = false;
     constexpr const char* ConfigImportPopupId = "ConfigImportTextPopup";
+    constexpr const char* ConfigExportPopupId = "ConfigExportTextPopup";
 
     const NavItem navItems[] = {
         {Page::Player, "tab.player", "player"},
@@ -71,6 +74,7 @@ namespace {
     void DrawSettings();
     void DrawConfigSettings();
     void DrawConfigImportPopup();
+    void DrawConfigExportPopup();
     void DrawUpdateSettings();
     void DrawLogViewer();
     void DrawDebugSettings();
@@ -243,10 +247,13 @@ namespace {
         }
         ImGui::SameLine();
         if (ImGui::Button(T("settings.exportConfig"), ImVec2(130.0f, 0.0f))) {
-            if (AppConfig::ExportTo(AppConfig::GetConfigPath(), AppConfig::TransferScope::All)) {
-                std::snprintf(configStatus, sizeof(configStatus), "%s", T("settings.exportSuccess"));
-            } else {
+            const std::string exported = AppConfig::ExportToText(scope);
+            std::snprintf(configExportText, sizeof(configExportText), "%s", exported.c_str());
+            if (exported.empty()) {
                 std::snprintf(configStatus, sizeof(configStatus), "%s", T("settings.exportFailed"));
+            } else {
+                std::snprintf(configStatus, sizeof(configStatus), "%s", configTransferScope == 1 ? T("settings.exportPartialSuccess") : T("settings.exportSuccess"));
+                openConfigExportPopup = true;
             }
         }
 
@@ -280,6 +287,30 @@ namespace {
                 } else {
                     std::snprintf(configStatus, sizeof(configStatus), "%s", T("settings.importFailed"));
                 }
+            }
+            ImGui::SameLine();
+            if (ImGui::Button(T("settings.close"), ImVec2(130.0f, 0.0f))) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+    }
+
+    void DrawConfigExportPopup() {
+        char popupTitle[128] = {};
+        std::snprintf(popupTitle, sizeof(popupTitle), "%s###%s", T("settings.exportTextTitle"), ConfigExportPopupId);
+
+        if (openConfigExportPopup) {
+            ImGui::OpenPopup(popupTitle);
+            openConfigExportPopup = false;
+        }
+
+        if (ImGui::BeginPopupModal(popupTitle, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::TextUnformatted(T("settings.exportTextTitle"));
+            ImGui::TextUnformatted(T("settings.exportTextHint"));
+            ImGui::InputTextMultiline("##ConfigExportText", configExportText, sizeof(configExportText), ImVec2(620.0f, 300.0f), ImGuiInputTextFlags_ReadOnly);
+            if (ImGui::Button(T("settings.copyText"), ImVec2(130.0f, 0.0f))) {
+                ImGui::SetClipboardText(configExportText);
             }
             ImGui::SameLine();
             if (ImGui::Button(T("settings.close"), ImVec2(130.0f, 0.0f))) {
@@ -482,6 +513,7 @@ void Menu::Draw() {
 
         DrawUpdateDialog();
         DrawConfigImportPopup();
+        DrawConfigExportPopup();
     }
     ImGui::End();
 

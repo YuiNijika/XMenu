@@ -1,4 +1,5 @@
 #include "UpdateChecker.h"
+#include "utils/AppConfig.h"
 #include "utils/Log.h"
 #include <windows.h>
 #include <urlmon.h>
@@ -211,56 +212,32 @@ namespace {
         return DecodeJsonString(json.substr(valueStart + 1, valueEnd - valueStart - 1));
     }
 
-    std::string CachePath() {
-        char path[MAX_PATH] = {};
-        const DWORD size = GetModuleFileNameA(nullptr, path, MAX_PATH);
-        if (size == 0) {
-            return "XMenu.update.cache";
-        }
-
-        std::string directory(path, size);
-        const std::size_t slash = directory.find_last_of("\\/");
-        if (slash != std::string::npos) {
-            directory = directory.substr(0, slash + 1);
-        } else {
-            directory.clear();
-        }
-        return directory + "XMenu.update.cache";
-    }
-
     bool LoadCache(std::string& latestVersion, std::string& releaseUrl) {
-        std::ifstream file(CachePath(), std::ios::binary);
-        if (!file.is_open()) {
-            DebugUpdate(std::string("缓存不存在：") + CachePath());
+        AppConfig::UpdateCache cache;
+        if (!AppConfig::LoadUpdateCache(cache)) {
+            DebugUpdate(std::string("缓存不存在：") + AppConfig::GetConfigPath());
             return false;
         }
 
-        std::string timestampLine;
-        std::getline(file, timestampLine);
-        std::getline(file, latestVersion);
-        std::getline(file, releaseUrl);
-
-        const std::time_t cachedAt = static_cast<std::time_t>(std::atoll(timestampLine.c_str()));
+        const std::time_t cachedAt = static_cast<std::time_t>(cache.timestamp);
         const std::time_t now = std::time(nullptr);
-        if (cachedAt <= 0 || now <= 0 || now - cachedAt > CacheTtlSeconds || latestVersion.empty()) {
-            DebugUpdate(std::string("缓存无效或过期：") + CachePath());
+        if (cachedAt <= 0 || now <= 0 || now - cachedAt > CacheTtlSeconds || cache.tagName.empty()) {
+            DebugUpdate(std::string("缓存无效或过期：") + AppConfig::GetConfigPath());
             return false;
         }
 
+        latestVersion = cache.tagName;
+        releaseUrl = cache.htmlUrl;
         DebugUpdate(std::string("缓存命中：") + latestVersion);
         return true;
     }
 
     void SaveCache(const std::string& latestVersion, const std::string& releaseUrl) {
-        std::ofstream file(CachePath(), std::ios::binary | std::ios::trunc);
-        if (!file.is_open()) {
-            Log::Warn("更新检查缓存写入失败");
-            return;
-        }
-
-        file << static_cast<long long>(std::time(nullptr)) << '\n'
-             << latestVersion << '\n'
-             << releaseUrl << '\n';
+        AppConfig::UpdateCache cache;
+        cache.timestamp = static_cast<long long>(std::time(nullptr));
+        cache.tagName = latestVersion;
+        cache.htmlUrl = releaseUrl;
+        AppConfig::SaveUpdateCache(cache);
     }
 
     bool DownloadText(const char* url, std::string& output) {
