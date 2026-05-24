@@ -22,7 +22,19 @@ static EndScene_t oEndScene = NULL;
 static Reset_t oReset = NULL;
 static Present_t oPresent = NULL;
 
+extern const bool XMENU_DEBUG_MODE;
+
 namespace {
+    void DebugD3D(const std::string& message) {
+        if (XMENU_DEBUG_MODE) {
+            Log::Info(std::string("D3D Hook 调试：") + message);
+        }
+    }
+
+    std::string StatusText(int status) {
+        return std::to_string(status);
+    }
+
     bool FileExists(const std::string& path) {
         const DWORD attributes = GetFileAttributesA(path.c_str());
         return attributes != INVALID_FILE_ATTRIBUTES && !(attributes & FILE_ATTRIBUTE_DIRECTORY);
@@ -100,16 +112,54 @@ HWND D3DHook::window = NULL;
 WNDPROC D3DHook::oWndProc = NULL;
 bool D3DHook::menuVisible = false;
 bool D3DHook::isInitialized = false;
+bool D3DHook::hookInstalled = false;
+bool D3DHook::initFailed = false;
+LPDIRECT3DDEVICE9 D3DHook::device = nullptr;
+const char* D3DHook::initStatus = "not initialized";
 std::function<void()> D3DHook::renderCallback = nullptr;
 
 bool D3DHook::IsMenuVisible() {
     return menuVisible;
 }
 
+void D3DHook::ToggleMenu() {
+    SetMenuVisible(!menuVisible);
+}
+
+LPDIRECT3DDEVICE9 D3DHook::GetDevice() {
+    return device;
+}
+
+bool D3DHook::IsInitialized() {
+    return isInitialized;
+}
+
+bool D3DHook::IsReady() {
+    return hookInstalled;
+}
+
+bool D3DHook::HadInitFailure() {
+    return initFailed;
+}
+
+const char* D3DHook::GetInitStatus() {
+    return initStatus;
+}
+
+const char* D3DHook::GetStatusText() {
+    return initStatus;
+}
+
 void D3DHook::SetMenuVisible(bool visible) {
+    if (!hookInstalled) {
+        menuVisible = false;
+        return;
+    }
     if (menuVisible == visible) return;
     menuVisible = visible;
-    ProcessMouse();
+    if (isInitialized) {
+        ProcessMouse();
+    }
 }
 
 void D3DHook::ProcessMouse() {
@@ -151,9 +201,29 @@ void D3DHook::ProcessMouse() {
 
 LRESULT __stdcall D3DHook::hkWndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     if (menuVisible) {
-        ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
-        if (uMsg == WM_MOUSEMOVE || uMsg == WM_LBUTTONDOWN || uMsg == WM_LBUTTONUP || uMsg == WM_RBUTTONDOWN || uMsg == WM_RBUTTONUP || uMsg == WM_MOUSEWHEEL) {
+        if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) {
             return true;
+        }
+
+        switch (uMsg) {
+        case WM_MOUSEMOVE:
+        case WM_LBUTTONDOWN:
+        case WM_LBUTTONUP:
+        case WM_RBUTTONDOWN:
+        case WM_RBUTTONUP:
+        case WM_MOUSEWHEEL:
+        case WM_KEYDOWN:
+        case WM_KEYUP:
+        case WM_SYSKEYDOWN:
+        case WM_SYSKEYUP:
+        case WM_CHAR:
+        case WM_SYSCHAR:
+        case WM_IME_STARTCOMPOSITION:
+        case WM_IME_COMPOSITION:
+        case WM_IME_ENDCOMPOSITION:
+            return true;
+        default:
+            break;
         }
     }
     return CallWindowProc(oWndProc, hWnd, uMsg, wParam, lParam);
@@ -176,6 +246,7 @@ void D3DHook::InitImGui(LPDIRECT3DDEVICE9 pDevice) {
 }
 
 HRESULT __stdcall D3DHook::hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
+    device = pDevice;
     if (!isInitialized) {
         D3DDEVICE_CREATION_PARAMETERS params;
         pDevice->GetCreationParameters(&params);
@@ -216,23 +287,41 @@ HRESULT __stdcall D3DHook::hkPresent(LPDIRECT3DDEVICE9 pDevice, const RECT* pSou
 
 bool D3DHook::Init(std::function<void()> onRender) {
     renderCallback = onRender;
-    const auto initStatus = kiero::init(kiero::RenderType::D3D9);
-    if (initStatus == kiero::Status::Success) {
+    hookInstalled = false;
+    initFailed = false;
+    initStatus = "initializing";
+    DebugD3D("开始初始化 kiero D3D9");
+    const auto initStatusCode = kiero::init(kiero::RenderType::D3D9);
+    DebugD3D(std::string("kiero::init 状态=") + StatusText(static_cast<int>(initStatusCode)));
+    if (initStatusCode == kiero::Status::Success) {
         const auto endSceneStatus = kiero::bind(42, (void**)&oEndScene, (void*)hkEndScene);
         const auto resetStatus = kiero::bind(16, (void**)&oReset, (void*)hkReset);
         const auto presentStatus = kiero::bind(17, (void**)&oPresent, (void*)hkPresent);
+        DebugD3D(std::string("bind EndScene(42) 状态=") + StatusText(static_cast<int>(endSceneStatus)));
+        DebugD3D(std::string("bind Reset(16) 状态=") + StatusText(static_cast<int>(resetStatus)));
+        DebugD3D(std::string("bind Present(17) 状态=") + StatusText(static_cast<int>(presentStatus)));
 
         if (endSceneStatus == kiero::Status::Success && resetStatus == kiero::Status::Success && presentStatus == kiero::Status::Success) {
+            hookInstalled = true;
+            initStatus = "D3D9 Hook ready";
             Log::Info("D3D9 Hook 绑定完成");
             return true;
         }
 
+        hookInstalled = false;
+        initFailed = true;
+        initStatus = "D3D9 Hook binding failed";
         Log::Error("D3D9 Hook 绑定失败");
+        DebugD3D("绑定失败，已执行 kiero::shutdown");
         kiero::shutdown();
         return false;
     }
 
-    Log::Error("kiero D3D9 初始化失败");
+    hookInstalled = false;
+    initFailed = true;
+    initStatus = "D3D9 Hook init failed: GTA III/VC need D3D8to9; SA needs D3D9 render path";
+    Log::Error("kiero D3D9 初始化失败：GTA III/VC 请确认已安装 D3D8to9 wrapper；SA 请确认当前渲染路径为 D3D9。菜单渲染不可用，但脚本逻辑继续执行");
+    DebugD3D("初始化失败：GTA III/VC 通常需要 D3D8to9 wrapper；SA 需要确认当前渲染路径为 D3D9");
     return false;
 }
 
@@ -243,7 +332,14 @@ void D3DHook::Shutdown() {
         ImGui_ImplDX9_Shutdown();
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();
-        kiero::shutdown();
         isInitialized = false;
     }
+
+    if (hookInstalled) {
+        kiero::shutdown();
+        hookInstalled = false;
+    }
+
+    device = nullptr;
+    menuVisible = false;
 }

@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <vector>
 #include "utils/DataManager.h"
+#include <string>
 
 namespace Resources {
     // 使用DataManager的结构
@@ -26,6 +27,8 @@ namespace Resources {
 
     WeaponTable GetWeapons();
     LocationTable GetLocations();
+    void ReloadLocations();
+    bool AddCustomLocation(const std::string& name, float x, float y, float z, int interior);
     VehicleTable GetVehicles();
     bool IsKnownVehicleModel(unsigned int model);
     

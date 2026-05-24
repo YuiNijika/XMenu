@@ -31,7 +31,16 @@ namespace {
             }
         }
 
+        if (key.rfind("teleport.", 0) != 0) {
+            return key;
+        }
+
         return I18n::T(key.c_str());
+    }
+
+    void WriteCurrentPosition(char* output, std::size_t outputSize) {
+        const CVector pos = Controllers::Teleport::GetCurrentPosition();
+        std::snprintf(output, outputSize, "%.2f, %.2f, %.2f", pos.x, pos.y, pos.z);
     }
 
     void DrawLocationList() {
@@ -69,29 +78,31 @@ namespace {
 namespace Pages::Teleport {
     void Draw() {
         static char coordInput[128] = "0, 0, 10";
+        static char currentCoordText[128] = "";
         static char locationName[128] = "";
+
+        WriteCurrentPosition(currentCoordText, sizeof(currentCoordText));
 
         if (UI::BeginTabBar("TeleportTabs")) {
             if (ImGui::BeginTabItem(T("tab.teleport"))) {
 #ifdef GTASA
                 ImGui::Columns(2, nullptr, false);
-                ImGui::Checkbox(T("teleport.insertCurrentCoordinates"), &MenuState::TeleportInsertCoord);
                 ImGui::Checkbox(T("teleport.quickMapTeleport"), &MenuState::QuickTeleport);
                 ImGui::NextColumn();
                 ImGui::Checkbox(T("teleport.allowUnderwaterLanding"), &MenuState::SpawnUnderwater);
                 ImGui::Checkbox(T("teleport.quickMarkerTeleport"), &MenuState::TeleportMarker);
                 ImGui::Columns(1);
-#else
-                ImGui::Checkbox(T("teleport.insertCurrentCoordinates"), &MenuState::TeleportInsertCoord);
 #endif
 
-                if (MenuState::TeleportInsertCoord) {
-                    const CVector pos = Controllers::Teleport::GetCurrentPosition();
-                    std::snprintf(coordInput, sizeof(coordInput), "%.0f, %.0f, %.0f", pos.x, pos.y, pos.z);
-                }
-
                 ImGui::Spacing();
+                ImGui::InputTextWithHint(T("teleport.currentCoordinates"), "x, y, z", currentCoordText, sizeof(currentCoordText), ImGuiInputTextFlags_ReadOnly);
+                ImGui::PushItemWidth(-142.0f);
                 ImGui::InputTextWithHint(T("teleport.coordinates"), "x, y, z", coordInput, sizeof(coordInput));
+                ImGui::PopItemWidth();
+                ImGui::SameLine();
+                if (ImGui::Button(T("teleport.readCurrentValues"), ImVec2(132.0f, 0.0f))) {
+                    std::snprintf(coordInput, sizeof(coordInput), "%s", currentCoordText);
+                }
                 ImGui::Spacing();
 
                 if (UI::Button(T("teleport.toCoordinates"), 4)) {
@@ -151,9 +162,14 @@ namespace Pages::Teleport {
 
             if (ImGui::BeginTabItem(T("teleport.locations"))) {
                 ImGui::InputTextWithHint(T("teleport.locationName"), T("teleport.customLocation"), locationName, sizeof(locationName));
-                ImGui::InputTextWithHint(T("teleport.locationCoordinates"), "x, y, z", coordInput, sizeof(coordInput));
+                ImGui::InputTextWithHint(T("teleport.locationCoordinates"), "x, y, z", currentCoordText, sizeof(currentCoordText), ImGuiInputTextFlags_ReadOnly);
                 if (UI::Button(T("teleport.addLocation"))) {
-                    locationName[0] = '\0';
+                    float x = 0.0f;
+                    float y = 0.0f;
+                    float z = 10.0f;
+                    if (std::sscanf(currentCoordText, "%f,%f,%f", &x, &y, &z) == 3 && Resources::AddCustomLocation(locationName, x, y, z, 0)) {
+                        locationName[0] = '\0';
+                    }
                 }
 
                 UI::SpacingSeparator();

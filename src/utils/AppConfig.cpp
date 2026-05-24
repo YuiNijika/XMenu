@@ -1,0 +1,546 @@
+#include "AppConfig.h"
+#include "utils/JsonLoader.h"
+#include "utils/Log.h"
+#include <algorithm>
+#include <cctype>
+#include <cstdlib>
+#include <fstream>
+#include <sstream>
+#include <unordered_map>
+
+#ifdef GetObject
+#undef GetObject
+#endif
+
+extern const char* XMENU_AUTHOR;
+extern const char* XMENU_URL;
+extern const char* XMENU_GITHUB;
+
+namespace {
+    constexpr const char* DefaultMenuKey = "M";
+
+    std::string menuKeyName = DefaultMenuKey;
+    AppConfig::Hotkey menuHotkey;
+    std::vector<DataManager::LocationData> customLocations;
+
+    std::string ConfigPath() {
+        HMODULE module = nullptr;
+        GetModuleHandleExA(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            reinterpret_cast<LPCSTR>(&ConfigPath),
+            &module
+        );
+
+        char path[MAX_PATH] = {};
+        DWORD size = 0;
+        if (module) {
+            size = GetModuleFileNameA(module, path, MAX_PATH);
+        }
+        if (size == 0) {
+            return "XMenu.json";
+        }
+
+        std::string directory(path, size);
+        const std::size_t slash = directory.find_last_of("\\/");
+        if (slash != std::string::npos) {
+            directory = directory.substr(0, slash + 1);
+        } else {
+            directory.clear();
+        }
+        return directory + "XMenu.json";
+    }
+
+    std::string Trim(std::string value) {
+        while (!value.empty() && std::isspace(static_cast<unsigned char>(value.front()))) {
+            value.erase(value.begin());
+        }
+        while (!value.empty() && std::isspace(static_cast<unsigned char>(value.back()))) {
+            value.pop_back();
+        }
+        return value;
+    }
+
+    std::string Upper(std::string value) {
+        for (char& ch : value) {
+            ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+        }
+        return value;
+    }
+
+    std::vector<std::string> SplitKeyExpression(const std::string& rawValue) {
+        std::vector<std::string> parts;
+        std::string current;
+
+        for (const char ch : rawValue) {
+            if (ch == '+') {
+                const std::string part = Trim(current);
+                if (!part.empty()) {
+                    parts.push_back(part);
+                }
+                current.clear();
+                continue;
+            }
+            current.push_back(ch);
+        }
+
+        const std::string part = Trim(current);
+        if (!part.empty()) {
+            parts.push_back(part);
+        }
+        return parts;
+    }
+
+    const std::unordered_map<std::string, int>& KeyMap() {
+        static const std::unordered_map<std::string, int> keys = {
+            {"BACKSPACE", VK_BACK}, {"BACK", VK_BACK},
+            {"TAB", VK_TAB},
+            {"ENTER", VK_RETURN}, {"RETURN", VK_RETURN},
+            {"SHIFT", VK_SHIFT}, {"LSHIFT", VK_LSHIFT}, {"RSHIFT", VK_RSHIFT},
+            {"CTRL", VK_CONTROL}, {"CONTROL", VK_CONTROL}, {"LCTRL", VK_LCONTROL}, {"RCTRL", VK_RCONTROL},
+            {"ALT", VK_MENU}, {"MENU", VK_MENU}, {"LALT", VK_LMENU}, {"RALT", VK_RMENU},
+            {"PAUSE", VK_PAUSE}, {"CAPSLOCK", VK_CAPITAL}, {"CAPS", VK_CAPITAL},
+            {"ESC", VK_ESCAPE}, {"ESCAPE", VK_ESCAPE},
+            {"SPACE", VK_SPACE}, {"SPACEBAR", VK_SPACE},
+            {"PAGEUP", VK_PRIOR}, {"PGUP", VK_PRIOR},
+            {"PAGEDOWN", VK_NEXT}, {"PGDN", VK_NEXT},
+            {"END", VK_END}, {"HOME", VK_HOME},
+            {"LEFT", VK_LEFT}, {"UP", VK_UP}, {"RIGHT", VK_RIGHT}, {"DOWN", VK_DOWN},
+            {"PRINTSCREEN", VK_SNAPSHOT}, {"PRTSC", VK_SNAPSHOT},
+            {"INSERT", VK_INSERT}, {"INS", VK_INSERT},
+            {"DELETE", VK_DELETE}, {"DEL", VK_DELETE},
+            {"WIN", VK_LWIN}, {"LWIN", VK_LWIN}, {"RWIN", VK_RWIN},
+            {"NUM0", VK_NUMPAD0}, {"NUMPAD0", VK_NUMPAD0},
+            {"NUM1", VK_NUMPAD1}, {"NUMPAD1", VK_NUMPAD1},
+            {"NUM2", VK_NUMPAD2}, {"NUMPAD2", VK_NUMPAD2},
+            {"NUM3", VK_NUMPAD3}, {"NUMPAD3", VK_NUMPAD3},
+            {"NUM4", VK_NUMPAD4}, {"NUMPAD4", VK_NUMPAD4},
+            {"NUM5", VK_NUMPAD5}, {"NUMPAD5", VK_NUMPAD5},
+            {"NUM6", VK_NUMPAD6}, {"NUMPAD6", VK_NUMPAD6},
+            {"NUM7", VK_NUMPAD7}, {"NUMPAD7", VK_NUMPAD7},
+            {"NUM8", VK_NUMPAD8}, {"NUMPAD8", VK_NUMPAD8},
+            {"NUM9", VK_NUMPAD9}, {"NUMPAD9", VK_NUMPAD9},
+            {"MULTIPLY", VK_MULTIPLY}, {"NUM*", VK_MULTIPLY},
+            {"ADD", VK_ADD}, {"NUM+", VK_ADD},
+            {"SUBTRACT", VK_SUBTRACT}, {"NUM-", VK_SUBTRACT},
+            {"DECIMAL", VK_DECIMAL}, {"NUM.", VK_DECIMAL},
+            {"DIVIDE", VK_DIVIDE}, {"NUM/", VK_DIVIDE},
+            {"F1", VK_F1}, {"F2", VK_F2}, {"F3", VK_F3}, {"F4", VK_F4},
+            {"F5", VK_F5}, {"F6", VK_F6}, {"F7", VK_F7}, {"F8", VK_F8},
+            {"F9", VK_F9}, {"F10", VK_F10}, {"F11", VK_F11}, {"F12", VK_F12},
+            {"F13", VK_F13}, {"F14", VK_F14}, {"F15", VK_F15}, {"F16", VK_F16},
+            {"F17", VK_F17}, {"F18", VK_F18}, {"F19", VK_F19}, {"F20", VK_F20},
+            {"F21", VK_F21}, {"F22", VK_F22}, {"F23", VK_F23}, {"F24", VK_F24},
+            {"NUMLOCK", VK_NUMLOCK}, {"SCROLLLOCK", VK_SCROLL}, {"SCROLL", VK_SCROLL},
+            {";", VK_OEM_1}, {":", VK_OEM_1},
+            {"=", VK_OEM_PLUS}, {"PLUS", VK_OEM_PLUS},
+            {",", VK_OEM_COMMA}, {"COMMA", VK_OEM_COMMA},
+            {"-", VK_OEM_MINUS}, {"MINUS", VK_OEM_MINUS},
+            {".", VK_OEM_PERIOD}, {"PERIOD", VK_OEM_PERIOD},
+            {"/", VK_OEM_2}, {"SLASH", VK_OEM_2},
+            {"`", VK_OEM_3}, {"~", VK_OEM_3}, {"BACKQUOTE", VK_OEM_3},
+            {"[", VK_OEM_4}, {"LBRACKET", VK_OEM_4},
+            {"\\", VK_OEM_5}, {"BACKSLASH", VK_OEM_5},
+            {"]", VK_OEM_6}, {"RBRACKET", VK_OEM_6},
+            {"'", VK_OEM_7}, {"QUOTE", VK_OEM_7}
+        };
+        return keys;
+    }
+
+    int KeyNameToVirtualKey(const std::string& rawName) {
+        const std::string name = Upper(Trim(rawName));
+        if (name.empty()) {
+            return 0;
+        }
+
+        if (name.size() == 1) {
+            const char ch = name[0];
+            if ((ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9')) {
+                return ch;
+            }
+        }
+
+        const auto mapped = KeyMap().find(name);
+        if (mapped != KeyMap().end()) {
+            return mapped->second;
+        }
+
+        if (name.rfind("VK_", 0) == 0) {
+            return KeyNameToVirtualKey(name.substr(3));
+        }
+
+        if (name.rfind("0X", 0) == 0) {
+            return static_cast<int>(std::strtol(name.c_str(), nullptr, 16));
+        }
+
+        bool numeric = true;
+        for (const char ch : name) {
+            if (!std::isdigit(static_cast<unsigned char>(ch))) {
+                numeric = false;
+                break;
+            }
+        }
+        if (numeric) {
+            return std::atoi(name.c_str());
+        }
+
+        return 0;
+    }
+
+    bool IsKeyDown(int virtualKey) {
+        return virtualKey > 0 && (GetKeyState(virtualKey) & 0x8000) != 0;
+    }
+
+    bool IsModifierDown(bool required, int genericKey, int leftKey, int rightKey) {
+        if (!required) {
+            return true;
+        }
+        return IsKeyDown(genericKey) || IsKeyDown(leftKey) || IsKeyDown(rightKey);
+    }
+
+    std::string CanonicalHotkeyName(const AppConfig::Hotkey& hotkey) {
+        std::vector<std::string> parts;
+        if (hotkey.ctrl) {
+            parts.push_back("Ctrl");
+        }
+        if (hotkey.alt) {
+            parts.push_back("Alt");
+        }
+        if (hotkey.shift) {
+            parts.push_back("Shift");
+        }
+
+        std::string keyName;
+        for (const auto& item : KeyMap()) {
+            if (item.second == hotkey.key && item.first.size() > keyName.size()) {
+                keyName = item.first;
+            }
+        }
+
+        if (hotkey.key >= 'A' && hotkey.key <= 'Z') {
+            keyName = static_cast<char>(hotkey.key);
+        } else if (hotkey.key >= '0' && hotkey.key <= '9') {
+            keyName = static_cast<char>(hotkey.key);
+        } else if (keyName.empty()) {
+            keyName = "VK_" + std::to_string(hotkey.key);
+        }
+
+        parts.push_back(keyName);
+
+        std::ostringstream stream;
+        for (std::size_t i = 0; i < parts.size(); ++i) {
+            if (i > 0) {
+                stream << "+";
+            }
+            stream << parts[i];
+        }
+        return stream.str();
+    }
+
+    AppConfig::Hotkey ParseHotkey(const std::string& keyName, bool& valid) {
+        AppConfig::Hotkey hotkey;
+        valid = false;
+
+        const std::vector<std::string> parts = SplitKeyExpression(keyName);
+        for (const std::string& rawPart : parts) {
+            const std::string part = Upper(Trim(rawPart));
+            if (part == "CTRL" || part == "CONTROL" || part == "LCTRL" || part == "RCTRL") {
+                hotkey.ctrl = true;
+                continue;
+            }
+            if (part == "ALT" || part == "MENU" || part == "LALT" || part == "RALT") {
+                hotkey.alt = true;
+                continue;
+            }
+            if (part == "SHIFT" || part == "LSHIFT" || part == "RSHIFT") {
+                hotkey.shift = true;
+                continue;
+            }
+
+            const int virtualKey = KeyNameToVirtualKey(part);
+            if (virtualKey > 0) {
+                hotkey.key = virtualKey;
+                valid = true;
+            }
+        }
+
+        return hotkey;
+    }
+
+    std::string EscapeJson(const std::string& value) {
+        std::string escaped;
+        escaped.reserve(value.size());
+        for (const char ch : value) {
+            switch (ch) {
+            case '"': escaped += "\\\""; break;
+            case '\\': escaped += "\\\\"; break;
+            case '\n': escaped += "\\n"; break;
+            case '\r': escaped += "\\r"; break;
+            case '\t': escaped += "\\t"; break;
+            default: escaped.push_back(ch); break;
+            }
+        }
+        return escaped;
+    }
+
+    const JsonLoader::JsonValue& ObjectOrNull(const JsonLoader::JsonValue& value, const std::string& key) {
+        static const JsonLoader::JsonValue empty;
+        if (value.type != JsonLoader::JsonValue::OBJECT) {
+            return empty;
+        }
+
+        const auto found = value.object_values.find(key);
+        return found == value.object_values.end() ? empty : found->second;
+    }
+
+    void ApplyMenuKey(const std::string& keyName);
+
+    const char* GameKey() {
+#ifdef GTASA
+        return "sa";
+#elif GTAVC
+        return "vc";
+#elif GTA3
+        return "iii";
+#else
+        return "unknown";
+#endif
+    }
+
+    void LoadLocationsFromArray(const std::vector<JsonLoader::JsonValue>& locations, std::vector<DataManager::LocationData>& output) {
+        output.clear();
+        for (const JsonLoader::JsonValue& item : locations) {
+            if (item.type != JsonLoader::JsonValue::OBJECT) {
+                continue;
+            }
+
+            DataManager::LocationData location;
+            location.category = "custom";
+            location.name = JsonLoader::GetString(item, "name", "");
+            location.x = static_cast<float>(JsonLoader::GetNumber(item, "x", 0.0));
+            location.y = static_cast<float>(JsonLoader::GetNumber(item, "y", 0.0));
+            location.z = static_cast<float>(JsonLoader::GetNumber(item, "z", 0.0));
+            location.interior = static_cast<int>(JsonLoader::GetNumber(item, "interior", 0));
+            if (!location.name.empty()) {
+                output.push_back(location);
+            }
+        }
+    }
+
+    std::vector<DataManager::LocationData> ReadCurrentGameLocations(const JsonLoader::JsonValue& root) {
+        std::vector<DataManager::LocationData> locations;
+        LoadLocationsFromArray(JsonLoader::GetArray(root, GameKey()), locations);
+        if (!locations.empty()) {
+            return locations;
+        }
+
+        LoadLocationsFromArray(JsonLoader::GetArray(root, "customLocations"), locations);
+        return locations;
+    }
+
+    void AppendLocations(const std::vector<DataManager::LocationData>& locations) {
+        customLocations.insert(customLocations.end(), locations.begin(), locations.end());
+    }
+
+    void WriteLocationArray(std::ofstream& file, const char* key, const std::vector<DataManager::LocationData>& locations, bool trailingComma) {
+        file << "  \"" << key << "\": [\n";
+        for (std::size_t i = 0; i < locations.size(); ++i) {
+            const DataManager::LocationData& location = locations[i];
+            file << "    {\"name\": \"" << EscapeJson(location.name) << "\", \"x\": " << location.x
+                 << ", \"y\": " << location.y << ", \"z\": " << location.z
+                 << ", \"interior\": " << location.interior << "}";
+            if (i + 1 < locations.size()) {
+                file << ",";
+            }
+            file << "\n";
+        }
+        file << "  ]" << (trailingComma ? "," : "") << "\n";
+    }
+
+    void LoadConfigData(const JsonLoader::JsonValue& root) {
+        const JsonLoader::JsonValue& menu = ObjectOrNull(root, "menu");
+        ApplyMenuKey(JsonLoader::GetString(menu, "toggleKey", DefaultMenuKey));
+
+        const std::vector<JsonLoader::JsonValue>& gameLocations = JsonLoader::GetArray(root, GameKey());
+        if (!gameLocations.empty()) {
+            LoadLocationsFromArray(gameLocations, customLocations);
+            return;
+        }
+
+        const std::vector<JsonLoader::JsonValue>& legacyLocations = JsonLoader::GetArray(root, "customLocations");
+        LoadLocationsFromArray(legacyLocations, customLocations);
+    }
+
+    bool SaveToPath(const std::string& path, const JsonLoader::JsonValue* sourceRoot = nullptr, AppConfig::TransferScope scope = AppConfig::TransferScope::All) {
+        std::vector<DataManager::LocationData> iiiLocations;
+        std::vector<DataManager::LocationData> vcLocations;
+        std::vector<DataManager::LocationData> saLocations;
+
+        const JsonLoader::JsonValue existingRoot = sourceRoot ? *sourceRoot : JsonLoader::LoadFromFile(ConfigPath());
+        if (existingRoot.type == JsonLoader::JsonValue::OBJECT) {
+            LoadLocationsFromArray(JsonLoader::GetArray(existingRoot, "iii"), iiiLocations);
+            LoadLocationsFromArray(JsonLoader::GetArray(existingRoot, "vc"), vcLocations);
+            LoadLocationsFromArray(JsonLoader::GetArray(existingRoot, "sa"), saLocations);
+        }
+
+        const std::string currentGame = GameKey();
+        if (currentGame == "iii") {
+            iiiLocations = customLocations;
+        } else if (currentGame == "vc") {
+            vcLocations = customLocations;
+        } else if (currentGame == "sa") {
+            saLocations = customLocations;
+        }
+
+        std::ofstream file(path, std::ios::binary | std::ios::trunc);
+        if (!file.is_open()) {
+            Log::Warn(std::string("配置文件写入失败: ") + path);
+            return false;
+        }
+
+        file << "{\n";
+        if (scope == AppConfig::TransferScope::CustomLocations) {
+            WriteLocationArray(file, currentGame.c_str(), currentGame == "iii" ? iiiLocations : currentGame == "vc" ? vcLocations : saLocations, false);
+            file << "}\n";
+            return true;
+        }
+
+        file << "  \"XMenu\": {\n";
+        file << "    \"XMENU_AUTHOR\": \"" << EscapeJson(XMENU_AUTHOR) << "\",\n";
+        file << "    \"XMENU_URL\": \"" << EscapeJson(XMENU_URL) << "\",\n";
+        file << "    \"XMENU_GITHUB\": \"" << EscapeJson(XMENU_GITHUB) << "\"\n";
+        file << "  },\n";
+        file << "  \"menu\": {\n";
+        file << "    \"toggleKey\": \"" << EscapeJson(menuKeyName) << "\",\n";
+        file << "    \"hotkey\": {\n";
+        file << "      \"key\": " << menuHotkey.key << ",\n";
+        file << "      \"ctrl\": " << (menuHotkey.ctrl ? "true" : "false") << ",\n";
+        file << "      \"alt\": " << (menuHotkey.alt ? "true" : "false") << ",\n";
+        file << "      \"shift\": " << (menuHotkey.shift ? "true" : "false") << "\n";
+        file << "    }\n";
+        file << "  },\n";
+        WriteLocationArray(file, "iii", iiiLocations, true);
+        WriteLocationArray(file, "vc", vcLocations, true);
+        WriteLocationArray(file, "sa", saLocations, false);
+        file << "}\n";
+        return true;
+    }
+
+    void ApplyMenuKey(const std::string& keyName) {
+        bool valid = false;
+        AppConfig::Hotkey parsed = ParseHotkey(keyName, valid);
+        if (!valid) {
+            Log::Warn(std::string("菜单快捷键无效，已回退到 M: ") + keyName);
+            ParseHotkey(DefaultMenuKey, valid);
+            parsed = AppConfig::Hotkey{};
+            parsed.key = 'M';
+        }
+
+        menuHotkey = parsed;
+        menuKeyName = CanonicalHotkeyName(menuHotkey);
+    }
+}
+
+namespace AppConfig {
+    void Init() {
+        customLocations.clear();
+        ApplyMenuKey(DefaultMenuKey);
+
+        const std::string path = ConfigPath();
+        const JsonLoader::JsonValue root = JsonLoader::LoadFromFile(path);
+        if (root.type != JsonLoader::JsonValue::OBJECT) {
+            Log::Info(std::string("配置文件不存在或为空，将创建默认配置: ") + path);
+            Save();
+            return;
+        }
+
+        LoadConfigData(root);
+        Save();
+        Log::Info(std::string("配置加载完成：游戏=") + GameKey() + "，快捷键=" + menuKeyName + "，自定义地点=" + std::to_string(customLocations.size()));
+    }
+
+    void Save() {
+        SaveToPath(ConfigPath());
+    }
+
+    std::string GetConfigPath() {
+        return ConfigPath();
+    }
+
+    bool ImportFrom(const std::string& path, TransferScope scope) {
+        const JsonLoader::JsonValue root = JsonLoader::LoadFromFile(path);
+        if (root.type != JsonLoader::JsonValue::OBJECT) {
+            Log::Warn(std::string("配置导入失败，文件无效: ") + path);
+            return false;
+        }
+
+        if (scope == TransferScope::CustomLocations) {
+            const std::vector<DataManager::LocationData> importedLocations = ReadCurrentGameLocations(root);
+            AppendLocations(importedLocations);
+            SaveToPath(ConfigPath());
+            Log::Info(std::string("自定义地点导入完成: ") + path + "，追加数量=" + std::to_string(importedLocations.size()));
+            return true;
+        }
+
+        customLocations.clear();
+        ApplyMenuKey(DefaultMenuKey);
+        LoadConfigData(root);
+        SaveToPath(ConfigPath(), &root);
+        Log::Info(std::string("配置导入完成: ") + path);
+        return true;
+    }
+
+    bool ExportTo(const std::string& path, TransferScope scope) {
+        if (!SaveToPath(path, nullptr, scope)) {
+            return false;
+        }
+        Log::Info(std::string(scope == TransferScope::CustomLocations ? "自定义地点导出完成: " : "配置导出完成: ") + path);
+        return true;
+    }
+
+    const Hotkey& GetMenuHotkey() {
+        return menuHotkey;
+    }
+
+    bool IsMenuHotkeyPressed() {
+        return IsModifierDown(menuHotkey.ctrl, VK_CONTROL, VK_LCONTROL, VK_RCONTROL)
+            && IsModifierDown(menuHotkey.alt, VK_MENU, VK_LMENU, VK_RMENU)
+            && IsModifierDown(menuHotkey.shift, VK_SHIFT, VK_LSHIFT, VK_RSHIFT)
+            && IsKeyDown(menuHotkey.key);
+    }
+
+    int GetMenuKeyVirtualKey() {
+        return menuHotkey.key;
+    }
+
+    std::string GetMenuKeyName() {
+        return menuKeyName;
+    }
+
+    void SetMenuKeyName(const std::string& keyName) {
+        ApplyMenuKey(keyName);
+        Save();
+    }
+
+    const std::vector<DataManager::LocationData>& GetCustomLocations() {
+        return customLocations;
+    }
+
+    bool AddCustomLocation(const std::string& name, float x, float y, float z, int interior) {
+        const std::string trimmedName = Trim(name);
+        if (trimmedName.empty()) {
+            return false;
+        }
+
+        DataManager::LocationData location;
+        location.category = "custom";
+        location.name = trimmedName;
+        location.x = x;
+        location.y = y;
+        location.z = z;
+        location.interior = interior;
+        customLocations.push_back(location);
+        Save();
+        Log::Info(std::string("已添加自定义地点: ") + trimmedName);
+        return true;
+    }
+}

@@ -18,8 +18,10 @@ namespace UpdateChecker {
     };
 
     void Start(const char* apiUrl, const char* currentVersion);
+    void Refresh();
     bool IsChecking();
     bool HasUpdate();
     UpdateInfo GetUpdateInfo();
     void Dismiss();
+    void ForceDebugUpdate();
 }

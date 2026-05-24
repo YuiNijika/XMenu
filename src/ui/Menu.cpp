@@ -6,6 +6,8 @@
 #include "utils/D3DHook.h"
 #include "utils/I18n.h"
 #include "utils/UpdateChecker.h"
+#include "utils/AppConfig.h"
+#include "resources/ResourceData.h"
 #include "ui/Widget.h"
 #include "imgui/imgui.h"
 #include "ui/pages/Player.h"
@@ -14,6 +16,7 @@
 #include "ui/pages/Weapon.h"
 #include "ui/pages/World.h"
 
+extern const bool XMENU_DEBUG_MODE;
 extern const char* XMENU_VERSION;
 extern const char* XMENU_AUTHOR;
 extern const char* XMENU_AUTHOR_TEST;
@@ -61,9 +64,13 @@ namespace {
     }
 
     void DrawSettings();
+    void DrawConfigSettings();
+    void DrawUpdateSettings();
+    void DrawLogViewer();
+    void DrawDebugSettings();
     void DrawAbout();
     void DrawUpdateDialog();
-    void DrawVersionStatus();
+    void DrawVersionBadge();
 
     void DrawPageHeader(const char* titleKey) {
         ImGui::TextUnformatted(T(titleKey));
@@ -71,28 +78,46 @@ namespace {
         ImGui::Spacing();
     }
 
-    void DrawVersionStatus() {
+    void DrawVersionBadge() {
         const UpdateChecker::UpdateInfo info = UpdateChecker::GetUpdateInfo();
         const char* remoteVersion = info.latestVersion.empty() ? T("status.remoteUnknown") : info.latestVersion.c_str();
+        const char* statusText = T("status.remoteUnknown");
 
         ImVec4 versionColor = ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
-        if (info.status == UpdateChecker::VersionStatus::Equal) {
+        if (UpdateChecker::IsChecking()) {
+            statusText = T("status.checking");
+        } else if (info.status == UpdateChecker::VersionStatus::Equal) {
             versionColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+            statusText = T("status.upToDate");
         } else if (info.status == UpdateChecker::VersionStatus::LocalNewer) {
             versionColor = ImVec4(1.0f, 0.30f, 0.25f, 1.0f);
+            statusText = T("status.localNewer");
         } else if (info.status == UpdateChecker::VersionStatus::RemoteNewer) {
             versionColor = ImVec4(1.0f, 0.82f, 0.20f, 1.0f);
+            statusText = T("status.remoteNewer");
         }
 
-        ImGui::TextDisabled("%s: %s", T("status.language"), I18n::GetLanguageName(I18n::GetLanguage()));
+        ImGui::SameLine();
+        ImGui::TextDisabled("%s", XMENU_VERSION);
+        ImGui::SameLine();
         ImGui::PushStyleColor(ImGuiCol_Text, versionColor);
-        ImGui::TextWrapped(T("status.localVersion"), XMENU_VERSION);
-        ImGui::TextWrapped(T("status.remoteVersion"), remoteVersion);
+        ImGui::SmallButton("?##VersionInfo");
         ImGui::PopStyleColor();
+
+        if (ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip();
+            ImGui::TextUnformatted(statusText);
+            ImGui::Separator();
+            ImGui::Text("%s: %s", T("status.language"), I18n::GetLanguageName(I18n::GetLanguage()));
+            ImGui::Text(T("status.localVersion"), XMENU_VERSION);
+            ImGui::Text(T("status.remoteVersion"), remoteVersion);
+            ImGui::EndTooltip();
+        }
     }
 
     void DrawNavigation() {
         ImGui::TextUnformatted("XMenu");
+        DrawVersionBadge();
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
@@ -106,9 +131,13 @@ namespace {
             }
         }
 
-        ImGui::SetCursorPosY(ImGui::GetWindowHeight() - 86.0f);
+        const float footerHeight = ImGui::GetTextLineHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
+        const float footerY = ImGui::GetWindowContentRegionMax().y - footerHeight;
+        if (ImGui::GetCursorPosY() < footerY) {
+            ImGui::SetCursorPosY(footerY);
+        }
         ImGui::Separator();
-        DrawVersionStatus();
+        ImGui::TextDisabled("%s: %s", T("status.language"), I18n::GetLanguageName(I18n::GetLanguage()));
     }
 
     void DrawActivePage() {
@@ -163,6 +192,175 @@ namespace {
 
         ImGui::Spacing();
         ImGui::TextDisabled("%s", T("settings.applyImmediately"));
+
+        static char hotkeyInput[32] = "";
+        if (hotkeyInput[0] == '\0') {
+            std::snprintf(hotkeyInput, sizeof(hotkeyInput), "%s", AppConfig::GetMenuKeyName().c_str());
+        }
+        ImGui::Spacing();
+        ImGui::InputTextWithHint(T("settings.menuHotkey"), "M", hotkeyInput, sizeof(hotkeyInput));
+        ImGui::SameLine();
+        if (ImGui::Button(T("settings.applyHotkey"))) {
+            AppConfig::SetMenuKeyName(hotkeyInput);
+            std::snprintf(hotkeyInput, sizeof(hotkeyInput), "%s", AppConfig::GetMenuKeyName().c_str());
+        }
+        ImGui::TextDisabled(T("settings.currentHotkey"), AppConfig::GetMenuKeyName().c_str());
+
+        UI::SpacingSeparator();
+        DrawConfigSettings();
+
+        UI::SpacingSeparator();
+        DrawUpdateSettings();
+        if (XMENU_DEBUG_MODE) {
+            UI::SpacingSeparator();
+            DrawDebugSettings();
+        }
+        UI::SpacingSeparator();
+        DrawLogViewer();
+    }
+
+    void DrawConfigSettings() {
+        static char configPathInput[MAX_PATH] = "";
+        static char configStatus[128] = "";
+        static int configTransferScope = 0;
+        if (configPathInput[0] == '\0') {
+            std::snprintf(configPathInput, sizeof(configPathInput), "%s", AppConfig::GetConfigPath().c_str());
+        }
+
+        ImGui::TextUnformatted(T("settings.config"));
+        ImGui::InputTextWithHint(T("settings.configPath"), "XMenu.json", configPathInput, sizeof(configPathInput));
+        ImGui::TextDisabled(T("settings.defaultConfigPath"), AppConfig::GetConfigPath().c_str());
+        ImGui::TextUnformatted(T("settings.transferScope"));
+        ImGui::RadioButton(T("settings.transferAll"), &configTransferScope, 0);
+        ImGui::SameLine();
+        ImGui::RadioButton(T("settings.transferCustomLocations"), &configTransferScope, 1);
+
+        const AppConfig::TransferScope scope = configTransferScope == 1
+            ? AppConfig::TransferScope::CustomLocations
+            : AppConfig::TransferScope::All;
+
+        if (ImGui::Button(T("settings.importConfig"), ImVec2(130.0f, 0.0f))) {
+            if (AppConfig::ImportFrom(configPathInput, scope)) {
+                Resources::ReloadLocations();
+                std::snprintf(configStatus, sizeof(configStatus), "%s", configTransferScope == 1 ? T("settings.importPartialSuccess") : T("settings.importSuccess"));
+            } else {
+                std::snprintf(configStatus, sizeof(configStatus), "%s", T("settings.importFailed"));
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button(T("settings.exportConfig"), ImVec2(130.0f, 0.0f))) {
+            if (AppConfig::ExportTo(configPathInput, scope)) {
+                std::snprintf(configStatus, sizeof(configStatus), "%s", configTransferScope == 1 ? T("settings.exportPartialSuccess") : T("settings.exportSuccess"));
+            } else {
+                std::snprintf(configStatus, sizeof(configStatus), "%s", T("settings.exportFailed"));
+            }
+        }
+
+        if (configStatus[0] != '\0') {
+            ImGui::TextDisabled("%s", configStatus);
+        }
+    }
+
+    const char* VersionStatusText(UpdateChecker::VersionStatus status) {
+        switch (status) {
+        case UpdateChecker::VersionStatus::Equal: return T("status.upToDate");
+        case UpdateChecker::VersionStatus::LocalNewer: return T("status.localNewer");
+        case UpdateChecker::VersionStatus::RemoteNewer: return T("status.remoteNewer");
+        case UpdateChecker::VersionStatus::Unknown:
+        default: return T("status.remoteUnknown");
+        }
+    }
+
+    ImVec4 VersionStatusColor(UpdateChecker::VersionStatus status) {
+        if (status == UpdateChecker::VersionStatus::Equal) {
+            return ImGui::GetStyleColorVec4(ImGuiCol_Text);
+        }
+        if (status == UpdateChecker::VersionStatus::LocalNewer) {
+            return ImVec4(1.0f, 0.30f, 0.25f, 1.0f);
+        }
+        if (status == UpdateChecker::VersionStatus::RemoteNewer) {
+            return ImVec4(1.0f, 0.82f, 0.20f, 1.0f);
+        }
+        return ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
+    }
+
+    void DrawUpdateSettings() {
+        const UpdateChecker::UpdateInfo info = UpdateChecker::GetUpdateInfo();
+        const bool checking = UpdateChecker::IsChecking();
+        const char* remoteVersion = info.latestVersion.empty() ? T("status.remoteUnknown") : info.latestVersion.c_str();
+        const char* releaseUrl = info.releaseUrl.empty() ? XMENU_GITHUB : info.releaseUrl.c_str();
+
+        ImGui::TextUnformatted(T("update.details"));
+        ImGui::PushStyleColor(ImGuiCol_Text, VersionStatusColor(info.status));
+        ImGui::TextUnformatted(checking ? T("status.checking") : VersionStatusText(info.status));
+        ImGui::PopStyleColor();
+        ImGui::Text(T("status.localVersion"), XMENU_VERSION);
+        ImGui::Text(T("status.remoteVersion"), remoteVersion);
+
+        if (ImGui::Button(T("update.refresh"), ImVec2(130.0f, 0.0f))) {
+            UpdateChecker::Refresh();
+        }
+        if (checking) {
+            ImGui::SameLine();
+            ImGui::TextDisabled("%s", T("status.checking"));
+        }
+
+        ImGui::Spacing();
+        if (UI::Button(T("update.openGTAMODX"), 2)) {
+            ShellExecuteA(nullptr, "open", XMENU_URL, nullptr, nullptr, SW_SHOWNORMAL);
+        }
+        ImGui::SameLine();
+        if (UI::Button(T("update.openGitHub"), 2)) {
+            ShellExecuteA(nullptr, "open", releaseUrl, nullptr, nullptr, SW_SHOWNORMAL);
+        }
+    }
+
+    void DrawDebugSettings() {
+        ImGui::TextUnformatted(T("settings.debug"));
+        ImGui::Text(T("settings.d3dHookStatus"), D3DHook::GetInitStatus());
+        ImGui::TextDisabled("%s", D3DHook::IsInitialized() ? T("settings.d3dHookInitialized") : T("settings.d3dHookFailed"));
+
+        if (ImGui::Button(T("update.debugShowDialog"), ImVec2(160.0f, 0.0f))) {
+            UpdateChecker::ForceDebugUpdate();
+        }
+    }
+
+    ImVec4 LogColor(const std::string& level) {
+        if (level == "ERROR" || level == "CRASH") {
+            return ImVec4(1.0f, 0.35f, 0.30f, 1.0f);
+        }
+        if (level == "WARN") {
+            return ImVec4(1.0f, 0.78f, 0.25f, 1.0f);
+        }
+        return ImGui::GetStyleColorVec4(ImGuiCol_Text);
+    }
+
+    void DrawLogViewer() {
+        ImGui::TextUnformatted(T("log.title"));
+        ImGui::SameLine();
+        if (ImGui::SmallButton(T("log.copy"))) {
+            ImGui::SetClipboardText(Log::GetText().c_str());
+        }
+        const std::vector<Log::Entry> entries = Log::GetEntries();
+        const std::size_t totalCount = Log::GetTotalCount();
+        ImGui::SameLine();
+        ImGui::TextDisabled(T("log.counts"), totalCount, entries.size());
+
+        const float height = ImGui::GetTextLineHeightWithSpacing() * 12.0f;
+        ImGui::BeginChild("XMenuLogViewer", ImVec2(0.0f, height), true, ImGuiWindowFlags_HorizontalScrollbar);
+        if (entries.empty()) {
+            ImGui::TextDisabled("%s", T("log.empty"));
+        } else {
+            for (const Log::Entry& entry : entries) {
+                ImGui::PushStyleColor(ImGuiCol_Text, LogColor(entry.level));
+                ImGui::TextUnformatted(entry.line.c_str());
+                ImGui::PopStyleColor();
+            }
+            if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 4.0f) {
+                ImGui::SetScrollHereY(1.0f);
+            }
+        }
+        ImGui::EndChild();
     }
 
     void DrawAbout() {

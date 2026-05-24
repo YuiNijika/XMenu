@@ -21,8 +21,10 @@
 #include "utils/Log.h"
 #include "utils/I18n.h"
 #include "utils/UpdateChecker.h"
+#include "utils/AppConfig.h"
 #include "CHud.h"
 
+extern const bool XMENU_DEBUG_MODE = false;
 const char* XMENU_VERSION = "v0.0.1-alpha2";
 const char* XMENU_AUTHOR = "鼠子(YuiNijika)";
 const char* XMENU_AUTHOR_TEST = "枫林、狂风晨、IIScar";
@@ -38,7 +40,7 @@ namespace {
 
     void ShowD3DHookFailedMessage() {
 #ifdef GTASA
-        CHud::SetHelpMessage("XMenu: D3D Hook 初始化失败, 菜单已禁用", true, false, false);
+        CHud::SetHelpMessage("XMenu: D3D Hook 初始化失败, 菜单渲染不可用", true, false, false);
 #elif GTAVC
         static const wchar_t message[] = L"XMenu: D3D9 Hook 初始化失败, 请安装 D3D8to9 wrapper";
         CHud::SetHelpMessage(message, true, false);
@@ -53,6 +55,7 @@ namespace {
         plugin::Events::initGameEvent.after += []() {
             Log::Info("游戏初始化事件触发，开始初始化功能模块");
             I18n::Init();
+            AppConfig::Init();
             Resources::InitData();  // 初始化游戏数据
             UpdateChecker::Start(XMENU_GITHUB_API, XMENU_VERSION);
             GameLogic::Init();
@@ -67,26 +70,31 @@ namespace {
                 xMenuActive = false;
                 D3DHook::SetMenuVisible(false);
                 ShowD3DHookFailedMessage();
-                Log::Error("D3D9 Hook 初始化失败，GTA III/VC 请确认已安装 D3D8to9 wrapper；XMenu 已停止初始化");
-                return;
+                Log::Error("D3D9 Hook 初始化失败，GTA III/VC 请确认已安装 D3D8to9 wrapper；菜单渲染不可用，脚本逻辑继续执行");
             }
         };
 
         plugin::Events::processScriptsEvent += []() {
-            if (!xMenuActive) {
-                return;
-            }
-
             GameLogic::Process();
             Menu::Process();
 
-            static bool lastKeyState = false;
-            const bool currentKeyState = (GetKeyState('M') & 0x8000) != 0;
+            if (!xMenuActive) {
+                if (XMENU_DEBUG_MODE && D3DHook::HadInitFailure()) {
+                    static unsigned int hintCooldown = 0;
+                    if (hintCooldown++ % 1800 == 0) {
+                        ShowD3DHookFailedMessage();
+                    }
+                }
+                return;
+            }
 
-            if (currentKeyState && !lastKeyState) {
+            static bool lastHotkeyState = false;
+            const bool currentHotkeyState = AppConfig::IsMenuHotkeyPressed();
+
+            if (currentHotkeyState && !lastHotkeyState) {
                 D3DHook::SetMenuVisible(!D3DHook::IsMenuVisible());
             }
-            lastKeyState = currentKeyState;
+            lastHotkeyState = currentHotkeyState;
 
             CPad* pad = CPad::GetPad(0);
             if (pad) {

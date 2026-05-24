@@ -9,9 +9,16 @@ public:
     static void Shutdown();
     static void SetMenuVisible(bool visible);
     static bool IsMenuVisible();
+    static void ToggleMenu();
+    static void ProcessMouse();
+    static LPDIRECT3DDEVICE9 GetDevice();
+    static bool IsInitialized();
+    static bool IsReady();
+    static bool HadInitFailure();
+    static const char* GetInitStatus();
+    static const char* GetStatusText();
 
 private:
-    static void ProcessMouse();
     static LRESULT __stdcall hkWndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     static HRESULT __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice);
     static HRESULT __stdcall hkReset(LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentationParameters);
@@ -22,5 +29,9 @@ private:
     static WNDPROC oWndProc;
     static bool menuVisible;
     static bool isInitialized;
+    static bool hookInstalled;
+    static bool initFailed;
+    static LPDIRECT3DDEVICE9 device;
+    static const char* initStatus;
     static std::function<void()> renderCallback;
 };

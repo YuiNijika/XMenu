@@ -14,13 +14,24 @@
 #include <thread>
 #include <vector>
 
+extern const bool XMENU_DEBUG_MODE;
+
 namespace {
     constexpr std::time_t CacheTtlSeconds = 24 * 60 * 60;
+
+    void DebugUpdate(const std::string& message) {
+        if (XMENU_DEBUG_MODE) {
+            Log::Info(std::string("更新检查调试：") + message);
+        }
+    }
 
     std::mutex updateMutex;
     std::atomic<bool> checking{ false };
     std::atomic<bool> started{ false };
     std::atomic<bool> dismissed{ false };
+    std::atomic<bool> debugUpdateDialog{ false };
+    std::string configuredApiUrl;
+    std::string configuredCurrentVersion;
     UpdateChecker::UpdateInfo updateInfo;
 
     std::string Trim(const std::string& value) {
@@ -220,6 +231,7 @@ namespace {
     bool LoadCache(std::string& latestVersion, std::string& releaseUrl) {
         std::ifstream file(CachePath(), std::ios::binary);
         if (!file.is_open()) {
+            DebugUpdate(std::string("缓存不存在：") + CachePath());
             return false;
         }
 
@@ -231,9 +243,11 @@ namespace {
         const std::time_t cachedAt = static_cast<std::time_t>(std::atoll(timestampLine.c_str()));
         const std::time_t now = std::time(nullptr);
         if (cachedAt <= 0 || now <= 0 || now - cachedAt > CacheTtlSeconds || latestVersion.empty()) {
+            DebugUpdate(std::string("缓存无效或过期：") + CachePath());
             return false;
         }
 
+        DebugUpdate(std::string("缓存命中：") + latestVersion);
         return true;
     }
 
@@ -267,12 +281,13 @@ namespace {
         return !output.empty();
     }
 
-    void CheckLatestRelease(std::string apiUrl, std::string currentVersion) {
+    void CheckLatestRelease(std::string apiUrl, std::string currentVersion, bool useCache) {
         checking = true;
+        DebugUpdate(std::string("开始检查，API=") + apiUrl + "，本地=" + currentVersion + (useCache ? "，允许缓存" : "，强制刷新"));
 
         std::string latestVersion;
         std::string releaseUrl;
-        if (LoadCache(latestVersion, releaseUrl)) {
+        if (useCache && LoadCache(latestVersion, releaseUrl)) {
             ApplyVersionInfo(currentVersion, latestVersion, releaseUrl);
             Log::Info(std::string("使用缓存的云端版本：") + latestVersion);
             checking = false;
@@ -308,7 +323,23 @@ namespace UpdateChecker {
         }
 
         ApplyVersionInfo(currentVersion, "", "");
-        std::thread(CheckLatestRelease, std::string(apiUrl), std::string(currentVersion)).detach();
+        configuredApiUrl = apiUrl;
+        configuredCurrentVersion = currentVersion;
+        std::thread(CheckLatestRelease, std::string(apiUrl), std::string(currentVersion), true).detach();
+    }
+
+    void Refresh() {
+        if (checking) {
+            DebugUpdate("刷新被跳过：当前已有检查任务");
+            return;
+        }
+
+        if (configuredApiUrl.empty() || configuredCurrentVersion.empty()) {
+            DebugUpdate("刷新被跳过：更新检查尚未初始化");
+            return;
+        }
+
+        std::thread(CheckLatestRelease, configuredApiUrl, configuredCurrentVersion, false).detach();
     }
 
     bool IsChecking() {
@@ -316,7 +347,16 @@ namespace UpdateChecker {
     }
 
     bool HasUpdate() {
-        if (checking || dismissed) {
+        if (dismissed) {
+            return false;
+        }
+
+        if (debugUpdateDialog) {
+            std::lock_guard<std::mutex> lock(updateMutex);
+            return updateInfo.available;
+        }
+
+        if (checking) {
             return false;
         }
 
@@ -329,7 +369,15 @@ namespace UpdateChecker {
         return updateInfo;
     }
 
+    void ForceDebugUpdate() {
+        ApplyVersionInfo(configuredCurrentVersion.empty() ? "v0.0.0" : configuredCurrentVersion, "v999.999.999-debug", "https://github.com/YuiNijika/XMenu/releases");
+        debugUpdateDialog = true;
+        dismissed = false;
+        DebugUpdate("已注入调试更新状态，用于测试更新弹窗");
+    }
+
     void Dismiss() {
+        debugUpdateDialog = false;
         dismissed = true;
     }
 }

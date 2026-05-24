@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <ctime>
+#include <deque>
 #include <exception>
 #include <fstream>
 #include <iomanip>
@@ -13,8 +13,12 @@
 #include <string>
 
 namespace {
+    constexpr std::size_t MaxLogEntries = 600;
+
     std::ofstream logFile;
     std::mutex logMutex;
+    std::deque<Log::Entry> recentEntries;
+    std::size_t totalEntries = 0;
     LPTOP_LEVEL_EXCEPTION_FILTER previousExceptionFilter = nullptr;
     std::terminate_handler previousTerminateHandler = nullptr;
     bool crashHandlersInstalled = false;
@@ -83,16 +87,27 @@ namespace {
         }
     }
 
+    void PushEntryUnlocked(const char* level, const std::string& line) {
+        ++totalEntries;
+        recentEntries.push_back({ level, line });
+        while (recentEntries.size() > MaxLogEntries) {
+            recentEntries.pop_front();
+        }
+    }
+
     void WriteLineUnlocked(const char* level, const char* message) {
         if (!logFile.is_open()) {
             logFile.open(LogPath(), std::ios::app);
         }
 
+        const std::string line = "[" + BuildTimestamp() + "] [" + level + "] " + message;
+        PushEntryUnlocked(level, line);
+
         if (!logFile.is_open()) {
             return;
         }
 
-        logFile << "[" << BuildTimestamp() << "] [" << level << "] " << message << '\n';
+        logFile << line << '\n';
         logFile.flush();
     }
 
@@ -195,10 +210,16 @@ namespace Log {
 
         logFile.open(LogPath(), std::ios::out | std::ios::trunc);
         if (logFile.is_open()) {
-            logFile << "[" << BuildTimestamp() << "] [INFO] XMenu 日志启动" << '\n';
-            logFile << "[" << BuildTimestamp() << "] [INFO] 进程: " << GetCurrentProcessPath()
-                    << " pid=" << GetCurrentProcessId()
-                    << " thread=" << GetCurrentThreadId() << '\n';
+            const std::string line = "[" + BuildTimestamp() + "] [INFO] XMenu 日志启动";
+            PushEntryUnlocked("INFO", line);
+            logFile << line << '\n';
+
+            std::ostringstream processLine;
+            processLine << "[" << BuildTimestamp() << "] [INFO] 进程: " << GetCurrentProcessPath()
+                        << " pid=" << GetCurrentProcessId()
+                        << " thread=" << GetCurrentThreadId();
+            PushEntryUnlocked("INFO", processLine.str());
+            logFile << processLine.str() << '\n';
             logFile.flush();
             InstallCrashHandlers();
         }
@@ -234,5 +255,24 @@ namespace Log {
 
     void Error(const std::string& message) {
         WriteLine("ERROR", message.c_str());
+    }
+
+    std::vector<Entry> GetEntries() {
+        std::lock_guard<std::mutex> lock(logMutex);
+        return std::vector<Entry>(recentEntries.begin(), recentEntries.end());
+    }
+
+    std::size_t GetTotalCount() {
+        std::lock_guard<std::mutex> lock(logMutex);
+        return totalEntries;
+    }
+
+    std::string GetText() {
+        std::lock_guard<std::mutex> lock(logMutex);
+        std::ostringstream stream;
+        for (const Entry& entry : recentEntries) {
+            stream << entry.line << '\n';
+        }
+        return stream.str();
     }
 }
