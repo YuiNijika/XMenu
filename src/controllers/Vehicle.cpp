@@ -8,6 +8,7 @@
 #include "CPools.h"
 #include "CPlayerPed.h"
 #include "CVehicle.h"
+#include <windows.h>
 #include <string>
 
 namespace {
@@ -15,6 +16,36 @@ namespace {
     CVehicle* effectVehicle = nullptr;
     GameLogic::ProofState savedVehicleProofs;
     bool hasSavedVehicleProofs = false;
+    bool spawnInProgress = false;
+    DWORD lastSpawnTick = 0;
+    constexpr DWORD SpawnCooldownMs = 650;
+
+    bool CanStartSpawn(unsigned int modelId) {
+        const DWORD now = GetTickCount();
+        if (spawnInProgress) {
+            Log::Warn("载具生成被跳过：已有生成流程正在执行，模型 ID " + std::to_string(modelId));
+            return false;
+        }
+
+        if (lastSpawnTick != 0 && now - lastSpawnTick < SpawnCooldownMs) {
+            Log::Warn("载具生成被节流：请求过于频繁，模型 ID " + std::to_string(modelId));
+            return false;
+        }
+
+        spawnInProgress = true;
+        lastSpawnTick = now;
+        return true;
+    }
+
+    void FinishSpawn() {
+        spawnInProgress = false;
+    }
+
+    struct SpawnGuard {
+        ~SpawnGuard() {
+            FinishSpawn();
+        }
+    };
 
     bool IsVehicleInPool(CVehicle* vehicle) {
         if (!vehicle) {
@@ -266,6 +297,11 @@ namespace Controllers::Vehicle {
     }
 
     bool Spawn(unsigned int modelId) {
+        if (!CanStartSpawn(modelId)) {
+            return false;
+        }
+        SpawnGuard spawnGuard;
+
         GameLogic::SpawnVehicleOptions options;
         options.asDriver = MenuState::VehicleSpawnAsDriver;
         options.aircraftInAir = MenuState::VehicleSpawnAircraftInAir;
