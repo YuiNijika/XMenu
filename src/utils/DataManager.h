@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "utils/JsonLoader.h"
+#include "JsonLoader.h"
 
 namespace DataManager {
     struct LocationData {
