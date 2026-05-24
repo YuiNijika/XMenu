@@ -2,7 +2,14 @@
 #include "controllers/World.h"
 #include "ui/MenuState.h"
 #include "ui/Widget.h"
+#include "utils/I18n.h"
 #include "imgui/imgui.h"
+
+namespace {
+    const char* T(const char* key) {
+        return I18n::T(key);
+    }
+}
 
 namespace Pages::World {
     void Process() {
@@ -10,17 +17,17 @@ namespace Pages::World {
     }
 
     void Draw() {
-        if (ImGui::CollapsingHeader((const char*)u8"时间", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::CollapsingHeader(T("world.time"), ImGuiTreeNodeFlags_DefaultOpen)) {
             int hour = 0;
             int minute = 0;
             Controllers::World::GetTime(hour, minute);
 
             ImGui::PushItemWidth(150);
             bool timeChanged = false;
-            if (ImGui::SliderInt((const char*)u8"小时", &hour, 0, 23)) {
+            if (ImGui::SliderInt(T("world.hour"), &hour, 0, 23)) {
                 timeChanged = true;
             }
-            if (ImGui::SliderInt((const char*)u8"分钟", &minute, 0, 59)) {
+            if (ImGui::SliderInt(T("world.minute"), &minute, 0, 59)) {
                 timeChanged = true;
             }
             ImGui::PopItemWidth();
@@ -29,42 +36,42 @@ namespace Pages::World {
                 Controllers::World::SetTime(hour, minute);
             }
 
-            if (UI::Button((const char*)u8"同步现实时间")) {
+            if (UI::Button(T("world.syncRealTime"))) {
                 Controllers::World::SyncTimeWithSystemClock();
             }
         }
 
-        if (ImGui::CollapsingHeader((const char*)u8"天气", ImGuiTreeNodeFlags_DefaultOpen)) {
-            if (ImGui::Checkbox((const char*)u8"锁住当前天气", &MenuState::LockWeather)) {
+        if (ImGui::CollapsingHeader(T("world.weather"), ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::Checkbox(T("world.lockCurrentWeather"), &MenuState::LockWeather)) {
                 Controllers::World::CaptureWeather();
             }
             Controllers::World::DrawWeatherButtons();
         }
 
-        if (ImGui::CollapsingHeader((const char*)u8"游戏规则", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::CollapsingHeader(T("world.gameRules"), ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::Columns(2, nullptr, false);
-            if (ImGui::Checkbox((const char*)u8"禁用回放", &MenuState::DisableReplay)) {
+            if (ImGui::Checkbox(T("world.disableReplay"), &MenuState::DisableReplay)) {
                 Controllers::World::SetDisableReplay(MenuState::DisableReplay);
             }
             ImGui::NextColumn();
-            if (ImGui::Checkbox((const char*)u8"禁用作弊码", &MenuState::DisableCheats)) {
+            if (ImGui::Checkbox(T("world.disableCheats"), &MenuState::DisableCheats)) {
                 Controllers::World::SetDisableCheats(MenuState::DisableCheats);
             }
             ImGui::NextColumn();
-            if (ImGui::Checkbox((const char*)u8"加快时钟", &MenuState::FasterClock)) {
+            if (ImGui::Checkbox(T("world.fasterClock"), &MenuState::FasterClock)) {
                 Controllers::World::SetFasterClock(MenuState::FasterClock);
             }
             ImGui::NextColumn();
-            if (ImGui::Checkbox((const char*)u8"冻结时间", &MenuState::FreezeTime)) {
+            if (ImGui::Checkbox(T("world.freezeTime"), &MenuState::FreezeTime)) {
                 Controllers::World::SetFreezeTime(MenuState::FreezeTime);
             }
 #ifdef GTASA
             ImGui::NextColumn();
-            if (ImGui::Checkbox((const char*)u8"禁止通缉区域", &MenuState::ForbiddenAreaWanted)) {
+            if (ImGui::Checkbox(T("world.disableForbiddenAreaWanted"), &MenuState::ForbiddenAreaWanted)) {
                 Controllers::World::SetForbiddenAreaWanted(MenuState::ForbiddenAreaWanted);
             }
             ImGui::NextColumn();
-            if (ImGui::Checkbox((const char*)u8"免费喷漆店", &MenuState::FreePayNSpray)) {
+            if (ImGui::Checkbox(T("world.freePayNSpray"), &MenuState::FreePayNSpray)) {
                 Controllers::World::SetFreePayNSpray(MenuState::FreePayNSpray);
             }
 #endif
@@ -72,43 +79,43 @@ namespace Pages::World {
             ImGui::Spacing();
             ImGui::PushItemWidth(150);
 
-            ImGui::InputInt((const char*)u8"经过天数", &MenuState::DaysPassed);
+            ImGui::InputInt(T("world.daysPassed"), &MenuState::DaysPassed);
             ImGui::SameLine();
-            if (UI::Button((const char*)u8"设置天数", 4)) {
+            if (UI::Button(T("world.setDays"), 4)) {
                 if (MenuState::DaysPassed < 0) MenuState::DaysPassed = 0;
                 if (MenuState::DaysPassed > 9999) MenuState::DaysPassed = 9999;
                 Controllers::World::SetDaysPassed(MenuState::DaysPassed);
             }
             ImGui::SameLine();
-            if (UI::Button((const char*)u8"读取天数", 4)) {
+            if (UI::Button(T("world.readDays"), 4)) {
                 MenuState::DaysPassed = Controllers::World::GetDaysPassed();
             }
 
             float gravity = Controllers::World::GetGravity();
-            if (ImGui::SliderFloat((const char*)u8"重力", &gravity, -1.0f, 1.0f, "%.3f")) {
+            if (ImGui::SliderFloat(T("world.gravity"), &gravity, -1.0f, 1.0f, "%.3f")) {
                 Controllers::World::SetGravity(gravity);
             }
 
-            ImGui::InputInt((const char*)u8"FPS 限制", &MenuState::FpsLimit);
+            ImGui::InputInt(T("world.fpsLimit"), &MenuState::FpsLimit);
             ImGui::SameLine();
-            if (UI::Button((const char*)u8"设置 FPS", 4)) {
+            if (UI::Button(T("world.setFps"), 4)) {
                 if (MenuState::FpsLimit < 1) MenuState::FpsLimit = 1;
                 if (MenuState::FpsLimit > 999) MenuState::FpsLimit = 999;
                 Controllers::World::SetFpsLimit(MenuState::FpsLimit);
             }
             ImGui::SameLine();
-            if (UI::Button((const char*)u8"读取 FPS", 4)) {
+            if (UI::Button(T("world.readFps"), 4)) {
                 MenuState::FpsLimit = Controllers::World::GetFpsLimit();
             }
             ImGui::PopItemWidth();
         }
 
-        if (ImGui::CollapsingHeader((const char*)u8"游戏节奏", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::CollapsingHeader(T("world.gameSpeed"), ImGuiTreeNodeFlags_DefaultOpen)) {
             float speed = Controllers::World::GetGameSpeed();
-            if (ImGui::SliderFloat((const char*)u8"倍率", &speed, 0.1f, 5.0f, "%.1fx")) {
+            if (ImGui::SliderFloat(T("world.multiplier"), &speed, 0.1f, 5.0f, "%.1fx")) {
                 Controllers::World::SetGameSpeed(speed);
             }
-            if (UI::Button((const char*)u8"恢复原速")) {
+            if (UI::Button(T("world.restoreSpeed"))) {
                 Controllers::World::SetGameSpeed(1.0f);
             }
         }

@@ -2,7 +2,14 @@
 #include "controllers/Player.h"
 #include "ui/MenuState.h"
 #include "ui/Widget.h"
+#include "utils/I18n.h"
 #include "imgui/imgui.h"
+
+namespace {
+    const char* T(const char* key) {
+        return I18n::T(key);
+    }
+}
 
 namespace Pages::Player {
     void Process() {
@@ -10,64 +17,64 @@ namespace Pages::Player {
     }
 
     void Draw() {
-        if (UI::Button((const char*)u8"复制坐标", 3)) {
+        if (UI::Button(T("player.copyCoordinates"), 3)) {
             Controllers::Player::CopyCoordinates();
         }
         ImGui::SameLine();
-        if (UI::Button((const char*)u8"回满血量", 3)) {
+        if (UI::Button(T("player.healFully"), 3)) {
             Controllers::Player::Heal();
         }
         ImGui::SameLine();
-        if (UI::Button((const char*)u8"补满护甲", 3)) {
+        if (UI::Button(T("player.refillArmor"), 3)) {
             Controllers::Player::GiveArmour();
         }
-        if (UI::Button((const char*)u8"加 25 万现金", 2)) {
+        if (UI::Button(T("player.addMoney"), 2)) {
             Controllers::Player::GiveMoney();
         }
         ImGui::SameLine();
-        if (UI::Button((const char*)u8"立即倒地", 2)) {
+        if (UI::Button(T("player.kill"), 2)) {
             Controllers::Player::Kill();
         }
 
         UI::SpacingSeparator();
 
         if (UI::BeginTabBar("PlayerTabs")) {
-            if (ImGui::BeginTabItem((const char*)u8"状态开关")) {
+            if (ImGui::BeginTabItem(T("player.statusToggles"))) {
                 ImGui::Columns(3, nullptr, false);
-                ImGui::Checkbox((const char*)u8"无敌", &MenuState::GodMode);
+                ImGui::Checkbox(T("player.godMode"), &MenuState::GodMode);
                 ImGui::NextColumn();
-                ImGui::Checkbox((const char*)u8"自动回血", &MenuState::AutoHeal);
+                ImGui::Checkbox(T("player.autoHeal"), &MenuState::AutoHeal);
                 ImGui::NextColumn();
-                ImGui::Checkbox((const char*)u8"50 血量", &MenuState::HardMode);
+                ImGui::Checkbox(T("player.hardMode"), &MenuState::HardMode);
                 ImGui::NextColumn();
 
-                if (ImGui::Checkbox((const char*)u8"无限冲刺", &MenuState::InfiniteSprint)) {
+                if (ImGui::Checkbox(T("player.infiniteSprint"), &MenuState::InfiniteSprint)) {
                     Controllers::Player::SetInfiniteSprint(MenuState::InfiniteSprint);
                 }
                 ImGui::NextColumn();
-                ImGui::Checkbox((const char*)u8"死亡后回到原地", &MenuState::RespawnAtDeathPosition);
+                ImGui::Checkbox(T("player.respawnAtDeathPosition"), &MenuState::RespawnAtDeathPosition);
                 ImGui::NextColumn();
-                ImGui::Checkbox((const char*)u8"冻结通缉", &MenuState::FreezeWantedLevel);
+                ImGui::Checkbox(T("player.freezeWantedLevel"), &MenuState::FreezeWantedLevel);
                 ImGui::NextColumn();
 
-                if (ImGui::Checkbox((const char*)u8"住院/被捕保留装备", &MenuState::KeepStuff)) {
+                if (ImGui::Checkbox(T("player.keepStuff"), &MenuState::KeepStuff)) {
                     Controllers::Player::SetKeepStuff(MenuState::KeepStuff);
                 }
                 ImGui::NextColumn();
 
                 bool freeHealth = Controllers::Player::GetFreeHealthcare();
-                if (ImGui::Checkbox((const char*)u8"住院不扣钱", &freeHealth)) {
+                if (ImGui::Checkbox(T("player.freeHospital"), &freeHealth)) {
                     Controllers::Player::SetFreeHealthcare(freeHealth);
                 }
                 ImGui::NextColumn();
                 bool freeJail = Controllers::Player::GetFreeJail();
-                if (ImGui::Checkbox((const char*)u8"被捕不扣钱", &freeJail)) {
+                if (ImGui::Checkbox(T("player.freeJail"), &freeJail)) {
                     Controllers::Player::SetFreeJail(freeJail);
                 }
                 ImGui::Columns(1);
 
                 UI::SpacingSeparator();
-                ImGui::TextUnformatted((const char*)u8"单项防护");
+                ImGui::TextUnformatted(T("player.proofFlags"));
 
                 GameLogic::ProofState proofs = Controllers::Player::GetProofState();
                 MenuState::BulletProof = proofs.bullet;
@@ -79,15 +86,15 @@ namespace Pages::Player {
                 ImGui::BeginDisabled(MenuState::GodMode);
                 ImGui::Columns(3, nullptr, false);
                 bool changedProof = false;
-                changedProof |= ImGui::Checkbox((const char*)u8"防弹", &MenuState::BulletProof);
+                changedProof |= ImGui::Checkbox(T("proof.bullet"), &MenuState::BulletProof);
                 ImGui::NextColumn();
-                changedProof |= ImGui::Checkbox((const char*)u8"防撞", &MenuState::CollisionProof);
+                changedProof |= ImGui::Checkbox(T("proof.collision"), &MenuState::CollisionProof);
                 ImGui::NextColumn();
-                changedProof |= ImGui::Checkbox((const char*)u8"防爆", &MenuState::ExplosionProof);
+                changedProof |= ImGui::Checkbox(T("proof.explosion"), &MenuState::ExplosionProof);
                 ImGui::NextColumn();
-                changedProof |= ImGui::Checkbox((const char*)u8"防火", &MenuState::FireProof);
+                changedProof |= ImGui::Checkbox(T("proof.fire"), &MenuState::FireProof);
                 ImGui::NextColumn();
-                changedProof |= ImGui::Checkbox((const char*)u8"防近战", &MenuState::MeleeProof);
+                changedProof |= ImGui::Checkbox(T("proof.melee"), &MenuState::MeleeProof);
                 ImGui::Columns(1);
                 ImGui::EndDisabled();
 
@@ -103,7 +110,7 @@ namespace Pages::Player {
                 ImGui::EndTabItem();
             }
 
-            if (ImGui::BeginTabItem((const char*)u8"数值调整")) {
+            if (ImGui::BeginTabItem(T("player.valueAdjustments"))) {
                 static bool valuesInitialized = false;
                 if (!valuesInitialized) {
                     MenuState::PlayerHealth = Controllers::Player::GetHealth();
@@ -114,42 +121,42 @@ namespace Pages::Player {
                 }
 
                 ImGui::PushItemWidth(180);
-                ImGui::InputFloat((const char*)u8"血量", &MenuState::PlayerHealth, 1.0f, 10.0f, "%.1f");
+                ImGui::InputFloat(T("player.health"), &MenuState::PlayerHealth, 1.0f, 10.0f, "%.1f");
                 ImGui::SameLine();
-                if (UI::Button((const char*)u8"设置血量", 4)) {
+                if (UI::Button(T("player.setHealth"), 4)) {
                     if (MenuState::PlayerHealth > 0.0f && MenuState::PlayerHealth < 2.0f) {
                         MenuState::PlayerHealth = 2.0f;
                     }
                     Controllers::Player::SetHealth(MenuState::PlayerHealth);
                 }
 
-                ImGui::InputFloat((const char*)u8"护甲", &MenuState::PlayerArmour, 1.0f, 10.0f, "%.1f");
+                ImGui::InputFloat(T("player.armor"), &MenuState::PlayerArmour, 1.0f, 10.0f, "%.1f");
                 ImGui::SameLine();
-                if (UI::Button((const char*)u8"设置护甲", 4)) {
+                if (UI::Button(T("player.setArmor"), 4)) {
                     Controllers::Player::SetArmour(MenuState::PlayerArmour);
                 }
 
-                ImGui::InputInt((const char*)u8"现金", &MenuState::PlayerMoney, 1000, 10000);
+                ImGui::InputInt(T("player.money"), &MenuState::PlayerMoney, 1000, 10000);
                 ImGui::SameLine();
-                if (UI::Button((const char*)u8"设置现金", 4)) {
+                if (UI::Button(T("player.setMoney"), 4)) {
                     Controllers::Player::SetMoney(MenuState::PlayerMoney);
                 }
 
-                ImGui::SliderInt((const char*)u8"通缉星级", &MenuState::WantedLevel, 0, 6);
+                ImGui::SliderInt(T("player.wantedLevel"), &MenuState::WantedLevel, 0, 6);
                 ImGui::SameLine();
-                if (UI::Button((const char*)u8"设置通缉", 4)) {
+                if (UI::Button(T("player.setWanted"), 4)) {
                     Controllers::Player::SetWantedLevel(MenuState::WantedLevel);
                 }
                 ImGui::PopItemWidth();
 
-                if (UI::Button((const char*)u8"读取当前数值", 2)) {
+                if (UI::Button(T("player.readCurrentValues"), 2)) {
                     MenuState::PlayerHealth = Controllers::Player::GetHealth();
                     MenuState::PlayerArmour = Controllers::Player::GetArmour();
                     MenuState::PlayerMoney = Controllers::Player::GetMoney();
                     MenuState::WantedLevel = Controllers::Player::GetWantedLevel();
                 }
                 ImGui::SameLine();
-                if (UI::Button((const char*)u8"消除通缉", 2)) {
+                if (UI::Button(T("player.clearWanted"), 2)) {
                     MenuState::WantedLevel = 0;
                     Controllers::Player::ClearWantedLevel();
                 }

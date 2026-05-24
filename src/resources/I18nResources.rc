@@ -1,0 +1,16 @@
+#include "I18nResources.h"
+
+IDR_I18N_ZH RCDATA "../data/i18n/zh.json"
+IDR_I18N_EN RCDATA "../data/i18n/en.json"
+IDR_I18N_JP RCDATA "../data/i18n/jp.json"
+IDR_I18N_RU RCDATA "../data/i18n/ru.json"
+
+IDR_DATA_SA_MAPS RCDATA "../data/sa/maps.json"
+IDR_DATA_SA_WEAPONS RCDATA "../data/sa/weapons.json"
+
+IDR_DATA_VC_MAPS RCDATA "../data/vc/maps.json"
+IDR_DATA_VC_WEAPONS RCDATA "../data/vc/weapons.json"
+IDR_DATA_VC_VEHICLES RCDATA "../data/vc/vehicles.json"
+
+IDR_DATA_III_MAPS RCDATA "../data/iii/maps.json"
+IDR_DATA_III_WEAPONS RCDATA "../data/iii/weapons.json"

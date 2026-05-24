@@ -69,15 +69,29 @@ namespace {
                 continue;
             }
 
-            if (io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 18.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull())) {
-                Log::Info(std::string("中文字体加载成功: ") + font.displayName + " (" + fontPath + ")");
+            // 合并多个语言的字符范围：中文、日文、韩文、西里尔文（俄语）、默认拉丁文
+            ImWchar ranges[] = {
+                0x0020, 0x00FF, // Basic Latin + Latin Supplement (English, etc.)
+                0x0400, 0x044F, // Cyrillic (Russian)
+                0x0490, 0x052F, // Cyrillic Supplement
+                0x3000, 0x30FF, // Japanese Hiragana, Katakana
+                0x31F0, 0x31FF, // Katakana Phonetic Extensions
+                0x4E00, 0x9FFF, // CJK Unified Ideographs (Chinese, Japanese Kanji)
+                0x3400, 0x4DBF, // CJK Unified Ideographs Extension A
+                0xF900, 0xFAFF, // CJK Compatibility Ideographs
+                0xFF00, 0xFFEF, // Full-width Characters
+                0,
+            };
+
+            if (io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 18.0f, nullptr, ranges)) {
+                Log::Info(std::string("多语言字体加载成功: ") + font.displayName + " (" + fontPath + ")");
                 return true;
             }
 
-            Log::Warn(std::string("中文字体文件存在但加载失败: ") + font.displayName + " (" + fontPath + ")");
+            Log::Warn(std::string("字体文件存在但加载失败: ") + font.displayName + " (" + fontPath + ")");
         }
 
-        Log::Warn(std::string("未找到可用中文字体目录候选: ") + fontsDir);
+        Log::Warn(std::string("未找到可用字体候选: ") + fontsDir);
         return false;
     }
 }

@@ -8,5 +8,4 @@ namespace Controllers::Teleport {
     void MapPosition(float x, float y, bool spawnUnderwater);
     void Center();
     void Marker(bool spawnUnderwater);
-    void DrawLocations();
 }

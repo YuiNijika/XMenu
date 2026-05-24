@@ -3,10 +3,15 @@
 #include "ui/MenuState.h"
 #include "resources/ResourceData.h"
 #include "ui/Widget.h"
+#include "utils/I18n.h"
 #include "imgui/imgui.h"
 #include <cstring>
 
 namespace {
+    const char* T(const char* key) {
+        return I18n::T(key);
+    }
+
     void WeaponButton(const char* label, unsigned int weaponType) {
         if (UI::Button(label, 3)) {
             Controllers::Weapon::Give(weaponType, static_cast<unsigned int>(MenuState::WeaponAmmo));
@@ -22,21 +27,31 @@ namespace {
     void DrawWeaponList() {
         const Resources::WeaponTable table = Resources::GetWeapons();
         const char* currentCategory = nullptr;
+        std::string currentCategoryKey;
         int index = 0;
 
         for (std::size_t i = 0; i < table.count; ++i) {
-            const Resources::WeaponEntry& weapon = table.entries[i];
-            if (!currentCategory || std::strcmp(currentCategory, weapon.category) != 0) {
-                currentCategory = weapon.category;
+            const Resources::WeaponEntry& weapon = table.entries->at(i);
+            
+            // 翻译分类名称
+            std::string categoryKey = "weapon.category." + weapon.category;
+            const char* translatedCategory = I18n::T(categoryKey.c_str());
+            
+            if (!currentCategory || currentCategoryKey != weapon.category) {
+                currentCategory = translatedCategory;
+                currentCategoryKey = weapon.category;
                 index = 0;
                 ImGui::Spacing();
-                ImGui::SeparatorText(currentCategory);
+                ImGui::SeparatorText(translatedCategory);
             }
 
+            // 翻译武器名称
+            const char* translatedName = I18n::T(weapon.name.c_str());
+
             if (weapon.isModel) {
-                WeaponModelButton(weapon.label, weapon.value);
+                WeaponModelButton(translatedName, static_cast<unsigned int>(weapon.modelId));
             } else {
-                WeaponButton(weapon.label, weapon.value);
+                WeaponButton(translatedName, static_cast<unsigned int>(weapon.id));
             }
             UI::SameLineEvery(index++, 3);
         }
@@ -50,56 +65,56 @@ namespace Pages::Weapon {
 
     void Draw() {
         if (!Controllers::Weapon::HasPlayer()) {
-            ImGui::Text((const char*)u8"玩家还没准备好，稍等进档后再用。");
+            ImGui::Text("%s", T("weapon.playerNotReady"));
             return;
         }
 
-        if (UI::Button((const char*)u8"获取所有武器", 4)) {
+        if (UI::Button(T("weapon.getAll"), 4)) {
             Controllers::Weapon::GiveAll();
         }
         ImGui::SameLine();
-        if (UI::Button((const char*)u8"丢出当前武器", 4)) {
+        if (UI::Button(T("weapon.dropWeapon"), 4)) {
             Controllers::Weapon::DropWeapon();
         }
         ImGui::SameLine();
-        if (UI::Button((const char*)u8"清空武器", 4)) {
+        if (UI::Button(T("weapon.clearWeapons"), 4)) {
             Controllers::Weapon::ClearAll();
         }
         ImGui::SameLine();
-        if (UI::Button((const char*)u8"移除当前武器", 4)) {
+        if (UI::Button(T("weapon.removeCurrent"), 4)) {
             Controllers::Weapon::DropCurrent();
         }
 
         ImGui::Spacing();
 
         if (UI::BeginTabBar("WeaponTabs")) {
-            if (ImGui::BeginTabItem((const char*)u8"功能开关")) {
+            if (ImGui::BeginTabItem(T("common.toggles"))) {
                 bool weaponStatsChanged = false;
 
                 ImGui::Columns(3, nullptr, false);
-                weaponStatsChanged |= ImGui::Checkbox((const char*)u8"高伤害", &MenuState::HugeWeaponDamage);
+                weaponStatsChanged |= ImGui::Checkbox(T("weapon.highDamage"), &MenuState::HugeWeaponDamage);
                 ImGui::NextColumn();
-                if (ImGui::Checkbox((const char*)u8"快速换弹", &MenuState::FastReload)) {
+                if (ImGui::Checkbox(T("weapon.fastReload"), &MenuState::FastReload)) {
                     Controllers::Weapon::ResetStats();
                 }
                 ImGui::NextColumn();
-                ImGui::Checkbox((const char*)u8"无限弹药", &MenuState::InfiniteAmmo);
+                ImGui::Checkbox(T("weapon.infiniteAmmo"), &MenuState::InfiniteAmmo);
                 ImGui::NextColumn();
-                weaponStatsChanged |= ImGui::Checkbox((const char*)u8"远射程", &MenuState::LongWeaponRange);
+                weaponStatsChanged |= ImGui::Checkbox(T("weapon.longRange"), &MenuState::LongWeaponRange);
 #ifdef GTASA
                 ImGui::NextColumn();
-                weaponStatsChanged |= ImGui::Checkbox((const char*)u8"瞄准时可移动", &MenuState::MoveAim);
+                weaponStatsChanged |= ImGui::Checkbox(T("weapon.moveWhileAiming"), &MenuState::MoveAim);
                 ImGui::NextColumn();
-                weaponStatsChanged |= ImGui::Checkbox((const char*)u8"开火时可移动", &MenuState::MoveFire);
+                weaponStatsChanged |= ImGui::Checkbox(T("weapon.moveWhileFiring"), &MenuState::MoveFire);
                 ImGui::NextColumn();
-                weaponStatsChanged |= ImGui::Checkbox((const char*)u8"零散射", &MenuState::NoSpread);
+                weaponStatsChanged |= ImGui::Checkbox(T("weapon.noSpread"), &MenuState::NoSpread);
                 ImGui::NextColumn();
-                weaponStatsChanged |= ImGui::Checkbox((const char*)u8"快速连射", &MenuState::RapidFire);
+                weaponStatsChanged |= ImGui::Checkbox(T("weapon.rapidFire"), &MenuState::RapidFire);
                 ImGui::NextColumn();
-                weaponStatsChanged |= ImGui::Checkbox((const char*)u8"双持", &MenuState::DualWield);
+                weaponStatsChanged |= ImGui::Checkbox(T("weapon.dualWield"), &MenuState::DualWield);
 #else
                 ImGui::NextColumn();
-                weaponStatsChanged |= ImGui::Checkbox((const char*)u8"零散射", &MenuState::NoSpread);
+                weaponStatsChanged |= ImGui::Checkbox(T("weapon.noSpread"), &MenuState::NoSpread);
 #endif
                 ImGui::Columns(1);
 
@@ -110,23 +125,23 @@ namespace Pages::Weapon {
                 ImGui::EndTabItem();
             }
 
-            if (ImGui::BeginTabItem((const char*)u8"获取武器")) {
+            if (ImGui::BeginTabItem(T("weapon.getWeapon"))) {
                 ImGui::PushItemWidth(160);
-                ImGui::InputInt((const char*)u8"弹药", &MenuState::WeaponAmmo);
+                ImGui::InputInt(T("weapon.ammo"), &MenuState::WeaponAmmo);
                 if (MenuState::WeaponAmmo < 0) MenuState::WeaponAmmo = 0;
                 if (MenuState::WeaponAmmo > 99999) MenuState::WeaponAmmo = 99999;
                 ImGui::PopItemWidth();
 
                 ImGui::PushItemWidth(160);
 #ifdef GTASA
-                ImGui::InputInt((const char*)u8"武器类型 ID", &MenuState::WeaponSpawnId);
+                ImGui::InputInt(T("weapon.typeId"), &MenuState::WeaponSpawnId);
 #else
-                ImGui::InputInt((const char*)u8"武器模型 ID", &MenuState::WeaponSpawnId);
+                ImGui::InputInt(T("weapon.modelId"), &MenuState::WeaponSpawnId);
 #endif
                 if (MenuState::WeaponSpawnId < 0) MenuState::WeaponSpawnId = 0;
                 ImGui::PopItemWidth();
                 ImGui::SameLine();
-                if (UI::Button((const char*)u8"按 ID 获取", 2)) {
+                if (UI::Button(T("weapon.getById"), 2)) {
 #ifdef GTASA
                     Controllers::Weapon::Give(static_cast<unsigned int>(MenuState::WeaponSpawnId), static_cast<unsigned int>(MenuState::WeaponAmmo));
 #else

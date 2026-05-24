@@ -85,6 +85,22 @@ function createPayloadProject(projectID)
             "include/**.c"
         }
 
+        -- Embed i18n JSON files as resources
+        files {
+            "src/resources/I18nResources.rc",
+            "src/data/i18n/zh.json",
+            "src/data/i18n/en.json",
+            "src/data/i18n/jp.json",
+            "src/data/i18n/ru.json",
+            "src/data/sa/maps.json",
+            "src/data/sa/weapons.json",
+            "src/data/vc/maps.json",
+            "src/data/vc/weapons.json",
+            "src/data/vc/vehicles.json",
+            "src/data/iii/maps.json",
+            "src/data/iii/weapons.json"
+        }
+
         removefiles {
             "src/loader/**.h",
             "src/loader/**.cpp"

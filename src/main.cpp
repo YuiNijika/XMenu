@@ -2,7 +2,7 @@
  * XMenu
  * 作者：鼠子(YuiNijika)
  * 测试：枫林、狂风晨、IIScar
- * 版本：v0.0.1-alpha1
+ * 版本：v0.0.1-alpha2
  * 网站：https://gtamodx.com/mods/xmenu
  * GitHub：https://github.com/YuiNijika/XMenu
  * QQ群：https://gtamodx.com/qqun
@@ -16,11 +16,13 @@
 #include "utils/D3DHook.h"
 #include "ui/Menu.h"
 #include "features/GameLogic.h"
+#include "resources/ResourceData.h"
 #include "CPad.h"
 #include "utils/Log.h"
+#include "utils/I18n.h"
 #include "CHud.h"
 
-const char* XMENU_VERSION = "v0.0.1-alpha1";
+const char* XMENU_VERSION = "v0.0.1-alpha2";
 const char* XMENU_AUTHOR = "鼠子(YuiNijika)";
 const char* XMENU_AUTHOR_TEST = "枫林、狂风晨、IIScar";
 const char* XMENU_URL = "https://gtamodx.com/mods/xmenu";
@@ -48,6 +50,8 @@ namespace {
         Log::Info("注册游戏初始化与脚本循环事件");
         plugin::Events::initGameEvent.after += []() {
             Log::Info("游戏初始化事件触发，开始初始化功能模块");
+            I18n::Init();
+            Resources::InitData();  // 初始化游戏数据
             GameLogic::Init();
             const bool hookReady = D3DHook::Init([]() {
                 Menu::Draw();

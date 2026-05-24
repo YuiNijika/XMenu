@@ -4,33 +4,43 @@
 #include "ui/MenuState.h"
 #include "resources/ResourceData.h"
 #include "ui/Widget.h"
+#include "utils/I18n.h"
 #include "imgui/imgui.h"
 #include <cstring>
 #include <cstdio>
 
 namespace {
+    const char* T(const char* key) {
+        return I18n::T(key);
+    }
+
     void DrawVehicleList() {
         const Resources::VehicleTable table = Resources::GetVehicles();
         if (table.count == 0) {
-            ImGui::TextWrapped((const char*)u8"当前版本没有 Cheat-Menu 的载具列表数据，请用模型 ID 生成。");
+            ImGui::TextWrapped("%s", T("vehicle.noListData"));
             return;
         }
 
-        const char* currentCategory = nullptr;
+        std::string currentCategoryKey;
         int index = 0;
         for (std::size_t i = 0; i < table.count; ++i) {
-            const Resources::VehicleEntry& vehicle = table.entries[i];
-            if (!currentCategory || std::strcmp(currentCategory, vehicle.category) != 0) {
-                currentCategory = vehicle.category;
+            const Resources::VehicleEntry& vehicle = table.entries->at(i);
+
+            const std::string categoryKey = "vehicle.category." + vehicle.category;
+            const char* translatedCategory = I18n::T(categoryKey.c_str());
+
+            if (currentCategoryKey != vehicle.category) {
+                currentCategoryKey = vehicle.category;
                 index = 0;
                 ImGui::Spacing();
-                ImGui::SeparatorText(currentCategory);
+                ImGui::SeparatorText(translatedCategory);
             }
 
+            const char* translatedName = I18n::T(vehicle.name.c_str());
             char buttonLabel[96];
-            std::snprintf(buttonLabel, sizeof(buttonLabel), "%s (%u)", vehicle.label, vehicle.model);
+            std::snprintf(buttonLabel, sizeof(buttonLabel), "%s (%d)", translatedName, vehicle.id);
             if (UI::Button(buttonLabel, 3)) {
-                Controllers::Vehicle::Spawn(vehicle.model);
+                Controllers::Vehicle::Spawn(static_cast<unsigned int>(vehicle.id));
             }
             UI::SameLineEvery(index++, 3);
         }
@@ -52,124 +62,124 @@ namespace Pages::Vehicle {
             vehicleHealth = Controllers::Vehicle::GetHealth();
         }
 
-        if (UI::Button((const char*)u8"炸毁所有载具")) {
+        if (UI::Button(T("vehicle.blowUpAll"))) {
             Controllers::Vehicle::BlowUpAll();
         }
 
         ImGui::Spacing();
 
         if (!hasVehicle) {
-            ImGui::Text((const char*)u8"当前不在载具中，修车和载具状态功能暂不可用。");
+            ImGui::Text("%s", T("vehicle.notInVehicle"));
             ImGui::Spacing();
         } else {
-            if (UI::Button((const char*)u8"一键修车", 6)) {
+            if (UI::Button(T("vehicle.repair"), 6)) {
                 Controllers::Vehicle::Repair();
             }
             ImGui::SameLine();
-            if (UI::Button((const char*)u8"立即停车", 6)) {
+            if (UI::Button(T("vehicle.stop"), 6)) {
                 Controllers::Vehicle::Stop();
             }
             ImGui::SameLine();
-            if (UI::Button((const char*)u8"扶正载具", 6)) {
+            if (UI::Button(T("vehicle.unflip"), 6)) {
                 Controllers::Vehicle::Unflip();
             }
             ImGui::SameLine();
-            if (UI::Button((const char*)u8"立即起步", 6)) {
+            if (UI::Button(T("vehicle.start"), 6)) {
                 Controllers::Vehicle::Start();
             }
             ImGui::SameLine();
-            if (UI::Button((const char*)u8"点火", 6)) {
+            if (UI::Button(T("vehicle.engineOn"), 6)) {
                 Controllers::Vehicle::SetEngine(true);
             }
             ImGui::SameLine();
-            if (UI::Button((const char*)u8"熄火", 6)) {
+            if (UI::Button(T("vehicle.engineOff"), 6)) {
                 Controllers::Vehicle::SetEngine(false);
             }
 
             ImGui::Spacing();
             bool lights = Controllers::Vehicle::GetLights();
-            if (ImGui::Checkbox((const char*)u8"车灯", &lights)) {
+            if (ImGui::Checkbox(T("vehicle.lights"), &lights)) {
                 Controllers::Vehicle::SetLights(lights);
             }
             ImGui::SameLine();
             bool locked = Controllers::Vehicle::GetLocked();
-            if (ImGui::Checkbox((const char*)u8"车门上锁", &locked)) {
+            if (ImGui::Checkbox(T("vehicle.lockDoors"), &locked)) {
                 Controllers::Vehicle::SetLocked(locked);
             }
             ImGui::SameLine();
             bool visible = Controllers::Vehicle::GetVisible();
             bool invisible = !visible;
-            if (ImGui::Checkbox((const char*)u8"隐形载具", &invisible)) {
+            if (ImGui::Checkbox(T("vehicle.invisible"), &invisible)) {
                 Controllers::Vehicle::SetVisible(!invisible);
             }
 
             GameLogic::ProofState proofs = Controllers::Vehicle::GetProofState();
-            if (ImGui::Checkbox((const char*)u8"防弹", &proofs.bullet)) {
+            if (ImGui::Checkbox(T("proof.bullet"), &proofs.bullet)) {
                 Controllers::Vehicle::SetProofState(proofs);
             }
             ImGui::SameLine();
-            if (ImGui::Checkbox((const char*)u8"防撞", &proofs.collision)) {
+            if (ImGui::Checkbox(T("proof.collision"), &proofs.collision)) {
                 Controllers::Vehicle::SetProofState(proofs);
             }
             ImGui::SameLine();
-            if (ImGui::Checkbox((const char*)u8"防爆", &proofs.explosion)) {
+            if (ImGui::Checkbox(T("proof.explosion"), &proofs.explosion)) {
                 Controllers::Vehicle::SetProofState(proofs);
             }
             ImGui::SameLine();
-            if (ImGui::Checkbox((const char*)u8"防火", &proofs.fire)) {
+            if (ImGui::Checkbox(T("proof.fire"), &proofs.fire)) {
                 Controllers::Vehicle::SetProofState(proofs);
             }
             ImGui::SameLine();
-            if (ImGui::Checkbox((const char*)u8"防近战", &proofs.melee)) {
+            if (ImGui::Checkbox(T("proof.melee"), &proofs.melee)) {
                 Controllers::Vehicle::SetProofState(proofs);
             }
 
 #if GTASA
             bool skidMarks = Controllers::Vehicle::GetAlwaysSkidMarks();
-            if (ImGui::Checkbox((const char*)u8"始终留下刹车痕", &skidMarks)) {
+            if (ImGui::Checkbox(T("vehicle.alwaysSkidMarks"), &skidMarks)) {
                 Controllers::Vehicle::SetAlwaysSkidMarks(skidMarks);
             }
             ImGui::SameLine();
             bool disableParticles = Controllers::Vehicle::GetDisableParticles();
-            if (ImGui::Checkbox((const char*)u8"禁用粒子效果", &disableParticles)) {
+            if (ImGui::Checkbox(T("vehicle.disableParticles"), &disableParticles)) {
                 Controllers::Vehicle::SetDisableParticles(disableParticles);
             }
             ImGui::SameLine();
             bool driverTargetable = Controllers::Vehicle::GetDriverTargetable();
-            if (ImGui::Checkbox((const char*)u8"驾驶员可被瞄准", &driverTargetable)) {
+            if (ImGui::Checkbox(T("vehicle.driverTargetable"), &driverTargetable)) {
                 Controllers::Vehicle::SetDriverTargetable(driverTargetable);
             }
 
             bool heatSeekingTargetable = Controllers::Vehicle::GetHeatSeekingTargetable();
-            if (ImGui::Checkbox((const char*)u8"可被导弹锁定", &heatSeekingTargetable)) {
+            if (ImGui::Checkbox(T("vehicle.missileTargetable"), &heatSeekingTargetable)) {
                 Controllers::Vehicle::SetHeatSeekingTargetable(heatSeekingTargetable);
             }
             ImGui::SameLine();
             bool petrolTankWeakPoint = Controllers::Vehicle::GetPetrolTankWeakPoint();
-            if (ImGui::Checkbox((const char*)u8"油箱弱点", &petrolTankWeakPoint)) {
+            if (ImGui::Checkbox(T("vehicle.petrolTankWeakness"), &petrolTankWeakPoint)) {
                 Controllers::Vehicle::SetPetrolTankWeakPoint(petrolTankWeakPoint);
             }
             ImGui::SameLine();
             bool sirenOrAlarm = Controllers::Vehicle::GetSirenOrAlarm();
-            if (ImGui::Checkbox((const char*)u8"警笛/警报", &sirenOrAlarm)) {
+            if (ImGui::Checkbox(T("vehicle.sirenAlarm"), &sirenOrAlarm)) {
                 Controllers::Vehicle::SetSirenOrAlarm(sirenOrAlarm);
             }
             ImGui::SameLine();
             bool takeLessDamage = Controllers::Vehicle::GetTakeLessDamage();
-            if (ImGui::Checkbox((const char*)u8"降低受损", &takeLessDamage)) {
+            if (ImGui::Checkbox(T("vehicle.takeLessDamage"), &takeLessDamage)) {
                 Controllers::Vehicle::SetTakeLessDamage(takeLessDamage);
             }
 #endif
 
             ImGui::PushItemWidth(160);
-            ImGui::SliderFloat((const char*)u8"车身健康值", &vehicleHealth, 0.0f, 1000.0f, "%.0f");
+            ImGui::SliderFloat(T("vehicle.health"), &vehicleHealth, 0.0f, 1000.0f, "%.0f");
             ImGui::PopItemWidth();
             ImGui::SameLine();
-            if (ImGui::Button((const char*)u8"设置健康值")) {
+            if (ImGui::Button(T("vehicle.setHealth"))) {
                 Controllers::Vehicle::SetHealth(vehicleHealth);
             }
             ImGui::SameLine();
-            if (ImGui::Button((const char*)u8"读取健康值")) {
+            if (ImGui::Button(T("vehicle.readHealth"))) {
                 vehicleHealth = Controllers::Vehicle::GetHealth();
             }
         }
@@ -177,33 +187,33 @@ namespace Pages::Vehicle {
         ImGui::Spacing();
 
         if (UI::BeginTabBar("VehicleTabs")) {
-            if (ImGui::BeginTabItem((const char*)u8"功能开关")) {
-                ImGui::Checkbox((const char*)u8"载具无伤", &MenuState::VehicleNoDamage);
+            if (ImGui::BeginTabItem(T("common.toggles"))) {
+                ImGui::Checkbox(T("vehicle.noDamage"), &MenuState::VehicleNoDamage);
                 ImGui::SameLine();
-                ImGui::Checkbox((const char*)u8"自动扶正", &MenuState::VehicleAutoUnflip);
+                ImGui::Checkbox(T("vehicle.autoUnflip"), &MenuState::VehicleAutoUnflip);
                 ImGui::SameLine();
-                ImGui::Checkbox((const char*)u8"车身加重", &MenuState::VehicleHeavy);
+                ImGui::Checkbox(T("vehicle.heavy"), &MenuState::VehicleHeavy);
                 ImGui::SameLine();
-                ImGui::Checkbox((const char*)u8"载具防水", &MenuState::VehicleWatertight);
+                ImGui::Checkbox(T("vehicle.watertight"), &MenuState::VehicleWatertight);
 
-                ImGui::Checkbox((const char*)u8"锁定车速", &MenuState::VehicleSpeedLock);
+                ImGui::Checkbox(T("vehicle.lockSpeed"), &MenuState::VehicleSpeedLock);
                 ImGui::PushItemWidth(150);
-                ImGui::SliderFloat((const char*)u8"目标速度", &MenuState::VehicleSpeed, 5.0f, 300.0f, "%.0f");
+                ImGui::SliderFloat(T("vehicle.targetSpeed"), &MenuState::VehicleSpeed, 5.0f, 300.0f, "%.0f");
                 ImGui::PopItemWidth();
                 ImGui::EndTabItem();
             }
 
-            if (ImGui::BeginTabItem((const char*)u8"生成载具")) {
-                ImGui::Checkbox((const char*)u8"生成后坐上驾驶位", &MenuState::VehicleSpawnAsDriver);
+            if (ImGui::BeginTabItem(T("vehicle.spawnVehicle"))) {
+                ImGui::Checkbox(T("vehicle.spawnAsDriver"), &MenuState::VehicleSpawnAsDriver);
                 ImGui::SameLine();
-                ImGui::Checkbox((const char*)u8"飞机/直升机生成在空中", &MenuState::VehicleSpawnAircraftInAir);
+                ImGui::Checkbox(T("vehicle.spawnAircraftInAir"), &MenuState::VehicleSpawnAircraftInAir);
 
-                ImGui::TextWrapped((const char*)u8"提示：手输 ID 只允许当前游戏已知载具模型，避免不存在的 ID 进入创建流程导致崩溃。");
+                ImGui::TextWrapped("%s", T("vehicle.spawnIdTip"));
                 ImGui::PushItemWidth(160);
-                ImGui::InputInt((const char*)u8"模型 ID", &MenuState::VehicleSpawnModel);
+                ImGui::InputInt(T("vehicle.modelId"), &MenuState::VehicleSpawnModel);
                 ImGui::PopItemWidth();
                 ImGui::SameLine();
-                if (UI::Button((const char*)u8"按 ID 生成", 2)) {
+                if (UI::Button(T("vehicle.spawnById"), 2)) {
                     if (MenuState::VehicleSpawnModel >= 0) {
                         Controllers::Vehicle::Spawn(static_cast<unsigned int>(MenuState::VehicleSpawnModel));
                     }

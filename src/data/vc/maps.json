@@ -1,0 +1,85 @@
+{
+  "locations": [
+    {
+      "category": "hospital",
+      "entries": [
+        {"name": "teleport.location.vc_west_hospital", "x": -873.0, "y": -473.0, "z": 10.0},
+        {"name": "teleport.location.vc_west_downtown_hospital", "x": -825.0, "y": 1162.0, "z": 10.0},
+        {"name": "teleport.location.vc_east_hospital", "x": -112.0, "y": -968.0, "z": 10.0},
+        {"name": "teleport.location.vc_east_vice_hospital", "x": 466.0, "y": 704.0, "z": 11.0}
+      ]
+    },
+    {
+      "category": "police",
+      "entries": [
+        {"name": "teleport.location.vc_east_police", "x": 412.0, "y": -471.0, "z": 10.0},
+        {"name": "teleport.location.vc_east_vice_police", "x": 516.0, "y": 506.0, "z": 11.0},
+        {"name": "teleport.location.vc_west_police", "x": -851.0, "y": -676.0, "z": 11.0},
+        {"name": "teleport.location.vc_west_downtown_police", "x": -611.0, "y": 755.0, "z": 11.0},
+        {"name": "teleport.location.vc_west_airport_police", "x": -1189.0, "y": -900.0, "z": 14.0}
+      ]
+    },
+    {
+      "category": "safehouse",
+      "entries": [
+        {"name": "teleport.location.vc_ocean_view_hotel", "x": 237.0, "y": -1281.0, "z": 10.0},
+        {"name": "teleport.location.vc_safehouse_1", "x": 19.0, "y": -1479.0, "z": 10.0},
+        {"name": "teleport.location.vc_safehouse_2", "x": 99.0, "y": -810.0, "z": 10.0},
+        {"name": "teleport.location.vc_safehouse_3", "x": 309.0, "y": 379.0, "z": 12.0},
+        {"name": "teleport.location.vc_safehouse_4", "x": 445.0, "y": 626.0, "z": 11.0},
+        {"name": "teleport.location.vc_safehouse_5", "x": 527.0, "y": 1268.0, "z": 16.0},
+        {"name": "teleport.location.vc_safehouse_6", "x": -835.0, "y": 1301.0, "z": 11.0},
+        {"name": "teleport.location.vc_safehouse_7", "x": -561.0, "y": 706.0, "z": 20.0},
+        {"name": "teleport.location.vc_vercetti_mansion", "x": -365.0, "y": -521.0, "z": 12.0}
+      ]
+    },
+    {
+      "category": "weapon_shop",
+      "entries": [
+        {"name": "teleport.location.vc_east_weapon", "x": -53.0, "y": -1481.0, "z": 10.0},
+        {"name": "teleport.location.vc_east_northpoint_weapon", "x": 372.0, "y": 1056.0, "z": 19.0},
+        {"name": "teleport.location.vc_west_weapon", "x": -677.0, "y": 1192.0, "z": 10.0}
+      ]
+    },
+    {
+      "category": "misc",
+      "entries": [
+        {"name": "teleport.location.vc_east_melee", "x": 197.0, "y": -486.0, "z": 10.0},
+        {"name": "teleport.location.vc_east_northpoint_melee", "x": 373.0, "y": 1079.0, "z": 18.0},
+        {"name": "teleport.location.vc_west_melee", "x": -976.0, "y": -674.0, "z": 11.0}
+      ]
+    },
+    {
+      "category": "paynspray",
+      "entries": [
+        {"name": "teleport.location.vc_east_paynspray", "x": -23.0, "y": -1261.0, "z": 10.0},
+        {"name": "teleport.location.vc_east_vice_point_paynspray", "x": 336.0, "y": 425.0, "z": 11.0},
+        {"name": "teleport.location.vc_west_paynspray", "x": -859.0, "y": -120.0, "z": 10.0},
+        {"name": "teleport.location.vc_west_boatyard_paynspray", "x": -914.0, "y": -1277.0, "z": 11.0}
+      ]
+    },
+    {
+      "category": "common",
+      "entries": [
+        {"name": "teleport.location.vc_military_base", "x": -1710.0, "y": -306.0, "z": 14.0},
+        {"name": "teleport.location.vc_airport", "x": -1456.0, "y": -823.0, "z": 14.0},
+        {"name": "teleport.location.vc_race_track", "x": -1097.0, "y": 1326.0, "z": 19.0},
+        {"name": "teleport.location.vc_golf_course", "x": 103.0, "y": 248.0, "z": 21.0},
+        {"name": "teleport.location.vc_lighthouse", "x": 442.0, "y": -1725.0, "z": 9.0}
+      ]
+    },
+    {
+      "category": "interior",
+      "entries": [
+        {"name": "teleport.location.vc_shipyard", "x": -647.0, "y": -1498.0, "z": 12.0},
+        {"name": "teleport.location.vc_strip_club", "x": 100.0, "y": -1474.0, "z": 10.0},
+        {"name": "teleport.location.vc_sunshine_autos", "x": -1008.0, "y": -891.0, "z": 12.0},
+        {"name": "teleport.location.vc_ice_cream_factory", "x": -859.0, "y": -572.0, "z": 10.0},
+        {"name": "teleport.location.vc_money_factory", "x": -1052.0, "y": -275.0, "z": 11.0},
+        {"name": "teleport.location.vc_taxi_depot", "x": -1012.0, "y": 198.0, "z": 11.0},
+        {"name": "teleport.location.vc_film_studio", "x": 15.0, "y": 961.0, "z": 10.0},
+        {"name": "teleport.location.vc_nightclub", "x": 496.0, "y": -84.0, "z": 9.0}
+      ]
+    }
+  ]
+}

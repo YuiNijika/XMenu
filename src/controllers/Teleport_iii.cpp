@@ -1,6 +1,5 @@
 #include "Teleport.h"
 #include "features/GameLogic.h"
-#include "imgui/imgui.h"
 #include "CPlayerPed.h"
 
 namespace Controllers::Teleport {
@@ -27,11 +26,5 @@ namespace Controllers::Teleport {
 
     void Marker(bool spawnUnderwater) {
         GameLogic::TeleportMarker(spawnUnderwater);
-    }
-
-    void DrawLocations() {
-        if (ImGui::Button((const char*)u8"斯唐顿岛")) {
-            GameLogic::TeleportPlayer(CVector(150.0f, -150.0f, 15.0f));
-        }
     }
 }

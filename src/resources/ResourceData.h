@@ -1,41 +1,26 @@
 #pragma once
 #include <cstddef>
+#include <vector>
+#include "utils/DataManager.h"
 
 namespace Resources {
-    struct WeaponEntry {
-        const char* category;
-        const char* label;
-        unsigned int value;
-        bool isModel;
-    };
-
-    struct LocationEntry {
-        const char* category;
-        const char* label;
-        int interior;
-        float x;
-        float y;
-        float z;
-    };
-
-    struct VehicleEntry {
-        const char* category;
-        const char* label;
-        unsigned int model;
-    };
-
+    // 使用DataManager的结构
+    using LocationEntry = DataManager::LocationData;
+    using WeaponEntry = DataManager::WeaponData;
+    using VehicleEntry = DataManager::VehicleData;
+    
     struct WeaponTable {
-        const WeaponEntry* entries;
+        const std::vector<WeaponEntry>* entries;
         std::size_t count;
     };
 
     struct LocationTable {
-        const LocationEntry* entries;
+        const std::vector<LocationEntry>* entries;
         std::size_t count;
     };
 
     struct VehicleTable {
-        const VehicleEntry* entries;
+        const std::vector<VehicleEntry>* entries;
         std::size_t count;
     };
 
@@ -43,4 +28,7 @@ namespace Resources {
     LocationTable GetLocations();
     VehicleTable GetVehicles();
     bool IsKnownVehicleModel(unsigned int model);
+    
+    // 初始化数据
+    void InitData();
 }

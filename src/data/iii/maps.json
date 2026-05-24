@@ -1,0 +1,47 @@
+{
+  "locations": [
+    {
+      "category": "hospital",
+      "entries": [
+        {"name": "teleport.location.portland_hospital", "x": 1140.0, "y": -589.0, "z": 14.0},
+        {"name": "teleport.location.staunton_hospital", "x": 176.0, "y": -30.0, "z": 16.0},
+        {"name": "teleport.location.shoreside_hospital", "x": -1252.0, "y": -79.0, "z": 58.0}
+      ]
+    },
+    {
+      "category": "police",
+      "entries": [
+        {"name": "teleport.location.portland_police", "x": 1139.0, "y": -672.0, "z": 14.0},
+        {"name": "teleport.location.staunton_police", "x": 338.0, "y": -1140.0, "z": 22.0},
+        {"name": "teleport.location.shoreside_police", "x": -1262.0, "y": -40.0, "z": 58.0}
+      ]
+    },
+    {
+      "category": "safehouse",
+      "entries": [
+        {"name": "teleport.location.portland_safehouse", "x": 874.0, "y": -307.0, "z": 8.0},
+        {"name": "teleport.location.staunton_safehouse", "x": 117.0, "y": -469.0, "z": 15.0},
+        {"name": "teleport.location.shoreside_safehouse", "x": -668.0, "y": -13.0, "z": 18.0}
+      ]
+    },
+    {
+      "category": "station",
+      "entries": [
+        {"name": "teleport.location.portland_subway", "x": 186.0, "y": -1553.0, "z": 26.0},
+        {"name": "teleport.location.staunton_subway", "x": 775.0, "y": -616.0, "z": 14.0},
+        {"name": "teleport.location.staunton_elevated", "x": 1308.0, "y": -511.0, "z": 40.0},
+        {"name": "teleport.location.shoreside_station", "x": -633.0, "y": -759.0, "z": 18.0}
+      ]
+    },
+    {
+      "category": "misc",
+      "entries": [
+        {"name": "teleport.location.portland_docks", "x": -740.0, "y": -518.0, "z": 8.0},
+        {"name": "teleport.location.staunton_park", "x": -279.0, "y": 375.0, "z": 78.0},
+        {"name": "teleport.location.shoreside_hills", "x": -1148.0, "y": 422.0, "z": 23.0},
+        {"name": "teleport.location.portland_downtown", "x": 46.0, "y": -701.0, "z": 25.0},
+        {"name": "teleport.location.staunton_commercial", "x": 76.0, "y": -1073.0, "z": 25.0}
+      ]
+    }
+  ]
+}

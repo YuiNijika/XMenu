@@ -130,6 +130,12 @@ if not exist "build\bin\XMenuIII.dll" (
 >> "build\Payloads.rc" echo IDR_XMENU_SA RCDATA "bin/XMenuSA.dll"
 >> "build\Payloads.rc" echo IDR_XMENU_VC RCDATA "bin/XMenuVC.dll"
 >> "build\Payloads.rc" echo IDR_XMENU_III RCDATA "bin/XMenuIII.dll"
+>> "build\Payloads.rc" echo.
+>> "build\Payloads.rc" echo // i18n language files
+>> "build\Payloads.rc" echo IDR_I18N_ZH RCDATA "../src/data/i18n/zh.json"
+>> "build\Payloads.rc" echo IDR_I18N_EN RCDATA "../src/data/i18n/en.json"
+>> "build\Payloads.rc" echo IDR_I18N_JP RCDATA "../src/data/i18n/jp.json"
+>> "build\Payloads.rc" echo IDR_I18N_RU RCDATA "../src/data/i18n/ru.json"
 exit /b 0
 
 :find_msbuild
