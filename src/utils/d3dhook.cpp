@@ -303,7 +303,7 @@ HRESULT __stdcall D3DHook::hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
     if (!isInitialized) {
         D3DDEVICE_CREATION_PARAMETERS params;
         pDevice->GetCreationParameters(&params);
-        window = params.hFocusWindow ? params.hFocusWindow : params.hDeviceWindow;
+        window = params.hFocusWindow;
         if (!IsWindowUsable(window)) {
             window = GetForegroundWindow();
         }

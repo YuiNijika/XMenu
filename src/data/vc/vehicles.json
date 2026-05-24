@@ -47,6 +47,7 @@
         {"name": "vehicle.zebra", "id": 188},
         {"name": "vehicle.bus", "id": 161},
         {"name": "vehicle.coach", "id": 167},
+        {"name": "vehicle.mrwhoopee", "id": 153},
         {"name": "vehicle.kaufman", "id": 216},
         {"name": "vehicle.baggage", "id": 215}
       ]
@@ -152,8 +153,7 @@
         {"name": "vehicle.topfun", "id": 189},
         {"name": "vehicle.patriot", "id": 200},
         {"name": "vehicle.lovefist", "id": 201},
-        {"name": "vehicle.spand", "id": 213},
-        {"name": "vehicle.rancher", "id": 219}
+        {"name": "vehicle.spand", "id": 213}
       ]
     }
   ]
