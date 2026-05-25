@@ -278,7 +278,7 @@ void StopVehicle(CVehicle* vehicle) {
 }
 
 void UnflipVehicle(CVehicle* vehicle) {
-    if (!vehicle) return;
+    if (!vehicle || !vehicle->IsUpsideDown()) return;
     int handle = CPools::GetVehicleRef(vehicle);
     float roll = 0.0f;
     plugin::Command<plugin::Commands::GET_CAR_ROLL>(handle, &roll);
@@ -290,7 +290,9 @@ void UnflipVehicle(CVehicle* vehicle) {
 
 void SetVehicleForwardSpeed(CVehicle* vehicle, float speed) {
     if (!vehicle) return;
-    plugin::Command<plugin::Commands::SET_CAR_FORWARD_SPEED>(CPools::GetVehicleRef(vehicle), speed);
+    const CVector forward = vehicle->GetForward();
+    const float velocity = speed / 50.0f;
+    vehicle->m_vecMoveSpeed = CVector(forward.x * velocity, forward.y * velocity, forward.z * velocity);
 }
 
 void SetVehicleSpeedLock(CVehicle* vehicle, bool enable, float speed) {

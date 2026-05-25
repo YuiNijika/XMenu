@@ -56,6 +56,42 @@ bool PatchByteIfExpected(const char* label, std::uintptr_t address, unsigned cha
     VirtualProtect(target, 1, oldProtect, &unusedProtect);
     return true;
 }
+
+bool PatchBytesIfExpected(const char* label, std::uintptr_t address, const unsigned char* original, const unsigned char* patched, std::size_t size, bool enable) {
+    auto* target = reinterpret_cast<unsigned char*>(address);
+
+    MEMORY_BASIC_INFORMATION memoryInfo{};
+    if (VirtualQuery(target, &memoryInfo, sizeof(memoryInfo)) == 0 || memoryInfo.State != MEM_COMMIT ||
+        (memoryInfo.Protect & (PAGE_NOACCESS | PAGE_GUARD)) != 0 ||
+        reinterpret_cast<std::uintptr_t>(target) + size > reinterpret_cast<std::uintptr_t>(memoryInfo.BaseAddress) + memoryInfo.RegionSize) {
+        Log::Warn(std::string(label) + " 补丁地址不可用，已跳过");
+        return false;
+    }
+
+    const unsigned char* desired = enable ? patched : original;
+    if (std::memcmp(target, desired, size) == 0) {
+        return true;
+    }
+
+    const unsigned char* acceptableCurrent = enable ? original : patched;
+    if (std::memcmp(target, acceptableCurrent, size) != 0) {
+        Log::Warn(std::string(label) + " 补丁位置与预期不符，已跳过");
+        return false;
+    }
+
+    DWORD oldProtect = 0;
+    if (!VirtualProtect(target, size, PAGE_EXECUTE_READWRITE, &oldProtect)) {
+        Log::Warn(std::string(label) + " 补丁无法修改内存权限，已跳过");
+        return false;
+    }
+
+    std::memcpy(target, desired, size);
+    FlushInstructionCache(GetCurrentProcess(), target, size);
+
+    DWORD unusedProtect = 0;
+    VirtualProtect(target, size, oldProtect, &unusedProtect);
+    return true;
+}
 }
 
 namespace GameLogic {
@@ -287,7 +323,7 @@ void StopVehicle(CVehicle* vehicle) {
 }
 
 void UnflipVehicle(CVehicle* vehicle) {
-    if (!vehicle) return;
+    if (!vehicle || !vehicle->IsUpsideDown()) return;
     float x = 0.0f;
     float y = 0.0f;
     float z = 0.0f;
@@ -298,7 +334,9 @@ void UnflipVehicle(CVehicle* vehicle) {
 
 void SetVehicleForwardSpeed(CVehicle* vehicle, float speed) {
     if (!vehicle) return;
-    plugin::Command<plugin::Commands::SET_CAR_FORWARD_SPEED>(CPools::GetVehicleRef(vehicle), speed);
+    const CVector forward = vehicle->GetForward();
+    const float velocity = speed / 50.0f;
+    vehicle->m_vecMoveSpeed = CVector(forward.x * velocity, forward.y * velocity, forward.z * velocity);
 }
 
 void SetVehicleSpeedLock(CVehicle* vehicle, bool enable, float speed) {
@@ -753,14 +791,16 @@ void SetDisableReplay(bool enable) {
 }
 
 void SetDisableCheats(bool enable) {
-    if (enable) {
-        plugin::patch::Nop(0x602BD8, 5, false);
-        plugin::patch::Nop(0x602BE7, 5, false);
-        return;
-    }
+    static const unsigned char originalFirst[] = { 0x88, 0xD8, 0x89, 0xF1, 0x50 };
+    static const unsigned char patchedFirst[] = { 0x90, 0x90, 0x90, 0x90, 0x90 };
+    static const unsigned char originalSecond[] = { 0xE8, 0x34, 0x91, 0xEA, 0xFF };
+    static const unsigned char patchedSecond[] = { 0x90, 0x90, 0x90, 0x90, 0x90 };
 
-    plugin::patch::SetRaw(0x602BD8, (void*)"\x88\xD8\x89\xF1\x50", 5, false);
-    plugin::patch::SetRaw(0x602BE7, (void*)"\xE8\x34\x91\xEA\xFF", 5, false);
+    const bool firstOk = PatchBytesIfExpected("VC 禁用作弊码", 0x602BD8, originalFirst, patchedFirst, sizeof(originalFirst), enable);
+    const bool secondOk = PatchBytesIfExpected("VC 禁用作弊码", 0x602BE7, originalSecond, patchedSecond, sizeof(originalSecond), enable);
+    if (!firstOk || !secondOk) {
+        Log::Warn("VC 禁用作弊码补丁未完整应用，当前游戏版本可能不匹配");
+    }
 }
 
 void SetForbiddenAreaWanted(bool enable) {

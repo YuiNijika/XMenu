@@ -12,6 +12,10 @@
 #include <array>
 #include <string>
 
+#ifdef GTASA
+#include <vector>
+#endif
+
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 typedef HRESULT(__stdcall* EndScene_t)(LPDIRECT3DDEVICE9);
@@ -25,6 +29,14 @@ static Present_t oPresent = NULL;
 extern const bool XMENU_DEBUG_MODE;
 
 namespace {
+#ifdef GTASA
+    bool virtualMouseActive = false;
+    bool virtualMouseReady = false;
+    bool virtualMouseDown[5] = {};
+    float virtualMouseX = 0.0f;
+    float virtualMouseY = 0.0f;
+#endif
+
     void DebugD3D(const std::string& message) {
         if (XMENU_DEBUG_MODE) {
             Log::Info(std::string("D3D Hook 调试：") + message);
@@ -108,17 +120,8 @@ namespace {
     }
 
     void ReleaseWindowInput() {
-        ClipCursor(nullptr);
-        ReleaseCapture();
         if (ImGui::GetCurrentContext()) {
             ImGui::GetIO().MouseDrawCursor = false;
-        }
-    }
-
-    void ReleaseWindowCaptureOnly() {
-        ClipCursor(nullptr);
-        if (GetCapture()) {
-            ReleaseCapture();
         }
     }
 
@@ -126,100 +129,124 @@ namespace {
         return hwnd && IsWindow(hwnd);
     }
 
-    bool IsGameWindowActive(HWND hwnd) {
-        if (!IsWindowUsable(hwnd)) {
-            return false;
+#ifdef GTASA
+    float ClampFloat(float value, float minValue, float maxValue) {
+        if (value < minValue) return minValue;
+        if (value > maxValue) return maxValue;
+        return value;
+    }
+
+    void ApplyVirtualMouseToImGui() {
+        if (!ImGui::GetCurrentContext() || !virtualMouseActive) {
+            return;
         }
 
-        const HWND foreground = GetForegroundWindow();
-        return foreground == hwnd || IsChild(hwnd, foreground) || IsChild(foreground, hwnd);
+        ImGuiIO& io = ImGui::GetIO();
+        io.MousePos = ImVec2(virtualMouseX, virtualMouseY);
+        for (int i = 0; i < 5; ++i) {
+            io.MouseDown[i] = virtualMouseDown[i];
+        }
+        io.MouseDrawCursor = true;
     }
 
-    void ClearGameMouseState() {
-        CPad::NewMouseControllerState.x = 0;
-        CPad::NewMouseControllerState.y = 0;
-#ifdef GTASA
-        CPad::OldMouseControllerState.x = 0;
-        CPad::OldMouseControllerState.y = 0;
-#endif
+    void InitVirtualMousePosition(HWND hwnd) {
+        if (!ImGui::GetCurrentContext()) {
+            return;
+        }
+
+        ImGuiIO& io = ImGui::GetIO();
+        if (virtualMouseReady) {
+            return;
+        }
+
+        POINT cursor{};
+        if (GetCursorPos(&cursor) && ScreenToClient(hwnd, &cursor)) {
+            virtualMouseX = static_cast<float>(cursor.x);
+            virtualMouseY = static_cast<float>(cursor.y);
+        } else {
+            virtualMouseX = io.DisplaySize.x * 0.5f;
+            virtualMouseY = io.DisplaySize.y * 0.5f;
+        }
+        virtualMouseReady = true;
+        ApplyVirtualMouseToImGui();
     }
+
+    void MoveVirtualMouseFromRawInput(LPARAM lParam) {
+        if (!ImGui::GetCurrentContext() || !virtualMouseActive) {
+            return;
+        }
+
+        UINT size = 0;
+        if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, nullptr, &size, sizeof(RAWINPUTHEADER)) != 0 || size == 0) {
+            return;
+        }
+
+        std::vector<unsigned char> buffer(size);
+        if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, buffer.data(), &size, sizeof(RAWINPUTHEADER)) != size) {
+            return;
+        }
+
+        const RAWINPUT* raw = reinterpret_cast<const RAWINPUT*>(buffer.data());
+        if (raw->header.dwType != RIM_TYPEMOUSE) {
+            return;
+        }
+
+        ImGuiIO& io = ImGui::GetIO();
+        const float speed = 1.0f;
+        virtualMouseX = ClampFloat(virtualMouseX + static_cast<float>(raw->data.mouse.lLastX) * speed, 0.0f, io.DisplaySize.x - 1.0f);
+        virtualMouseY = ClampFloat(virtualMouseY + static_cast<float>(raw->data.mouse.lLastY) * speed, 0.0f, io.DisplaySize.y - 1.0f);
+
+        const USHORT flags = raw->data.mouse.usButtonFlags;
+        if (flags & RI_MOUSE_LEFT_BUTTON_DOWN) virtualMouseDown[0] = true;
+        if (flags & RI_MOUSE_LEFT_BUTTON_UP) virtualMouseDown[0] = false;
+        if (flags & RI_MOUSE_RIGHT_BUTTON_DOWN) virtualMouseDown[1] = true;
+        if (flags & RI_MOUSE_RIGHT_BUTTON_UP) virtualMouseDown[1] = false;
+        if (flags & RI_MOUSE_MIDDLE_BUTTON_DOWN) virtualMouseDown[2] = true;
+        if (flags & RI_MOUSE_MIDDLE_BUTTON_UP) virtualMouseDown[2] = false;
+        if (flags & RI_MOUSE_BUTTON_4_DOWN) virtualMouseDown[3] = true;
+        if (flags & RI_MOUSE_BUTTON_4_UP) virtualMouseDown[3] = false;
+        if (flags & RI_MOUSE_BUTTON_5_DOWN) virtualMouseDown[4] = true;
+        if (flags & RI_MOUSE_BUTTON_5_UP) virtualMouseDown[4] = false;
+        if (flags & RI_MOUSE_WHEEL) {
+            const SHORT wheelDelta = static_cast<SHORT>(raw->data.mouse.usButtonData);
+            io.MouseWheel += static_cast<float>(wheelDelta) / static_cast<float>(WHEEL_DELTA);
+        }
+
+        ApplyVirtualMouseToImGui();
+    }
+
+    void RegisterMenuRawMouse(HWND hwnd) {
+        RAWINPUTDEVICE device{};
+        device.usUsagePage = 0x01;
+        device.usUsage = 0x02;
+        device.dwFlags = RIDEV_INPUTSINK;
+        device.hwndTarget = hwnd;
+        if (!RegisterRawInputDevices(&device, 1, sizeof(device))) {
+            Log::Warn("注册菜单 RawInput 鼠标失败");
+        }
+    }
+#endif
 
     void ApplyMousePatch(bool menuActive) {
         if (menuActive) {
             plugin::patch::SetUChar((uintptr_t)BY_GAME(0x6194A0, 0x6020A0, 0x580D20), 0xC3);
             plugin::patch::Nop((uintptr_t)BY_GAME(0x541DD7, 0x4AB6CA, 0x49272F), 5);
+#ifdef GTASA
+            plugin::patch::SetUChar(0x4EB731, 0xEB);
+            plugin::patch::SetUChar(0x4EB75A, 0xEB);
+#endif
             return;
         }
 
         plugin::patch::SetUChar((uintptr_t)BY_GAME(0x6194A0, 0x6020A0, 0x580D20), BY_GAME(0xE9, 0x53, 0x53));
 #ifdef GTASA
         plugin::patch::SetRaw(0x541DD7, (void*)"\xE8\xE4\xD5\xFF\xFF", 5);
+        plugin::patch::SetUChar(0x4EB731, 0x74);
+        plugin::patch::SetUChar(0x4EB75A, 0x74);
 #elif GTAVC
         plugin::patch::SetRaw(0x4AB6CA, (void*)"\xE8\x51\x21\x00\x00", 5);
 #else
         plugin::patch::SetRaw(0x49272F, (void*)"\xE8\x6C\xF5\xFF\xFF", 5);
-#endif
-    }
-
-    float ClampFloat(float value, float minValue, float maxValue) {
-        if (value < minValue) {
-            return minValue;
-        }
-        if (value > maxValue) {
-            return maxValue;
-        }
-        return value;
-    }
-
-    void SyncImGuiMousePosition(HWND hwnd) {
-        if (!ImGui::GetCurrentContext() || !IsWindowUsable(hwnd)) {
-            return;
-        }
-
-        RECT clientRect = {};
-        if (!GetClientRect(hwnd, &clientRect)) {
-            return;
-        }
-
-#ifdef GTASA
-        static bool virtualMouseReady = false;
-        static ImVec2 virtualMousePos(0.0f, 0.0f);
-
-        const float width = static_cast<float>(clientRect.right - clientRect.left);
-        const float height = static_cast<float>(clientRect.bottom - clientRect.top);
-        if (width <= 0.0f || height <= 0.0f) {
-            return;
-        }
-
-        if (!virtualMouseReady) {
-            POINT cursor = {};
-            if (GetCursorPos(&cursor) && ScreenToClient(hwnd, &cursor)
-                && cursor.x >= 0 && cursor.y >= 0
-                && cursor.x < static_cast<int>(width)
-                && cursor.y < static_cast<int>(height)) {
-                virtualMousePos = ImVec2(static_cast<float>(cursor.x), static_cast<float>(cursor.y));
-            } else {
-                virtualMousePos = ImVec2(width * 0.5f, height * 0.5f);
-            }
-            virtualMouseReady = true;
-        }
-
-        const float dx = static_cast<float>(CPad::NewMouseControllerState.x);
-        const float dy = static_cast<float>(CPad::NewMouseControllerState.y);
-        if (dx != 0.0f || dy != 0.0f) {
-            virtualMousePos.x = ClampFloat(virtualMousePos.x + dx, 0.0f, width - 1.0f);
-            virtualMousePos.y = ClampFloat(virtualMousePos.y + dy, 0.0f, height - 1.0f);
-        }
-
-        ImGui::GetIO().MousePos = virtualMousePos;
-#else
-        POINT cursor = {};
-        if (!GetCursorPos(&cursor)) {
-            return;
-        }
-
-        ScreenToClient(hwnd, &cursor);
-        ImGui::GetIO().MousePos = ImVec2(static_cast<float>(cursor.x), static_cast<float>(cursor.y));
 #endif
     }
 }
@@ -273,7 +300,10 @@ void D3DHook::SetMenuVisible(bool visible) {
         return;
     }
 
-    const bool changed = menuVisible != visible;
+    if (menuVisible == visible) {
+        return;
+    }
+
     menuVisible = visible;
 
     if (isInitialized) {
@@ -281,7 +311,7 @@ void D3DHook::SetMenuVisible(bool visible) {
         return;
     }
 
-    if (!menuVisible || changed) {
+    if (!menuVisible) {
         ReleaseWindowInput();
     }
 }
@@ -297,14 +327,21 @@ void D3DHook::ProcessMouse() {
     ImGui::GetIO().MouseDrawCursor = menuVisible;
 
     if (menuVisible) {
+#ifdef GTASA
+        virtualMouseActive = true;
+        InitVirtualMousePosition(window);
+#endif
         ApplyMousePatch(true);
-        ClearGameMouseState();
     } else {
+#ifdef GTASA
+        virtualMouseActive = false;
+        virtualMouseReady = false;
+        std::memset(virtualMouseDown, 0, sizeof(virtualMouseDown));
+#endif
         ApplyMousePatch(false);
-        // 清除鼠标历史记录防止视角跳变
         CPad::UpdatePads();
-        ClearGameMouseState();
-        ReleaseWindowInput();
+        CPad::NewMouseControllerState.x = 0;
+        CPad::NewMouseControllerState.y = 0;
 #ifdef GTA3
         // CPad::GetPad(0)->ClearMouseHistory(); // Disabled to prevent camera reset
 #else
@@ -317,75 +354,38 @@ void D3DHook::ProcessMouse() {
             pad->OldState.DPadDown = 0;
         }
 #endif
-    }
-}
-
-void D3DHook::MaintainInputState() {
-    const bool active = IsGameWindowActive(window);
-
-    if (hookInstalled && isInitialized && menuVisible && active) {
-        ApplyMousePatch(true);
-        if (ImGui::GetCurrentContext()) {
-            ImGui::GetIO().MouseDrawCursor = true;
-            SyncImGuiMousePosition(window);
-        }
-        ClearGameMouseState();
-        return;
-    }
-
-    if (!hookInstalled || !isInitialized || !menuVisible || !active) {
-        if (menuVisible && !active) {
-            menuVisible = false;
-            ProcessMouse();
-            DebugD3D("窗口失焦，已关闭菜单并释放鼠标状态");
-            return;
-        }
-
         ReleaseWindowInput();
     }
 }
 
+void D3DHook::MaintainInputState() {
+    if (hookInstalled && isInitialized && menuVisible) {
+#ifdef GTASA
+        virtualMouseActive = true;
+        InitVirtualMousePosition(window);
+#endif
+        ApplyMousePatch(true);
+        if (ImGui::GetCurrentContext()) {
+#ifdef GTASA
+            ApplyVirtualMouseToImGui();
+#endif
+            ImGui::GetIO().MouseDrawCursor = true;
+        }
+    }
+}
+
 LRESULT __stdcall D3DHook::hkWndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    if (uMsg == WM_KILLFOCUS || uMsg == WM_CANCELMODE || uMsg == WM_ACTIVATE || uMsg == WM_ACTIVATEAPP) {
-        const bool inactive =
-            uMsg == WM_KILLFOCUS ||
-            uMsg == WM_CANCELMODE ||
-            (uMsg == WM_ACTIVATE && LOWORD(wParam) == WA_INACTIVE) ||
-            (uMsg == WM_ACTIVATEAPP && wParam == FALSE);
-
-        if (inactive) {
-            SetMenuVisible(false);
-        }
-    }
-
-    if (uMsg == WM_CAPTURECHANGED) {
-        ClipCursor(nullptr);
-    }
-
     if (menuVisible) {
-        if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) {
+#ifdef GTASA
+        if (uMsg == WM_INPUT && virtualMouseActive) {
+            MoveVirtualMouseFromRawInput(lParam);
             return true;
         }
+#endif
 
-        switch (uMsg) {
-        case WM_MOUSEMOVE:
-        case WM_LBUTTONDOWN:
-        case WM_LBUTTONUP:
-        case WM_RBUTTONDOWN:
-        case WM_RBUTTONUP:
-        case WM_MOUSEWHEEL:
-        case WM_KEYDOWN:
-        case WM_KEYUP:
-        case WM_SYSKEYDOWN:
-        case WM_SYSKEYUP:
-        case WM_CHAR:
-        case WM_SYSCHAR:
-        case WM_IME_STARTCOMPOSITION:
-        case WM_IME_COMPOSITION:
-        case WM_IME_ENDCOMPOSITION:
+        ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
+        if (uMsg == WM_MOUSEMOVE || uMsg == WM_LBUTTONDOWN || uMsg == WM_LBUTTONUP || uMsg == WM_RBUTTONDOWN || uMsg == WM_RBUTTONUP || uMsg == WM_MOUSEWHEEL) {
             return true;
-        default:
-            break;
         }
     }
     return CallWindowProc(oWndProc, hWnd, uMsg, wParam, lParam);
@@ -401,6 +401,9 @@ void D3DHook::InitImGui(LPDIRECT3DDEVICE9 pDevice) {
     }
     
     ImGui_ImplWin32_Init(window);
+#ifdef GTASA
+    RegisterMenuRawMouse(window);
+#endif
     ImGui_ImplDX9_Init(pDevice);
     
     isInitialized = true;
@@ -414,9 +417,6 @@ HRESULT __stdcall D3DHook::hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
         D3DDEVICE_CREATION_PARAMETERS params;
         pDevice->GetCreationParameters(&params);
         window = params.hFocusWindow;
-        if (!IsWindowUsable(window)) {
-            window = GetForegroundWindow();
-        }
         if (!IsWindowUsable(window)) {
             initFailed = true;
             initStatus = "D3D9 Hook failed: invalid game window";
@@ -433,8 +433,10 @@ HRESULT __stdcall D3DHook::hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
         ApplyMousePatch(true);
         ImGui_ImplDX9_NewFrame();
         ImGui_ImplWin32_NewFrame();
-        SyncImGuiMousePosition(window);
         ImGui::NewFrame();
+#ifdef GTASA
+        ApplyVirtualMouseToImGui();
+#endif
         
         if (renderCallback) {
             renderCallback();
