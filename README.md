@@ -9,7 +9,7 @@ A simple yet feature-rich ASI menu for GTA III, GTA Vice City, and GTA San Andre
 
 [![GitHub](https://img.shields.io/badge/GitHub-XMenu-181717?style=for-the-badge&logo=github)](https://github.com/YuiNijika/XMenu)
 [![GTAMODX](https://img.shields.io/badge/GTAMODX-XMenu-2ea44f?style=for-the-badge)](https://gtamodx.com/mods/xmenu)
-[![Bilibili](https://img.shields.io/badge/Bilibili-关注鼠子(YuiNijika)-00A1D6?style=for-the-badge&logo=bilibili&logoColor=white)](https://space.bilibili.com/435502585)
+[![Bilibili](https://img.shields.io/badge/Bilibili-Tomoriゞ-00A1D6?style=for-the-badge&logo=bilibili&logoColor=white)](https://space.bilibili.com/435502585)
 
 </div>
 
