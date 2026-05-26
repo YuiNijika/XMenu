@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <ctime>
+#include <stdexcept>
 
 #pragma comment(lib, "urlmon.lib")
 #pragma comment(lib, "shell32.lib")
@@ -68,6 +69,21 @@ namespace {
         output.pop_back();
         return output;
     }
+
+    struct DownloadSource {
+        const wchar_t* label;
+        const char* proxyPrefix;
+    };
+
+    const DownloadSource DownloadSources[] = {
+        { L"GitHub 官方源", "" },
+        { L"gh-proxy.org Cloudflare (v4)", "https://gh-proxy.org/" },
+        { L"v4.gh-proxy.org Cloudflare (v4)", "https://v4.gh-proxy.org/" },
+        { L"v6.gh-proxy.org Cloudflare (v4/v6)", "https://v6.gh-proxy.org/" },
+        { L"cdn.gh-proxy.org Fastly (v4)", "https://cdn.gh-proxy.org/" }
+    };
+
+    constexpr int DefaultDownloadSourceIndex = 0;
 
     struct ReleaseInfo {
         std::string tagName;
@@ -384,10 +400,45 @@ namespace {
         ProgressHandler handler_ = nullptr;
     };
 
-    bool DownloadFile(const std::string& url, const std::string& path, DownloadProgressCallback::ProgressHandler progressHandler = nullptr) {
+    std::string LastSystemErrorText(HRESULT hr) {
+        std::ostringstream stream;
+        stream << "HRESULT=0x";
+        stream << std::hex << static_cast<unsigned long>(hr);
+        return stream.str();
+    }
+
+    std::string BuildDownloadUrl(const std::string& url, int sourceIndex) {
+        if (sourceIndex <= 0 || sourceIndex >= static_cast<int>(sizeof(DownloadSources) / sizeof(DownloadSources[0]))) {
+            return url;
+        }
+        return std::string(DownloadSources[sourceIndex].proxyPrefix) + url;
+    }
+
+    void ThrowDownloadFailure(const std::string& sourceName, const std::string& url, HRESULT hr) {
+        std::ostringstream message;
+        message << "download failed, source=" << sourceName << ", url=" << url << ", " << LastSystemErrorText(hr);
+        throw std::runtime_error(message.str());
+    }
+
+    void DownloadFileOrThrow(const std::string& url, const std::string& path, const std::string& sourceName, DownloadProgressCallback::ProgressHandler progressHandler = nullptr) {
         DeleteFileA(path.c_str());
         DownloadProgressCallback callback(progressHandler);
-        return SUCCEEDED(URLDownloadToFileA(nullptr, url.c_str(), path.c_str(), 0, progressHandler ? &callback : nullptr));
+        const HRESULT hr = URLDownloadToFileA(nullptr, url.c_str(), path.c_str(), 0, progressHandler ? &callback : nullptr);
+        if (FAILED(hr)) {
+            ThrowDownloadFailure(sourceName, url, hr);
+        }
+        if (!PathExists(path)) {
+            throw std::runtime_error("download failed, file was not created: " + path);
+        }
+    }
+
+    bool DownloadFile(const std::string& url, const std::string& path, DownloadProgressCallback::ProgressHandler progressHandler = nullptr) {
+        try {
+            DownloadFileOrThrow(url, path, "GitHub official", progressHandler);
+            return true;
+        } catch (...) {
+            return false;
+        }
     }
 
     bool RunHiddenAndWait(const std::string& commandLine) {
@@ -478,6 +529,31 @@ namespace {
         FindClose(find);
     }
 
+    void ExtractNestedArchivesForDependencies(const std::string& extractedRoot, const std::string& gameRoot) {
+        std::vector<std::string> files;
+        CollectFiles(extractedRoot, "", files);
+        int archiveIndex = 0;
+        for (const std::string& relative : files) {
+            const std::string name = FileNameOf(relative);
+            if (!EndsWithInsensitive(name, ".zip")) {
+                continue;
+            }
+            if (!ContainsInsensitive(relative, "SilentPatch")
+                && !ContainsInsensitive(relative, "Ultimate")
+                && !ContainsInsensitive(relative, "ASI")
+                && !ContainsInsensitive(relative, "D3D8to9")) {
+                continue;
+            }
+            const std::string nestedDir = JoinPath(extractedRoot, "_nested_dependency_" + std::to_string(++archiveIndex));
+            const std::string zipPath = JoinPath(extractedRoot, relative);
+            if (ExtractZip(zipPath, nestedDir)) {
+                AppendInstallLog(gameRoot, "Extracted nested dependency archive: " + relative + " -> " + nestedDir);
+            } else {
+                AppendInstallLog(gameRoot, "Failed to extract nested dependency archive: " + relative);
+            }
+        }
+    }
+
     std::string FindFirstFileByName(const std::string& root, const std::string& fileName) {
         std::vector<std::string> files;
         CollectFiles(root, "", files);
@@ -509,6 +585,49 @@ namespace {
             const std::string name = FileNameOf(relative);
             if (ContainsInsensitive(name, namePart)) {
                 result.push_back(JoinPath(root, relative));
+            }
+        }
+        return result;
+    }
+
+    bool IsInstallablePluginBinary(const std::string& fileName) {
+        return EndsWithInsensitive(fileName, ".asi") || EndsWithInsensitive(fileName, ".dll");
+    }
+
+    bool LooksLikeSilentPatch(const std::string& relativePath) {
+        const std::string name = FileNameOf(relativePath);
+        return IsInstallablePluginBinary(name) && ContainsInsensitive(relativePath, "SilentPatch");
+    }
+
+    bool IsRootDependencyName(const std::string& fileName) {
+        return _stricmp(fileName.c_str(), "Ultimate-ASI-Loader.asi") == 0
+            || _stricmp(fileName.c_str(), "dinput8.dll") == 0
+            || _stricmp(fileName.c_str(), "d3d8.dll") == 0
+            || _stricmp(fileName.c_str(), "d3d9.dll") == 0
+            || (EndsWithInsensitive(fileName, ".asi") && ContainsInsensitive(fileName, "Ultimate") && ContainsInsensitive(fileName, "ASI"))
+            || (EndsWithInsensitive(fileName, ".dll") && ContainsInsensitive(fileName, "D3D8to9"));
+    }
+
+    std::vector<std::string> CollectInstallableSilentPatchFiles(const std::string& extractedRoot) {
+        std::vector<std::string> result;
+        std::vector<std::string> files;
+        CollectFiles(extractedRoot, "", files);
+        for (const std::string& relative : files) {
+            if (LooksLikeSilentPatch(relative)) {
+                result.push_back(JoinPath(extractedRoot, relative));
+            }
+        }
+        return result;
+    }
+
+    std::vector<std::string> CollectInstallableRootDependencies(const std::string& extractedRoot) {
+        std::vector<std::string> result;
+        std::vector<std::string> files;
+        CollectFiles(extractedRoot, "", files);
+        for (const std::string& relative : files) {
+            const std::string name = FileNameOf(relative);
+            if (IsRootDependencyName(name)) {
+                result.push_back(JoinPath(extractedRoot, relative));
             }
         }
         return result;
@@ -735,24 +854,11 @@ namespace {
     }
 
     bool HasInstallableSilentPatch(const std::string& extractedRoot) {
-        const std::vector<std::string> silentPatchFiles = FindAllFilesByNamePart(extractedRoot, "SilentPatch");
-        for (const std::string& source : silentPatchFiles) {
-            const std::string name = FileNameOf(source);
-            if (EndsWithInsensitive(name, ".asi") || EndsWithInsensitive(name, ".dll")) {
-                return true;
-            }
-        }
-        return false;
+        return !CollectInstallableSilentPatchFiles(extractedRoot).empty();
     }
 
     bool HasInstallableRootDependencies(const std::string& extractedRoot) {
-        const char* rootDependencies[] = {"Ultimate-ASI-Loader.asi", "dinput8.dll", "d3d8.dll", "d3d9.dll"};
-        for (const char* dep : rootDependencies) {
-            if (!FindFirstFileByName(extractedRoot, dep).empty()) {
-                return true;
-            }
-        }
-        return false;
+        return !CollectInstallableRootDependencies(extractedRoot).empty();
     }
 
     std::string BuildComponentSummary(const std::string& extractedRoot, const InstallOptions& options) {
@@ -782,7 +888,7 @@ namespace {
         } else {
             message += L"GitHub 版本：" + WideFromUtf8(githubVersion) + L"\n";
         }
-        message += L"Release 资产：" + WideFromUtf8(assetName) + L"\n";
+        message += L"Release 包：" + WideFromUtf8(assetName) + L"\n";
         message += L"完整性状态：" + WideFromUtf8(integrityReport) + L"\n\n";
         message += L"将安装的组件：\n" + WideFromUtf8(componentSummary) + L"\n继续？";
 
@@ -820,6 +926,7 @@ namespace {
         EnsureDirectory(xmenuDir);
 
         std::vector<InstalledFile> manifestFiles;
+        ExtractNestedArchivesForDependencies(extractedRoot, gameRoot);
 
         const std::string asi = FindFirstFileByName(extractedRoot, "XMenu.asi");
         if (asi.empty() || !CopyFileEnsureDirectory(asi, JoinPath(pluginsDir, "XMenu.asi"), true)) {
@@ -871,24 +978,28 @@ namespace {
             AppendInstallLog(gameRoot, "Installed plugins\\XMenu\\data");
         }
 
-        const std::vector<std::string> silentPatchFiles = FindAllFilesByNamePart(extractedRoot, "SilentPatch");
+        const std::vector<std::string> silentPatchFiles = CollectInstallableSilentPatchFiles(extractedRoot);
+        if (silentPatchFiles.empty()) {
+            AppendInstallLog(gameRoot, "SilentPatch files not found after scanning release asset");
+        }
         for (const std::string& source : silentPatchFiles) {
             const std::string name = FileNameOf(source);
-            if (!EndsWithInsensitive(name, ".asi") && !EndsWithInsensitive(name, ".dll")) {
-                continue;
+            const std::string target = JoinPath(pluginsDir, name);
+            if (CopyFileEnsureDirectory(source, target, true)) {
+                AddManifestRecord(manifestFiles, gameRoot, JoinPath("plugins", name));
+                AppendInstallLog(gameRoot, "Installed plugins\\" + name + " from " + source);
+            } else {
+                AppendInstallLog(gameRoot, "ERROR failed to install SilentPatch file: " + source + " -> " + target);
             }
-            CopyFileEnsureDirectory(source, JoinPath(pluginsDir, name), true);
-            AddManifestRecord(manifestFiles, gameRoot, JoinPath("plugins", name));
-            AppendInstallLog(gameRoot, "Installed plugins\\" + name);
         }
 
         if (options.installRootDependencies) {
-            const char* rootDependencies[] = {"Ultimate-ASI-Loader.asi", "dinput8.dll", "d3d8.dll", "d3d9.dll"};
-            for (const char* dep : rootDependencies) {
-                const std::string source = FindFirstFileByName(extractedRoot, dep);
-                if (source.empty()) {
-                    continue;
-                }
+            const std::vector<std::string> rootDependencies = CollectInstallableRootDependencies(extractedRoot);
+            if (rootDependencies.empty()) {
+                AppendInstallLog(gameRoot, "Root dependency files not found after scanning release asset");
+            }
+            for (const std::string& source : rootDependencies) {
+                const std::string dep = FileNameOf(source);
                 const std::string target = JoinPath(gameRoot, dep);
                 bool overwrite = true;
                 if (PathExists(target)) {
@@ -896,9 +1007,11 @@ namespace {
                 }
                 if (overwrite && CopyFileEnsureDirectory(source, target, true)) {
                     AddManifestRecord(manifestFiles, gameRoot, dep);
-                    AppendInstallLog(gameRoot, std::string("Installed ") + dep);
+                    AppendInstallLog(gameRoot, "Installed " + dep + " from " + source);
                 } else if (!overwrite) {
-                    AppendInstallLog(gameRoot, std::string("Skipped existing root dependency ") + dep);
+                    AppendInstallLog(gameRoot, "Skipped existing root dependency " + dep);
+                } else {
+                    AppendInstallLog(gameRoot, "ERROR failed to install root dependency: " + source + " -> " + target);
                 }
             }
         } else {
@@ -922,10 +1035,15 @@ namespace {
         HWND moduleVC = nullptr;
         HWND moduleSA = nullptr;
         HWND rootDependencies = nullptr;
+        HWND downloadSource = nullptr;
         HWND installButton = nullptr;
         HWND statusText = nullptr;
         HWND progressBar = nullptr;
         HWND logBox = nullptr;
+        HFONT titleFont = nullptr;
+        HFONT normalFont = nullptr;
+        HFONT smallFont = nullptr;
+        HBRUSH windowBrush = nullptr;
         std::string gameRoot;
         GameType gameType = GameType::Unknown;
     };
@@ -936,11 +1054,78 @@ namespace {
     constexpr int ControlModuleVC = 1004;
     constexpr int ControlModuleSA = 1005;
     constexpr int ControlRootDependencies = 1006;
+    constexpr int ControlDownloadSource = 1007;
 
     InstallerUiState gUi;
 
+    int SelectedDownloadSourceIndex() {
+        if (!gUi.downloadSource) {
+            return DefaultDownloadSourceIndex;
+        }
+        const LRESULT selected = SendMessageW(gUi.downloadSource, CB_GETCURSEL, 0, 0);
+        if (selected < 0 || selected >= static_cast<LRESULT>(sizeof(DownloadSources) / sizeof(DownloadSources[0]))) {
+            return DefaultDownloadSourceIndex;
+        }
+        return static_cast<int>(selected);
+    }
+
+    const DownloadSource& SelectedDownloadSource() {
+        return DownloadSources[SelectedDownloadSourceIndex()];
+    }
+
     void SetControlText(HWND hwnd, const std::wstring& text) {
         SetWindowTextW(hwnd, text.c_str());
+    }
+
+    void ApplyFont(HWND hwnd, HFONT font) {
+        if (hwnd && font) {
+            SendMessageW(hwnd, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
+        }
+    }
+
+    void ApplyNormalFont(HWND hwnd) {
+        ApplyFont(hwnd, gUi.normalFont);
+    }
+
+    void ApplySmallFont(HWND hwnd) {
+        ApplyFont(hwnd, gUi.smallFont);
+    }
+
+    void ApplyTitleFont(HWND hwnd) {
+        ApplyFont(hwnd, gUi.titleFont);
+    }
+
+    HFONT CreateUiFont(int pointSize, int weight) {
+        HDC dc = GetDC(nullptr);
+        const int height = -MulDiv(pointSize, GetDeviceCaps(dc, LOGPIXELSY), 72);
+        ReleaseDC(nullptr, dc);
+        return CreateFontW(height, 0, 0, 0, weight, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Microsoft YaHei UI");
+    }
+
+    void InitUiFonts() {
+        gUi.titleFont = CreateUiFont(18, FW_SEMIBOLD);
+        gUi.normalFont = CreateUiFont(9, FW_NORMAL);
+        gUi.smallFont = CreateUiFont(8, FW_NORMAL);
+        gUi.windowBrush = CreateSolidBrush(RGB(250, 250, 250));
+    }
+
+    void DestroyUiFonts() {
+        if (gUi.titleFont) {
+            DeleteObject(gUi.titleFont);
+            gUi.titleFont = nullptr;
+        }
+        if (gUi.normalFont) {
+            DeleteObject(gUi.normalFont);
+            gUi.normalFont = nullptr;
+        }
+        if (gUi.smallFont) {
+            DeleteObject(gUi.smallFont);
+            gUi.smallFont = nullptr;
+        }
+        if (gUi.windowBrush) {
+            DeleteObject(gUi.windowBrush);
+            gUi.windowBrush = nullptr;
+        }
     }
 
     void AppendUiLog(const std::wstring& message) {
@@ -995,6 +1180,7 @@ namespace {
         EnableWindow(gUi.moduleVC, enabled);
         EnableWindow(gUi.moduleSA, enabled);
         EnableWindow(gUi.rootDependencies, enabled);
+        EnableWindow(gUi.downloadSource, enabled);
         EnableWindow(gUi.installButton, enabled);
     }
 
@@ -1076,10 +1262,10 @@ namespace {
 
         const ReleaseInfo release = ParseReleaseInfo(ReadTextFile(apiJsonPath));
         if (release.tagName.empty() || release.assetUrl.empty()) {
-            SetStatus(L"状态：未找到可安装的 release 资产");
-            AppendUiLog(L"GitHub release 中未找到可安装的 zip 资产。");
+            SetStatus(L"状态：未找到可安装的 release 包");
+            AppendUiLog(L"GitHub release 中未找到可安装的 zip 包。");
             AppendInstallLog(gUi.gameRoot, "ERROR no installable zip asset found in GitHub release");
-            MessageBoxW(gUi.window, L"GitHub release 中未找到可安装的 zip 资产。请上传 XMenuIII.VC.SA.zip 到 release。", InstallerTitle, MB_ICONERROR);
+            MessageBoxW(gUi.window, L"GitHub release 中未找到可安装的 zip 包。请上传 XMenuIII.VC.SA.zip 到 release。", InstallerTitle, MB_ICONERROR);
             EnableWindow(gUi.installButton, TRUE);
             EnableWindow(gUi.browseButton, TRUE);
             return false;
@@ -1088,12 +1274,19 @@ namespace {
         AppendUiLog(L"GitHub 版本：" + WideFromUtf8(release.tagName));
         AppendInstallLog(gUi.gameRoot, "Release version: " + release.tagName);
         AppendInstallLog(gUi.gameRoot, "Selected asset: " + release.assetName);
+        AppendInstallLog(gUi.gameRoot, "Asset official URL: " + release.assetUrl);
+
+        const int downloadSourceIndex = SelectedDownloadSourceIndex();
+        const DownloadSource& downloadSource = SelectedDownloadSource();
+        const std::string downloadUrl = BuildDownloadUrl(release.assetUrl, downloadSourceIndex);
+        const std::string downloadSourceName = AnsiFromWide(downloadSource.label);
 
         std::wstring confirm;
         confirm += installedVersion.empty() ? L"将执行安装：\n\n" : L"将执行更新：\n\n";
         confirm += L"本地版本：" + WideFromUtf8(installedVersion.empty() ? "未安装" : installedVersion) + L"\n";
         confirm += L"GitHub 版本：" + WideFromUtf8(release.tagName) + L"\n";
-        confirm += L"Release 资产：" + WideFromUtf8(release.assetName) + L"\n";
+        confirm += L"Release 包：" + WideFromUtf8(release.assetName) + L"\n";
+        confirm += L"下载源：" + WideFromUtf8(downloadSourceName) + L"\n";
         confirm += L"完整性状态：" + WideFromUtf8(integrityReport) + L"\n\n";
         confirm += L"选择的组件：\n" + WideFromUtf8(BuildSelectedComponentSummary(options)) + L"\n继续安装？";
         if (MessageBoxW(gUi.window, confirm.c_str(), InstallerTitle, MB_ICONQUESTION | MB_YESNO | MB_DEFBUTTON1) != IDYES) {
@@ -1107,13 +1300,21 @@ namespace {
         const std::string zipPath = TempPathFor(release.assetName.empty() ? "release.zip" : release.assetName);
         SetProgress(0);
         SetStatus(L"状态：准备下载安装包...");
-        AppendUiLog(L"开始下载安装包...");
+        AppendUiLog(L"开始下载安装包，下载源：" + WideFromUtf8(downloadSourceName));
+        AppendInstallLog(gUi.gameRoot, "Download source: " + downloadSourceName);
+        AppendInstallLog(gUi.gameRoot, "Download URL: " + downloadUrl);
         AppendInstallLog(gUi.gameRoot, "Downloading asset to: " + zipPath);
-        if (!DownloadFile(release.assetUrl, zipPath, OnDownloadProgress)) {
+        try {
+            DownloadFileOrThrow(downloadUrl, zipPath, downloadSourceName, OnDownloadProgress);
+        } catch (const std::exception& error) {
+            const std::string errorText = error.what();
             SetStatus(L"状态：下载安装包失败");
-            AppendUiLog(L"下载安装包失败。");
-            AppendInstallLog(gUi.gameRoot, "ERROR asset download failed: " + release.assetUrl);
-            MessageBoxW(gUi.window, L"下载安装包失败。", InstallerTitle, MB_ICONERROR);
+            AppendUiLog(L"下载安装包失败：" + WideFromUtf8(errorText));
+            AppendInstallLog(gUi.gameRoot, "ERROR asset download failed: " + errorText);
+            const std::wstring message = L"下载安装包失败。\n\n下载源：" + WideFromUtf8(downloadSourceName)
+                + L"\n错误：" + WideFromUtf8(errorText)
+                + L"\n\n可以切换到 gh-proxy / v4 / v6 / Fastly 后重试。";
+            MessageBoxW(gUi.window, message.c_str(), InstallerTitle, MB_ICONERROR);
             EnableWindow(gUi.installButton, TRUE);
             EnableWindow(gUi.browseButton, TRUE);
             return false;
@@ -1150,7 +1351,7 @@ namespace {
             SetControlText(gUi.localVersionText, L"本地版本：" + WideFromUtf8(release.tagName));
 
             const std::wstring message = L"XMenu 安装/更新完成。\n\n版本：" + WideFromUtf8(release.tagName)
-                + L"\n资产：" + WideFromUtf8(release.assetName)
+                + L"\n包：" + WideFromUtf8(release.assetName)
                 + L"\n开始时间：" + WideFromUtf8(startedAt)
                 + L"\n结束时间：" + WideFromUtf8(finishedAt)
                 + L"\n耗时：" + WideFromUtf8(duration)
@@ -1167,38 +1368,89 @@ namespace {
     }
 
     HWND CreateLabel(HWND parent, const wchar_t* text, int x, int y, int w, int h) {
-        return CreateWindowExW(0, L"STATIC", text, WS_CHILD | WS_VISIBLE, x, y, w, h, parent, nullptr, gUi.instance, nullptr);
+        HWND hwnd = CreateWindowExW(0, L"STATIC", text, WS_CHILD | WS_VISIBLE, x, y, w, h, parent, nullptr, gUi.instance, nullptr);
+        ApplyNormalFont(hwnd);
+        return hwnd;
+    }
+
+    HWND CreateTitleLabel(HWND parent, const wchar_t* text, int x, int y, int w, int h) {
+        HWND hwnd = CreateWindowExW(0, L"STATIC", text, WS_CHILD | WS_VISIBLE, x, y, w, h, parent, nullptr, gUi.instance, nullptr);
+        ApplyTitleFont(hwnd);
+        return hwnd;
+    }
+
+    HWND CreateSmallLabel(HWND parent, const wchar_t* text, int x, int y, int w, int h) {
+        HWND hwnd = CreateWindowExW(0, L"STATIC", text, WS_CHILD | WS_VISIBLE, x, y, w, h, parent, nullptr, gUi.instance, nullptr);
+        ApplySmallFont(hwnd);
+        return hwnd;
+    }
+
+    HWND CreateSectionTitle(HWND parent, const wchar_t* text, int x, int y, int w, int h) {
+        HWND hwnd = CreateWindowExW(0, L"STATIC", text, WS_CHILD | WS_VISIBLE, x, y, w, h, parent, nullptr, gUi.instance, nullptr);
+        ApplyNormalFont(hwnd);
+        return hwnd;
     }
 
     HWND CreateButton(HWND parent, const wchar_t* text, int id, int x, int y, int w, int h) {
-        return CreateWindowExW(0, L"BUTTON", text, WS_CHILD | WS_VISIBLE | WS_TABSTOP, x, y, w, h, parent, reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)), gUi.instance, nullptr);
+        HWND hwnd = CreateWindowExW(0, L"BUTTON", text, WS_CHILD | WS_VISIBLE | WS_TABSTOP, x, y, w, h, parent, reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)), gUi.instance, nullptr);
+        ApplyNormalFont(hwnd);
+        return hwnd;
     }
 
     HWND CreateCheckbox(HWND parent, const wchar_t* text, int id, int x, int y, int w, int h) {
-        return CreateWindowExW(0, L"BUTTON", text, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX, x, y, w, h, parent, reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)), gUi.instance, nullptr);
+        HWND hwnd = CreateWindowExW(0, L"BUTTON", text, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX, x, y, w, h, parent, reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)), gUi.instance, nullptr);
+        ApplyNormalFont(hwnd);
+        return hwnd;
+    }
+
+    HWND CreateReadonlyEdit(HWND parent, const wchar_t* text, int x, int y, int w, int h) {
+        HWND hwnd = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", text, WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | ES_READONLY, x, y, w, h, parent, nullptr, gUi.instance, nullptr);
+        ApplyNormalFont(hwnd);
+        return hwnd;
+    }
+
+    HWND CreateDownloadSourceCombo(HWND parent, int x, int y, int w, int h) {
+        HWND hwnd = CreateWindowExW(0, L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP | CBS_DROPDOWNLIST | WS_VSCROLL, x, y, w, h, parent, reinterpret_cast<HMENU>(static_cast<INT_PTR>(ControlDownloadSource)), gUi.instance, nullptr);
+        ApplyNormalFont(hwnd);
+        for (const DownloadSource& source : DownloadSources) {
+            SendMessageW(hwnd, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(source.label));
+        }
+        SendMessageW(hwnd, CB_SETCURSEL, DefaultDownloadSourceIndex, 0);
+        return hwnd;
     }
 
     void CreateInstallerControls(HWND window) {
-        CreateLabel(window, L"游戏目录", 20, 22, 90, 24);
-        gUi.pathEdit = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | ES_READONLY, 110, 18, 420, 28, window, nullptr, gUi.instance, nullptr);
-        gUi.browseButton = CreateButton(window, L"选择...", ControlBrowse, 540, 18, 90, 28);
+        CreateTitleLabel(window, L"XMenu Installer", 24, 18, 260, 34);
+        CreateSmallLabel(window, L"选择 GTA 游戏目录，确认模块，然后一键安装或更新 XMenu。", 26, 50, 560, 20);
 
-        gUi.gameTypeText = CreateLabel(window, L"检测到游戏：未选择", 20, 60, 300, 24);
-        gUi.localVersionText = CreateLabel(window, L"本地版本：未检测", 330, 60, 300, 24);
+        CreateSectionTitle(window, L"1. 游戏目录", 24, 86, 180, 24);
+        CreateLabel(window, L"目录", 42, 118, 56, 24);
+        gUi.pathEdit = CreateReadonlyEdit(window, L"尚未选择游戏目录", 98, 114, 440, 28);
+        gUi.browseButton = CreateButton(window, L"选择目录", ControlBrowse, 550, 113, 88, 30);
+        gUi.gameTypeText = CreateSmallLabel(window, L"检测到游戏：未选择", 98, 150, 250, 22);
+        gUi.localVersionText = CreateSmallLabel(window, L"本地版本：未检测", 350, 150, 250, 22);
 
-        CreateLabel(window, L"安装模块", 20, 100, 100, 24);
-        gUi.moduleIII = CreateCheckbox(window, L"GTA III 模块", ControlModuleIII, 40, 130, 180, 24);
-        gUi.moduleVC = CreateCheckbox(window, L"GTA Vice City 模块", ControlModuleVC, 40, 158, 180, 24);
-        gUi.moduleSA = CreateCheckbox(window, L"GTA San Andreas 模块", ControlModuleSA, 40, 186, 200, 24);
-        CreateLabel(window, L"SilentPatch：随 XMenu 一起安装到 plugins", 280, 130, 330, 24);
-        gUi.rootDependencies = CreateCheckbox(window, L"安装 Ultimate ASI Loader / D3D8to9 到游戏根目录", ControlRootDependencies, 280, 158, 360, 24);
+        CreateSectionTitle(window, L"2. 安装模块", 24, 196, 180, 24);
+        gUi.moduleIII = CreateCheckbox(window, L"GTA III 模块", ControlModuleIII, 42, 226, 180, 24);
+        gUi.moduleVC = CreateCheckbox(window, L"GTA Vice City 模块", ControlModuleVC, 42, 254, 180, 24);
+        gUi.moduleSA = CreateCheckbox(window, L"GTA San Andreas 模块", ControlModuleSA, 42, 282, 210, 24);
+        CreateSmallLabel(window, L"SilentPatch：固定随 XMenu 安装到 plugins", 330, 226, 280, 22);
+        gUi.rootDependencies = CreateCheckbox(window, L"安装 Ultimate ASI Loader / D3D8to9 到游戏根目录", ControlRootDependencies, 330, 254, 300, 24);
+        CreateSmallLabel(window, L"同名根目录依赖会在安装时再次询问覆盖或跳过。", 330, 284, 300, 22);
+        CreateLabel(window, L"下载源", 42, 316, 56, 24);
+        gUi.downloadSource = CreateDownloadSourceCombo(window, 98, 312, 280, 150);
+        CreateSmallLabel(window, L"默认官方源；下载慢或失败时可切换代理。", 390, 316, 250, 22);
 
-        gUi.statusText = CreateLabel(window, L"状态：等待选择游戏目录", 20, 224, 360, 24);
-        gUi.progressBar = CreateWindowExW(0, PROGRESS_CLASSW, L"", WS_CHILD | WS_VISIBLE, 20, 246, 490, 18, window, nullptr, gUi.instance, nullptr);
+        CreateSectionTitle(window, L"3. 安装进度", 24, 362, 180, 24);
+        gUi.statusText = CreateLabel(window, L"状态：等待选择游戏目录", 42, 394, 420, 24);
+        gUi.progressBar = CreateWindowExW(0, PROGRESS_CLASSW, L"", WS_CHILD | WS_VISIBLE, 42, 424, 470, 18, window, nullptr, gUi.instance, nullptr);
         SendMessageW(gUi.progressBar, PBM_SETRANGE, 0, MAKELPARAM(0, 100));
         SendMessageW(gUi.progressBar, PBM_SETPOS, 0, 0);
-        gUi.installButton = CreateButton(window, L"安装/更新", ControlInstall, 520, 220, 110, 34);
-        gUi.logBox = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"安装器已启动。请先选择游戏目录。\r\n", WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_READONLY | WS_VSCROLL, 20, 280, 610, 160, window, nullptr, gUi.instance, nullptr);
+        gUi.installButton = CreateButton(window, L"安装 / 更新", ControlInstall, 528, 394, 108, 48);
+
+        CreateSectionTitle(window, L"日志", 24, 466, 180, 24);
+        gUi.logBox = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"安装器已启动。请先选择游戏目录。\r\n", WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_READONLY | WS_VSCROLL, 42, 496, 594, 100, window, nullptr, gUi.instance, nullptr);
+        ApplySmallFont(gUi.logBox);
         SetModuleControlsEnabled(false);
     }
 
@@ -1206,6 +1458,7 @@ namespace {
         switch (message) {
         case WM_CREATE:
             gUi.window = window;
+            InitUiFonts();
             CreateInstallerControls(window);
             return 0;
         case WM_COMMAND:
@@ -1223,7 +1476,31 @@ namespace {
             default:
                 return 0;
             }
+        case WM_CTLCOLORSTATIC: {
+            const HWND control = reinterpret_cast<HWND>(lParam);
+            if (control == gUi.pathEdit || control == gUi.logBox) {
+                SetBkMode(reinterpret_cast<HDC>(wParam), OPAQUE);
+                return reinterpret_cast<LRESULT>(GetSysColorBrush(COLOR_WINDOW));
+            }
+            SetBkMode(reinterpret_cast<HDC>(wParam), TRANSPARENT);
+            return reinterpret_cast<LRESULT>(gUi.windowBrush ? gUi.windowBrush : GetStockObject(WHITE_BRUSH));
+        }
+        case WM_CTLCOLORBTN: {
+            const HWND control = reinterpret_cast<HWND>(lParam);
+            if (control == gUi.moduleIII || control == gUi.moduleVC || control == gUi.moduleSA || control == gUi.rootDependencies) {
+                SetBkMode(reinterpret_cast<HDC>(wParam), TRANSPARENT);
+                return reinterpret_cast<LRESULT>(gUi.windowBrush ? gUi.windowBrush : GetStockObject(WHITE_BRUSH));
+            }
+            return DefWindowProcW(window, message, wParam, lParam);
+        }
+        case WM_ERASEBKGND: {
+            RECT rect{};
+            GetClientRect(window, &rect);
+            FillRect(reinterpret_cast<HDC>(wParam), &rect, gUi.windowBrush ? gUi.windowBrush : reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1));
+            return 1;
+        }
         case WM_DESTROY:
+            DestroyUiFonts();
             PostQuitMessage(0);
             return 0;
         default:
@@ -1240,10 +1517,10 @@ namespace {
         windowClass.hInstance = instance;
         windowClass.lpszClassName = L"XMenuInstallerWindow";
         windowClass.hCursor = LoadCursorW(nullptr, MAKEINTRESOURCEW(32512));
-        windowClass.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
+        windowClass.hbrBackground = gUi.windowBrush ? gUi.windowBrush : reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
         RegisterClassW(&windowClass);
 
-        HWND window = CreateWindowExW(0, windowClass.lpszClassName, InstallerTitle, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 670, 500, nullptr, nullptr, instance, nullptr);
+        HWND window = CreateWindowExW(0, windowClass.lpszClassName, InstallerTitle, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 700, 670, nullptr, nullptr, instance, nullptr);
         if (!window) {
             CoUninitialize();
             return 1;
