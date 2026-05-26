@@ -9,6 +9,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <ctime>
 
 #pragma comment(lib, "urlmon.lib")
 #pragma comment(lib, "shell32.lib")
@@ -76,6 +77,11 @@ namespace {
         std::string relativePath;
         unsigned long long size = 0;
         unsigned int hash = 2166136261u;
+    };
+
+    struct InstallOptions {
+        bool installSilentPatch = true;
+        bool installRootDependencies = true;
     };
 
     std::string NormalizeSlashes(std::string value) {
@@ -157,6 +163,38 @@ namespace {
         return !file.fail();
     }
 
+    std::string CurrentTimestamp() {
+        std::time_t now = std::time(nullptr);
+        std::tm localTime{};
+        localtime_s(&localTime, &now);
+
+        char buffer[32]{};
+        std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &localTime);
+        return buffer;
+    }
+
+    void AppendInstallLog(const std::string& gameRoot, const std::string& message) {
+        if (gameRoot.empty()) {
+            return;
+        }
+        const std::string logPath = JoinPath(gameRoot, "plugins\\XMenu\\install.log");
+        EnsureDirectory(ParentDirectory(logPath));
+        std::ofstream file(logPath, std::ios::binary | std::ios::app);
+        if (!file.is_open()) {
+            return;
+        }
+        file << "[" << CurrentTimestamp() << "] " << message << "\r\n";
+    }
+
+    std::string FormatDuration(DWORD startTick, DWORD endTick) {
+        const DWORD elapsedMs = endTick >= startTick ? endTick - startTick : 0;
+        std::ostringstream output;
+        output << (elapsedMs / 1000) << ".";
+        const DWORD decimal = (elapsedMs % 1000) / 100;
+        output << decimal << "s";
+        return output.str();
+    }
+
     std::string JsonStringValue(const std::string& json, const std::string& key, std::size_t start = 0) {
         const std::string marker = "\"" + key + "\"";
         std::size_t pos = json.find(marker, start);
@@ -231,6 +269,12 @@ namespace {
         ReleaseInfo info;
         info.tagName = JsonStringValue(json, "tag_name");
 
+        struct CandidateAsset {
+            std::string url;
+            std::string name;
+        };
+
+        std::vector<CandidateAsset> zipAssets;
         std::size_t search = 0;
         while (true) {
             const std::size_t urlPos = json.find("\"browser_download_url\"", search);
@@ -240,11 +284,30 @@ namespace {
             const std::string url = JsonStringValue(json, "browser_download_url", urlPos);
             const std::string name = FileNameOf(url);
             if (EndsWithInsensitive(name, ".zip")) {
-                info.assetUrl = url;
-                info.assetName = name;
-                return info;
+                zipAssets.push_back({ url, name });
             }
             search = urlPos + 1;
+        }
+
+        for (const CandidateAsset& asset : zipAssets) {
+            if (_stricmp(asset.name.c_str(), "XMenuIII.VC.SA.zip") == 0) {
+                info.assetUrl = asset.url;
+                info.assetName = asset.name;
+                return info;
+            }
+        }
+
+        for (const CandidateAsset& asset : zipAssets) {
+            if (ContainsInsensitive(asset.name, "XMenu")) {
+                info.assetUrl = asset.url;
+                info.assetName = asset.name;
+                return info;
+            }
+        }
+
+        if (!zipAssets.empty()) {
+            info.assetUrl = zipAssets.front().url;
+            info.assetName = zipAssets.front().name;
         }
         return info;
     }
@@ -524,6 +587,7 @@ namespace {
         std::ostringstream json;
         json << "{\n";
         json << "  \"version\": \"" << EscapeJson(version) << "\",\n";
+        json << "  \"installedAt\": \"" << EscapeJson(CurrentTimestamp()) << "\",\n";
         json << "  \"files\": [\n";
         for (std::size_t i = 0; i < files.size(); ++i) {
             json << "    {\"path\": \"" << EscapeJson(files[i].relativePath) << "\", \"size\": " << files[i].size << ", \"hash\": " << files[i].hash << "}";
@@ -551,7 +615,87 @@ namespace {
         return true;
     }
 
-    bool InstallRelease(const std::string& extractedRoot, const std::string& gameRoot, const std::string& version) {
+    bool HasInstallableSilentPatch(const std::string& extractedRoot) {
+        const std::vector<std::string> silentPatchFiles = FindAllFilesByNamePart(extractedRoot, "SilentPatch");
+        for (const std::string& source : silentPatchFiles) {
+            const std::string name = FileNameOf(source);
+            if (EndsWithInsensitive(name, ".asi") || EndsWithInsensitive(name, ".dll")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool HasInstallableRootDependencies(const std::string& extractedRoot) {
+        const char* rootDependencies[] = {"Ultimate-ASI-Loader.asi", "dinput8.dll", "d3d8.dll", "d3d9.dll"};
+        for (const char* dep : rootDependencies) {
+            if (!FindFirstFileByName(extractedRoot, dep).empty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    std::string BuildComponentSummary(const std::string& extractedRoot, const InstallOptions& options) {
+        std::ostringstream summary;
+        summary << "- XMenu.asi -> plugins\\XMenu.asi\r\n";
+        summary << "- XMenu payload/config/data -> plugins\\XMenu\\\r\n";
+
+        if (HasInstallableSilentPatch(extractedRoot)) {
+            summary << (options.installSilentPatch ? "- SilentPatch -> plugins\\\r\n" : "- SilentPatch -> 跳过\r\n");
+        }
+
+        if (HasInstallableRootDependencies(extractedRoot)) {
+            summary << (options.installRootDependencies ? "- Ultimate ASI Loader / D3D8to9 -> 游戏根目录\r\n" : "- Ultimate ASI Loader / D3D8to9 -> 跳过\r\n");
+        }
+
+        return summary.str();
+    }
+
+    bool ConfirmInstallPlan(const std::string& gameRoot, const std::string& installedVersion, const std::string& githubVersion, const std::string& assetName, const std::string& integrityReport, const std::string& componentSummary) {
+        const bool isUpdate = !installedVersion.empty();
+        std::wstring message;
+        message += isUpdate ? L"将执行更新：\n\n" : L"将执行安装：\n\n";
+        message += L"游戏目录：" + WideFromAnsi(gameRoot) + L"\n";
+        if (isUpdate) {
+            message += L"本地版本：" + WideFromUtf8(installedVersion) + L"\n";
+            message += L"GitHub 版本：" + WideFromUtf8(githubVersion) + L"\n";
+        } else {
+            message += L"GitHub 版本：" + WideFromUtf8(githubVersion) + L"\n";
+        }
+        message += L"Release 资产：" + WideFromUtf8(assetName) + L"\n";
+        message += L"完整性状态：" + WideFromUtf8(integrityReport) + L"\n\n";
+        message += L"将安装的组件：\n" + WideFromUtf8(componentSummary) + L"\n继续？";
+
+        return MessageBoxW(HWND_DESKTOP, message.c_str(), InstallerTitle, MB_ICONQUESTION | MB_YESNO | MB_DEFBUTTON1) == IDYES;
+    }
+
+    bool AskOptionalComponent(const wchar_t* title, const std::wstring& description) {
+        const std::wstring message = description + L"\n\n选择“是”安装，选择“否”跳过。";
+        return MessageBoxW(HWND_DESKTOP, message.c_str(), title, MB_ICONQUESTION | MB_YESNO | MB_DEFBUTTON1) == IDYES;
+    }
+
+    InstallOptions PickInstallOptions(const std::string& gameRoot, const std::string& extractedRoot) {
+        InstallOptions options;
+
+        if (HasInstallableSilentPatch(extractedRoot)) {
+            options.installSilentPatch = AskOptionalComponent(L"选择安装组件", L"发布包中检测到 SilentPatch 依赖。\n安装位置：plugins");
+        } else {
+            options.installSilentPatch = false;
+            AppendInstallLog(gameRoot, "SilentPatch component not found in release asset");
+        }
+
+        if (HasInstallableRootDependencies(extractedRoot)) {
+            options.installRootDependencies = AskOptionalComponent(L"选择安装组件", L"发布包中检测到 Ultimate ASI Loader / D3D8to9 依赖。\n安装位置：游戏根目录");
+        } else {
+            options.installRootDependencies = false;
+            AppendInstallLog(gameRoot, "Root dependency component not found in release asset");
+        }
+
+        return options;
+    }
+
+    bool InstallRelease(const std::string& extractedRoot, const std::string& gameRoot, const std::string& version, const InstallOptions& options) {
         const std::string pluginsDir = JoinPath(gameRoot, "plugins");
         const std::string xmenuDir = JoinPath(pluginsDir, "XMenu");
         EnsureDirectory(pluginsDir);
@@ -561,10 +705,12 @@ namespace {
 
         const std::string asi = FindFirstFileByName(extractedRoot, "XMenu.asi");
         if (asi.empty() || !CopyFileEnsureDirectory(asi, JoinPath(pluginsDir, "XMenu.asi"), true)) {
+            AppendInstallLog(gameRoot, "ERROR missing or failed to copy plugins\\XMenu.asi");
             MessageBoxW(HWND_DESKTOP, L"安装失败：发布包中缺少 XMenu.asi。", InstallerTitle, MB_ICONERROR);
             return false;
         }
         AddManifestRecord(manifestFiles, gameRoot, "plugins\\XMenu.asi");
+        AppendInstallLog(gameRoot, "Installed plugins\\XMenu.asi");
 
         const char* payloads[] = {"XMenuSA.dll", "XMenuVC.dll", "XMenuIII.dll"};
         for (const char* payload : payloads) {
@@ -572,6 +718,7 @@ namespace {
             if (!source.empty()) {
                 CopyFileEnsureDirectory(source, JoinPath(xmenuDir, payload), true);
                 AddManifestRecord(manifestFiles, gameRoot, JoinPath("plugins\\XMenu", payload));
+                AppendInstallLog(gameRoot, std::string("Installed plugins\\XMenu\\") + payload);
             }
         }
 
@@ -590,60 +737,76 @@ namespace {
                 rootDataDir = parent;
             }
             InstallDirectoryContents(rootDataDir, JoinPath(xmenuDir, "data"), "plugins\\XMenu\\data", gameRoot, manifestFiles);
+            AppendInstallLog(gameRoot, "Installed plugins\\XMenu\\data");
         }
 
-        const std::vector<std::string> silentPatchFiles = FindAllFilesByNamePart(extractedRoot, "SilentPatch");
-        for (const std::string& source : silentPatchFiles) {
-            const std::string name = FileNameOf(source);
-            if (!EndsWithInsensitive(name, ".asi") && !EndsWithInsensitive(name, ".dll")) {
-                continue;
+        if (options.installSilentPatch) {
+            const std::vector<std::string> silentPatchFiles = FindAllFilesByNamePart(extractedRoot, "SilentPatch");
+            for (const std::string& source : silentPatchFiles) {
+                const std::string name = FileNameOf(source);
+                if (!EndsWithInsensitive(name, ".asi") && !EndsWithInsensitive(name, ".dll")) {
+                    continue;
+                }
+                CopyFileEnsureDirectory(source, JoinPath(pluginsDir, name), true);
+                AddManifestRecord(manifestFiles, gameRoot, JoinPath("plugins", name));
+                AppendInstallLog(gameRoot, "Installed plugins\\" + name);
             }
-            CopyFileEnsureDirectory(source, JoinPath(pluginsDir, name), true);
-            AddManifestRecord(manifestFiles, gameRoot, JoinPath("plugins", name));
+        } else {
+            AppendInstallLog(gameRoot, "Skipped SilentPatch components by user choice");
         }
 
-        const char* rootDependencies[] = {"Ultimate-ASI-Loader.asi", "dinput8.dll", "d3d8.dll", "d3d9.dll"};
-        for (const char* dep : rootDependencies) {
-            const std::string source = FindFirstFileByName(extractedRoot, dep);
-            if (source.empty()) {
-                continue;
+        if (options.installRootDependencies) {
+            const char* rootDependencies[] = {"Ultimate-ASI-Loader.asi", "dinput8.dll", "d3d8.dll", "d3d9.dll"};
+            for (const char* dep : rootDependencies) {
+                const std::string source = FindFirstFileByName(extractedRoot, dep);
+                if (source.empty()) {
+                    continue;
+                }
+                const std::string target = JoinPath(gameRoot, dep);
+                bool overwrite = true;
+                if (PathExists(target)) {
+                    overwrite = AskOverwriteDependency(dep, target) == IDYES;
+                }
+                if (overwrite && CopyFileEnsureDirectory(source, target, true)) {
+                    AddManifestRecord(manifestFiles, gameRoot, dep);
+                    AppendInstallLog(gameRoot, std::string("Installed ") + dep);
+                } else if (!overwrite) {
+                    AppendInstallLog(gameRoot, std::string("Skipped existing root dependency ") + dep);
+                }
             }
-            const std::string target = JoinPath(gameRoot, dep);
-            bool overwrite = true;
-            if (PathExists(target)) {
-                overwrite = AskOverwriteDependency(dep, target) == IDYES;
-            }
-            if (overwrite && CopyFileEnsureDirectory(source, target, true)) {
-                AddManifestRecord(manifestFiles, gameRoot, dep);
-            }
+        } else {
+            AppendInstallLog(gameRoot, "Skipped root dependencies by user choice");
         }
 
         SyncConfigVersion(gameRoot, version);
         WriteManifest(gameRoot, version, manifestFiles);
+        AppendInstallLog(gameRoot, "Manifest and config updated for version " + version);
         return true;
     }
 
     bool RunInstaller() {
         CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+        const DWORD startedTick = GetTickCount();
+        const std::string startedAt = CurrentTimestamp();
         const std::string gameRoot = PickGameRoot();
         if (gameRoot.empty()) {
             CoUninitialize();
             return false;
         }
 
+        AppendInstallLog(gameRoot, "===== XMenu installer started at " + startedAt + " =====");
+        AppendInstallLog(gameRoot, "Game root: " + gameRoot);
+
         const std::string installedVersion = ReadInstalledVersion(gameRoot);
         std::string integrityReport;
-        const bool integrityOk = VerifyInstalledFiles(gameRoot, integrityReport);
-        if (!installedVersion.empty()) {
-            const std::wstring message = L"当前本地版本：" + WideFromUtf8(installedVersion) + L"\n" + WideFromUtf8(integrityReport) + L"\n\n继续检查 GitHub 最新版本并安装？";
-            if (MessageBoxW(HWND_DESKTOP, message.c_str(), InstallerTitle, MB_ICONQUESTION | MB_YESNO | MB_DEFBUTTON1) != IDYES) {
-                CoUninitialize();
-                return integrityOk;
-            }
-        }
+        VerifyInstalledFiles(gameRoot, integrityReport);
+        AppendInstallLog(gameRoot, "Installed version: " + (installedVersion.empty() ? std::string("none") : installedVersion));
+        AppendInstallLog(gameRoot, "Integrity before install: " + integrityReport);
 
         const std::string apiJsonPath = TempPathFor("release.json");
+        AppendInstallLog(gameRoot, std::string("Requesting GitHub API: ") + XMENU_GITHUB_API);
         if (!DownloadFile(XMENU_GITHUB_API, apiJsonPath)) {
+            AppendInstallLog(gameRoot, "ERROR GitHub API request failed");
             MessageBoxW(HWND_DESKTOP, L"请求 GitHub API 失败。", InstallerTitle, MB_ICONERROR);
             CoUninitialize();
             return false;
@@ -651,13 +814,18 @@ namespace {
 
         const ReleaseInfo release = ParseReleaseInfo(ReadTextFile(apiJsonPath));
         if (release.tagName.empty() || release.assetUrl.empty()) {
-            MessageBoxW(HWND_DESKTOP, L"GitHub release 中未找到可安装的 zip 资产。", InstallerTitle, MB_ICONERROR);
+            AppendInstallLog(gameRoot, "ERROR no installable zip asset found in GitHub release");
+            MessageBoxW(HWND_DESKTOP, L"GitHub release 中未找到可安装的 zip 资产。请上传 XMenuIII.VC.SA.zip 到 release。", InstallerTitle, MB_ICONERROR);
             CoUninitialize();
             return false;
         }
+        AppendInstallLog(gameRoot, "Release version: " + release.tagName);
+        AppendInstallLog(gameRoot, "Selected asset: " + release.assetName);
 
         const std::string zipPath = TempPathFor(release.assetName.empty() ? "release.zip" : release.assetName);
+        AppendInstallLog(gameRoot, "Downloading asset to: " + zipPath);
         if (!DownloadFile(release.assetUrl, zipPath)) {
+            AppendInstallLog(gameRoot, "ERROR asset download failed: " + release.assetUrl);
             MessageBoxW(HWND_DESKTOP, L"下载安装包失败。", InstallerTitle, MB_ICONERROR);
             CoUninitialize();
             return false;
@@ -665,18 +833,41 @@ namespace {
 
         const std::string extractDir = TempPathFor("extract");
         RunHiddenAndWait("cmd.exe /c rmdir /s /q \"" + extractDir + "\"");
+        AppendInstallLog(gameRoot, "Extracting asset to: " + extractDir);
         if (!ExtractZip(zipPath, extractDir)) {
+            AppendInstallLog(gameRoot, "ERROR asset extraction failed");
             MessageBoxW(HWND_DESKTOP, L"解压安装包失败。", InstallerTitle, MB_ICONERROR);
             CoUninitialize();
             return false;
         }
 
-        const bool ok = InstallRelease(extractDir, gameRoot, release.tagName);
+        InstallOptions options = PickInstallOptions(gameRoot, extractDir);
+        const std::string componentSummary = BuildComponentSummary(extractDir, options);
+        AppendInstallLog(gameRoot, "Selected components:\r\n" + componentSummary);
+        if (!ConfirmInstallPlan(gameRoot, installedVersion, release.tagName, release.assetName, integrityReport, componentSummary)) {
+            AppendInstallLog(gameRoot, "User cancelled install plan");
+            CoUninitialize();
+            return false;
+        }
+
+        const bool ok = InstallRelease(extractDir, gameRoot, release.tagName, options);
+        const DWORD finishedTick = GetTickCount();
+        const std::string finishedAt = CurrentTimestamp();
+        const std::string duration = FormatDuration(startedTick, finishedTick);
         if (ok) {
             std::string finalReport;
             VerifyInstalledFiles(gameRoot, finalReport);
-            const std::wstring message = L"XMenu 安装/更新完成。\n\n版本：" + WideFromUtf8(release.tagName) + L"\n" + WideFromUtf8(finalReport);
+            AppendInstallLog(gameRoot, "Integrity after install: " + finalReport);
+            AppendInstallLog(gameRoot, "Installer finished at " + finishedAt + ", duration " + duration);
+            const std::wstring message = L"XMenu 安装/更新完成。\n\n版本：" + WideFromUtf8(release.tagName)
+                + L"\n资产：" + WideFromUtf8(release.assetName)
+                + L"\n开始时间：" + WideFromUtf8(startedAt)
+                + L"\n结束时间：" + WideFromUtf8(finishedAt)
+                + L"\n耗时：" + WideFromUtf8(duration)
+                + L"\n" + WideFromUtf8(finalReport);
             MessageBoxW(HWND_DESKTOP, message.c_str(), InstallerTitle, MB_ICONINFORMATION);
+        } else {
+            AppendInstallLog(gameRoot, "ERROR install failed at " + finishedAt + ", duration " + duration);
         }
         CoUninitialize();
         return ok;
