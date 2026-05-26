@@ -341,6 +341,8 @@ namespace {
         ImGui::Checkbox(T("overlay.showPosition"), &MenuState::OverlayShowPosition);
         ImGui::SameLine();
         ImGui::Checkbox(T("overlay.showVehicle"), &MenuState::OverlayShowVehicle);
+        ImGui::SameLine();
+        ImGui::Checkbox(T("overlay.showFps"), &MenuState::OverlayShowFps);
 
         ImGui::Checkbox(T("command.enabled"), &MenuState::CommandWindowEnabled);
     }
@@ -768,6 +770,7 @@ void Menu::Process() {
     Pages::Teleport::Process();
     Controllers::Overlay::Process();
     Controllers::Command::Process();
+    Controllers::Hotkeys::Process();
     D3DHook::SetBackgroundRenderActive(MenuState::OverlayEnabled || MenuState::CommandWindowEnabled || MenuState::QuickTeleportMapActive);
 }
 

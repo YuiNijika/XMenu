@@ -13,6 +13,7 @@
   "overlay.enabled": "Overlay",
   "overlay.showPosition": "Позиция",
   "overlay.showVehicle": "Транспорт",
+  "overlay.showFps": "FPS",
   "command.enabled": "Командное окно",
   "common.toggles": "Переключатели",
   "status.language": "Язык",

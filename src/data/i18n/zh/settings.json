@@ -57,6 +57,7 @@
   "settings.persistentState.group.weapon": "武器",
   "settings.persistentState.group.vehicle": "载具",
   "settings.persistentState.group.world": "世界",
+  "settings.persistentState.group.overlay": "Overlay",
   "settings.persistentState.group.misc": "其他",
   "settings.persistentState.apply": "应用",
   "settings.persistentState.cancel": "取消",

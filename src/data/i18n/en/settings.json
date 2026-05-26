@@ -57,6 +57,7 @@
   "settings.persistentState.group.weapon": "Weapon",
   "settings.persistentState.group.vehicle": "Vehicle",
   "settings.persistentState.group.world": "World",
+  "settings.persistentState.group.overlay": "Overlay",
   "settings.persistentState.group.misc": "Misc",
   "settings.persistentState.apply": "Apply",
   "settings.persistentState.cancel": "Cancel",

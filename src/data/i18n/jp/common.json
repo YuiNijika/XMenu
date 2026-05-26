@@ -13,6 +13,7 @@
   "overlay.enabled": "Overlay",
   "overlay.showPosition": "座標",
   "overlay.showVehicle": "車両",
+  "overlay.showFps": "FPS",
   "command.enabled": "コマンドウィンドウ",
   "common.toggles": "機能切替",
   "status.language": "言語",

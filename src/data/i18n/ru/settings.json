@@ -57,6 +57,7 @@
   "settings.persistentState.group.weapon": "Оружие",
   "settings.persistentState.group.vehicle": "Транспорт",
   "settings.persistentState.group.world": "Мир",
+  "settings.persistentState.group.overlay": "Overlay",
   "settings.persistentState.group.misc": "Другое",
   "settings.persistentState.apply": "Применить",
   "settings.persistentState.cancel": "Отмена",

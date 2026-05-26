@@ -26,7 +26,9 @@ namespace Controllers::Overlay {
             if (MenuState::OverlayShowVehicle) {
                 ImGui::Text(I18n::T("overlay.vehicle"), Controllers::Vehicle::GetCurrentVehicle() ? I18n::T("common.yes") : I18n::T("common.no"));
             }
-            ImGui::Text(I18n::T("overlay.fps"), ImGui::GetIO().Framerate);
+            if (MenuState::OverlayShowFps) {
+                ImGui::Text(I18n::T("overlay.fps"), ImGui::GetIO().Framerate);
+            }
         }
         ImGui::End();
     }

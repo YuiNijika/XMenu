@@ -85,6 +85,7 @@ namespace MenuState {
     inline bool OverlayEnabled = false;
     inline bool OverlayShowPosition = true;
     inline bool OverlayShowVehicle = true;
+    inline bool OverlayShowFps = true;
     inline bool CommandWindowEnabled = false;
     inline bool LockWeather = false;
     inline bool DisableReplay = false;

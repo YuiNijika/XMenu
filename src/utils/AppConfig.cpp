@@ -73,7 +73,8 @@ namespace {
             {"world.disableForbiddenAreaWanted", "world.disableForbiddenAreaWanted", &MenuState::ForbiddenAreaWanted, false},
             {"world.freePayNSpray", "world.freePayNSpray", &MenuState::FreePayNSpray, false},
             {"world.fasterClock", "world.fasterClock", &MenuState::FasterClock, false},
-            {"world.freezeTime", "world.freezeTime", &MenuState::FreezeTime, false}
+            {"world.freezeTime", "world.freezeTime", &MenuState::FreezeTime, false},
+            {"overlay.showFps", "overlay.showFps", &MenuState::OverlayShowFps, true}
         };
         return bindings;
     }
@@ -494,9 +495,9 @@ namespace {
         }
     }
 
-    void LoadActionHotkeys(const JsonLoader::JsonValue& root) {
+    void LoadActionHotkeys(const JsonLoader::JsonValue& configRoot) {
         ResetActionHotkeysToDefaults();
-        const JsonLoader::JsonValue& actions = ObjectOrNull(root, "actions");
+        const JsonLoader::JsonValue& actions = ObjectOrNull(configRoot, "actions");
         if (actions.type != JsonLoader::JsonValue::OBJECT) {
             return;
         }
@@ -600,6 +601,116 @@ namespace {
         return GameRuntime::CurrentKey();
     }
 
+    const JsonLoader::JsonValue& GameConfigRoot(const JsonLoader::JsonValue& root, const char* gameKey) {
+        const JsonLoader::JsonValue& games = ObjectOrNull(root, "games");
+        const JsonLoader::JsonValue& game = ObjectOrNull(games, gameKey ? gameKey : "");
+        return game.type == JsonLoader::JsonValue::OBJECT ? game : ObjectOrNull(root, "__missingGameConfig");
+    }
+
+    const JsonLoader::JsonValue& CurrentGameConfigOrLegacyRoot(const JsonLoader::JsonValue& root) {
+        const JsonLoader::JsonValue& game = GameConfigRoot(root, GameKey());
+        return game.type == JsonLoader::JsonValue::OBJECT ? game : root;
+    }
+
+    void WriteJsonValue(std::ostream& file, const JsonLoader::JsonValue& value) {
+        switch (value.type) {
+        case JsonLoader::JsonValue::STRING:
+            file << "\"" << EscapeJson(value.string_value) << "\"";
+            break;
+        case JsonLoader::JsonValue::NUMBER:
+            file << value.number_value;
+            break;
+        case JsonLoader::JsonValue::BOOL:
+            file << (value.bool_value ? "true" : "false");
+            break;
+        case JsonLoader::JsonValue::ARRAY:
+            file << "[";
+            for (std::size_t i = 0; i < value.array_values.size(); ++i) {
+                if (i > 0) {
+                    file << ", ";
+                }
+                WriteJsonValue(file, value.array_values[i]);
+            }
+            file << "]";
+            break;
+        case JsonLoader::JsonValue::OBJECT: {
+            file << "{";
+            std::size_t index = 0;
+            for (const auto& item : value.object_values) {
+                if (index++ > 0) {
+                    file << ", ";
+                }
+                file << "\"" << EscapeJson(item.first) << "\": ";
+                WriteJsonValue(file, item.second);
+            }
+            file << "}";
+            break;
+        }
+        case JsonLoader::JsonValue::NULL_VALUE:
+        default:
+            file << "null";
+            break;
+        }
+    }
+
+    void WriteMenuConfig(std::ostream& file, const std::string& indent, bool trailingComma) {
+        file << indent << "\"menu\": {\n";
+        file << indent << "  \"toggleKey\": \"" << EscapeJson(menuKeyName) << "\",\n";
+        file << indent << "  \"fallbackLanguage\": \"" << EscapeJson(fallbackLanguageCode) << "\",\n";
+        file << indent << "  \"hotkey\": {\n";
+        file << indent << "    \"key\": " << menuHotkey.key << ",\n";
+        file << indent << "    \"ctrl\": " << (menuHotkey.ctrl ? "true" : "false") << ",\n";
+        file << indent << "    \"alt\": " << (menuHotkey.alt ? "true" : "false") << ",\n";
+        file << indent << "    \"shift\": " << (menuHotkey.shift ? "true" : "false") << "\n";
+        file << indent << "  }\n";
+        file << indent << "}" << (trailingComma ? "," : "") << "\n";
+    }
+
+    void WriteActionHotkeys(std::ostream& file, const std::string& indent, bool trailingComma) {
+        file << indent << "\"actions\": {\n";
+        for (std::size_t i = 0; i < actionHotkeys.size(); ++i) {
+            const AppConfig::ActionHotkey& action = actionHotkeys[i];
+            file << indent << "  \"" << EscapeJson(action.id) << "\": \"" << EscapeJson(CanonicalHotkeyName(action.hotkey)) << "\"";
+            if (i + 1 < actionHotkeys.size()) {
+                file << ",";
+            }
+            file << "\n";
+        }
+        file << indent << "}" << (trailingComma ? "," : "") << "\n";
+    }
+
+    void WritePersistentState(std::ostream& file, const std::string& indent, bool trailingComma) {
+        file << indent << "\"persistentState\": {\n";
+        const std::vector<PersistentStateBinding>& bindings = PersistentStateBindings();
+        for (std::size_t i = 0; i < bindings.size(); ++i) {
+            const PersistentStateBinding& binding = bindings[i];
+            const bool enabled = persistentEnabled[binding.id];
+            const bool value = persistentValues[binding.id];
+            file << indent << "  \"" << EscapeJson(binding.id) << "\": {\"enabled\": " << (enabled ? "true" : "false")
+                 << ", \"value\": " << (value ? "true" : "false") << "}";
+            if (i + 1 < bindings.size()) {
+                file << ",";
+            }
+            file << "\n";
+        }
+        file << indent << "}" << (trailingComma ? "," : "") << "\n";
+    }
+
+    void WriteLocationArray(std::ostream& file, const std::string& indent, const char* key, const std::vector<DataManager::LocationData>& locations, bool trailingComma) {
+        file << indent << "\"" << key << "\": [\n";
+        for (std::size_t i = 0; i < locations.size(); ++i) {
+            const DataManager::LocationData& location = locations[i];
+            file << indent << "  {\"name\": \"" << EscapeJson(location.name) << "\", \"x\": " << location.x
+                 << ", \"y\": " << location.y << ", \"z\": " << location.z
+                 << ", \"interior\": " << location.interior << "}";
+            if (i + 1 < locations.size()) {
+                file << ",";
+            }
+            file << "\n";
+        }
+        file << indent << "]" << (trailingComma ? "," : "") << "\n";
+    }
+
     void LoadLocationsFromArray(const std::vector<JsonLoader::JsonValue>& locations, std::vector<DataManager::LocationData>& output) {
         output.clear();
         for (const JsonLoader::JsonValue& item : locations) {
@@ -622,6 +733,12 @@ namespace {
 
     std::vector<DataManager::LocationData> ReadCurrentGameLocations(const JsonLoader::JsonValue& root) {
         std::vector<DataManager::LocationData> locations;
+        const JsonLoader::JsonValue& gameConfig = CurrentGameConfigOrLegacyRoot(root);
+        LoadLocationsFromArray(JsonLoader::GetArray(gameConfig, "customLocations"), locations);
+        if (!locations.empty()) {
+            return locations;
+        }
+
         LoadLocationsFromArray(JsonLoader::GetArray(root, GameKey()), locations);
         if (!locations.empty()) {
             return locations;
@@ -667,14 +784,21 @@ namespace {
 
     void LoadConfigData(const JsonLoader::JsonValue& root) {
         LoadUpdateCacheData(root);
-        LoadActionHotkeys(root);
-        LoadPersistentState(root);
 
-        const JsonLoader::JsonValue& menu = ObjectOrNull(root, "menu");
+        const JsonLoader::JsonValue& gameConfig = CurrentGameConfigOrLegacyRoot(root);
+        LoadActionHotkeys(gameConfig);
+        LoadPersistentState(gameConfig);
+
+        const JsonLoader::JsonValue& menu = ObjectOrNull(gameConfig, "menu");
         ApplyMenuKey(JsonLoader::GetString(menu, "toggleKey", DefaultMenuKey));
         fallbackLanguageCode = JsonLoader::GetString(menu, "fallbackLanguage", "zh");
         I18n::SetFallbackLanguage(fallbackLanguageCode);
         fallbackLanguageCode = I18n::GetFallbackLanguageCode();
+
+        LoadLocationsFromArray(JsonLoader::GetArray(gameConfig, "customLocations"), customLocations);
+        if (!customLocations.empty()) {
+            return;
+        }
 
         const std::vector<JsonLoader::JsonValue>& gameLocations = JsonLoader::GetArray(root, GameKey());
         if (!gameLocations.empty()) {
@@ -687,29 +811,17 @@ namespace {
     }
 
     bool WriteConfigData(std::ostream& file, const JsonLoader::JsonValue* sourceRoot = nullptr, AppConfig::TransferScope scope = AppConfig::TransferScope::All) {
-        std::vector<DataManager::LocationData> iiiLocations;
-        std::vector<DataManager::LocationData> vcLocations;
-        std::vector<DataManager::LocationData> saLocations;
-
         const JsonLoader::JsonValue existingRoot = sourceRoot ? *sourceRoot : JsonLoader::LoadFromFile(ReadConfigPath());
-        if (existingRoot.type == JsonLoader::JsonValue::OBJECT) {
-            LoadLocationsFromArray(JsonLoader::GetArray(existingRoot, "iii"), iiiLocations);
-            LoadLocationsFromArray(JsonLoader::GetArray(existingRoot, "vc"), vcLocations);
-            LoadLocationsFromArray(JsonLoader::GetArray(existingRoot, "sa"), saLocations);
-        }
-
+        const JsonLoader::JsonValue& existingGames = ObjectOrNull(existingRoot, "games");
         const std::string currentGame = GameKey();
-        if (currentGame == "iii") {
-            iiiLocations = customLocations;
-        } else if (currentGame == "vc") {
-            vcLocations = customLocations;
-        } else if (currentGame == "sa") {
-            saLocations = customLocations;
-        }
 
         file << "{\n";
         if (scope == AppConfig::TransferScope::CustomLocations) {
-            WriteLocationArray(file, currentGame.c_str(), currentGame == "iii" ? iiiLocations : currentGame == "vc" ? vcLocations : saLocations, false);
+            file << "  \"games\": {\n";
+            file << "    \"" << EscapeJson(currentGame) << "\": {\n";
+            WriteLocationArray(file, "      ", "customLocations", customLocations, false);
+            file << "    }\n";
+            file << "  }\n";
             file << "}\n";
             return !file.fail();
         }
@@ -719,22 +831,41 @@ namespace {
         file << "    \"XMENU_URL\": \"" << EscapeJson(XMENU_URL) << "\",\n";
         file << "    \"XMENU_GITHUB\": \"" << EscapeJson(XMENU_GITHUB) << "\"\n";
         file << "  },\n";
-        file << "  \"menu\": {\n";
-        file << "    \"toggleKey\": \"" << EscapeJson(menuKeyName) << "\",\n";
-        file << "    \"fallbackLanguage\": \"" << EscapeJson(fallbackLanguageCode) << "\",\n";
-        file << "    \"hotkey\": {\n";
-        file << "      \"key\": " << menuHotkey.key << ",\n";
-        file << "      \"ctrl\": " << (menuHotkey.ctrl ? "true" : "false") << ",\n";
-        file << "      \"alt\": " << (menuHotkey.alt ? "true" : "false") << ",\n";
-        file << "      \"shift\": " << (menuHotkey.shift ? "true" : "false") << "\n";
-        file << "    }\n";
-        file << "  },\n";
         WriteUpdateCache(file, true);
-        WriteActionHotkeys(file, true);
-        WritePersistentState(file, true);
-        WriteLocationArray(file, "iii", iiiLocations, true);
-        WriteLocationArray(file, "vc", vcLocations, true);
-        WriteLocationArray(file, "sa", saLocations, false);
+        file << "  \"games\": {\n";
+
+        const char* games[] = {"iii", "vc", "sa"};
+        for (std::size_t i = 0; i < 3; ++i) {
+            const std::string game = games[i];
+            file << "    \"" << game << "\": ";
+
+            if (game == currentGame) {
+                file << "{\n";
+                WriteMenuConfig(file, "      ", true);
+                WriteActionHotkeys(file, "      ", true);
+                WritePersistentState(file, "      ", true);
+                WriteLocationArray(file, "      ", "customLocations", customLocations, false);
+                file << "    }";
+            } else {
+                const JsonLoader::JsonValue& existingGame = GameConfigRoot(existingRoot, game.c_str());
+                if (existingGame.type == JsonLoader::JsonValue::OBJECT) {
+                    WriteJsonValue(file, existingGame);
+                } else {
+                    std::vector<DataManager::LocationData> legacyLocations;
+                    LoadLocationsFromArray(JsonLoader::GetArray(existingRoot, game), legacyLocations);
+                    file << "{\n";
+                    WriteLocationArray(file, "      ", "customLocations", legacyLocations, false);
+                    file << "    }";
+                }
+            }
+
+            if (i + 1 < 3) {
+                file << ",";
+            }
+            file << "\n";
+        }
+
+        file << "  }\n";
         file << "}\n";
         return !file.fail();
     }

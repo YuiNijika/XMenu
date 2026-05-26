@@ -13,6 +13,7 @@
   "overlay.enabled": "Overlay",
   "overlay.showPosition": "坐标",
   "overlay.showVehicle": "载具",
+  "overlay.showFps": "FPS",
   "command.enabled": "命令窗口",
   "common.toggles": "功能开关",
   "status.language": "语言",

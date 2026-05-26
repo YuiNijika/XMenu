@@ -13,6 +13,7 @@
   "overlay.enabled": "Overlay",
   "overlay.showPosition": "Position",
   "overlay.showVehicle": "Vehicle",
+  "overlay.showFps": "FPS",
   "command.enabled": "Command window",
   "common.toggles": "Toggles",
   "status.language": "Language",
