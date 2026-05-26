@@ -1,5 +1,3 @@
-# XMenu
-
 <div align="center">
 
 # XMenu for GTA III / Vice City / San Andreas
