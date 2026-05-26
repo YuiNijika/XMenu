@@ -15,6 +15,7 @@
 #undef GetObject
 #endif
 
+extern const char* XMENU_VERSION;
 extern const char* XMENU_AUTHOR;
 extern const char* XMENU_URL;
 extern const char* XMENU_GITHUB;
@@ -827,6 +828,7 @@ namespace {
         }
 
         file << "  \"XMenu\": {\n";
+        file << "    \"version\": \"" << EscapeJson(XMENU_VERSION) << "\",\n";
         file << "    \"XMENU_AUTHOR\": \"" << EscapeJson(XMENU_AUTHOR) << "\",\n";
         file << "    \"XMENU_URL\": \"" << EscapeJson(XMENU_URL) << "\",\n";
         file << "    \"XMENU_GITHUB\": \"" << EscapeJson(XMENU_GITHUB) << "\"\n";
@@ -912,7 +914,8 @@ namespace AppConfig {
         const JsonLoader::JsonValue root = JsonLoader::LoadFromFile(path);
         persistentSyncReadyTick = GetTickCount64() + PersistentStartupDelayMs;
         if (root.type != JsonLoader::JsonValue::OBJECT) {
-            Log::Info(std::string("配置文件不存在或为空，将在首次设置变更时创建默认配置: ") + path);
+            Log::Info(std::string("配置文件不存在或为空，将创建默认配置: ") + path);
+            Save();
             return;
         }
 

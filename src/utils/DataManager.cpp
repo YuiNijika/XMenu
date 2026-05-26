@@ -71,6 +71,18 @@ std::string GetDataFilePath(const std::string& filename) {
 }
 
 JsonLoader::JsonValue LoadDataJson(const std::string& filename, int resourceId, const char* label) {
+    const std::string filepath = GetDataFilePath(filename);
+    if (GetFileAttributesA(filepath.c_str()) != INVALID_FILE_ATTRIBUTES) {
+        Log::Info(std::string("尝试加载") + label + "数据: " + filepath);
+        JsonLoader::JsonValue data = JsonLoader::LoadFromFile(filepath);
+        if (data.type == JsonLoader::JsonValue::OBJECT) {
+            return data;
+        }
+        Log::Warn(std::string("从文件系统加载") + label + "数据失败，尝试从DLL资源加载");
+    } else {
+        Log::Warn(std::string("未找到") + label + "数据文件: " + filepath + "，尝试从DLL资源加载");
+    }
+
     if (resourceId != 0) {
         Log::Info(std::string("尝试从DLL资源加载") + label + "数据，资源ID: " + std::to_string(resourceId));
         JsonLoader::JsonValue data = JsonLoader::LoadFromResource(resourceId);
@@ -78,12 +90,10 @@ JsonLoader::JsonValue LoadDataJson(const std::string& filename, int resourceId, 
             Log::Info(std::string("从DLL资源成功加载") + label + "数据");
             return data;
         }
-        Log::Warn(std::string("从DLL资源加载") + label + "数据失败，尝试从文件系统加载");
+        Log::Warn(std::string("从DLL资源加载") + label + "数据失败");
     }
 
-    const std::string filepath = GetDataFilePath(filename);
-    Log::Info(std::string("尝试加载") + label + "数据: " + filepath);
-    return JsonLoader::LoadFromFile(filepath);
+    return JsonLoader::JsonValue();
 }
 
 std::vector<LocationData> LoadLocations() {

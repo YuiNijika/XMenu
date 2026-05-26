@@ -10,6 +10,7 @@
 #include "utils/I18n.h"
 #include "imgui/imgui.h"
 #include <unordered_map>
+#include <cstdio>
 #include <string>
 
 namespace {
@@ -33,6 +34,12 @@ namespace {
         for (const AppConfig::ActionHotkey& action : actions) {
             previousActionStates[action.id] = AppConfig::IsHotkeyPressed(action.hotkey);
         }
+    }
+
+    void ShowActionNotice(const AppConfig::ActionHotkey& action) {
+        char message[256] = {};
+        std::snprintf(message, sizeof(message), I18n::T("hotkey.triggered"), I18n::T(action.name.c_str()));
+        MenuState::ShowNotice(message, 1.5);
     }
 
     void Dispatch(const std::string& actionId) {
@@ -119,6 +126,9 @@ namespace Controllers::Hotkeys {
             const bool wasPressed = previousActionStates[action.id];
             if (pressed && !wasPressed) {
                 Dispatch(action.id);
+                if (action.id != "teleport.quickMap") {
+                    ShowActionNotice(action);
+                }
             }
             previousActionStates[action.id] = pressed;
         }

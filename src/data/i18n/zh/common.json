@@ -47,5 +47,6 @@
   "quickMap.title": "快速传送地图",
   "quickMap.hint": "点击地图区域传送到目标位置。",
   "quickMap.opened": "快速地图已打开",
-  "quickMap.closed": "快速地图已关闭"
+  "quickMap.closed": "快速地图已关闭",
+  "hotkey.triggered": "热键触发：%s"
 }

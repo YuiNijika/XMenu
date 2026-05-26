@@ -28,7 +28,7 @@ workspace "XMenu"
     targetdir "build/bin"
 
     toolset "msc"
-    buildoptions { "/utf-8" }
+    buildoptions { "/utf-8", "/FS" }
 
     links {
         "d3d9",
@@ -176,7 +176,35 @@ function createUnifiedProject()
             defines { "NDEBUG" }
 end
 
+function createInstallerProject()
+    project "XMenuInstaller"
+        kind "WindowedApp"
+        targetname "XMenuInstaller"
+        targetextension ".exe"
+
+        files {
+            "installer/**.h",
+            "installer/**.cpp",
+            "installer/**.rc"
+        }
+
+        links {
+            "urlmon",
+            "shell32",
+            "ole32"
+        }
+
+        filter "configurations:Debug"
+            symbols "On"
+            defines { "DEBUG" }
+
+        filter "configurations:Release"
+            optimize "On"
+            defines { "NDEBUG" }
+end
+
 createPayloadProject("sa")
 createPayloadProject("vc")
 createPayloadProject("iii")
 createUnifiedProject()
+createInstallerProject()

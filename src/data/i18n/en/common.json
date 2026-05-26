@@ -47,5 +47,6 @@
   "quickMap.title": "Quick teleport map",
   "quickMap.hint": "Click the map area to teleport to the target position.",
   "quickMap.opened": "Quick map opened",
-  "quickMap.closed": "Quick map closed"
+  "quickMap.closed": "Quick map closed",
+  "hotkey.triggered": "Hotkey triggered: %s"
 }

@@ -802,7 +802,7 @@ namespace {
     }
 
     eWeaponType GetWeaponTypeFromModel(int model) {
-        for (int i = 0; i < 37; ++i) {
+        for (int i = 0; i <= 39; ++i) {
             const auto weaponType = static_cast<eWeaponType>(i);
             if (GetWeaponModel(weaponType) == model) {
                 return weaponType;

@@ -110,6 +110,14 @@ if errorlevel 1 (
     goto fail
 )
 
+echo Building installer build\bin\XMenuInstaller.exe...
+"!MSBUILD_EXE!" "build\XMenu.sln" /m /t:XMenuInstaller /p:Configuration=%CONFIG% /p:Platform=Win32 /verbosity:minimal
+if errorlevel 1 (
+    echo.
+    echo [Error] Installer build failed.
+    goto fail
+)
+
 if not exist "build\bin\XMenu.asi" (
     echo [Error] build\bin\XMenu.asi was not produced.
     goto fail
@@ -130,6 +138,11 @@ if not exist "build\bin\XMenu\XMenuIII.dll" (
     goto fail
 )
 
+if not exist "build\bin\XMenuInstaller.exe" (
+    echo [Error] build\bin\XMenuInstaller.exe was not produced.
+    goto fail
+)
+
 call :stage_i18n
 if errorlevel 1 goto fail
 
@@ -143,6 +156,7 @@ echo   build\bin\XMenu.asi
 echo   build\bin\XMenu\XMenuSA.dll
 echo   build\bin\XMenu\XMenuVC.dll
 echo   build\bin\XMenu\XMenuIII.dll
+echo   build\bin\XMenuInstaller.exe
 echo   build\bin\XMenu\i18n\{lang}\index.json
 echo   build\bin\XMenu\data\{sa,vc,iii}\*.json
 echo   build\bin\XMenu\data\i18n\{lang}\index.json

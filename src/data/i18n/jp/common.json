@@ -47,5 +47,6 @@
   "quickMap.title": "クイックテレポートマップ",
   "quickMap.hint": "マップ領域をクリックして目標位置へテレポートします。",
   "quickMap.opened": "クイックマップを開きました",
-  "quickMap.closed": "クイックマップを閉じました"
+  "quickMap.closed": "クイックマップを閉じました",
+  "hotkey.triggered": "ホットキー実行：%s"
 }
