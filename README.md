@@ -11,6 +11,8 @@ A simple yet feature-rich ASI menu for GTA III, GTA Vice City, and GTA San Andre
 [![GTAMODX](https://img.shields.io/badge/GTAMODX-XMenu-2ea44f?style=for-the-badge)](https://gtamodx.com/mods/xmenu)
 [![Bilibili](https://img.shields.io/badge/Bilibili-Tomoriゞ-00A1D6?style=for-the-badge&logo=bilibili&logoColor=white)](https://space.bilibili.com/435502585)
 
+![XMenu](./images/xmenu.png)
+
 </div>
 
 ---
