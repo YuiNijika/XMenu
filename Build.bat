@@ -23,7 +23,7 @@ goto parse_args
 :args_done
 
 echo ==========================================
-echo    XMenu ASI Builder
+echo    XMenu Builder
 echo ==========================================
 echo Configuration: %CONFIG%
 echo Platform: Win32
@@ -56,7 +56,6 @@ if not exist "%PLUGIN_SDK_DIR%" (
 )
 
 if not exist "build" mkdir "build"
-call :write_payloads_rc_placeholder
 
 echo Generating Visual Studio 2022 project files...
 tools\premake5.exe vs2022
@@ -79,23 +78,35 @@ if not defined MSBUILD_EXE (
 
 echo.
 echo Using MSBuild: !MSBUILD_EXE!
-echo Building embedded payloads...
-"!MSBUILD_EXE!" "build\XMenu.sln" /m /t:XMenuPayloadSA;XMenuPayloadVC;XMenuPayloadIII /p:Configuration=%CONFIG% /p:Platform=Win32 /verbosity:minimal
-if errorlevel 1 (
-    echo.
-    echo [Error] Payload build failed.
-    goto fail
-)
-
-call :write_payloads_rc
-if errorlevel 1 goto fail
-
-echo.
-echo Building unified build\bin\XMenu.asi...
+echo Building loader build\bin\XMenu.asi...
 "!MSBUILD_EXE!" "build\XMenu.sln" /m /t:XMenu /p:Configuration=%CONFIG% /p:Platform=Win32 /verbosity:minimal
 if errorlevel 1 (
     echo.
-    echo [Error] Unified ASI build failed.
+    echo [Error] ASI loader build failed.
+    goto fail
+)
+
+echo Building payload build\bin\XMenu\XMenuSA.dll...
+"!MSBUILD_EXE!" "build\XMenu.sln" /m /t:XMenuPayloadSA /p:Configuration=%CONFIG% /p:Platform=Win32 /verbosity:minimal
+if errorlevel 1 (
+    echo.
+    echo [Error] SA payload build failed.
+    goto fail
+)
+
+echo Building payload build\bin\XMenu\XMenuVC.dll...
+"!MSBUILD_EXE!" "build\XMenu.sln" /m /t:XMenuPayloadVC /p:Configuration=%CONFIG% /p:Platform=Win32 /verbosity:minimal
+if errorlevel 1 (
+    echo.
+    echo [Error] VC payload build failed.
+    goto fail
+)
+
+echo Building payload build\bin\XMenu\XMenuIII.dll...
+"!MSBUILD_EXE!" "build\XMenu.sln" /m /t:XMenuPayloadIII /p:Configuration=%CONFIG% /p:Platform=Win32 /verbosity:minimal
+if errorlevel 1 (
+    echo.
+    echo [Error] III payload build failed.
     goto fail
 )
 
@@ -104,38 +115,97 @@ if not exist "build\bin\XMenu.asi" (
     goto fail
 )
 
+if not exist "build\bin\XMenu\XMenuSA.dll" (
+    echo [Error] build\bin\XMenu\XMenuSA.dll was not produced.
+    goto fail
+)
+
+if not exist "build\bin\XMenu\XMenuVC.dll" (
+    echo [Error] build\bin\XMenu\XMenuVC.dll was not produced.
+    goto fail
+)
+
+if not exist "build\bin\XMenu\XMenuIII.dll" (
+    echo [Error] build\bin\XMenu\XMenuIII.dll was not produced.
+    goto fail
+)
+
+call :stage_i18n
+if errorlevel 1 goto fail
+
+call :stage_data
+if errorlevel 1 goto fail
+
 echo.
 echo Build completed successfully.
-echo Output file: build\bin\XMenu.asi
+echo Output files:
+echo   build\bin\XMenu.asi
+echo   build\bin\XMenu\XMenuSA.dll
+echo   build\bin\XMenu\XMenuVC.dll
+echo   build\bin\XMenu\XMenuIII.dll
+echo   build\bin\XMenu\i18n\{lang}\index.json
+echo   build\bin\XMenu\data\{sa,vc,iii}\*.json
+echo   build\bin\XMenu\data\i18n\{lang}\index.json
+echo.
 goto success
 
-:write_payloads_rc_placeholder
-> "build\Payloads.rc" echo #include "../src/loader/PayloadResources.h"
+:stage_i18n
+if exist "build\bin\XMenu\i18n" rmdir /S /Q "build\bin\XMenu\i18n"
+if not exist "build\bin\XMenu" mkdir "build\bin\XMenu"
+if not exist "build\bin\XMenu\i18n" mkdir "build\bin\XMenu\i18n"
+
+if exist "tools\build_i18n_split.py" (
+    py -3 "tools\build_i18n_split.py" >nul 2>nul
+    if errorlevel 1 python "tools\build_i18n_split.py" >nul 2>nul
+)
+
+for %%L in (zh en jp ru) do (
+    if not exist "src\data\i18n\%%L\index.json" (
+        echo [Error] Missing language index: src\data\i18n\%%L\index.json
+        exit /b 1
+    )
+    xcopy "src\data\i18n\%%L" "build\bin\XMenu\i18n\%%L\" /E /I /Y >nul
+    if errorlevel 1 (
+        echo [Error] Failed to stage language pack: %%L
+        exit /b 1
+    )
+)
 exit /b 0
 
-:write_payloads_rc
-if not exist "build\bin\XMenuSA.dll" (
-    echo [Error] Missing payload: build\bin\XMenuSA.dll
-    exit /b 1
+:stage_data
+if exist "tools\generate_scene_visual_data.py" (
+    py -3 "tools\generate_scene_visual_data.py" >nul 2>nul
+    if errorlevel 1 python "tools\generate_scene_visual_data.py" >nul 2>nul
 )
-if not exist "build\bin\XMenuVC.dll" (
-    echo [Error] Missing payload: build\bin\XMenuVC.dll
-    exit /b 1
+
+if exist "build\bin\XMenu\data" rmdir /S /Q "build\bin\XMenu\data"
+if not exist "build\bin\XMenu" mkdir "build\bin\XMenu"
+if not exist "build\bin\XMenu\data" mkdir "build\bin\XMenu\data"
+
+for %%G in (sa vc iii) do (
+    if not exist "src\data\%%G" (
+        echo [Error] Missing data directory: src\data\%%G
+        exit /b 1
+    )
+    xcopy "src\data\%%G" "build\bin\XMenu\data\%%G\" /E /I /Y >nul
+    if errorlevel 1 (
+        echo [Error] Failed to stage data pack: %%G
+        exit /b 1
+    )
 )
-if not exist "build\bin\XMenuIII.dll" (
-    echo [Error] Missing payload: build\bin\XMenuIII.dll
-    exit /b 1
+
+if not exist "build\bin\XMenu\data\i18n" mkdir "build\bin\XMenu\data\i18n"
+for %%L in (zh en jp ru) do (
+    if not exist "src\data\i18n\%%L\index.json" (
+        echo [Error] Missing language index: src\data\i18n\%%L\index.json
+        exit /b 1
+    )
+    xcopy "src\data\i18n\%%L" "build\bin\XMenu\data\i18n\%%L\" /E /I /Y >nul
+    if errorlevel 1 (
+        echo [Error] Failed to stage data language pack: %%L
+        exit /b 1
+    )
 )
-> "build\Payloads.rc" echo #include "../src/loader/PayloadResources.h"
->> "build\Payloads.rc" echo IDR_XMENU_SA RCDATA "bin/XMenuSA.dll"
->> "build\Payloads.rc" echo IDR_XMENU_VC RCDATA "bin/XMenuVC.dll"
->> "build\Payloads.rc" echo IDR_XMENU_III RCDATA "bin/XMenuIII.dll"
->> "build\Payloads.rc" echo.
->> "build\Payloads.rc" echo // i18n language files
->> "build\Payloads.rc" echo IDR_I18N_ZH RCDATA "../src/data/i18n/zh.json"
->> "build\Payloads.rc" echo IDR_I18N_EN RCDATA "../src/data/i18n/en.json"
->> "build\Payloads.rc" echo IDR_I18N_JP RCDATA "../src/data/i18n/jp.json"
->> "build\Payloads.rc" echo IDR_I18N_RU RCDATA "../src/data/i18n/ru.json"
 exit /b 0
 
 :find_msbuild

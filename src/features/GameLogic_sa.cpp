@@ -10,17 +10,23 @@
 #include "CAutomobile.h"
 #include "CBike.h"
 #include "CTrain.h"
+#include "CPed.h"
 #include "CPools.h"
 #include "CModelInfo.h"
 #include "CWeaponInfo.h"
-#include "CPools.h"
+#include "CPickups.h"
 #include "extensions/ScriptCommands.h"
 #include "Patch.h"
 #include "CTimer.h"
 #include "CClock.h"
+#include "CHud.h"
+#include "CWeather.h"
+#include "CCutsceneMgr.h"
+#include "CTheScripts.h"
 #include "rw/skeleton.h"
 #include <array>
 #include <cstdint>
+#include <cstdio>
 #include <windows.h>
 #include <ctime>
 #include <string>
@@ -513,6 +519,40 @@ int GetTrainConfigForModel(int model) {
     }
 }
 
+bool IsValidPedModel(unsigned int modelId) {
+    const int model = static_cast<int>(modelId);
+    return model >= 0 && model < CModelInfo::ms_modelInfoCount && CModelInfo::IsPedModel(model);
+}
+
+bool SetPlayerSkin(unsigned int modelId) {
+    if (!IsValidPedModel(modelId)) {
+        Log::Warn("SA 玩家皮肤切换被拒绝：无效模型 ID " + std::to_string(modelId));
+        return false;
+    }
+
+    CPlayerPed* player = FindPlayerPed();
+    if (!player) return false;
+
+    const int model = static_cast<int>(modelId);
+    CStreaming::RequestModel(model, PRIORITY_REQUEST);
+    CStreaming::LoadAllRequestedModels(false);
+    plugin::Command<plugin::Commands::SET_PLAYER_MODEL>(0, model);
+    plugin::Command<plugin::Commands::BUILD_PLAYER_MODEL>(0);
+    plugin::Command<plugin::Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(model);
+    return true;
+}
+
+bool ApplyPlayerClothes(int textureId, int modelId, int bodyPart) {
+    plugin::Command<plugin::Commands::GIVE_PLAYER_CLOTHES>(0, textureId, modelId, bodyPart);
+    plugin::Command<plugin::Commands::BUILD_PLAYER_MODEL>(0);
+    return true;
+}
+
+bool SetPlayerStat(int statId, float value) {
+    plugin::Command<plugin::Commands::SET_FLOAT_STAT>(statId, value);
+    return true;
+}
+
 CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options) {
     CPlayerPed* player = FindPlayerPed();
     if (!player) return nullptr;
@@ -700,6 +740,184 @@ bool TeleportMarker(bool spawnUnderwater) {
     return true;
 }
 
+void ApplyVehicleAppearance(CVehicle* vehicle, const VehicleAppearanceOptions& options) {
+    if (!vehicle) return;
+    const int hveh = CPools::GetVehicleRef(vehicle);
+    plugin::Command<plugin::Commands::CHANGE_CAR_COLOUR>(hveh, options.primaryColor, options.secondaryColor);
+    if (options.paintjob >= 0) {
+        plugin::Command<plugin::Commands::GIVE_VEHICLE_PAINTJOB>(hveh, options.paintjob);
+    }
+    if (options.modId > 0) {
+        plugin::Command<plugin::Commands::REQUEST_VEHICLE_MOD>(options.modId);
+        if (plugin::Command<plugin::Commands::HAS_VEHICLE_MOD_LOADED>(options.modId)) {
+            plugin::Command<plugin::Commands::ADD_VEHICLE_MOD>(hveh, options.modId);
+        }
+    }
+}
+
+void OpenVehicleDoor(CVehicle* vehicle, int doorIndex) {
+    if (!vehicle) return;
+    plugin::Command<plugin::Commands::OPEN_CAR_DOOR>(CPools::GetVehicleRef(vehicle), doorIndex);
+}
+
+void PopVehicleDoor(CVehicle* vehicle, int doorIndex) {
+    if (!vehicle) return;
+    plugin::Command<plugin::Commands::POP_CAR_DOOR>(CPools::GetVehicleRef(vehicle), doorIndex);
+}
+
+void WarpPlayerToVehicleSeat(CVehicle* vehicle, int seatIndex) {
+    CPlayerPed* player = FindPlayerPed();
+    if (!player || !vehicle) return;
+    const int hplayer = CPools::GetPedRef(player);
+    const int hveh = CPools::GetVehicleRef(vehicle);
+    if (seatIndex <= 0) {
+        plugin::Command<plugin::Commands::WARP_CHAR_INTO_CAR>(hplayer, hveh);
+        return;
+    }
+    plugin::Command<plugin::Commands::WARP_CHAR_INTO_CAR_AS_PASSENGER>(hplayer, hveh, seatIndex - 1);
+}
+
+void ProcessAutoDrive(CVehicle* vehicle, bool enable, float speed) {
+    CPlayerPed* player = FindPlayerPed();
+    if (!enable || !player || !vehicle) return;
+    const CVector pos = player->GetPosition();
+    plugin::Command<plugin::Commands::TASK_CAR_DRIVE_TO_COORD>(CPools::GetPedRef(player), CPools::GetVehicleRef(vehicle), pos.x + 80.0f, pos.y, pos.z, speed, 0, vehicle->m_nModelIndex, 2, 10.0f);
+}
+
+void SetTrafficDensity(float density) {
+    plugin::Command<plugin::Commands::SET_CAR_DENSITY_MULTIPLIER>(density);
+    plugin::Command<plugin::Commands::SET_PED_DENSITY_MULTIPLIER>(density);
+}
+
+void SetFlyingCars(bool enable) {
+    Log::Warn(std::string("SA 飞车开关暂未接入安全接口，已跳过：") + (enable ? "开启" : "关闭"));
+}
+
+CPed* SpawnPedNearPlayer(const PedSpawnOptions& options) {
+    CPlayerPed* player = FindPlayerPed();
+    if (!player || !IsValidPedModel(options.modelId)) return nullptr;
+    const int model = static_cast<int>(options.modelId);
+    CVector pos = player->TransformFromObjectSpace(CVector(0.0f, 3.0f, 0.0f));
+    CStreaming::RequestModel(model, PRIORITY_REQUEST);
+    CStreaming::LoadAllRequestedModels(false);
+    int hped = 0;
+    plugin::Command<plugin::Commands::CREATE_CHAR>(options.pedType, model, pos.x, pos.y, pos.z, &hped);
+    CPed* ped = CPools::GetPed(hped);
+    ApplyPedOptions(ped, options);
+    plugin::Command<plugin::Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(model);
+    return ped;
+}
+
+CPed* SpawnPedAtMarker(const PedSpawnOptions& options) {
+    const auto index = static_cast<unsigned short>(FrontEndMenuManager.m_nTargetBlipIndex);
+    const tRadarTrace& targetBlip = CRadar::ms_RadarTrace[index];
+    if (targetBlip.m_nRadarSprite != RADAR_SPRITE_WAYPOINT || !IsValidPedModel(options.modelId)) return nullptr;
+    const int model = static_cast<int>(options.modelId);
+    CVector pos = targetBlip.m_vecPos;
+    pos.z = CWorld::FindGroundZFor3DCoord(pos.x, pos.y, 1000.0f, nullptr, nullptr) + 1.0f;
+    CStreaming::RequestModel(model, PRIORITY_REQUEST);
+    CStreaming::LoadAllRequestedModels(false);
+    int hped = 0;
+    plugin::Command<plugin::Commands::CREATE_CHAR>(options.pedType, model, pos.x, pos.y, pos.z, &hped);
+    CPed* ped = CPools::GetPed(hped);
+    ApplyPedOptions(ped, options);
+    plugin::Command<plugin::Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(model);
+    return ped;
+}
+
+void DeletePed(CPed* ped) {
+    if (!ped) return;
+    const int hped = CPools::GetPedRef(ped);
+    plugin::Command<plugin::Commands::DELETE_CHAR>(hped);
+}
+
+void ApplyPedOptions(CPed* ped, const PedSpawnOptions& options) {
+    if (!ped) return;
+    const int hped = CPools::GetPedRef(ped);
+    plugin::Command<plugin::Commands::SET_CHAR_HEALTH>(hped, static_cast<int>(options.health));
+    plugin::Command<plugin::Commands::SET_CHAR_ARMOUR>(hped, static_cast<int>(options.armour));
+    plugin::Command<plugin::Commands::FREEZE_CHAR_POSITION>(hped, options.freeze);
+    plugin::Command<plugin::Commands::SET_CHAR_PROOFS>(hped, false, false, false, false, false);
+    if (options.weaponModel > 0) {
+        plugin::Command<plugin::Commands::GIVE_WEAPON_TO_CHAR>(hped, options.weaponModel, 9999);
+    }
+}
+
+bool PlayPlayerAnimation(const char* group, const char* name, bool loop) {
+    CPlayerPed* player = FindPlayerPed();
+    if (!player || !group || !name || group[0] == '\0' || name[0] == '\0') return false;
+    const int hplayer = CPools::GetPedRef(player);
+    plugin::Command<plugin::Commands::REQUEST_ANIMATION>(group);
+    if (!plugin::Command<plugin::Commands::HAS_ANIMATION_LOADED>(group)) {
+        CStreaming::LoadAllRequestedModels(false);
+    }
+    plugin::Command<plugin::Commands::TASK_PLAY_ANIM>(hplayer, name, group, 4.0f, loop, false, false, false, -1);
+    return true;
+}
+
+void StopPlayerAnimation() {
+    CPlayerPed* player = FindPlayerPed();
+    if (!player) return;
+    plugin::Command<plugin::Commands::CLEAR_CHAR_TASKS>(CPools::GetPedRef(player));
+}
+
+bool SpawnParticleAtPlayer(const char* name) {
+    CPlayerPed* player = FindPlayerPed();
+    if (!player || !name || name[0] == '\0') return false;
+    const CVector pos = player->GetPosition();
+    int fx = 0;
+    plugin::Command<plugin::Commands::CREATE_FX_SYSTEM>(name, pos.x, pos.y, pos.z + 1.0f, 0, &fx);
+    plugin::Command<plugin::Commands::PLAY_AND_KILL_FX_SYSTEM>(fx);
+    return true;
+}
+
+bool StartCutscene(const char* name) {
+    if (!name || name[0] == '\0') return false;
+    CCutsceneMgr::DeleteCutsceneData();
+    CCutsceneMgr::LoadCutsceneData(name);
+    CCutsceneMgr::StartCutscene();
+    return true;
+}
+
+void StopCutscene() {
+    CCutsceneMgr::DeleteCutsceneData();
+}
+
+bool IsCutsceneRunning() {
+    return CCutsceneMgr::ms_running || CCutsceneMgr::ms_cutsceneProcessing;
+}
+
+const char* GetMissionStatus() {
+    static char status[160];
+    std::snprintf(status, sizeof(status), "commands=%u missionFlag=%d activeScripts=%s", CTheScripts::CommandsExecuted, CTheScripts::OnAMissionFlag, CTheScripts::pActiveScripts ? "yes" : "no");
+    return status;
+}
+
+void DisplayHud(bool enable) {
+    plugin::Command<plugin::Commands::DISPLAY_HUD>(enable);
+    CHud::m_Wants_To_Draw_Hud = enable;
+}
+
+void DisplayRadar(bool enable) {
+    plugin::Command<plugin::Commands::DISPLAY_RADAR>(enable);
+    CHud::bScriptDontDisplayRadar = !enable;
+}
+
+void SetVisualFilter(bool enable, int filterId, float) {
+    if (!enable) {
+        return;
+    }
+
+    if (filterId < 0) {
+        filterId = 0;
+    } else if (filterId > 22) {
+        filterId = 22;
+    }
+
+    CWeather::OldWeatherType = static_cast<short>(filterId);
+    CWeather::NewWeatherType = static_cast<short>(filterId);
+}
+
 void TeleportForward(float distance) {
     CPlayerPed* player = FindPlayerPed();
     if (!player) return;
@@ -783,6 +1001,20 @@ void DropCurrentWeapon(CPlayerPed* player) {
 
 void ClearWeapons(CPlayerPed* player) {
     if (player) player->ClearWeapons();
+}
+
+int RemoveTrackedPickups() {
+    int removed = 0;
+    for (unsigned int i = 0; i < MAX_NUM_PICKUPS; ++i) {
+        CPickup& pickup = CPickups::aPickUps[i];
+        if (pickup.m_nPickupType == PICKUP_NONE || pickup.m_nFlags.bDisabled) {
+            continue;
+        }
+
+        pickup.Remove();
+        ++removed;
+    }
+    return removed;
 }
 
 void ProcessInfiniteAmmo(CPlayerPed* player, bool enable) {

@@ -4,6 +4,7 @@
 
 class CPlayerPed;
 class CVehicle;
+class CPed;
 
 namespace GameLogic {
     struct ProofState {
@@ -20,6 +21,34 @@ namespace GameLogic {
         bool aircraftInAir = true;
     };
 
+    struct PedSpawnOptions {
+        unsigned int modelId = 7;
+        int pedType = 4;
+        int gangType = 0;
+        bool asGang = false;
+        float health = 100.0f;
+        float armour = 0.0f;
+        bool freeze = false;
+        bool hostile = false;
+        unsigned int weaponModel = 0;
+    };
+
+    struct VehicleAppearanceOptions {
+        int primaryColor = 0;
+        int secondaryColor = 0;
+        int paintjob = -1;
+        int modId = 1000;
+    };
+
+    struct PlayerAppearanceOptions {
+        int skinModel = 0;
+        int clothesTexture = 0;
+        int clothesModel = 0;
+        int clothesBodyPart = 0;
+        int statId = 0;
+        float statValue = 0.0f;
+    };
+
     // 玩家
     ProofState GetPlayerProofState(CPlayerPed* player);
     void SetPlayerProofState(CPlayerPed* player, const ProofState& state);
@@ -32,6 +61,9 @@ namespace GameLogic {
     void GiveMoney(int amount);
     int GetMoney();
     void SetMoney(int amount);
+    bool SetPlayerSkin(unsigned int modelId);
+    bool ApplyPlayerClothes(int textureId, int modelId, int bodyPart);
+    bool SetPlayerStat(int statId, float value);
     float GetHealth(CPlayerPed* player);
     void SetHealth(CPlayerPed* player, float value);
     float GetArmour(CPlayerPed* player);
@@ -86,10 +118,36 @@ namespace GameLogic {
     void SetVehicleTakeLessDamage(CVehicle* vehicle, bool enable);
     void BlowUpAllVehicles();
     bool IsValidVehicleModel(unsigned int modelId);
+    bool IsValidPedModel(unsigned int modelId);
     CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options);
     void DeleteVehicle(CVehicle* vehicle);
+    void ApplyVehicleAppearance(CVehicle* vehicle, const VehicleAppearanceOptions& options);
+    void OpenVehicleDoor(CVehicle* vehicle, int doorIndex);
+    void PopVehicleDoor(CVehicle* vehicle, int doorIndex);
+    void WarpPlayerToVehicleSeat(CVehicle* vehicle, int seatIndex);
+    void ProcessAutoDrive(CVehicle* vehicle, bool enable, float speed);
+    void SetTrafficDensity(float density);
+    void SetFlyingCars(bool enable);
     
-    // 传送
+    // Ped
+    CPed* SpawnPedNearPlayer(const PedSpawnOptions& options);
+    CPed* SpawnPedAtMarker(const PedSpawnOptions& options);
+    void DeletePed(CPed* ped);
+    void ApplyPedOptions(CPed* ped, const PedSpawnOptions& options);
+    
+    // 场景
+    bool PlayPlayerAnimation(const char* group, const char* name, bool loop);
+    void StopPlayerAnimation();
+    bool SpawnParticleAtPlayer(const char* name);
+    bool StartCutscene(const char* name);
+    void StopCutscene();
+    bool IsCutsceneRunning();
+    const char* GetMissionStatus();
+    
+    // 视觉
+    void DisplayHud(bool enable);
+    void DisplayRadar(bool enable);
+    void SetVisualFilter(bool enable, int filterId, float strength);
     void TeleportPlayer(CVector pos, int interiorID = 0);
     void TeleportMapPosition(CVector pos, bool spawnUnderwater);
     bool TeleportMarker(bool spawnUnderwater);
@@ -102,6 +160,7 @@ namespace GameLogic {
     void DropWeapon(CPlayerPed* player);
     void DropCurrentWeapon(CPlayerPed* player);
     void ClearWeapons(CPlayerPed* player);
+    int RemoveTrackedPickups();
     void ProcessInfiniteAmmo(CPlayerPed* player, bool enable);
     void SetFastReload(CPlayerPed* player, bool enable);
     void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange, bool rapidFire, bool dualWield, bool moveAim, bool moveFire, bool noSpread);

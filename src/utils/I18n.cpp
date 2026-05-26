@@ -1,24 +1,21 @@
 #include "I18n.h"
-#include "resources/I18nResources.h"
+#include "utils/JsonLoader.h"
 #include "utils/Log.h"
-#include <array>
 #include <fstream>
 #include <iterator>
 #include <string>
 #include <unordered_map>
-#include <utility>
+#include <vector>
 #include <windows.h>
 
 namespace {
     using Dictionary = std::unordered_map<std::string, std::string>;
 
-    constexpr std::size_t LanguageCount = 4;
-    I18n::Language currentLanguage = I18n::Language::Zh;
-    std::array<Dictionary, LanguageCount> dictionaries;
-
-    int LanguageIndex(I18n::Language language) {
-        return static_cast<int>(language);
-    }
+    std::string currentLanguageCode = "zh";
+    std::string fallbackLanguageCode = "zh";
+    std::unordered_map<std::string, Dictionary> dictionaries;
+    std::unordered_map<std::string, std::string> fallbacks;
+    std::vector<I18n::LanguageInfo> availableLanguages;
 
     std::string DecodeJsonString(const std::string& value) {
         std::string decoded;
@@ -38,9 +35,7 @@ namespace {
             case '"': decoded.push_back('"'); break;
             case '\\': decoded.push_back('\\'); break;
             case '/': decoded.push_back('/'); break;
-            default:
-                decoded.push_back(escaped);
-                break;
+            default: decoded.push_back(escaped); break;
             }
         }
 
@@ -51,42 +46,28 @@ namespace {
         std::size_t cursor = 0;
         while (cursor < content.size()) {
             const std::size_t keyStartQuote = content.find('"', cursor);
-            if (keyStartQuote == std::string::npos) {
-                break;
-            }
+            if (keyStartQuote == std::string::npos) break;
 
             const std::size_t keyEndQuote = content.find('"', keyStartQuote + 1);
-            if (keyEndQuote == std::string::npos) {
-                break;
-            }
+            if (keyEndQuote == std::string::npos) break;
 
             const std::size_t colon = content.find(':', keyEndQuote + 1);
-            if (colon == std::string::npos) {
-                break;
-            }
+            if (colon == std::string::npos) break;
 
             const std::size_t valueStartQuote = content.find('"', colon + 1);
-            if (valueStartQuote == std::string::npos) {
-                break;
-            }
+            if (valueStartQuote == std::string::npos) break;
 
             std::size_t valueEndQuote = valueStartQuote + 1;
             bool escaped = false;
             while (valueEndQuote < content.size()) {
                 const char current = content[valueEndQuote];
-                if (current == '"' && !escaped) {
-                    break;
-                }
+                if (current == '"' && !escaped) break;
                 escaped = current == '\\' && !escaped;
-                if (current != '\\') {
-                    escaped = false;
-                }
+                if (current != '\\') escaped = false;
                 ++valueEndQuote;
             }
 
-            if (valueEndQuote >= content.size()) {
-                break;
-            }
+            if (valueEndQuote >= content.size()) break;
 
             const std::string key = DecodeJsonString(content.substr(keyStartQuote + 1, keyEndQuote - keyStartQuote - 1));
             const std::string value = DecodeJsonString(content.substr(valueStartQuote + 1, valueEndQuote - valueStartQuote - 1));
@@ -95,215 +76,320 @@ namespace {
         }
     }
 
-    bool LoadDictionary(I18n::Language language, const char* path) {
-        std::ifstream file(path, std::ios::binary);
-        if (!file.is_open()) {
-            return false;
-        }
-
-        const std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-        ParseFlatJson(content, dictionaries[LanguageIndex(language)]);
-        return !dictionaries[LanguageIndex(language)].empty();
+    bool FileExists(const std::string& path) {
+        const DWORD attributes = GetFileAttributesA(path.c_str());
+        return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
     }
 
-    bool LoadDictionaryFromResource(I18n::Language language, int resourceId) {
-        // 尝试从当前DLL模块加载资源
-        HMODULE hModule = nullptr;
-        GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                          (LPCSTR)&LoadDictionaryFromResource, &hModule);
-        
-        if (!hModule) {
-            Log::Warn("无法获取当前模块句柄");
-            hModule = GetModuleHandle(NULL);
-        }
-        
-        char moduleName[MAX_PATH];
-        GetModuleFileNameA(hModule, moduleName, MAX_PATH);
-        Log::Info(std::string("尝试从模块加载资源: ") + moduleName + ", 资源ID: " + std::to_string(resourceId));
-        
-        HRSRC hResource = FindResourceA(hModule, MAKEINTRESOURCEA(resourceId), RT_RCDATA);
-        if (!hResource) {
-            DWORD error = GetLastError();
-            Log::Warn(std::string("资源加载失败: 找不到资源ID ") + std::to_string(resourceId) + ", 错误码: " + std::to_string(error));
-            return false;
-        }
+    bool DirectoryExists(const std::string& path) {
+        const DWORD attributes = GetFileAttributesA(path.c_str());
+        return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+    }
 
-        HGLOBAL hLoaded = LoadResource(hModule, hResource);
-        if (!hLoaded) {
-            Log::Warn(std::string("资源加载失败: 无法加载资源ID ") + std::to_string(resourceId));
-            return false;
-        }
+    std::string DirectoryFromModule(HMODULE module) {
+        char path[MAX_PATH] = {};
+        const DWORD size = GetModuleFileNameA(module, path, MAX_PATH);
+        if (size == 0) return "";
 
-        const DWORD size = SizeofResource(hModule, hResource);
-        const void* data = LockResource(hLoaded);
-        if (!data || size == 0) {
-            Log::Warn(std::string("资源加载失败: 资源数据为空，ID ") + std::to_string(resourceId));
-            return false;
-        }
+        std::string directory(path, size);
+        const std::size_t slash = directory.find_last_of("\\/");
+        if (slash == std::string::npos) return "";
+        return directory.substr(0, slash + 1);
+    }
 
-        const std::string content(static_cast<const char*>(data), size);
-        ParseFlatJson(content, dictionaries[LanguageIndex(language)]);
-        
-        bool success = !dictionaries[LanguageIndex(language)].empty();
-        if (success) {
-            Log::Info(std::string("从资源成功加载语言字典，ID: ") + std::to_string(resourceId) + ", 词条数: " + std::to_string(dictionaries[LanguageIndex(language)].size()));
+    std::string ModuleDirectory() {
+        HMODULE module = nullptr;
+        GetModuleHandleExA(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            reinterpret_cast<LPCSTR>(&ModuleDirectory),
+            &module
+        );
+        return DirectoryFromModule(module);
+    }
+
+    std::string AsiDirectory() {
+        const std::string asiDirectory = DirectoryFromModule(GetModuleHandleA("XMenu.asi"));
+        return asiDirectory.empty() ? ModuleDirectory() : asiDirectory;
+    }
+
+    std::string NormalizeDirectory(std::string path) {
+        if (!path.empty() && path.back() != '\\' && path.back() != '/') {
+            path += "\\";
+        }
+        return path;
+    }
+
+    bool LoadDictionaryFile(const std::string& languageCode, const std::string& path) {
+        std::ifstream file(path, std::ios::binary);
+        if (!file.is_open()) return false;
+
+        const std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+        Dictionary& dictionary = dictionaries[languageCode];
+        const std::size_t before = dictionary.size();
+        ParseFlatJson(content, dictionary);
+        return dictionary.size() > before;
+    }
+
+    I18n::LanguageInfo* FindLanguageInfo(const std::string& code) {
+        for (I18n::LanguageInfo& language : availableLanguages) {
+            if (language.code == code) return &language;
+        }
+        return nullptr;
+    }
+
+    void UpsertLanguageInfo(const std::string& code, const std::string& name, const std::string& fallback) {
+        if (code.empty()) return;
+
+        I18n::LanguageInfo* existing = FindLanguageInfo(code);
+        if (existing) {
+            if (!name.empty()) existing->name = name;
+            if (!fallback.empty()) existing->fallback = fallback;
         } else {
-            Log::Warn(std::string("从资源加载语言字典失败，解析后为空，ID: ") + std::to_string(resourceId));
+            I18n::LanguageInfo language;
+            language.code = code;
+            language.name = name.empty() ? code : name;
+            language.fallback = fallback;
+            availableLanguages.push_back(language);
         }
-        return success;
+
+        if (!fallback.empty()) {
+            fallbacks[code] = fallback;
+        }
+    }
+
+    bool LoadLanguageIndex(const std::string& languageDir, const std::string& directoryCode) {
+        const std::string indexPath = languageDir + "index.json";
+        if (!FileExists(indexPath)) return false;
+
+        const JsonLoader::JsonValue index = JsonLoader::LoadFromFile(indexPath);
+        if (index.type != JsonLoader::JsonValue::OBJECT) return false;
+
+        const std::string code = JsonLoader::GetString(index, "code", directoryCode);
+        const std::string name = JsonLoader::GetString(index, "name", code);
+        const std::string fallback = JsonLoader::GetString(index, "fallback", code == "zh" ? "" : "zh");
+        UpsertLanguageInfo(code, name, fallback);
+
+        bool loaded = false;
+        const std::vector<JsonLoader::JsonValue>& files = JsonLoader::GetArray(index, "files");
+        for (const JsonLoader::JsonValue& file : files) {
+            if (file.type != JsonLoader::JsonValue::STRING || file.string_value.empty()) continue;
+            loaded = LoadDictionaryFile(code, languageDir + file.string_value) || loaded;
+        }
+
+        if (loaded) {
+            Log::Info(std::string("语言包加载完成: ") + indexPath + "，词条数=" + std::to_string(dictionaries[code].size()));
+        }
+        return loaded;
+    }
+
+    bool LoadLegacyLanguage(const std::string& baseDir, const std::string& code, const std::string& name) {
+        if (!LoadDictionaryFile(code, baseDir + code + ".json")) return false;
+        UpsertLanguageInfo(code, name, code == "zh" ? "" : "zh");
+        return true;
+    }
+
+    bool ScanLanguageBase(const std::string& rawBaseDir) {
+        const std::string baseDir = NormalizeDirectory(rawBaseDir);
+        if (!DirectoryExists(baseDir)) return false;
+
+        bool loaded = false;
+        WIN32_FIND_DATAA data = {};
+        HANDLE find = FindFirstFileA((baseDir + "*").c_str(), &data);
+        if (find != INVALID_HANDLE_VALUE) {
+            do {
+                const std::string name = data.cFileName;
+                if (name == "." || name == "..") continue;
+                if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) continue;
+                loaded = LoadLanguageIndex(baseDir + name + "\\", name) || loaded;
+            } while (FindNextFileA(find, &data));
+            FindClose(find);
+        }
+
+        loaded = LoadLegacyLanguage(baseDir, "zh", (const char*)u8"简体中文") || loaded;
+        loaded = LoadLegacyLanguage(baseDir, "en", "English") || loaded;
+        loaded = LoadLegacyLanguage(baseDir, "jp", (const char*)u8"日本語") || loaded;
+        loaded = LoadLegacyLanguage(baseDir, "ru", (const char*)u8"Русский") || loaded;
+        return loaded;
     }
 
     void LoadFallbackZh() {
-        Dictionary& zh = dictionaries[LanguageIndex(I18n::Language::Zh)];
-        if (!zh.empty()) {
-            return;
-        }
+        Dictionary& zh = dictionaries["zh"];
+        if (!zh.empty()) return;
 
-        const std::pair<const char*, const char*> fallback[] = {
-            {"window.title", (const char*)u8"XMenu 作者：%s - GTAMODX"},
-            {"tab.player", (const char*)u8"玩家"}, {"tab.vehicle", (const char*)u8"载具"}, {"tab.teleport", (const char*)u8"传送"}, {"tab.weapon", (const char*)u8"武器"}, {"tab.world", (const char*)u8"世界"}, {"tab.settings", (const char*)u8"设置"}, {"tab.about", (const char*)u8"关于"},
-            {"settings.language", (const char*)u8"语言"}, {"settings.interfaceLanguage", (const char*)u8"界面语言"}, {"settings.applyImmediately", (const char*)u8"切换后立即生效"}, {"settings.menuHotkey", (const char*)u8"菜单快捷键"}, {"settings.applyHotkey", (const char*)u8"应用快捷键"}, {"settings.currentHotkey", (const char*)u8"当前快捷键：%s"}, {"settings.config", (const char*)u8"配置导入/导出"}, {"settings.configPath", (const char*)u8"配置路径"}, {"settings.defaultConfigPath", (const char*)u8"默认配置：%s"}, {"settings.importConfig", (const char*)u8"导入配置"}, {"settings.exportConfig", (const char*)u8"导出配置"}, {"settings.transferScope", (const char*)u8"导入/导出范围"}, {"settings.transferAll", (const char*)u8"全部配置"}, {"settings.transferCustomLocations", (const char*)u8"仅地图"}, {"settings.importSuccess", (const char*)u8"导入成功，地点列表已刷新"}, {"settings.importPartialSuccess", (const char*)u8"自定义地点导入成功，已追加到现有列表下方"}, {"settings.importFailed", (const char*)u8"导入失败，请检查 JSON 文件"}, {"settings.exportSuccess", (const char*)u8"导出成功"}, {"settings.exportPartialSuccess", (const char*)u8"自定义地点导出成功"}, {"settings.importTextTitle", (const char*)u8"导入配置文本"}, {"settings.exportTextTitle", (const char*)u8"导出配置文本"}, {"settings.importTextHint", (const char*)u8"粘贴要导入的 JSON 文本。仅自定义地点会追加到当前列表下方。"}, {"settings.exportTextHint", (const char*)u8"复制下面的 JSON 文本。"}, {"settings.importTextApply", (const char*)u8"导入文本"}, {"settings.copyText", (const char*)u8"复制文本"}, {"settings.close", (const char*)u8"关闭"}, {"settings.exportFailed", (const char*)u8"导出失败，请检查路径权限"}, {"settings.debug", (const char*)u8"调试"}, {"settings.d3dHookStatus", (const char*)u8"D3D Hook 状态：%s"}, {"settings.d3dHookInitialized", (const char*)u8"D3D Hook 已初始化"}, {"settings.d3dHookFailed", (const char*)u8"D3D Hook 未初始化；GTA III/VC 请确认 D3D8to9，SA 请确认 D3D9 渲染路径"},
-            {"player.copyCoordinates", (const char*)u8"复制坐标"}, {"player.healFully", (const char*)u8"回满血量"}, {"player.refillArmor", (const char*)u8"补满护甲"}, {"player.saveAnywhere", (const char*)u8"随地存档"}, {"player.addMoney", (const char*)u8"加 25 万现金"}, {"player.kill", (const char*)u8"立即倒地"},
-            {"common.toggles", (const char*)u8"功能开关"}, {"player.statusToggles", (const char*)u8"状态开关"}, {"player.valueAdjustments", (const char*)u8"数值调整"}, {"player.godMode", (const char*)u8"无敌"}, {"player.autoHeal", (const char*)u8"自动回血"}, {"player.hardMode", (const char*)u8"50 血量"}, {"player.infiniteSprint", (const char*)u8"无限冲刺"}, {"player.respawnAtDeathPosition", (const char*)u8"死亡后回到原地"}, {"player.freezeWantedLevel", (const char*)u8"冻结通缉"}, {"player.keepStuff", (const char*)u8"住院/被捕保留装备"}, {"player.freeHospital", (const char*)u8"住院不扣钱"}, {"player.freeJail", (const char*)u8"被捕不扣钱"}, {"player.proofFlags", (const char*)u8"单项防护"},
-            {"proof.bullet", (const char*)u8"防弹"}, {"proof.collision", (const char*)u8"防撞"}, {"proof.explosion", (const char*)u8"防爆"}, {"proof.fire", (const char*)u8"防火"}, {"proof.melee", (const char*)u8"防近战"},
-            {"player.health", (const char*)u8"血量"}, {"player.setHealth", (const char*)u8"设置血量"}, {"player.armor", (const char*)u8"护甲"}, {"player.setArmor", (const char*)u8"设置护甲"}, {"player.money", (const char*)u8"现金"}, {"player.setMoney", (const char*)u8"设置现金"}, {"player.wantedLevel", (const char*)u8"通缉星级"}, {"player.setWanted", (const char*)u8"设置通缉"}, {"player.readCurrentValues", (const char*)u8"读取当前数值"}, {"player.clearWanted", (const char*)u8"消除通缉"},
-            {"vehicle.blowUpAll", (const char*)u8"炸毁所有载具"}, {"vehicle.noListData", (const char*)u8"当前版本没有载具列表数据，请用模型 ID 生成。"}, {"vehicle.notInVehicle", (const char*)u8"当前不在载具中，修车和载具状态功能暂不可用。"}, {"vehicle.repair", (const char*)u8"一键修车"}, {"vehicle.stop", (const char*)u8"立即停车"}, {"vehicle.unflip", (const char*)u8"扶正载具"}, {"vehicle.start", (const char*)u8"立即起步"}, {"vehicle.engineOn", (const char*)u8"点火"}, {"vehicle.engineOff", (const char*)u8"熄火"}, {"vehicle.lights", (const char*)u8"车灯"}, {"vehicle.lockDoors", (const char*)u8"车门上锁"}, {"vehicle.invisible", (const char*)u8"隐形载具"}, {"vehicle.alwaysSkidMarks", (const char*)u8"始终留下刹车痕"}, {"vehicle.disableParticles", (const char*)u8"禁用粒子效果"}, {"vehicle.driverTargetable", (const char*)u8"驾驶员可被瞄准"}, {"vehicle.missileTargetable", (const char*)u8"可被导弹锁定"}, {"vehicle.petrolTankWeakness", (const char*)u8"油箱弱点"}, {"vehicle.sirenAlarm", (const char*)u8"警笛/警报"}, {"vehicle.takeLessDamage", (const char*)u8"降低受损"}, {"vehicle.health", (const char*)u8"车身健康值"}, {"vehicle.setHealth", (const char*)u8"设置健康值"}, {"vehicle.readHealth", (const char*)u8"读取健康值"}, {"vehicle.spawnVehicle", (const char*)u8"生成载具"}, {"vehicle.noDamage", (const char*)u8"载具无伤"}, {"vehicle.autoUnflip", (const char*)u8"自动扶正"}, {"vehicle.heavy", (const char*)u8"车身加重"}, {"vehicle.watertight", (const char*)u8"载具防水"}, {"vehicle.lockSpeed", (const char*)u8"锁定车速"}, {"vehicle.targetSpeed", (const char*)u8"目标速度"}, {"vehicle.spawnAsDriver", (const char*)u8"生成后坐上驾驶位"}, {"vehicle.spawnAircraftInAir", (const char*)u8"飞机/直升机生成在空中"}, {"vehicle.spawnIdTip", (const char*)u8"提示：手输 ID 只允许当前游戏已知载具模型，避免不存在的 ID 进入创建流程导致崩溃。"}, {"vehicle.modelId", (const char*)u8"模型 ID"}, {"vehicle.spawnById", (const char*)u8"按 ID 生成"},
-            {"weapon.playerNotReady", (const char*)u8"玩家还没准备好，稍等进档后再用。"}, {"weapon.getAll", (const char*)u8"获取所有武器"}, {"weapon.dropWeapon", (const char*)u8"丢出当前武器"}, {"weapon.clearWeapons", (const char*)u8"清空武器"}, {"weapon.removeCurrent", (const char*)u8"移除当前武器"}, {"weapon.highDamage", (const char*)u8"高伤害"}, {"weapon.fastReload", (const char*)u8"快速换弹"}, {"weapon.infiniteAmmo", (const char*)u8"无限弹药"}, {"weapon.longRange", (const char*)u8"远射程"}, {"weapon.moveWhileAiming", (const char*)u8"瞄准时可移动"}, {"weapon.moveWhileFiring", (const char*)u8"开火时可移动"}, {"weapon.noSpread", (const char*)u8"零散射"}, {"weapon.rapidFire", (const char*)u8"快速连射"}, {"weapon.dualWield", (const char*)u8"双持"}, {"weapon.getWeapon", (const char*)u8"获取武器"}, {"weapon.ammo", (const char*)u8"弹药"}, {"weapon.typeId", (const char*)u8"武器类型 ID"}, {"weapon.modelId", (const char*)u8"武器模型 ID"}, {"weapon.getById", (const char*)u8"按 ID 获取"},
-            {"teleport.readCurrentValues", (const char*)u8"读取"}, {"teleport.insertCurrentCoordinates", (const char*)u8"插入当前坐标"}, {"teleport.currentCoordinates", (const char*)u8"当前坐标"}, {"teleport.quickMapTeleport", (const char*)u8"快速地图传送"}, {"teleport.allowUnderwaterLanding", (const char*)u8"允许水下落点"}, {"teleport.quickMarkerTeleport", (const char*)u8"标记点快捷传送"}, {"teleport.coordinates", (const char*)u8"坐标"}, {"teleport.toCoordinates", (const char*)u8"传送到坐标"}, {"teleport.byMapPosition", (const char*)u8"按地图位置传送"}, {"teleport.toMarker", (const char*)u8"传送到标记点"}, {"teleport.mapCenter", (const char*)u8"地图中心"}, {"teleport.moveForward5m", (const char*)u8"向前挪 5 米"}, {"teleport.customMapSize", (const char*)u8"自定义地图尺寸"}, {"teleport.customMapSizeHint", (const char*)u8"如果快速地图传送位置偏移，可以在这里调整地图宽高。默认值是 6000 x 6000。"}, {"teleport.width", (const char*)u8"宽度"}, {"teleport.height", (const char*)u8"高度"}, {"teleport.applyMapSize", (const char*)u8"应用地图尺寸"}, {"teleport.restoreDefault", (const char*)u8"恢复默认"}, {"teleport.locations", (const char*)u8"地点"}, {"teleport.locationName", (const char*)u8"地点名称"}, {"teleport.customLocation", (const char*)u8"自定义地点"}, {"teleport.locationCoordinates", (const char*)u8"地点坐标"}, {"teleport.addLocation", (const char*)u8"添加地点"},
-            {"world.time", (const char*)u8"时间"}, {"world.hour", (const char*)u8"小时"}, {"world.minute", (const char*)u8"分钟"}, {"world.syncRealTime", (const char*)u8"同步现实时间"}, {"world.weather", (const char*)u8"天气"}, {"world.lockCurrentWeather", (const char*)u8"锁住当前天气"}, {"world.gameRules", (const char*)u8"游戏规则"}, {"world.disableReplay", (const char*)u8"禁用回放"}, {"world.disableCheats", (const char*)u8"禁用作弊码"}, {"world.fasterClock", (const char*)u8"加快时钟"}, {"world.freezeTime", (const char*)u8"冻结时间"}, {"world.disableForbiddenAreaWanted", (const char*)u8"禁止通缉区域"}, {"world.freePayNSpray", (const char*)u8"免费喷漆店"}, {"world.daysPassed", (const char*)u8"经过天数"}, {"world.setDays", (const char*)u8"设置天数"}, {"world.readDays", (const char*)u8"读取天数"}, {"world.gravity", (const char*)u8"重力"}, {"world.fpsLimit", (const char*)u8"FPS 限制"}, {"world.setFps", (const char*)u8"设置 FPS"}, {"world.readFps", (const char*)u8"读取 FPS"}, {"world.gameSpeed", (const char*)u8"游戏节奏"}, {"world.multiplier", (const char*)u8"倍率"}, {"world.restoreSpeed", (const char*)u8"恢复原速"}, {"weather.sunny", (const char*)u8"晴天"}, {"weather.cloudy", (const char*)u8"多云"}, {"weather.rainy", (const char*)u8"下雨"}, {"weather.foggy", (const char*)u8"起雾"},
-            {"about.version", (const char*)u8"版本：%s"}, {"about.author", (const char*)u8"作者：%s"}, {"about.testing", (const char*)u8"测试：%s"}, {"about.techStack", (const char*)u8"技术栈：%s"}, {"about.openSourceLibs", (const char*)u8"开源库：%s"}, {"about.notice1", (const char*)u8"1. 永久免费，禁止倒卖，禁止用于商业用途。"}, {"about.notice2", (const char*)u8"2. 遇到问题可以加群或前往项目主页反馈。"}, {"about.joinGroup", (const char*)u8"加群"}, {"about.projectPage", (const char*)u8"项目主页"},
-            {"update.availableTitle", (const char*)u8"发现新版本"}, {"update.availableMessage", (const char*)u8"当前版本：%s\n最新版本：%s\n请选择更新来源。"}, {"update.openGitHub", "GitHub"}, {"update.openGTAMODX", "GTAMODX"}, {"update.details", (const char*)u8"版本检测"}, {"update.refresh", (const char*)u8"刷新检测"}, {"update.debugShowDialog", (const char*)u8"测试更新弹窗"},
-            {"status.language", (const char*)u8"语言"}, {"status.localVersion", (const char*)u8"本地：%s"}, {"status.remoteVersion", (const char*)u8"云端：%s"}, {"status.remoteUnknown", (const char*)u8"未知"},
-            {"status.checking", (const char*)u8"正在检查更新"}, {"status.upToDate", (const char*)u8"已是最新版本"}, {"status.localNewer", (const char*)u8"本地版本高于云端版本"}, {"status.remoteNewer", (const char*)u8"发现新版本"},
-            {"log.title", (const char*)u8"日志"}, {"log.copy", (const char*)u8"复制"}, {"log.counts", (const char*)u8"共 %zu 条，显示 %zu 条"}, {"log.empty", (const char*)u8"暂无日志"}
-        };
+        zh["window.title"] = (const char*)u8"XMenu 作者：%s - GTAMODX";
+        zh["tab.player"] = (const char*)u8"玩家";
+        zh["tab.vehicle"] = (const char*)u8"载具";
+        zh["tab.teleport"] = (const char*)u8"传送";
+        zh["tab.weapon"] = (const char*)u8"武器";
+        zh["tab.world"] = (const char*)u8"世界";
+        zh["tab.ped"] = (const char*)u8"行人";
+        zh["tab.scene"] = (const char*)u8"场景";
+        zh["tab.visual"] = (const char*)u8"视觉";
+        zh["tab.settings"] = (const char*)u8"设置";
+        zh["tab.about"] = (const char*)u8"关于";
+        zh["settings.interfaceLanguage"] = (const char*)u8"界面语言";
+        zh["settings.applyImmediately"] = (const char*)u8"切换后立即生效";
+        zh["status.language"] = (const char*)u8"语言";
+        UpsertLanguageInfo("zh", (const char*)u8"简体中文", "");
+    }
 
-        for (const auto& item : fallback) {
-            zh[item.first] = item.second;
+    const std::string& CodeForLanguage(I18n::Language language) {
+        static const std::string zh = "zh";
+        static const std::string en = "en";
+        static const std::string jp = "jp";
+        static const std::string ru = "ru";
+
+        switch (language) {
+        case I18n::Language::En: return en;
+        case I18n::Language::Jp: return jp;
+        case I18n::Language::Ru: return ru;
+        case I18n::Language::Zh:
+        default: return zh;
         }
     }
 
-    void TryLoadAllFrom(const std::string& baseDir) {
-        LoadDictionary(I18n::Language::Zh, (baseDir + "zh.json").c_str());
-        LoadDictionary(I18n::Language::En, (baseDir + "en.json").c_str());
-        LoadDictionary(I18n::Language::Jp, (baseDir + "jp.json").c_str());
-        LoadDictionary(I18n::Language::Ru, (baseDir + "ru.json").c_str());
+    const char* Lookup(const std::string& languageCode, const char* key, int depth = 0) {
+        if (depth > 4) return nullptr;
+
+        const auto dictionary = dictionaries.find(languageCode);
+        if (dictionary != dictionaries.end()) {
+            const auto translated = dictionary->second.find(key);
+            if (translated != dictionary->second.end()) return translated->second.c_str();
+        }
+
+        if (!fallbackLanguageCode.empty() && fallbackLanguageCode != languageCode) {
+            if (const char* translated = Lookup(fallbackLanguageCode, key, depth + 1)) return translated;
+        }
+
+        const auto fallback = fallbacks.find(languageCode);
+        if (fallback != fallbacks.end() && !fallback->second.empty() && fallback->second != languageCode) {
+            if (const char* translated = Lookup(fallback->second, key, depth + 1)) return translated;
+        }
+
+        if (languageCode != "zh") {
+            if (const char* translated = Lookup("zh", key, depth + 1)) return translated;
+        }
+
+        return nullptr;
     }
 }
 
 namespace I18n {
     void Init() {
         Log::Info("开始初始化 i18n 系统...");
-        
-        for (Dictionary& dictionary : dictionaries) {
-            dictionary.clear();
+
+        dictionaries.clear();
+        fallbacks.clear();
+        availableLanguages.clear();
+
+        const std::string baseDir = AsiDirectory();
+        bool loadedFromPackagedData = false;
+        if (!baseDir.empty()) {
+            loadedFromPackagedData = ScanLanguageBase(baseDir + "XMenu\\data\\i18n\\");
+            if (!loadedFromPackagedData) {
+                ScanLanguageBase(baseDir + "XMenu\\i18n\\");
+                ScanLanguageBase(baseDir + "i18n\\");
+            }
         }
-
-        // 首先尝试从资源加载
-        Log::Info("尝试从DLL资源加载语言文件...");
-        bool loadedFromResource = true;
-        loadedFromResource &= LoadDictionaryFromResource(Language::Zh, IDR_I18N_ZH);
-        loadedFromResource &= LoadDictionaryFromResource(Language::En, IDR_I18N_EN);
-        loadedFromResource &= LoadDictionaryFromResource(Language::Jp, IDR_I18N_JP);
-        loadedFromResource &= LoadDictionaryFromResource(Language::Ru, IDR_I18N_RU);
-
-        if (!loadedFromResource) {
-            Log::Warn("从资源加载i18n失败，尝试从文件系统加载");
-            // 如果资源加载失败，回退到文件系统
-            // 尝试多个可能的路径
-            TryLoadAllFrom("data\\i18n\\");
-            TryLoadAllFrom("XMenu\\data\\i18n\\");
-            TryLoadAllFrom("src\\data\\i18n\\");
-            
-            // 获取当前模块所在目录
-            char modulePath[MAX_PATH];
-            HMODULE hModule = nullptr;
-            GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                              (LPCSTR)&Init, &hModule);
-            if (hModule) {
-                GetModuleFileNameA(hModule, modulePath, MAX_PATH);
-                std::string moduleDir(modulePath);
-                size_t lastSlash = moduleDir.find_last_of("\\/");
-                if (lastSlash != std::string::npos) {
-                    moduleDir = moduleDir.substr(0, lastSlash + 1);
-                    Log::Info(std::string("尝试从DLL目录加载: ") + moduleDir + "data\\i18n\\");
-                    TryLoadAllFrom((moduleDir + "data\\i18n\\").c_str());
-                }
+        if (!loadedFromPackagedData) {
+            if (!ScanLanguageBase("XMenu\\data\\i18n\\")) {
+                ScanLanguageBase("XMenu\\i18n\\");
+                ScanLanguageBase("src\\data\\i18n\\");
             }
         }
 
         LoadFallbackZh();
-        
-        // 输出各语言字典的状态
-        Log::Info(std::string("i18n 初始化完成 - 中文: ") + std::to_string(dictionaries[LanguageIndex(Language::Zh)].size()) + " 词条, " +
-                  "英文: " + std::to_string(dictionaries[LanguageIndex(Language::En)].size()) + " 词条, " +
-                  "日文: " + std::to_string(dictionaries[LanguageIndex(Language::Jp)].size()) + " 词条, " +
-                  "俄文: " + std::to_string(dictionaries[LanguageIndex(Language::Ru)].size()) + " 词条");
+        if (!FindLanguageInfo(currentLanguageCode)) {
+            currentLanguageCode = "zh";
+        }
+
+        Log::Info(std::string("i18n 初始化完成，语言数=") + std::to_string(availableLanguages.size()) + "，当前语言=" + currentLanguageCode);
     }
 
     void SetLanguage(Language language) {
-        currentLanguage = language;
-        Log::Info(std::string("语言已切换为: ") + GetLanguageName(language));
+        SetLanguage(CodeForLanguage(language));
+    }
+
+    void SetLanguage(const std::string& code) {
+        if (!FindLanguageInfo(code)) {
+            Log::Warn(std::string("语言不存在: ") + code);
+            return;
+        }
+        currentLanguageCode = code;
+        Log::Info(std::string("语言已切换为: ") + GetLanguageName(code));
+    }
+
+    void SetFallbackLanguage(const std::string& code) {
+        if (!FindLanguageInfo(code)) {
+            Log::Warn(std::string("回退语言不存在: ") + code);
+            return;
+        }
+        fallbackLanguageCode = code;
+        Log::Info(std::string("缺失翻译回退语言已切换为: ") + GetLanguageName(code));
+    }
+
+    std::string GetFallbackLanguageCode() {
+        return fallbackLanguageCode;
     }
 
     Language GetLanguage() {
-        return currentLanguage;
+        if (currentLanguageCode == "en") return Language::En;
+        if (currentLanguageCode == "jp") return Language::Jp;
+        if (currentLanguageCode == "ru") return Language::Ru;
+        return Language::Zh;
+    }
+
+    std::string GetCurrentLanguageCode() {
+        return currentLanguageCode;
+    }
+
+    const std::vector<LanguageInfo>& GetAvailableLanguages() {
+        return availableLanguages;
     }
 
     const char* GetLanguageCode(Language language) {
-        switch (language) {
-        case Language::En: return "en";
-        case Language::Jp: return "jp";
-        case Language::Ru: return "ru";
-        case Language::Zh:
-        default: return "zh";
-        }
+        return CodeForLanguage(language).c_str();
     }
 
     const char* GetLanguageName(Language language) {
-        switch (language) {
-        case Language::En: return "English";
-        case Language::Jp: return (const char*)u8"日本語";
-        case Language::Ru: return (const char*)u8"Русский";
-        case Language::Zh:
-        default: return (const char*)u8"简体中文";
+        return GetLanguageName(CodeForLanguage(language));
+    }
+
+    const char* GetLanguageName(const std::string& code) {
+        const LanguageInfo* language = nullptr;
+        for (const LanguageInfo& item : availableLanguages) {
+            if (item.code == code) {
+                language = &item;
+                break;
+            }
         }
+        return language ? language->name.c_str() : code.c_str();
     }
 
     const char* T(Language language, const char* key) {
-        const Dictionary& dictionary = dictionaries[LanguageIndex(language)];
-        const auto translated = dictionary.find(key);
-        if (translated != dictionary.end()) {
-            return translated->second.c_str();
-        }
+        return T(CodeForLanguage(language), key);
+    }
 
-        const Dictionary& zh = dictionaries[LanguageIndex(Language::Zh)];
-        const auto fallback = zh.find(key);
-        if (fallback != zh.end()) {
-            return fallback->second.c_str();
-        }
-
+    const char* T(const std::string& languageCode, const char* key) {
+        if (const char* translated = Lookup(languageCode, key)) return translated;
         return key;
     }
 
     const char* T(const char* key) {
-        const Dictionary& current = dictionaries[LanguageIndex(currentLanguage)];
-        const auto translated = current.find(key);
-        if (translated != current.end()) {
-            return translated->second.c_str();
-        }
+        if (const char* translated = Lookup(currentLanguageCode, key)) return translated;
 
-        const Dictionary& zh = dictionaries[LanguageIndex(Language::Zh)];
-        const auto fallback = zh.find(key);
-        if (fallback != zh.end()) {
-            return fallback->second.c_str();
-        }
-
-        // 如果找不到翻译，记录警告
         static std::unordered_map<std::string, bool> loggedKeys;
+        static std::size_t loggedCount = 0;
+        constexpr std::size_t maxLoggedMissingKeys = 32;
         if (loggedKeys.find(key) == loggedKeys.end()) {
-            Log::Warn(std::string("未找到翻译键: ") + key + "，当前语言: " + GetLanguageName(currentLanguage));
             loggedKeys[key] = true;
+            if (loggedCount < maxLoggedMissingKeys) {
+                ++loggedCount;
+                Log::Warn(std::string("未找到翻译键: ") + key + "，当前语言: " + currentLanguageCode);
+                if (loggedCount == maxLoggedMissingKeys) {
+                    Log::Warn("未找到翻译键日志达到上限，后续缺失项将静默回退为 key");
+                }
+            }
         }
         return key;
     }

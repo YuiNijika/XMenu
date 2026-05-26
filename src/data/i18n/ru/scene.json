@@ -1,0 +1,21 @@
+{
+  "scene.animation": "Анимация",
+  "scene.animGroup": "Группа анимации",
+  "scene.animName": "Имя анимации",
+  "scene.loop": "Цикл",
+  "scene.playAnim": "Запустить анимацию",
+  "scene.stopAnim": "Остановить анимацию",
+  "scene.particle": "Частицы",
+  "scene.particleName": "Имя эффекта частиц",
+  "scene.spawnParticle": "Создать частицы",
+  "scene.cutscene": "Катсцена",
+  "scene.cutsceneName": "Имя катсцены",
+  "scene.startCutscene": "Запустить катсцену",
+  "scene.stopCutscene": "Остановить катсцену",
+  "scene.cutsceneRunning": "Катсцена выполняется",
+  "scene.mission": "Статус миссии",
+  "scene.noListData": "Нет доступных данных списка.",
+  "scene.animationListHint": "Нажмите элемент списка, чтобы заполнить группу/имя анимации и сразу запустить её.",
+  "scene.particleListHint": "Нажмите элемент списка, чтобы заполнить имя эффекта и сразу создать его рядом с игроком.",
+  "scene.cutsceneListHint": "Нажмите элемент списка, чтобы заполнить имя катсцены и сразу запустить её."
+}

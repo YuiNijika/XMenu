@@ -76,6 +76,10 @@ namespace {
 }
 
 namespace Pages::Teleport {
+    void Process() {
+        Controllers::Teleport::Process();
+    }
+
     void Draw() {
         static char coordInput[128] = "0, 0, 10";
         static char currentCoordText[128] = "";

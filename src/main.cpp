@@ -2,7 +2,7 @@
  * XMenu
  * 作者：鼠子(YuiNijika)
  * 测试：枫林、狂风晨、IIScar
- * 版本：v0.0.1-alpha2
+ * 版本：v0.0.1-alpha3
  * 网站：https://gtamodx.com/mods/xmenu
  * GitHub：https://github.com/YuiNijika/XMenu
  * QQ群：https://gtamodx.com/qqun
@@ -25,7 +25,7 @@
 #include "CHud.h"
 
 extern const bool XMENU_DEBUG_MODE = false;
-const char* XMENU_VERSION = "v0.0.1-alpha2";
+const char* XMENU_VERSION = "v0.0.1-alpha3";
 const char* XMENU_AUTHOR = "鼠子(YuiNijika)";
 const char* XMENU_AUTHOR_TEST = "枫林、狂风晨、IIScar";
 const char* XMENU_URL = "https://gtamodx.com/mods/xmenu";
@@ -39,7 +39,7 @@ namespace {
     bool xMenuActive = false;
 
     void ShowD3DHookFailedMessage() {
-#ifdef GTASA
+#ifdef GTASA 
         CHud::SetHelpMessage("XMenu: D3D Hook 初始化失败, 菜单渲染不可用", true, false, false);
 #elif GTAVC
         static const wchar_t message[] = L"XMenu: D3D9 Hook 初始化失败, 请安装 D3D8to9 wrapper";

@@ -263,6 +263,9 @@ namespace Controllers::Vehicle {
         CVehicle* vehicle = GetCurrentVehicle();
         ProcessNoDamage(vehicle);
 
+        GameLogic::SetTrafficDensity(MenuState::VehicleTrafficClearRadius / 100.0f);
+        GameLogic::SetFlyingCars(MenuState::VehicleFlyingCars);
+
         if (!vehicle) {
             ProcessVehicleEffects(nullptr);
             return;
@@ -273,6 +276,7 @@ namespace Controllers::Vehicle {
         }
 
         GameLogic::SetVehicleSpeedLock(vehicle, MenuState::VehicleSpeedLock, MenuState::VehicleSpeed);
+        GameLogic::ProcessAutoDrive(vehicle, MenuState::VehicleAutoDrive, MenuState::VehicleAutoDriveSpeed);
         ProcessVehicleEffects(vehicle);
     }
 
@@ -286,6 +290,35 @@ namespace Controllers::Vehicle {
 
     void Stop() {
         GameLogic::StopVehicle(GetCurrentVehicle());
+    }
+
+    void ApplyAppearance() {
+        GameLogic::VehicleAppearanceOptions options;
+        options.primaryColor = MenuState::VehicleColorPrimary;
+        options.secondaryColor = MenuState::VehicleColorSecondary;
+        options.paintjob = MenuState::VehiclePaintjob;
+        options.modId = MenuState::VehicleModId;
+        GameLogic::ApplyVehicleAppearance(GetCurrentVehicle(), options);
+    }
+
+    void OpenDoor() {
+        GameLogic::OpenVehicleDoor(GetCurrentVehicle(), MenuState::VehicleDoorIndex);
+    }
+
+    void PopDoor() {
+        GameLogic::PopVehicleDoor(GetCurrentVehicle(), MenuState::VehicleDoorIndex);
+    }
+
+    void WarpToSeat() {
+        GameLogic::WarpPlayerToVehicleSeat(GetCurrentVehicle(), MenuState::VehicleSeatIndex);
+    }
+
+    void SetTrafficDensity(float density) {
+        GameLogic::SetTrafficDensity(density);
+    }
+
+    void SetFlyingCars(bool enable) {
+        GameLogic::SetFlyingCars(enable);
     }
 
     void SetEngine(bool enable) {

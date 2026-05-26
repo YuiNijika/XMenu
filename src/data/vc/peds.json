@@ -1,0 +1,468 @@
+{
+  "peds": [
+    {
+      "category": "common",
+      "entries": [
+        {
+          "name": "Tommy",
+          "id": 0
+        },
+        {
+          "name": "Swat",
+          "id": 2
+        },
+        {
+          "name": "FBI",
+          "id": 3
+        },
+        {
+          "name": "Army",
+          "id": 4
+        },
+        {
+          "name": "Medic",
+          "id": 5
+        },
+        {
+          "name": "Fireman",
+          "id": 6
+        },
+        {
+          "name": "Male 1",
+          "id": 7
+        }
+      ]
+    },
+    {
+      "category": "misc",
+      "entries": [
+        {
+          "name": "HFYST",
+          "id": 9
+        },
+        {
+          "name": "Bum 1",
+          "id": 10
+        },
+        {
+          "name": "Greaser",
+          "id": 11
+        },
+        {
+          "name": "HMOST",
+          "id": 12
+        },
+        {
+          "name": "HFYRI",
+          "id": 13
+        },
+        {
+          "name": "HFORI",
+          "id": 14
+        },
+        {
+          "name": "HMYRI",
+          "id": 15
+        },
+        {
+          "name": "HMORI",
+          "id": 16
+        },
+        {
+          "name": "HFYBU",
+          "id": 21
+        },
+        {
+          "name": "HFYMD",
+          "id": 22
+        },
+        {
+          "name": "HFYCG",
+          "id": 23
+        },
+        {
+          "name": "Bum 2",
+          "id": 25
+        },
+        {
+          "name": "Bum 3",
+          "id": 26
+        },
+        {
+          "name": "HMYAP",
+          "id": 27
+        },
+        {
+          "name": "BMODK",
+          "id": 29
+        },
+        {
+          "name": "Criminal 1",
+          "id": 30
+        },
+        {
+          "name": "BFYST",
+          "id": 31
+        },
+        {
+          "name": "BFOST",
+          "id": 32
+        },
+        {
+          "name": "BMYST",
+          "id": 33
+        },
+        {
+          "name": "BMOST",
+          "id": 34
+        },
+        {
+          "name": "BFYRI",
+          "id": 35
+        },
+        {
+          "name": "BFORI",
+          "id": 36
+        },
+        {
+          "name": "BMYRI",
+          "id": 37
+        },
+        {
+          "name": "BMYBU",
+          "id": 42
+        },
+        {
+          "name": "Bum 4",
+          "id": 44
+        },
+        {
+          "name": "Bum 5",
+          "id": 45
+        },
+        {
+          "name": "BMYPI",
+          "id": 46
+        },
+        {
+          "name": "BMYBB",
+          "id": 47
+        },
+        {
+          "name": "Punk 1",
+          "id": 48
+        },
+        {
+          "name": "WFOST",
+          "id": 50
+        },
+        {
+          "name": "Punk 2",
+          "id": 51
+        },
+        {
+          "name": "WMOST",
+          "id": 52
+        },
+        {
+          "name": "WFYRI",
+          "id": 53
+        },
+        {
+          "name": "WFORI",
+          "id": 54
+        },
+        {
+          "name": "WMYRI",
+          "id": 55
+        },
+        {
+          "name": "WMORI",
+          "id": 56
+        },
+        {
+          "name": "Construction Worker",
+          "id": 61
+        },
+        {
+          "name": "WFYBU",
+          "id": 67
+        },
+        {
+          "name": "WMYBU",
+          "id": 68
+        },
+        {
+          "name": "WMOBU",
+          "id": 69
+        },
+        {
+          "name": "WFOTR",
+          "id": 71
+        },
+        {
+          "name": "WMOTR",
+          "id": 72
+        },
+        {
+          "name": "WMYPI",
+          "id": 73
+        },
+        {
+          "name": "WMOCA",
+          "id": 74
+        },
+        {
+          "name": "WFYJG",
+          "id": 75
+        },
+        {
+          "name": "Skater Guy 1",
+          "id": 76
+        },
+        {
+          "name": "Skater Guy 2",
+          "id": 78
+        },
+        {
+          "name": "Young Woman Shopper",
+          "id": 79
+        },
+        {
+          "name": "Old Woman Shopper",
+          "id": 80
+        },
+        {
+          "name": "Tourist 1",
+          "id": 81
+        },
+        {
+          "name": "Tourist 2",
+          "id": 82
+        }
+      ]
+    },
+    {
+      "category": "gangs",
+      "entries": [
+        {
+          "name": "Cuban 1",
+          "id": 83
+        },
+        {
+          "name": "Cuban 2",
+          "id": 84
+        },
+        {
+          "name": "Haitian 1",
+          "id": 85
+        },
+        {
+          "name": "Haitian 2",
+          "id": 86
+        },
+        {
+          "name": "Sharks 1",
+          "id": 87
+        },
+        {
+          "name": "Sharks 2",
+          "id": 88
+        },
+        {
+          "name": "Diaz 1",
+          "id": 89
+        },
+        {
+          "name": "Patrol Invest Group 1",
+          "id": 91
+        },
+        {
+          "name": "Patrol Invest Group 2",
+          "id": 92
+        },
+        {
+          "name": "Biker 1",
+          "id": 93
+        },
+        {
+          "name": "Biker 2",
+          "id": 94
+        },
+        {
+          "name": "Vercetti 1",
+          "id": 95
+        },
+        {
+          "name": "Vercetti 2",
+          "id": 96
+        }
+      ]
+    },
+    {
+      "category": "prostitute",
+      "entries": [
+        {
+          "name": "Prostitute 1",
+          "id": 24
+        },
+        {
+          "name": "Prostitute 2",
+          "id": 43
+        },
+        {
+          "name": "Prostitute 3",
+          "id": 49
+        },
+        {
+          "name": "Prostitute 4",
+          "id": 70
+        },
+        {
+          "name": "Prostitute 5",
+          "id": 105
+        },
+        {
+          "name": "Prostitute 6",
+          "id": 106
+        }
+      ]
+    },
+    {
+      "category": "golfer",
+      "entries": [
+        {
+          "name": "Golfer 1",
+          "id": 62
+        },
+        {
+          "name": "Golfer 2",
+          "id": 63
+        },
+        {
+          "name": "Golfer 3",
+          "id": 64
+        }
+      ]
+    },
+    {
+      "category": "cop",
+      "entries": [
+        {
+          "name": "Default Cop",
+          "id": 1
+        },
+        {
+          "name": "Undercover Cop 1",
+          "id": 97
+        },
+        {
+          "name": "Undercover Cop 2",
+          "id": 98
+        },
+        {
+          "name": "Undercover Cop 3",
+          "id": 99
+        },
+        {
+          "name": "Undercover Cop 4",
+          "id": 100
+        },
+        {
+          "name": "Undercover Cop 5",
+          "id": 101
+        },
+        {
+          "name": "Undercover Cop 6",
+          "id": 102
+        },
+        {
+          "name": "Undercover Cop 7",
+          "id": 103
+        },
+        {
+          "name": "Undercover Cop 8",
+          "id": 104
+        }
+      ]
+    },
+    {
+      "category": "beach",
+      "entries": [
+        {
+          "name": "Beach Lady 1",
+          "id": 17
+        },
+        {
+          "name": "Fat Beach Lady",
+          "id": 18
+        },
+        {
+          "name": "Beach Guy 1",
+          "id": 19
+        },
+        {
+          "name": "Fat Beach Guy",
+          "id": 20
+        },
+        {
+          "name": "Beach Lady 2",
+          "id": 38
+        },
+        {
+          "name": "Beach Guy 2",
+          "id": 39
+        },
+        {
+          "name": "Beach Lady 3",
+          "id": 40
+        },
+        {
+          "name": "Beach Guy 3",
+          "id": 41
+        },
+        {
+          "name": "Beach Lady 4",
+          "id": 57
+        },
+        {
+          "name": "Beach Guy 4",
+          "id": 58
+        },
+        {
+          "name": "Beach Lady 5",
+          "id": 59
+        },
+        {
+          "name": "Beach Guy 5",
+          "id": 60
+        },
+        {
+          "name": "Beach Lady 6",
+          "id": 65
+        },
+        {
+          "name": "Beach Guy 6",
+          "id": 66
+        },
+        {
+          "name": "Beach Lady 7",
+          "id": 77
+        }
+      ]
+    },
+    {
+      "category": "driver",
+      "entries": [
+        {
+          "name": "Taxi Driver 1",
+          "id": 28
+        },
+        {
+          "name": "Taxi Driver 2",
+          "id": 74
+        }
+      ]
+    }
+  ]
+}

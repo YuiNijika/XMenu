@@ -1,0 +1,357 @@
+{
+  "particles": [
+    {
+      "category": "scene.particle.category.sa.explosion",
+      "entries": [
+        {
+          "name": "scene.particle.sa.explosion.barrel_explosion",
+          "effect": "explosion_barrel"
+        },
+        {
+          "name": "scene.particle.sa.explosion.crate_explosion",
+          "effect": "explosion_crate"
+        },
+        {
+          "name": "scene.particle.sa.explosion.door_explosion",
+          "effect": "explosion_door"
+        },
+        {
+          "name": "scene.particle.sa.explosion.fuel_car_explosion",
+          "effect": "explosion_fuel_car"
+        },
+        {
+          "name": "scene.particle.sa.explosion.large_explosion",
+          "effect": "explosion_large"
+        },
+        {
+          "name": "scene.particle.sa.explosion.medium_explosion",
+          "effect": "explosion_medium"
+        },
+        {
+          "name": "scene.particle.sa.explosion.molotov_explosion",
+          "effect": "explosion_molotov"
+        },
+        {
+          "name": "scene.particle.sa.explosion.small_explosion",
+          "effect": "explosion_small"
+        },
+        {
+          "name": "scene.particle.sa.explosion.tiny_explosion",
+          "effect": "explosion_tiny"
+        }
+      ]
+    },
+    {
+      "category": "scene.particle.category.sa.fire",
+      "entries": [
+        {
+          "name": "scene.particle.sa.fire.extinguisher",
+          "effect": "extinguisher"
+        },
+        {
+          "name": "scene.particle.sa.fire.fire",
+          "effect": "fire"
+        },
+        {
+          "name": "scene.particle.sa.fire.fire_bike",
+          "effect": "fire_bike"
+        },
+        {
+          "name": "scene.particle.sa.fire.fire_car",
+          "effect": "fire_car"
+        },
+        {
+          "name": "scene.particle.sa.fire.fire_large",
+          "effect": "fire_large"
+        },
+        {
+          "name": "scene.particle.sa.fire.fire_med",
+          "effect": "fire_med"
+        },
+        {
+          "name": "scene.particle.sa.fire.flame",
+          "effect": "flame"
+        },
+        {
+          "name": "scene.particle.sa.fire.flamethrower",
+          "effect": "flamethrower"
+        },
+        {
+          "name": "scene.particle.sa.fire.molotov_flame",
+          "effect": "molotov_flame"
+        },
+        {
+          "name": "scene.particle.sa.fire.prt_spark",
+          "effect": "prt_spark"
+        },
+        {
+          "name": "scene.particle.sa.fire.prt_spark2",
+          "effect": "prt_spark2"
+        }
+      ]
+    },
+    {
+      "category": "scene.particle.category.sa.smoke",
+      "entries": [
+        {
+          "name": "scene.particle.sa.smoke.cigarette_smoke",
+          "effect": "cigarette_smoke"
+        },
+        {
+          "name": "scene.particle.sa.smoke.collision_smoke",
+          "effect": "prt_collisionsmoke"
+        },
+        {
+          "name": "scene.particle.sa.smoke.factory_smoke",
+          "effect": "ws_factorysmoke"
+        },
+        {
+          "name": "scene.particle.sa.smoke.gunsmoke",
+          "effect": "gunsmoke"
+        },
+        {
+          "name": "scene.particle.sa.smoke.riot_smoke",
+          "effect": "riot_smoke"
+        },
+        {
+          "name": "scene.particle.sa.smoke.smoke_1",
+          "effect": "smoke30lit"
+        },
+        {
+          "name": "scene.particle.sa.smoke.smoke_2",
+          "effect": "smoke30m"
+        },
+        {
+          "name": "scene.particle.sa.smoke.smoke_3",
+          "effect": "smoke50lit"
+        },
+        {
+          "name": "scene.particle.sa.smoke.smoke_4",
+          "effect": "prt_smokeII_3_expand"
+        },
+        {
+          "name": "scene.particle.sa.smoke.smoke_huge",
+          "effect": "prt_smoke_huge"
+        },
+        {
+          "name": "scene.particle.sa.smoke.smoke_flare",
+          "effect": "smoke_flare"
+        }
+      ]
+    },
+    {
+      "category": "scene.particle.category.sa.water",
+      "entries": [
+        {
+          "name": "scene.particle.sa.water.prt_boatsplash",
+          "effect": "prt_boatsplash"
+        },
+        {
+          "name": "scene.particle.sa.water.prt_splash",
+          "effect": "prt_splash"
+        },
+        {
+          "name": "scene.particle.sa.water.prt_watersplash",
+          "effect": "prt_watersplash"
+        },
+        {
+          "name": "scene.particle.sa.water.water_big_splsh",
+          "effect": "water_splsh_big"
+        },
+        {
+          "name": "scene.particle.sa.water.water_fnt_tme",
+          "effect": "water_fnt_tme"
+        },
+        {
+          "name": "scene.particle.sa.water.water_fountain",
+          "effect": "water_fountain"
+        },
+        {
+          "name": "scene.particle.sa.water.water_hydrant",
+          "effect": "water_hydrant"
+        },
+        {
+          "name": "scene.particle.sa.water.water_ripples",
+          "effect": "water_ripples"
+        },
+        {
+          "name": "scene.particle.sa.water.water_sml_splsh",
+          "effect": "water_splsh_sml"
+        },
+        {
+          "name": "scene.particle.sa.water.water_speed",
+          "effect": "water_speed"
+        },
+        {
+          "name": "scene.particle.sa.water.water_splash",
+          "effect": "water_splash"
+        },
+        {
+          "name": "scene.particle.sa.water.water_swim",
+          "effect": "water_swim"
+        },
+        {
+          "name": "scene.particle.sa.water.waterfall_end",
+          "effect": "waterfall_end"
+        }
+      ]
+    },
+    {
+      "category": "scene.particle.category.sa.misc",
+      "entries": [
+        {
+          "name": "scene.particle.sa.misc.blood_heli",
+          "effect": "blood_heli"
+        },
+        {
+          "name": "scene.particle.sa.misc.boat_prop",
+          "effect": "boat_prop"
+        },
+        {
+          "name": "scene.particle.sa.misc.camflash",
+          "effect": "camflash"
+        },
+        {
+          "name": "scene.particle.sa.misc.carwash_spray",
+          "effect": "carwashspray"
+        },
+        {
+          "name": "scene.particle.sa.misc.cement",
+          "effect": "cement"
+        },
+        {
+          "name": "scene.particle.sa.misc.cloudfast",
+          "effect": "cloudfast"
+        },
+        {
+          "name": "scene.particle.sa.misc.coke_puff",
+          "effect": "coke_puff"
+        },
+        {
+          "name": "scene.particle.sa.misc.coke_trail",
+          "effect": "coke_trail"
+        },
+        {
+          "name": "scene.particle.sa.misc.exhale",
+          "effect": "exhale"
+        },
+        {
+          "name": "scene.particle.sa.misc.gunflash",
+          "effect": "gunflash"
+        },
+        {
+          "name": "scene.particle.sa.misc.heli_dust",
+          "effect": "heli_dust"
+        },
+        {
+          "name": "scene.particle.sa.misc.insects",
+          "effect": "insects"
+        },
+        {
+          "name": "scene.particle.sa.misc.jetpack",
+          "effect": "jetpack"
+        },
+        {
+          "name": "scene.particle.sa.misc.jetthrust",
+          "effect": "jetthrust"
+        },
+        {
+          "name": "scene.particle.sa.misc.nitro",
+          "effect": "nitro"
+        },
+        {
+          "name": "scene.particle.sa.misc.overheat_car",
+          "effect": "overheat_car"
+        },
+        {
+          "name": "scene.particle.sa.misc.overheat_electric_car",
+          "effect": "overheat_car_electric"
+        },
+        {
+          "name": "scene.particle.sa.misc.petrolcan",
+          "effect": "petrolcan"
+        },
+        {
+          "name": "scene.particle.sa.misc.prt_blood",
+          "effect": "prt_blood"
+        },
+        {
+          "name": "scene.particle.sa.misc.prt_bubbles",
+          "effect": "prt_bubbles"
+        },
+        {
+          "name": "scene.particle.sa.misc.prt_cardebris",
+          "effect": "prt_cardebris"
+        },
+        {
+          "name": "scene.particle.sa.misc.prt_glass",
+          "effect": "prt_glass"
+        },
+        {
+          "name": "scene.particle.sa.misc.prt_gunshell",
+          "effect": "prt_gunshell"
+        },
+        {
+          "name": "scene.particle.sa.misc.prt_sand",
+          "effect": "prt_sand"
+        },
+        {
+          "name": "scene.particle.sa.misc.prt_sand2",
+          "effect": "prt_sand2"
+        },
+        {
+          "name": "scene.particle.sa.misc.prt_wake",
+          "effect": "prt_wake"
+        },
+        {
+          "name": "scene.particle.sa.misc.prt_wheeldirt",
+          "effect": "prt_wheeldirt"
+        },
+        {
+          "name": "scene.particle.sa.misc.puke",
+          "effect": "puke"
+        },
+        {
+          "name": "scene.particle.sa.misc.shootlight",
+          "effect": "shootlight"
+        },
+        {
+          "name": "scene.particle.sa.misc.spraycan",
+          "effect": "spraycan"
+        },
+        {
+          "name": "scene.particle.sa.misc.tank_fire",
+          "effect": "tank_fire"
+        },
+        {
+          "name": "scene.particle.sa.misc.teargas",
+          "effect": "teargas"
+        },
+        {
+          "name": "scene.particle.sa.misc.teargasad",
+          "effect": "teargasAD"
+        },
+        {
+          "name": "scene.particle.sa.misc.tree_hit_fir",
+          "effect": "tree_hit_fir"
+        },
+        {
+          "name": "scene.particle.sa.misc.tree_hit_palm",
+          "effect": "tree_hit_palm"
+        },
+        {
+          "name": "scene.particle.sa.misc.vent",
+          "effect": "vent"
+        },
+        {
+          "name": "scene.particle.sa.misc.vent2",
+          "effect": "vent2"
+        },
+        {
+          "name": "scene.particle.sa.misc.wallbust",
+          "effect": "wallbust"
+        }
+      ]
+    }
+  ]
+}

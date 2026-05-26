@@ -9,6 +9,7 @@ namespace {
     std::vector<DataManager::LocationData> cachedLocations;
     std::vector<DataManager::WeaponData> cachedWeapons;
     std::vector<DataManager::VehicleData> cachedVehicles;
+    std::vector<DataManager::PedData> cachedPeds;
     bool dataInitialized = false;
     std::mutex dataMutex;
 
@@ -32,6 +33,7 @@ void InitData() {
     cachedLocations.insert(cachedLocations.end(), customLocations.begin(), customLocations.end());
     cachedWeapons = DataManager::LoadWeapons();
     cachedVehicles = DataManager::LoadVehicles();
+    cachedPeds = DataManager::LoadPeds();
     dataInitialized = true;
 }
 
@@ -74,6 +76,11 @@ bool AddCustomLocation(const std::string& name, float x, float y, float z, int i
 VehicleTable GetVehicles() {
     if (!dataInitialized) InitData();
     return {&cachedVehicles, cachedVehicles.size()};
+}
+
+PedTable GetPeds() {
+    if (!dataInitialized) InitData();
+    return {&cachedPeds, cachedPeds.size()};
 }
 
 bool IsKnownVehicleModel(unsigned int model) {

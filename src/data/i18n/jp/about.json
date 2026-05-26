@@ -1,0 +1,11 @@
+{
+  "about.version": "バージョン：%s",
+  "about.author": "作者：%s",
+  "about.testing": "テスト：%s",
+  "about.techStack": "技術スタック：%s",
+  "about.openSourceLibs": "オープンソースライブラリ：%s",
+  "about.notice1": "1. 永久無料。転売および商用利用は禁止です。",
+  "about.notice2": "2. 問題がある場合はグループに参加するか、プロジェクトページで報告してください。",
+  "about.joinGroup": "グループ参加",
+  "about.projectPage": "プロジェクトページ"
+}

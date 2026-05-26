@@ -9,6 +9,10 @@ public:
     static void Shutdown();
     static void SetMenuVisible(bool visible);
     static bool IsMenuVisible();
+    static void SetBackgroundInputActive(bool active);
+    static bool IsBackgroundInputActive();
+    static void SetBackgroundRenderActive(bool active);
+    static bool IsBackgroundRenderActive();
     static void ToggleMenu();
     static void ProcessMouse();
     static void MaintainInputState();
@@ -32,6 +36,8 @@ private:
     static bool isInitialized;
     static bool hookInstalled;
     static bool initFailed;
+    static bool backgroundInputActive;
+    static bool backgroundRenderActive;
     static LPDIRECT3DDEVICE9 device;
     static const char* initStatus;
     static std::function<void()> renderCallback;

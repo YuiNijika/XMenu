@@ -1,6 +1,9 @@
 #include "AppConfig.h"
+#include "game/Runtime.h"
+#include "ui/MenuState.h"
 #include "utils/JsonLoader.h"
 #include "utils/Log.h"
+#include "utils/I18n.h"
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
@@ -20,9 +23,85 @@ namespace {
     constexpr const char* DefaultMenuKey = "M";
 
     std::string menuKeyName = DefaultMenuKey;
+    std::string fallbackLanguageCode = "zh";
     AppConfig::Hotkey menuHotkey;
     AppConfig::UpdateCache updateCache;
     std::vector<DataManager::LocationData> customLocations;
+    std::vector<AppConfig::ActionHotkey> actionHotkeys;
+    std::unordered_map<std::string, bool> persistentEnabled;
+    std::unordered_map<std::string, bool> persistentValues;
+    bool syncingPersistentState = false;
+    ULONGLONG persistentSyncReadyTick = 0;
+    ULONGLONG lastPersistentSyncTick = 0;
+    constexpr ULONGLONG PersistentStartupDelayMs = 15000;
+    constexpr ULONGLONG PersistentWriteCooldownMs = 5000;
+
+    struct PersistentStateBinding {
+        const char* id;
+        const char* name;
+        bool* value;
+        bool defaultValue;
+    };
+
+    const std::vector<PersistentStateBinding>& PersistentStateBindings() {
+        static const std::vector<PersistentStateBinding> bindings = {
+            {"player.godMode", "player.godMode", &MenuState::GodMode, false},
+            {"player.autoHeal", "player.autoHeal", &MenuState::AutoHeal, false},
+            {"player.hardMode", "player.hardMode", &MenuState::HardMode, false},
+            {"player.infiniteSprint", "player.infiniteSprint", &MenuState::InfiniteSprint, false},
+            {"player.respawnAtDeathPosition", "player.respawnAtDeathPosition", &MenuState::RespawnAtDeathPosition, false},
+            {"player.freezeWantedLevel", "player.freezeWantedLevel", &MenuState::FreezeWantedLevel, false},
+            {"player.keepStuff", "player.keepStuff", &MenuState::KeepStuff, false},
+            {"weapon.infiniteAmmo", "weapon.infiniteAmmo", &MenuState::InfiniteAmmo, false},
+            {"weapon.fastReload", "weapon.fastReload", &MenuState::FastReload, false},
+            {"weapon.hugeDamage", "weapon.hugeDamage", &MenuState::HugeWeaponDamage, false},
+            {"weapon.longRange", "weapon.longRange", &MenuState::LongWeaponRange, false},
+            {"weapon.rapidFire", "weapon.rapidFire", &MenuState::RapidFire, false},
+            {"weapon.dualWield", "weapon.dualWield", &MenuState::DualWield, false},
+            {"weapon.moveAim", "weapon.moveAim", &MenuState::MoveAim, false},
+            {"weapon.moveFire", "weapon.moveFire", &MenuState::MoveFire, false},
+            {"weapon.noSpread", "weapon.noSpread", &MenuState::NoSpread, false},
+            {"vehicle.noDamage", "vehicle.noDamage", &MenuState::VehicleNoDamage, false},
+            {"vehicle.autoUnflip", "vehicle.autoUnflip", &MenuState::VehicleAutoUnflip, false},
+            {"vehicle.heavy", "vehicle.heavy", &MenuState::VehicleHeavy, false},
+            {"vehicle.watertight", "vehicle.watertight", &MenuState::VehicleWatertight, false},
+            {"vehicle.lockSpeed", "vehicle.lockSpeed", &MenuState::VehicleSpeedLock, false},
+            {"vehicle.flyingCars", "vehicle.flyingCars", &MenuState::VehicleFlyingCars, false},
+            {"world.lockCurrentWeather", "world.lockCurrentWeather", &MenuState::LockWeather, false},
+            {"world.disableReplay", "world.disableReplay", &MenuState::DisableReplay, false},
+            {"world.disableCheats", "world.disableCheats", &MenuState::DisableCheats, false},
+            {"world.disableForbiddenAreaWanted", "world.disableForbiddenAreaWanted", &MenuState::ForbiddenAreaWanted, false},
+            {"world.freePayNSpray", "world.freePayNSpray", &MenuState::FreePayNSpray, false},
+            {"world.fasterClock", "world.fasterClock", &MenuState::FasterClock, false},
+            {"world.freezeTime", "world.freezeTime", &MenuState::FreezeTime, false}
+        };
+        return bindings;
+    }
+
+    const PersistentStateBinding* FindPersistentStateBinding(const std::string& id) {
+        const std::vector<PersistentStateBinding>& bindings = PersistentStateBindings();
+        for (const PersistentStateBinding& binding : bindings) {
+            if (binding.id == id) {
+                return &binding;
+            }
+        }
+        return nullptr;
+    }
+
+    std::string PersistentFeatureGroup(const char* id) {
+        const std::string value = id ? id : "";
+        const std::size_t dot = value.find('.');
+        return dot == std::string::npos ? "misc" : value.substr(0, dot);
+    }
+
+    void ResetPersistentStateToDefaults() {
+        persistentEnabled.clear();
+        persistentValues.clear();
+        for (const PersistentStateBinding& binding : PersistentStateBindings()) {
+            persistentEnabled[binding.id] = false;
+            persistentValues[binding.id] = binding.defaultValue;
+        }
+    }
 
     std::string DirectoryFromModule(HMODULE module) {
         if (!module) {
@@ -58,12 +137,53 @@ namespace {
         return DirectoryFromModule(module);
     }
 
+    bool EnsureDirectory(const std::string& path) {
+        if (path.empty()) {
+            return false;
+        }
+        if (CreateDirectoryA(path.c_str(), nullptr)) {
+            return true;
+        }
+        return GetLastError() == ERROR_ALREADY_EXISTS;
+    }
+
+    bool FileExists(const std::string& path) {
+        const DWORD attributes = GetFileAttributesA(path.c_str());
+        return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
+    }
+
+    std::string XMenuDataDirectory() {
+        const std::string directory = XMenuModuleDirectory();
+        if (!directory.empty()) {
+            return directory + "XMenu\\";
+        }
+        return "XMenu\\";
+    }
+
     std::string ConfigPath() {
+        return XMenuDataDirectory() + "config.json";
+    }
+
+    std::string LegacyConfigPath() {
         const std::string directory = XMenuModuleDirectory();
         if (!directory.empty()) {
             return directory + "XMenu.json";
         }
         return "XMenu.json";
+    }
+
+    std::string ReadConfigPath() {
+        const std::string path = ConfigPath();
+        if (FileExists(path)) {
+            return path;
+        }
+
+        const std::string legacyPath = LegacyConfigPath();
+        if (FileExists(legacyPath)) {
+            return legacyPath;
+        }
+
+        return path;
     }
 
     std::string Trim(std::string value) {
@@ -214,6 +334,10 @@ namespace {
     }
 
     std::string CanonicalHotkeyName(const AppConfig::Hotkey& hotkey) {
+        if (hotkey.key <= 0) {
+            return "None";
+        }
+
         std::vector<std::string> parts;
         if (hotkey.ctrl) {
             parts.push_back("Ctrl");
@@ -255,6 +379,13 @@ namespace {
     AppConfig::Hotkey ParseHotkey(const std::string& keyName, bool& valid) {
         AppConfig::Hotkey hotkey;
         valid = false;
+
+        const std::string normalized = Upper(Trim(keyName));
+        if (normalized.empty() || normalized == "NONE" || normalized == "DISABLED") {
+            hotkey.key = 0;
+            valid = true;
+            return hotkey;
+        }
 
         const std::vector<std::string> parts = SplitKeyExpression(keyName);
         for (const std::string& rawPart : parts) {
@@ -310,16 +441,163 @@ namespace {
 
     void ApplyMenuKey(const std::string& keyName);
 
+    struct DefaultActionHotkey {
+        const char* id;
+        const char* name;
+        const char* key;
+    };
+
+    const DefaultActionHotkey* DefaultActions(std::size_t& count) {
+        static const DefaultActionHotkey actions[] = {
+            {"teleport.marker", "action.teleport.marker", "X"},
+            {"teleport.quickMap", "action.teleport.quickMap", "Shift+Q"},
+            {"teleport.forward", "action.teleport.forward", "Shift+X"},
+            {"command.toggle", "action.command.toggle", "Ctrl+C"},
+            {"overlay.toggle", "action.overlay.toggle", "F7"},
+            {"player.heal", "action.player.heal", "F8"},
+            {"player.armour", "action.player.armour", "Shift+F8"},
+            {"player.clearWanted", "action.player.clearWanted", "Ctrl+F8"},
+            {"vehicle.repair", "action.vehicle.repair", "F6"},
+            {"vehicle.unflip", "action.vehicle.unflip", "Shift+F6"},
+            {"vehicle.stop", "action.vehicle.stop", "Ctrl+F6"},
+            {"weapon.giveAll", "action.weapon.giveAll", "F9"},
+            {"world.toggleFreezeTime", "action.world.toggleFreezeTime", "Ctrl+F9"}
+        };
+        count = sizeof(actions) / sizeof(actions[0]);
+        return actions;
+    }
+
+    AppConfig::ActionHotkey* FindActionHotkey(const std::string& actionId) {
+        for (AppConfig::ActionHotkey& action : actionHotkeys) {
+            if (action.id == actionId) {
+                return &action;
+            }
+        }
+        return nullptr;
+    }
+
+    void ResetActionHotkeysToDefaults() {
+        actionHotkeys.clear();
+        std::size_t count = 0;
+        const DefaultActionHotkey* defaults = DefaultActions(count);
+        for (std::size_t i = 0; i < count; ++i) {
+            bool valid = false;
+            AppConfig::ActionHotkey action;
+            action.id = defaults[i].id;
+            action.name = defaults[i].name;
+            action.hotkey = ParseHotkey(defaults[i].key, valid);
+            if (!valid) {
+                action.hotkey = AppConfig::Hotkey{};
+                action.hotkey.key = 0;
+            }
+            actionHotkeys.push_back(action);
+        }
+    }
+
+    void LoadActionHotkeys(const JsonLoader::JsonValue& root) {
+        ResetActionHotkeysToDefaults();
+        const JsonLoader::JsonValue& actions = ObjectOrNull(root, "actions");
+        if (actions.type != JsonLoader::JsonValue::OBJECT) {
+            return;
+        }
+
+        for (const auto& item : actions.object_values) {
+            AppConfig::ActionHotkey* action = FindActionHotkey(item.first);
+            if (!action) {
+                continue;
+            }
+
+            const std::string keyName = item.second.type == JsonLoader::JsonValue::STRING
+                ? item.second.string_value
+                : JsonLoader::GetString(item.second, "hotkey", "");
+            bool valid = false;
+            AppConfig::Hotkey parsed = ParseHotkey(keyName, valid);
+            if (valid) {
+                action->hotkey = parsed;
+            }
+        }
+    }
+
+    void WriteActionHotkeys(std::ostream& file, bool trailingComma) {
+        file << "  \"actions\": {\n";
+        for (std::size_t i = 0; i < actionHotkeys.size(); ++i) {
+            const AppConfig::ActionHotkey& action = actionHotkeys[i];
+            file << "    \"" << EscapeJson(action.id) << "\": \"" << EscapeJson(CanonicalHotkeyName(action.hotkey)) << "\"";
+            if (i + 1 < actionHotkeys.size()) {
+                file << ",";
+            }
+            file << "\n";
+        }
+        file << "  }" << (trailingComma ? "," : "") << "\n";
+    }
+
+    void ApplyPersistentStateValues() {
+        for (const PersistentStateBinding& binding : PersistentStateBindings()) {
+            const auto enabled = persistentEnabled.find(binding.id);
+            if (enabled == persistentEnabled.end() || !enabled->second) {
+                continue;
+            }
+
+            const auto value = persistentValues.find(binding.id);
+            *binding.value = value == persistentValues.end() ? binding.defaultValue : value->second;
+        }
+    }
+
+    void LoadPersistentState(const JsonLoader::JsonValue& root) {
+        ResetPersistentStateToDefaults();
+        const JsonLoader::JsonValue& persistentState = ObjectOrNull(root, "persistentState");
+        if (persistentState.type != JsonLoader::JsonValue::OBJECT) {
+            return;
+        }
+
+        for (const auto& item : persistentState.object_values) {
+            const PersistentStateBinding* binding = FindPersistentStateBinding(item.first);
+            if (!binding || item.second.type != JsonLoader::JsonValue::OBJECT) {
+                continue;
+            }
+
+            persistentEnabled[binding->id] = JsonLoader::GetBool(item.second, "enabled", false);
+            persistentValues[binding->id] = JsonLoader::GetBool(item.second, "value", binding->defaultValue);
+        }
+
+        ApplyPersistentStateValues();
+    }
+
+    void WritePersistentState(std::ostream& file, bool trailingComma) {
+        file << "  \"persistentState\": {\n";
+        const std::vector<PersistentStateBinding>& bindings = PersistentStateBindings();
+        for (std::size_t i = 0; i < bindings.size(); ++i) {
+            const PersistentStateBinding& binding = bindings[i];
+            const bool enabled = persistentEnabled[binding.id];
+            const bool value = persistentValues[binding.id];
+            file << "    \"" << EscapeJson(binding.id) << "\": {\"enabled\": " << (enabled ? "true" : "false")
+                 << ", \"value\": " << (value ? "true" : "false") << "}";
+            if (i + 1 < bindings.size()) {
+                file << ",";
+            }
+            file << "\n";
+        }
+        file << "  }" << (trailingComma ? "," : "") << "\n";
+    }
+
+    bool CapturePersistentStateValues() {
+        bool changed = false;
+        for (const PersistentStateBinding& binding : PersistentStateBindings()) {
+            if (!persistentEnabled[binding.id]) {
+                continue;
+            }
+
+            const bool currentValue = *binding.value;
+            if (persistentValues[binding.id] != currentValue) {
+                persistentValues[binding.id] = currentValue;
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
     const char* GameKey() {
-#ifdef GTASA
-        return "sa";
-#elif GTAVC
-        return "vc";
-#elif GTA3
-        return "iii";
-#else
-        return "unknown";
-#endif
+        return GameRuntime::CurrentKey();
     }
 
     void LoadLocationsFromArray(const std::vector<JsonLoader::JsonValue>& locations, std::vector<DataManager::LocationData>& output) {
@@ -389,9 +667,14 @@ namespace {
 
     void LoadConfigData(const JsonLoader::JsonValue& root) {
         LoadUpdateCacheData(root);
+        LoadActionHotkeys(root);
+        LoadPersistentState(root);
 
         const JsonLoader::JsonValue& menu = ObjectOrNull(root, "menu");
         ApplyMenuKey(JsonLoader::GetString(menu, "toggleKey", DefaultMenuKey));
+        fallbackLanguageCode = JsonLoader::GetString(menu, "fallbackLanguage", "zh");
+        I18n::SetFallbackLanguage(fallbackLanguageCode);
+        fallbackLanguageCode = I18n::GetFallbackLanguageCode();
 
         const std::vector<JsonLoader::JsonValue>& gameLocations = JsonLoader::GetArray(root, GameKey());
         if (!gameLocations.empty()) {
@@ -408,7 +691,7 @@ namespace {
         std::vector<DataManager::LocationData> vcLocations;
         std::vector<DataManager::LocationData> saLocations;
 
-        const JsonLoader::JsonValue existingRoot = sourceRoot ? *sourceRoot : JsonLoader::LoadFromFile(ConfigPath());
+        const JsonLoader::JsonValue existingRoot = sourceRoot ? *sourceRoot : JsonLoader::LoadFromFile(ReadConfigPath());
         if (existingRoot.type == JsonLoader::JsonValue::OBJECT) {
             LoadLocationsFromArray(JsonLoader::GetArray(existingRoot, "iii"), iiiLocations);
             LoadLocationsFromArray(JsonLoader::GetArray(existingRoot, "vc"), vcLocations);
@@ -438,6 +721,7 @@ namespace {
         file << "  },\n";
         file << "  \"menu\": {\n";
         file << "    \"toggleKey\": \"" << EscapeJson(menuKeyName) << "\",\n";
+        file << "    \"fallbackLanguage\": \"" << EscapeJson(fallbackLanguageCode) << "\",\n";
         file << "    \"hotkey\": {\n";
         file << "      \"key\": " << menuHotkey.key << ",\n";
         file << "      \"ctrl\": " << (menuHotkey.ctrl ? "true" : "false") << ",\n";
@@ -446,6 +730,8 @@ namespace {
         file << "    }\n";
         file << "  },\n";
         WriteUpdateCache(file, true);
+        WriteActionHotkeys(file, true);
+        WritePersistentState(file, true);
         WriteLocationArray(file, "iii", iiiLocations, true);
         WriteLocationArray(file, "vc", vcLocations, true);
         WriteLocationArray(file, "sa", saLocations, false);
@@ -454,7 +740,7 @@ namespace {
     }
 
     bool SaveToPath(const std::string& path, const JsonLoader::JsonValue* sourceRoot = nullptr, AppConfig::TransferScope scope = AppConfig::TransferScope::All) {
-        const JsonLoader::JsonValue existingRoot = sourceRoot ? *sourceRoot : JsonLoader::LoadFromFile(ConfigPath());
+        const JsonLoader::JsonValue existingRoot = sourceRoot ? *sourceRoot : JsonLoader::LoadFromFile(ReadConfigPath());
 
         std::ofstream file(path, std::ios::binary | std::ios::trunc);
         if (!file.is_open()) {
@@ -483,22 +769,28 @@ namespace {
 namespace AppConfig {
     void Init() {
         customLocations.clear();
+        ResetActionHotkeysToDefaults();
+        ResetPersistentStateToDefaults();
         ApplyMenuKey(DefaultMenuKey);
+        fallbackLanguageCode = "zh";
+        I18n::SetFallbackLanguage(fallbackLanguageCode);
+        fallbackLanguageCode = I18n::GetFallbackLanguageCode();
 
-        const std::string path = ConfigPath();
+        const std::string path = ReadConfigPath();
+        EnsureDirectory(XMenuDataDirectory());
         const JsonLoader::JsonValue root = JsonLoader::LoadFromFile(path);
+        persistentSyncReadyTick = GetTickCount64() + PersistentStartupDelayMs;
         if (root.type != JsonLoader::JsonValue::OBJECT) {
-            Log::Info(std::string("配置文件不存在或为空，将创建默认配置: ") + path);
-            Save();
+            Log::Info(std::string("配置文件不存在或为空，将在首次设置变更时创建默认配置: ") + path);
             return;
         }
 
         LoadConfigData(root);
-        Save();
         Log::Info(std::string("配置加载完成：游戏=") + GameKey() + "，快捷键=" + menuKeyName + "，自定义地点=" + std::to_string(customLocations.size()));
     }
 
     void Save() {
+        EnsureDirectory(XMenuDataDirectory());
         SaveToPath(ConfigPath());
     }
 
@@ -507,7 +799,7 @@ namespace AppConfig {
     }
 
     bool LoadUpdateCache(UpdateCache& cache) {
-        const JsonLoader::JsonValue root = JsonLoader::LoadFromFile(ConfigPath());
+        const JsonLoader::JsonValue root = JsonLoader::LoadFromFile(ReadConfigPath());
         if (root.type != JsonLoader::JsonValue::OBJECT) {
             return false;
         }
@@ -537,6 +829,7 @@ namespace AppConfig {
         }
 
         customLocations.clear();
+        ResetPersistentStateToDefaults();
         ApplyMenuKey(DefaultMenuKey);
         LoadConfigData(root);
         SaveToPath(ConfigPath(), &root);
@@ -571,6 +864,84 @@ namespace AppConfig {
         return output.str();
     }
 
+    std::vector<PersistentFeatureState> GetPersistentFeatureStates() {
+        std::vector<PersistentFeatureState> features;
+        for (const PersistentStateBinding& binding : PersistentStateBindings()) {
+            PersistentFeatureState feature;
+            feature.id = binding.id;
+            feature.name = binding.name;
+            feature.group = PersistentFeatureGroup(binding.id);
+            feature.enabledNow = *binding.value;
+            feature.restoreNextLaunch = persistentEnabled[binding.id];
+            feature.restoreValue = persistentValues[binding.id];
+            features.push_back(feature);
+        }
+        return features;
+    }
+
+    std::size_t GetPersistentRestoreCount() {
+        std::size_t count = 0;
+        for (const PersistentStateBinding& binding : PersistentStateBindings()) {
+            if (persistentEnabled[binding.id]) {
+                ++count;
+            }
+        }
+        return count;
+    }
+
+    void CaptureEnabledPersistentFeatures() {
+        for (const PersistentStateBinding& binding : PersistentStateBindings()) {
+            const bool currentValue = *binding.value;
+            persistentEnabled[binding.id] = currentValue;
+            persistentValues[binding.id] = currentValue ? true : binding.defaultValue;
+        }
+
+        persistentSyncReadyTick = GetTickCount64() + PersistentStartupDelayMs;
+        Save();
+    }
+
+    void ApplyPersistentRestoreSelection(const std::vector<std::string>& selectedIds) {
+        std::unordered_map<std::string, bool> selected;
+        for (const std::string& id : selectedIds) {
+            selected[id] = true;
+        }
+
+        for (const PersistentStateBinding& binding : PersistentStateBindings()) {
+            const bool restore = selected.find(binding.id) != selected.end();
+            persistentEnabled[binding.id] = restore;
+            persistentValues[binding.id] = restore ? true : binding.defaultValue;
+        }
+
+        persistentSyncReadyTick = GetTickCount64() + PersistentStartupDelayMs;
+        Save();
+    }
+
+    void ClearPersistentRestoreSelection() {
+        for (const PersistentStateBinding& binding : PersistentStateBindings()) {
+            persistentEnabled[binding.id] = false;
+            persistentValues[binding.id] = binding.defaultValue;
+        }
+
+        persistentSyncReadyTick = GetTickCount64() + PersistentStartupDelayMs;
+        Save();
+    }
+
+    void SyncPersistentState() {
+        const ULONGLONG now = GetTickCount64();
+        if (syncingPersistentState || now < persistentSyncReadyTick || now - lastPersistentSyncTick < PersistentWriteCooldownMs) {
+            return;
+        }
+
+        if (!CapturePersistentStateValues()) {
+            return;
+        }
+
+        syncingPersistentState = true;
+        Save();
+        lastPersistentSyncTick = now;
+        syncingPersistentState = false;
+    }
+
     const Hotkey& GetMenuHotkey() {
         return menuHotkey;
     }
@@ -593,6 +964,63 @@ namespace AppConfig {
     void SetMenuKeyName(const std::string& keyName) {
         ApplyMenuKey(keyName);
         Save();
+    }
+
+    std::string GetFallbackLanguageCode() {
+        return fallbackLanguageCode;
+    }
+
+    void SetFallbackLanguageCode(const std::string& code) {
+        I18n::SetFallbackLanguage(code);
+        fallbackLanguageCode = I18n::GetFallbackLanguageCode();
+        Save();
+    }
+
+    const std::vector<ActionHotkey>& GetActionHotkeys() {
+        return actionHotkeys;
+    }
+
+    const Hotkey* GetActionHotkey(const std::string& actionId) {
+        const ActionHotkey* action = FindActionHotkey(actionId);
+        return action ? &action->hotkey : nullptr;
+    }
+
+    std::string GetActionHotkeyName(const std::string& actionId) {
+        const Hotkey* hotkey = GetActionHotkey(actionId);
+        return hotkey ? CanonicalHotkeyName(*hotkey) : "None";
+    }
+
+    void SetActionHotkeyName(const std::string& actionId, const std::string& keyName) {
+        ActionHotkey* action = FindActionHotkey(actionId);
+        if (!action) {
+            Log::Warn(std::string("动作快捷键不存在: ") + actionId);
+            return;
+        }
+
+        bool valid = false;
+        const Hotkey parsed = ParseHotkey(keyName, valid);
+        if (!valid) {
+            Log::Warn(std::string("动作快捷键无效: ") + actionId + " = " + keyName);
+            return;
+        }
+
+        action->hotkey = parsed;
+        Save();
+    }
+
+    bool IsHotkeyPressed(const Hotkey& hotkey) {
+        if (hotkey.key <= 0) {
+            return false;
+        }
+
+        return IsModifierDown(hotkey.ctrl, VK_CONTROL, VK_LCONTROL, VK_RCONTROL)
+            && IsModifierDown(hotkey.alt, VK_MENU, VK_LMENU, VK_RMENU)
+            && IsModifierDown(hotkey.shift, VK_SHIFT, VK_LSHIFT, VK_RSHIFT)
+            && IsKeyDown(hotkey.key);
+    }
+
+    std::string FormatHotkey(const Hotkey& hotkey) {
+        return CanonicalHotkeyName(hotkey);
     }
 
     const std::vector<DataManager::LocationData>& GetCustomLocations() {

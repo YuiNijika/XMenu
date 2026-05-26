@@ -1,0 +1,37 @@
+{
+  "visuals": [
+    {
+      "category": "visual.category.vc.weather",
+      "entries": [
+        {
+          "name": "visual.vc.weather.sunny",
+          "id": 0
+        },
+        {
+          "name": "visual.vc.weather.cloudy",
+          "id": 1
+        },
+        {
+          "name": "visual.vc.weather.rainy",
+          "id": 2
+        },
+        {
+          "name": "visual.vc.weather.foggy",
+          "id": 3
+        },
+        {
+          "name": "visual.vc.weather.extra_sunny",
+          "id": 4
+        },
+        {
+          "name": "visual.vc.weather.hurricane",
+          "id": 5
+        },
+        {
+          "name": "visual.vc.weather.extracolors",
+          "id": 6
+        }
+      ]
+    }
+  ]
+}

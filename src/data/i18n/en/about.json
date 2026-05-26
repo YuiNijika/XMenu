@@ -1,0 +1,11 @@
+{
+  "about.version": "Version: %s",
+  "about.author": "Author: %s",
+  "about.testing": "Testing: %s",
+  "about.techStack": "Tech stack: %s",
+  "about.openSourceLibs": "Open-source libs: %s",
+  "about.notice1": "1. Always free. Resale and commercial use are prohibited.",
+  "about.notice2": "2. For issues, join the group or report them on the project page.",
+  "about.joinGroup": "Join group",
+  "about.projectPage": "Project page"
+}

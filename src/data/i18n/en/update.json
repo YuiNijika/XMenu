@@ -1,0 +1,9 @@
+{
+  "update.availableTitle": "New version available",
+  "update.availableMessage": "Current version: %s\nLatest version: %s\nChoose an update source.",
+  "update.openGitHub": "GitHub",
+  "update.openGTAMODX": "GTAMODX",
+  "update.details": "Update check",
+  "update.refresh": "Refresh",
+  "update.debugShowDialog": "Test update dialog"
+}

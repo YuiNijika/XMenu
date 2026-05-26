@@ -1,0 +1,11 @@
+{
+  "visual.hud": "HUD",
+  "visual.radar": "Radar",
+  "visual.filter": "Visual filter",
+  "visual.filterId": "Filter ID",
+  "visual.timecycStrength": "Timecyc strength",
+  "visual.applyFilter": "Apply filter",
+  "visual.filterHint": "SA supports fuller filter effects; VC/III degrade safely according to available capabilities.",
+  "visual.listHint": "Click a list entry to fill the filter ID and apply it immediately.",
+  "visual.noListData": "No visual list data available."
+}

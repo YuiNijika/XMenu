@@ -1,0 +1,9 @@
+{
+  "update.availableTitle": "新しいバージョンがあります",
+  "update.availableMessage": "現在のバージョン：%s\n最新バージョン：%s\n更新元を選択してください。",
+  "update.openGitHub": "GitHub",
+  "update.openGTAMODX": "GTAMODX",
+  "update.details": "バージョン確認",
+  "update.refresh": "再確認",
+  "update.debugShowDialog": "更新ダイアログをテスト"
+}

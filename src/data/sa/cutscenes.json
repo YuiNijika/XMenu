@@ -1,0 +1,784 @@
+{
+  "cutscenes": [
+    {
+      "category": "scene.cutscene.category.sa.big_smoke",
+      "entries": [
+        {
+          "name": "scene.cutscene.sa.big_smoke.smoke1a",
+          "interior": "0",
+          "value": "smoke1a"
+        },
+        {
+          "name": "scene.cutscene.sa.big_smoke.smoke1b",
+          "interior": "0",
+          "value": "smoke1b"
+        },
+        {
+          "name": "scene.cutscene.sa.big_smoke.smoke2a",
+          "interior": "0",
+          "value": "smoke2a"
+        },
+        {
+          "name": "scene.cutscene.sa.big_smoke.smoke2b",
+          "interior": "0",
+          "value": "smoke2b"
+        },
+        {
+          "name": "scene.cutscene.sa.big_smoke.smoke3a",
+          "interior": "0",
+          "value": "smoke3a"
+        },
+        {
+          "name": "scene.cutscene.sa.big_smoke.smoke4a",
+          "interior": "0",
+          "value": "smoke4a"
+        }
+      ]
+    },
+    {
+      "category": "scene.cutscene.category.sa.catalina",
+      "entries": [
+        {
+          "name": "scene.cutscene.sa.catalina.cat_2",
+          "interior": "0",
+          "value": "cat_2"
+        },
+        {
+          "name": "scene.cutscene.sa.catalina.cat_3",
+          "interior": "0",
+          "value": "cat_3"
+        },
+        {
+          "name": "scene.cutscene.sa.catalina.cat_4",
+          "interior": "0",
+          "value": "cat_4"
+        }
+      ]
+    },
+    {
+      "category": "scene.cutscene.category.sa.cesar_vialpando",
+      "entries": [
+        {
+          "name": "scene.cutscene.sa.cesar_vialpando.bcesa4w",
+          "interior": "0",
+          "value": "bcesa4w"
+        },
+        {
+          "name": "scene.cutscene.sa.cesar_vialpando.bcesa5w",
+          "interior": "0",
+          "value": "bcesa5w"
+        },
+        {
+          "name": "scene.cutscene.sa.cesar_vialpando.bcesar2",
+          "interior": "2",
+          "value": "bcesar2"
+        },
+        {
+          "name": "scene.cutscene.sa.cesar_vialpando.bcesar4",
+          "interior": "0",
+          "value": "bcesar4"
+        },
+        {
+          "name": "scene.cutscene.sa.cesar_vialpando.bcesar5",
+          "interior": "0",
+          "value": "bcesar5"
+        },
+        {
+          "name": "scene.cutscene.sa.cesar_vialpando.cesar1a",
+          "interior": "0",
+          "value": "cesar1a"
+        }
+      ]
+    },
+    {
+      "category": "scene.cutscene.category.sa.dates",
+      "entries": [
+        {
+          "name": "scene.cutscene.sa.dates.date1a",
+          "interior": "10",
+          "value": "date1a"
+        },
+        {
+          "name": "scene.cutscene.sa.dates.date3a",
+          "interior": "4",
+          "value": "date3a"
+        },
+        {
+          "name": "scene.cutscene.sa.dates.date3b",
+          "interior": "4",
+          "value": "date3b"
+        },
+        {
+          "name": "scene.cutscene.sa.dates.date5a",
+          "interior": "6",
+          "value": "date5a"
+        },
+        {
+          "name": "scene.cutscene.sa.dates.date5b",
+          "interior": "6",
+          "value": "date5b"
+        },
+        {
+          "name": "scene.cutscene.sa.dates.date2a",
+          "interior": "9",
+          "value": "date2a"
+        },
+        {
+          "name": "scene.cutscene.sa.dates.date2b",
+          "interior": "9",
+          "value": "date2b"
+        },
+        {
+          "name": "scene.cutscene.sa.dates.date4a",
+          "interior": "5",
+          "value": "date4a"
+        },
+        {
+          "name": "scene.cutscene.sa.dates.date4b",
+          "interior": "5",
+          "value": "date4b"
+        },
+        {
+          "name": "scene.cutscene.sa.dates.date1b",
+          "interior": "5",
+          "value": "date1b"
+        },
+        {
+          "name": "scene.cutscene.sa.dates.date6a",
+          "interior": "5",
+          "value": "date6a"
+        },
+        {
+          "name": "scene.cutscene.sa.dates.date6b",
+          "interior": "17",
+          "value": "date6b"
+        }
+      ]
+    },
+    {
+      "category": "scene.cutscene.category.sa.misc",
+      "entries": [
+        {
+          "name": "scene.cutscene.sa.misc.bhill1",
+          "interior": "0",
+          "value": "bhill1"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.bhill2",
+          "interior": "5",
+          "value": "bhill2"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.bhill3a",
+          "interior": "5",
+          "value": "bhill3a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.bhill3b",
+          "interior": "0",
+          "value": "bhill3b"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.bhill3c",
+          "interior": "0",
+          "value": "bhill3c"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.bhill5a",
+          "interior": "5",
+          "value": "bhill5a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.bhill5b",
+          "interior": "3",
+          "value": "bhill5b"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.cas6b_1",
+          "interior": "1",
+          "value": "cas6b_1"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.cas6b_2",
+          "interior": "1",
+          "value": "cas6b_2"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.cas_11a",
+          "interior": "2",
+          "value": "cas_11a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.cas_1a",
+          "interior": "11",
+          "value": "cas_1a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.cas_2",
+          "interior": "0",
+          "value": "cas_2"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.cas_3",
+          "interior": "11",
+          "value": "cas_3"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.cas_4a",
+          "interior": "0",
+          "value": "cas_4a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.cas_4b",
+          "interior": "0",
+          "value": "cas_4b"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.cas_4c",
+          "interior": "2",
+          "value": "cas_4c"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.cas_5a",
+          "interior": "2",
+          "value": "cas_5a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.cas_6a",
+          "interior": "2",
+          "value": "cas_6a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.cas_7b",
+          "interior": "11",
+          "value": "cas_7b"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.cas_9a1",
+          "interior": "2",
+          "value": "cas_9a1"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.cas_9a2",
+          "interior": "0",
+          "value": "cas_9a2"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.desert1",
+          "interior": "0",
+          "value": "desert1"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.desert2",
+          "interior": "0",
+          "value": "desert2"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.desert3",
+          "interior": "0",
+          "value": "desert3"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.desert4",
+          "interior": "0",
+          "value": "desert4"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.desert6",
+          "interior": "0",
+          "value": "desert6"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.desert8",
+          "interior": "0",
+          "value": "desert8"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.desert9",
+          "interior": "0",
+          "value": "desert9"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.des_10a",
+          "interior": "0",
+          "value": "des_10a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.des_10b",
+          "interior": "0",
+          "value": "des_10b"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.doc_2",
+          "interior": "0",
+          "value": "doc_2"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.epilog",
+          "interior": "3",
+          "value": "epilog"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.farl_2a",
+          "interior": "3",
+          "value": "farl_2a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.farl_3a",
+          "interior": "3",
+          "value": "farl_3a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.farl_3b",
+          "interior": "0",
+          "value": "farl_3b"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.farl_4a",
+          "interior": "1",
+          "value": "farl_4a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.farl_5a",
+          "interior": "1",
+          "value": "farl_5a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.final1a",
+          "interior": "1",
+          "value": "final1a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.final2a",
+          "interior": "1",
+          "value": "final2a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.final2b",
+          "interior": "0",
+          "value": "final2b"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.garag1b",
+          "interior": "1",
+          "value": "garag1b"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.garag1c",
+          "interior": "1",
+          "value": "garag1c"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.garag3a",
+          "interior": "1",
+          "value": "garag3a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.grove1a",
+          "interior": "3",
+          "value": "grove1a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.grove1b",
+          "interior": "3",
+          "value": "grove1b"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.grove1c",
+          "interior": "2",
+          "value": "grove1c"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.grove2",
+          "interior": "1",
+          "value": "grove2"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.heist1a",
+          "interior": "10",
+          "value": "heist1a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.heist2a",
+          "interior": "10",
+          "value": "heist2a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.heist4a",
+          "interior": "10",
+          "value": "heist4a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.heist5a",
+          "interior": "10",
+          "value": "heist5a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.heist6a",
+          "interior": "10",
+          "value": "heist6a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.heist8a",
+          "interior": "0",
+          "value": "heist8a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.intro1a",
+          "interior": "3",
+          "value": "intro1a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.intro1b",
+          "interior": "0",
+          "value": "intro1b"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.intro2a",
+          "interior": "2",
+          "value": "intro2a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.prolog1",
+          "interior": "14",
+          "value": "prolog1"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.prolog3",
+          "interior": "0",
+          "value": "prolog3"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.riot4e1",
+          "interior": "0",
+          "value": "riot4e1"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.riot4e2",
+          "interior": "0",
+          "value": "riot4e2"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.riot_1a",
+          "interior": "5",
+          "value": "riot_1a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.riot_1b",
+          "interior": "5",
+          "value": "riot_1b"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.riot_2",
+          "interior": "1",
+          "value": "riot_2"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.riot_4a",
+          "interior": "1",
+          "value": "riot_4a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.riot_4b",
+          "interior": "0",
+          "value": "riot_4b"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.riot_4c",
+          "interior": "2",
+          "value": "riot_4c"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.riot_4d",
+          "interior": "2",
+          "value": "riot_4d"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.steal_1",
+          "interior": "1",
+          "value": "steal_1"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.steal_2",
+          "interior": "1",
+          "value": "steal_2"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.steal_4",
+          "interior": "1",
+          "value": "steal_4"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.steal_5",
+          "interior": "1",
+          "value": "steal_5"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.strp4b1",
+          "interior": "3",
+          "value": "strp4b1"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.strp4b2",
+          "interior": "0",
+          "value": "strp4b2"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.synd_2a",
+          "interior": "1",
+          "value": "synd_2a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.synd_2b",
+          "interior": "3",
+          "value": "synd_2b"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.synd_3a",
+          "interior": "0",
+          "value": "synd_3a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.synd_4a",
+          "interior": "1",
+          "value": "synd_4a"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.synd_4b",
+          "interior": "0",
+          "value": "synd_4b"
+        },
+        {
+          "name": "scene.cutscene.sa.misc.synd_7",
+          "interior": "1",
+          "value": "synd_7"
+        }
+      ]
+    },
+    {
+      "category": "scene.cutscene.category.sa.pizzaguy",
+      "entries": [
+        {
+          "name": "scene.cutscene.sa.pizzaguy.strap1a",
+          "interior": "0",
+          "value": "strap1a"
+        },
+        {
+          "name": "scene.cutscene.sa.pizzaguy.strap2a",
+          "interior": "10",
+          "value": "strap2a"
+        },
+        {
+          "name": "scene.cutscene.sa.pizzaguy.strap3a",
+          "interior": "10",
+          "value": "strap3a"
+        },
+        {
+          "name": "scene.cutscene.sa.pizzaguy.strap4a",
+          "interior": "0",
+          "value": "strap4a"
+        }
+      ]
+    },
+    {
+      "category": "scene.cutscene.category.sa.ryder",
+      "entries": [
+        {
+          "name": "scene.cutscene.sa.ryder.ryder1a",
+          "interior": "0",
+          "value": "ryder1a"
+        },
+        {
+          "name": "scene.cutscene.sa.ryder.ryder2a",
+          "interior": "0",
+          "value": "ryder2a"
+        },
+        {
+          "name": "scene.cutscene.sa.ryder.ryder3a",
+          "interior": "2",
+          "value": "ryder3a"
+        }
+      ]
+    },
+    {
+      "category": "scene.cutscene.category.sa.sweet",
+      "entries": [
+        {
+          "name": "scene.cutscene.sa.sweet.sweet1a",
+          "interior": "0",
+          "value": "sweet1a"
+        },
+        {
+          "name": "scene.cutscene.sa.sweet.sweet1b",
+          "interior": "1",
+          "value": "sweet1b"
+        },
+        {
+          "name": "scene.cutscene.sa.sweet.sweet1c",
+          "interior": "3",
+          "value": "sweet1c"
+        },
+        {
+          "name": "scene.cutscene.sa.sweet.sweet2a",
+          "interior": "0",
+          "value": "sweet2a"
+        },
+        {
+          "name": "scene.cutscene.sa.sweet.sweet2b",
+          "interior": "0",
+          "value": "sweet2b"
+        },
+        {
+          "name": "scene.cutscene.sa.sweet.sweet3a",
+          "interior": "1",
+          "value": "sweet3a"
+        },
+        {
+          "name": "scene.cutscene.sa.sweet.sweet3b",
+          "interior": "0",
+          "value": "sweet3b"
+        },
+        {
+          "name": "scene.cutscene.sa.sweet.sweet4a",
+          "interior": "0",
+          "value": "sweet4a"
+        },
+        {
+          "name": "scene.cutscene.sa.sweet.sweet5a",
+          "interior": "1",
+          "value": "sweet5a"
+        },
+        {
+          "name": "scene.cutscene.sa.sweet.sweet6a",
+          "interior": "1",
+          "value": "sweet6a"
+        },
+        {
+          "name": "scene.cutscene.sa.sweet.sweet6b",
+          "interior": "0",
+          "value": "sweet6b"
+        },
+        {
+          "name": "scene.cutscene.sa.sweet.sweet7a",
+          "interior": "0",
+          "value": "sweet7a"
+        }
+      ]
+    },
+    {
+      "category": "scene.cutscene.category.sa.tenpenny",
+      "entries": [
+        {
+          "name": "scene.cutscene.sa.tenpenny.bcras1",
+          "interior": "0",
+          "value": "bcras1"
+        },
+        {
+          "name": "scene.cutscene.sa.tenpenny.bcras2",
+          "interior": "0",
+          "value": "bcras2"
+        },
+        {
+          "name": "scene.cutscene.sa.tenpenny.crash1a",
+          "interior": "17",
+          "value": "crash1a"
+        },
+        {
+          "name": "scene.cutscene.sa.tenpenny.crash3a",
+          "interior": "0",
+          "value": "crash3a"
+        },
+        {
+          "name": "scene.cutscene.sa.tenpenny.crashv1",
+          "interior": "0",
+          "value": "crashv1"
+        },
+        {
+          "name": "scene.cutscene.sa.tenpenny.scrash1",
+          "interior": "1",
+          "value": "scrash1"
+        },
+        {
+          "name": "scene.cutscene.sa.tenpenny.scrash2",
+          "interior": "1",
+          "value": "scrash2"
+        }
+      ]
+    },
+    {
+      "category": "scene.cutscene.category.sa.the_truth",
+      "entries": [
+        {
+          "name": "scene.cutscene.sa.the_truth.truth_1",
+          "interior": "12",
+          "value": "truth_1"
+        },
+        {
+          "name": "scene.cutscene.sa.the_truth.truth_2",
+          "interior": "0",
+          "value": "truth_2"
+        },
+        {
+          "name": "scene.cutscene.sa.the_truth.d10_alt",
+          "interior": "0",
+          "value": "d10_alt"
+        },
+        {
+          "name": "scene.cutscene.sa.the_truth.d8_alt",
+          "interior": "0",
+          "value": "d8_alt"
+        }
+      ]
+    },
+    {
+      "category": "scene.cutscene.category.sa.woozie",
+      "entries": [
+        {
+          "name": "scene.cutscene.sa.woozie.woozi1a",
+          "interior": "1",
+          "value": "woozi1a"
+        },
+        {
+          "name": "scene.cutscene.sa.woozie.woozi1b",
+          "interior": "1",
+          "value": "woozi1b"
+        },
+        {
+          "name": "scene.cutscene.sa.woozie.woozie2",
+          "interior": "1",
+          "value": "woozie2"
+        },
+        {
+          "name": "scene.cutscene.sa.woozie.woozie4",
+          "interior": "1",
+          "value": "woozie4"
+        },
+        {
+          "name": "scene.cutscene.sa.woozie.w2_alt",
+          "interior": "1",
+          "value": "w2_alt"
+        }
+      ]
+    },
+    {
+      "category": "scene.cutscene.category.sa.zero",
+      "entries": [
+        {
+          "name": "scene.cutscene.sa.zero.zero_1",
+          "interior": "6",
+          "value": "zero_1"
+        },
+        {
+          "name": "scene.cutscene.sa.zero.zero_2",
+          "interior": "6",
+          "value": "zero_2"
+        },
+        {
+          "name": "scene.cutscene.sa.zero.zero_4",
+          "interior": "6",
+          "value": "zero_4"
+        }
+      ]
+    }
+  ]
+}

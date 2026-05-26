@@ -1,0 +1,15 @@
+{
+  "action.teleport.marker": "传送到标记点",
+  "action.teleport.quickMap": "打开快速地图",
+  "action.teleport.forward": "向前传送",
+  "action.command.toggle": "切换命令窗口",
+  "action.overlay.toggle": "切换 Overlay",
+  "action.player.heal": "玩家回血",
+  "action.player.armour": "补满护甲",
+  "action.player.clearWanted": "清除通缉",
+  "action.vehicle.repair": "修复载具",
+  "action.vehicle.unflip": "扶正载具",
+  "action.vehicle.stop": "停止载具",
+  "action.weapon.giveAll": "获取全部武器",
+  "action.world.toggleFreezeTime": "冻结/恢复时间"
+}

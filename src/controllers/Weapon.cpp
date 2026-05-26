@@ -1,6 +1,7 @@
 #include "Weapon.h"
 #include "features/GameLogic.h"
 #include "ui/MenuState.h"
+#include "utils/I18n.h"
 #include "plugin.h"
 #include "CPlayerPed.h"
 
@@ -43,6 +44,11 @@ namespace Controllers::Weapon {
 
     void DropCurrent() {
         GameLogic::DropCurrentWeapon(FindPlayerPed());
+    }
+
+    void RemovePickups() {
+        const int removed = GameLogic::RemoveTrackedPickups();
+        MenuState::ShowNotice(removed > 0 ? I18n::T("weapon.pickupsRemoved") : I18n::T("weapon.noPickupsToRemove"), 1.5);
     }
 
     void Give(unsigned int weaponType, unsigned int ammo) {

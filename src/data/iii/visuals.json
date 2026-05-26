@@ -1,0 +1,25 @@
+{
+  "visuals": [
+    {
+      "category": "visual.category.iii.weather",
+      "entries": [
+        {
+          "name": "visual.iii.weather.sunny",
+          "id": 0
+        },
+        {
+          "name": "visual.iii.weather.cloudy",
+          "id": 1
+        },
+        {
+          "name": "visual.iii.weather.rainy",
+          "id": 2
+        },
+        {
+          "name": "visual.iii.weather.foggy",
+          "id": 3
+        }
+      ]
+    }
+  ]
+}

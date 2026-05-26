@@ -9,7 +9,7 @@
 
 namespace {
     CPlayerPed* godModePlayer = nullptr;
-    GameLogic::ProofState savedPlayerProofs;
+    GameTypes::ProofState savedPlayerProofs;
     bool hasSavedPlayerProofs = false;
 
     int ClampWantedLevel(int level) {
@@ -29,12 +29,34 @@ namespace {
         return value < 2.0f ? 2.0f : value;
     }
 
+    GameLogic::ProofState ToLogicProof(const GameTypes::ProofState& state) {
+        GameLogic::ProofState result;
+        result.bullet = state.bullet;
+        result.collision = state.collision;
+        result.explosion = state.explosion;
+        result.fire = state.fire;
+        result.melee = state.melee;
+        result.nonPlayer = state.nonPlayer;
+        return result;
+    }
+
+    GameTypes::ProofState ToUiProof(const GameLogic::ProofState& state) {
+        GameTypes::ProofState result;
+        result.bullet = state.bullet;
+        result.collision = state.collision;
+        result.explosion = state.explosion;
+        result.fire = state.fire;
+        result.melee = state.melee;
+        result.nonPlayer = state.nonPlayer;
+        return result;
+    }
+
     void RestoreGodModeState() {
         if (!hasSavedPlayerProofs || !godModePlayer) {
             return;
         }
 
-        GameLogic::SetPlayerProofState(godModePlayer, savedPlayerProofs);
+        GameLogic::SetPlayerProofState(godModePlayer, ToLogicProof(savedPlayerProofs));
         godModePlayer = nullptr;
         hasSavedPlayerProofs = false;
     }
@@ -49,10 +71,9 @@ namespace {
             return;
         }
 
-        // 换角色或重新进档时先留一份原状态，关闭后尽量放回玩家原来的防护配置。
         if (!hasSavedPlayerProofs || godModePlayer != player) {
             RestoreGodModeState();
-            savedPlayerProofs = GameLogic::GetPlayerProofState(player);
+            savedPlayerProofs = ToUiProof(GameLogic::GetPlayerProofState(player));
             godModePlayer = player;
             hasSavedPlayerProofs = true;
         }
@@ -70,6 +91,9 @@ namespace Controllers::Player {
         CPlayerPed* player = GetPlayer();
         ProcessGodMode(player);
 
+        GameLogic::SetInfiniteSprint(MenuState::InfiniteSprint);
+        GameLogic::SetKeepStuff(MenuState::KeepStuff);
+
         if (!player) {
             return;
         }
@@ -81,11 +105,11 @@ namespace Controllers::Player {
     }
 
     void Heal() {
-        GameLogic::HealPlayer(GetPlayer());
+        GameLogic::SetHealth(GetPlayer(), 100.0f);
     }
 
     void GiveArmour() {
-        GameLogic::GiveArmour(GetPlayer());
+        GameLogic::SetArmour(GetPlayer(), 100.0f);
     }
 
     void GiveMoney() {
@@ -93,10 +117,7 @@ namespace Controllers::Player {
     }
 
     void Kill() {
-        CPlayerPed* player = GetPlayer();
-        if (player) {
-            player->m_fHealth = 0.0f;
-        }
+        GameLogic::SetHealth(GetPlayer(), 0.0f);
     }
 
     int GetWantedLevel() {
@@ -135,13 +156,13 @@ namespace Controllers::Player {
         GameLogic::SetArmour(GetPlayer(), value);
     }
 
-    GameLogic::ProofState GetProofState() {
-        return GameLogic::GetPlayerProofState(GetPlayer());
+    GameTypes::ProofState GetProofState() {
+        return ToUiProof(GameLogic::GetPlayerProofState(GetPlayer()));
     }
 
-    void SetProofState(const GameLogic::ProofState& state) {
+    void SetProofState(const GameTypes::ProofState& state) {
         if (!MenuState::GodMode) {
-            GameLogic::SetManualPlayerProof(GetPlayer(), state);
+            GameLogic::SetPlayerProofState(GetPlayer(), ToLogicProof(state));
         }
     }
 
@@ -199,5 +220,17 @@ namespace Controllers::Player {
 
     void SetFreeJail(bool enable) {
         GameLogic::SetFreeJail(enable);
+    }
+
+    bool SetSkin(unsigned int modelId) {
+        return GameLogic::SetPlayerSkin(modelId);
+    }
+
+    bool ApplyClothes(int textureId, int modelId, int bodyPart) {
+        return GameLogic::ApplyPlayerClothes(textureId, modelId, bodyPart);
+    }
+
+    bool SetStat(int statId, float value) {
+        return GameLogic::SetPlayerStat(statId, value);
     }
 }

@@ -1,0 +1,11 @@
+{
+  "about.version": "版本：%s",
+  "about.author": "作者：%s",
+  "about.testing": "测试：%s",
+  "about.techStack": "技术栈：%s",
+  "about.openSourceLibs": "开源库：%s",
+  "about.notice1": "1. 永久免费，禁止倒卖，禁止用于商业用途。",
+  "about.notice2": "2. 遇到问题可以加群或前往项目主页反馈。",
+  "about.joinGroup": "加群",
+  "about.projectPage": "项目主页"
+}

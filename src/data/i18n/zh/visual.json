@@ -1,0 +1,11 @@
+{
+  "visual.hud": "HUD",
+  "visual.radar": "雷达",
+  "visual.filter": "画面滤镜",
+  "visual.filterId": "滤镜 ID",
+  "visual.timecycStrength": "Timecyc 强度",
+  "visual.applyFilter": "应用滤镜",
+  "visual.filterHint": "SA 支持更完整的滤镜效果；VC/III 会按可用能力安全降级。",
+  "visual.listHint": "点击列表项会填入滤镜 ID 并立即应用。",
+  "visual.noListData": "没有可用的视觉列表数据。"
+}

@@ -9,6 +9,7 @@ namespace Resources {
     using LocationEntry = DataManager::LocationData;
     using WeaponEntry = DataManager::WeaponData;
     using VehicleEntry = DataManager::VehicleData;
+    using PedEntry = DataManager::PedData;
     
     struct WeaponTable {
         const std::vector<WeaponEntry>* entries;
@@ -25,11 +26,17 @@ namespace Resources {
         std::size_t count;
     };
 
+    struct PedTable {
+        const std::vector<PedEntry>* entries;
+        std::size_t count;
+    };
+
     WeaponTable GetWeapons();
     LocationTable GetLocations();
     void ReloadLocations();
     bool AddCustomLocation(const std::string& name, float x, float y, float z, int interior);
     VehicleTable GetVehicles();
+    PedTable GetPeds();
     bool IsKnownVehicleModel(unsigned int model);
     
     // 初始化数据

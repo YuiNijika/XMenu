@@ -1,0 +1,9 @@
+{
+  "update.availableTitle": "Доступна новая версия",
+  "update.availableMessage": "Текущая версия: %s\nПоследняя версия: %s\nВыберите источник обновления.",
+  "update.openGitHub": "GitHub",
+  "update.openGTAMODX": "GTAMODX",
+  "update.details": "Проверка версии",
+  "update.refresh": "Обновить",
+  "update.debugShowDialog": "Тест окна обновления"
+}

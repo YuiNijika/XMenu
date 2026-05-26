@@ -1,0 +1,15 @@
+{
+  "action.teleport.marker": "マーカーへテレポート",
+  "action.teleport.quickMap": "クイックマップを開く",
+  "action.teleport.forward": "前方へテレポート",
+  "action.command.toggle": "コマンドウィンドウ切替",
+  "action.overlay.toggle": "Overlay 切替",
+  "action.player.heal": "プレイヤー回復",
+  "action.player.armour": "アーマー補充",
+  "action.player.clearWanted": "手配度を消す",
+  "action.vehicle.repair": "車両修理",
+  "action.vehicle.unflip": "車両を起こす",
+  "action.vehicle.stop": "車両停止",
+  "action.weapon.giveAll": "全武器取得",
+  "action.world.toggleFreezeTime": "時間停止/再開"
+}

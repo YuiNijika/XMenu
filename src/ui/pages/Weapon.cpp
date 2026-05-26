@@ -81,8 +81,8 @@ namespace Pages::Weapon {
             Controllers::Weapon::ClearAll();
         }
         ImGui::SameLine();
-        if (UI::Button(T("weapon.removeCurrent"), 4)) {
-            Controllers::Weapon::DropCurrent();
+        if (UI::Button(T("weapon.removePickups"), 4)) {
+            Controllers::Weapon::RemovePickups();
         }
 
         ImGui::Spacing();

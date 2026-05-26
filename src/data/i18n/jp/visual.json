@@ -1,0 +1,11 @@
+{
+  "visual.hud": "HUD",
+  "visual.radar": "レーダー",
+  "visual.filter": "画面フィルター",
+  "visual.filterId": "フィルター ID",
+  "visual.timecycStrength": "Timecyc 強度",
+  "visual.applyFilter": "フィルター適用",
+  "visual.filterHint": "SA はより完全なフィルター効果に対応します。VC/III は利用可能な機能に応じて安全に縮退します。",
+  "visual.listHint": "リスト項目をクリックすると、フィルター ID を入力して即時適用します。",
+  "visual.noListData": "利用可能なビジュアルリストデータがありません。"
+}

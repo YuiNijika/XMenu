@@ -1,0 +1,15 @@
+{
+  "action.teleport.marker": "Teleport to marker",
+  "action.teleport.quickMap": "Open quick map",
+  "action.teleport.forward": "Teleport forward",
+  "action.command.toggle": "Toggle command window",
+  "action.overlay.toggle": "Toggle overlay",
+  "action.player.heal": "Heal player",
+  "action.player.armour": "Refill armor",
+  "action.player.clearWanted": "Clear wanted level",
+  "action.vehicle.repair": "Repair vehicle",
+  "action.vehicle.unflip": "Unflip vehicle",
+  "action.vehicle.stop": "Stop vehicle",
+  "action.weapon.giveAll": "Give all weapons",
+  "action.world.toggleFreezeTime": "Freeze/resume time"
+}

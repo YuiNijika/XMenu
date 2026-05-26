@@ -6,13 +6,16 @@
 #include "CStreaming.h"
 #include "CVehicle.h"
 #include "CAutomobile.h"
+#include "CPed.h"
 #include "CModelInfo.h"
 #include "CWeaponInfo.h"
-#include "CPools.h"
+#include "CPickups.h"
 #include "extensions/ScriptCommands.h"
 #include "Patch.h"
 #include "CTimer.h"
 #include "CClock.h"
+#include "CHud.h"
+#include "CWeather.h"
 #include "rw/skeleton.h"
 #include <cstdint>
 #include <windows.h>
@@ -510,6 +513,26 @@ bool IsValidVehicleModel(unsigned int modelId) {
     return model >= 90 && model <= 150 && CModelInfo::IsVehicleModel(model);
 }
 
+bool IsValidPedModel(unsigned int modelId) {
+    const int model = static_cast<int>(modelId);
+    return model >= 0 && model < CModelInfo::ms_modelInfoCount && CModelInfo::IsPedModel(model);
+}
+
+bool SetPlayerSkin(unsigned int modelId) {
+    Log::Warn("III 不支持安全玩家皮肤切换，已跳过模型 ID " + std::to_string(modelId));
+    return false;
+}
+
+bool ApplyPlayerClothes(int textureId, int modelId, int bodyPart) {
+    Log::Warn("III 不支持 CJ 衣服接口，已跳过");
+    return false;
+}
+
+bool SetPlayerStat(int statId, float value) {
+    Log::Warn("III 不支持 SA stats 接口，已跳过 stat " + std::to_string(statId));
+    return false;
+}
+
 CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options) {
     CPlayerPed* player = FindPlayerPed();
     if (!player) return nullptr;
@@ -599,6 +622,130 @@ void TeleportMapPosition(CVector pos, bool spawnUnderwater) {
 
 bool TeleportMarker(bool spawnUnderwater) {
     return false;
+}
+
+void ApplyVehicleAppearance(CVehicle* vehicle, const VehicleAppearanceOptions& options) {
+    if (!vehicle) return;
+    plugin::Command<plugin::Commands::CHANGE_CAR_COLOUR>(CPools::GetVehicleRef(vehicle), options.primaryColor, options.secondaryColor);
+}
+
+void OpenVehicleDoor(CVehicle*, int) {
+    Log::Warn("III 不支持安全车门打开接口，已跳过");
+}
+
+void PopVehicleDoor(CVehicle*, int) {
+    Log::Warn("III 不支持安全车门拆卸接口，已跳过");
+}
+
+void WarpPlayerToVehicleSeat(CVehicle* vehicle, int seatIndex) {
+    CPlayerPed* player = FindPlayerPed();
+    if (!player || !vehicle) return;
+    if (seatIndex <= 0) {
+        player->SetObjective(OBJECTIVE_ENTER_CAR_AS_DRIVER);
+        player->WarpPedIntoCar(vehicle);
+    } else {
+        plugin::Command<plugin::Commands::WARP_CHAR_INTO_CAR_AS_PASSENGER>(CPools::GetPedRef(player), CPools::GetVehicleRef(vehicle), seatIndex - 1);
+    }
+}
+
+void ProcessAutoDrive(CVehicle*, bool enable, float) {
+    if (enable) Log::Warn("III 不支持 AutoDrive，已安全降级");
+}
+
+void SetTrafficDensity(float density) {
+    Log::Warn("III 暂未接入交通密度调整，已跳过 " + std::to_string(density));
+}
+
+void SetFlyingCars(bool enable) {
+    Log::Warn(std::string("III 暂未接入飞车开关，已跳过：") + (enable ? "开启" : "关闭"));
+}
+
+CPed* SpawnPedNearPlayer(const PedSpawnOptions& options) {
+    CPlayerPed* player = FindPlayerPed();
+    if (!player || !IsValidPedModel(options.modelId)) return nullptr;
+    const int model = static_cast<int>(options.modelId);
+    CVector pos = player->TransformFromObjectSpace(CVector(0.0f, 3.0f, 0.0f));
+    CStreaming::RequestModel(model, PRIORITY_REQUEST);
+    CStreaming::LoadAllRequestedModels(false);
+    int hped = 0;
+    plugin::Command<plugin::Commands::CREATE_CHAR>(options.pedType, model, pos.x, pos.y, pos.z, &hped);
+    CPed* ped = CPools::GetPed(hped);
+    ApplyPedOptions(ped, options);
+    plugin::Command<plugin::Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(model);
+    return ped;
+}
+
+CPed* SpawnPedAtMarker(const PedSpawnOptions&) {
+    Log::Warn("III 暂不支持标记点生成 Ped，已安全降级");
+    return nullptr;
+}
+
+void DeletePed(CPed* ped) {
+    if (!ped) return;
+    plugin::Command<plugin::Commands::DELETE_CHAR>(CPools::GetPedRef(ped));
+}
+
+void ApplyPedOptions(CPed* ped, const PedSpawnOptions& options) {
+    if (!ped) return;
+    const int hped = CPools::GetPedRef(ped);
+    plugin::Command<plugin::Commands::SET_CHAR_HEALTH>(hped, static_cast<int>(options.health));
+    plugin::Command<plugin::Commands::SET_CHAR_ARMOUR>(hped, static_cast<int>(options.armour));
+    plugin::Command<plugin::Commands::FREEZE_CHAR_POSITION>(hped, options.freeze);
+    if (options.weaponModel > 0) {
+        plugin::Command<plugin::Commands::GIVE_WEAPON_TO_CHAR>(hped, options.weaponModel, 9999);
+    }
+}
+
+bool PlayPlayerAnimation(const char*, const char*, bool) {
+    Log::Warn("III 暂不支持动画页播放，已安全降级");
+    return false;
+}
+
+void StopPlayerAnimation() {
+}
+
+bool SpawnParticleAtPlayer(const char*) {
+    Log::Warn("III 暂不支持粒子页，已安全降级");
+    return false;
+}
+
+bool StartCutscene(const char*) {
+    Log::Warn("III 暂不支持 cutscene 页，已安全降级");
+    return false;
+}
+
+void StopCutscene() {
+}
+
+bool IsCutsceneRunning() {
+    return false;
+}
+
+const char* GetMissionStatus() {
+    return "III mission viewer unavailable";
+}
+
+void DisplayHud(bool enable) {
+    CHud::m_Wants_To_Draw_Hud = enable;
+}
+
+void DisplayRadar(bool enable) {
+    plugin::Command<plugin::Commands::DISPLAY_RADAR>(enable);
+}
+
+void SetVisualFilter(bool enable, int filterId, float) {
+    if (!enable) {
+        return;
+    }
+
+    if (filterId < 0) {
+        filterId = 0;
+    } else if (filterId > 3) {
+        filterId = 3;
+    }
+
+    CWeather::OldWeatherType = static_cast<short>(filterId);
+    CWeather::NewWeatherType = static_cast<short>(filterId);
 }
 
 void TeleportForward(float distance) {
@@ -699,6 +846,20 @@ void DropCurrentWeapon(CPlayerPed* player) {
 
 void ClearWeapons(CPlayerPed* player) {
     if (player) player->ClearWeapons();
+}
+
+int RemoveTrackedPickups() {
+    int removed = 0;
+    for (int i = 0; i < 336; ++i) {
+        CPickup& pickup = CPickups::aPickUps[i];
+        if (pickup.m_bRemoved || pickup.m_nPickupType == PICKUP_NONE) {
+            continue;
+        }
+
+        CPickups::RemovePickUp(i);
+        ++removed;
+    }
+    return removed;
 }
 
 void ProcessInfiniteAmmo(CPlayerPed* player, bool enable) {

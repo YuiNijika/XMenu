@@ -257,6 +257,8 @@ bool D3DHook::menuVisible = false;
 bool D3DHook::isInitialized = false;
 bool D3DHook::hookInstalled = false;
 bool D3DHook::initFailed = false;
+bool D3DHook::backgroundInputActive = false;
+bool D3DHook::backgroundRenderActive = false;
 LPDIRECT3DDEVICE9 D3DHook::device = nullptr;
 const char* D3DHook::initStatus = "not initialized";
 std::function<void()> D3DHook::renderCallback = nullptr;
@@ -293,6 +295,29 @@ const char* D3DHook::GetStatusText() {
     return initStatus;
 }
 
+void D3DHook::SetBackgroundInputActive(bool active) {
+    if (backgroundInputActive == active) {
+        return;
+    }
+
+    backgroundInputActive = active;
+    if (isInitialized) {
+        ProcessMouse();
+    }
+}
+
+bool D3DHook::IsBackgroundInputActive() {
+    return backgroundInputActive;
+}
+
+void D3DHook::SetBackgroundRenderActive(bool active) {
+    backgroundRenderActive = active;
+}
+
+bool D3DHook::IsBackgroundRenderActive() {
+    return backgroundRenderActive;
+}
+
 void D3DHook::SetMenuVisible(bool visible) {
     if (!hookInstalled) {
         menuVisible = false;
@@ -324,9 +349,9 @@ void D3DHook::ProcessMouse() {
         return;
     }
 
-    ImGui::GetIO().MouseDrawCursor = menuVisible;
+    ImGui::GetIO().MouseDrawCursor = menuVisible || backgroundInputActive;
 
-    if (menuVisible) {
+    if (menuVisible || backgroundInputActive) {
 #ifdef GTASA
         virtualMouseActive = true;
         InitVirtualMousePosition(window);
@@ -359,7 +384,7 @@ void D3DHook::ProcessMouse() {
 }
 
 void D3DHook::MaintainInputState() {
-    if (hookInstalled && isInitialized && menuVisible) {
+    if (hookInstalled && isInitialized && (menuVisible || backgroundInputActive)) {
 #ifdef GTASA
         virtualMouseActive = true;
         InitVirtualMousePosition(window);
@@ -375,7 +400,7 @@ void D3DHook::MaintainInputState() {
 }
 
 LRESULT __stdcall D3DHook::hkWndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    if (menuVisible) {
+    if (menuVisible || backgroundInputActive) {
 #ifdef GTASA
         if (uMsg == WM_INPUT && virtualMouseActive) {
             MoveVirtualMouseFromRawInput(lParam);
@@ -429,8 +454,10 @@ HRESULT __stdcall D3DHook::hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
         InitImGui(pDevice);
     }
     
-    if (isInitialized && menuVisible) {
-        ApplyMousePatch(true);
+    if (isInitialized && (menuVisible || backgroundRenderActive || backgroundInputActive)) {
+        if (menuVisible || backgroundInputActive) {
+            ApplyMousePatch(true);
+        }
         ImGui_ImplDX9_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();

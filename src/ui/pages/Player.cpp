@@ -83,7 +83,7 @@ namespace Pages::Player {
                 UI::SpacingSeparator();
                 ImGui::TextUnformatted(T("player.proofFlags"));
 
-                GameLogic::ProofState proofs = Controllers::Player::GetProofState();
+                GameTypes::ProofState proofs = Controllers::Player::GetProofState();
                 MenuState::BulletProof = proofs.bullet;
                 MenuState::CollisionProof = proofs.collision;
                 MenuState::ExplosionProof = proofs.explosion;

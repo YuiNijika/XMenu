@@ -1,0 +1,21 @@
+{
+  "code": "ru",
+  "name": "Русский",
+  "fallback": "zh",
+  "files": [
+    "common.json",
+    "settings.json",
+    "player.json",
+    "vehicle.json",
+    "weapon.json",
+    "world.json",
+    "teleport.json",
+    "ped.json",
+    "scene.json",
+    "visual.json",
+    "about.json",
+    "update.json",
+    "actions.json",
+    "scene_visual_data.json"
+  ]
+}

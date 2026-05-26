@@ -1,0 +1,11 @@
+{
+  "visual.hud": "HUD",
+  "visual.radar": "Радар",
+  "visual.filter": "Визуальный фильтр",
+  "visual.filterId": "ID фильтра",
+  "visual.timecycStrength": "Сила Timecyc",
+  "visual.applyFilter": "Применить фильтр",
+  "visual.filterHint": "SA поддерживает более полные эффекты фильтра; VC/III безопасно деградируют по доступным возможностям.",
+  "visual.listHint": "Нажмите элемент списка, чтобы заполнить ID фильтра и сразу применить его.",
+  "visual.noListData": "Нет доступных данных списка визуальных эффектов."
+}

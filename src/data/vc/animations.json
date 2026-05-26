@@ -1,0 +1,3648 @@
+{
+  "animations": [
+    {
+      "category": "scene.animation.category.vc.chainsaw_right",
+      "entries": [
+        {
+          "name": "scene.animation.vc.chainsaw_right.csawright_walk_csaw_right",
+          "value": "CSAWRIGHT WALK CSAW RIGHT",
+          "group": "Chainsaw right",
+          "ifpId": 60,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.chainsaw_right.csawright_run_csaw_right",
+          "value": "CSAWRIGHT RUN CSAW RIGHT",
+          "group": "Chainsaw right",
+          "ifpId": 60,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.chainsaw_right.csawright_run_csaw_right_1",
+          "value": "CSAWRIGHT RUN CSAW RIGHT 1",
+          "group": "Chainsaw right",
+          "ifpId": 60,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.chainsaw_right.csawright_idle_csaw",
+          "value": "CSAWRIGHT IDLE CSAW",
+          "group": "Chainsaw right",
+          "ifpId": 60,
+          "animId": 3
+        },
+        {
+          "name": "scene.animation.vc.chainsaw_right.csawright_walkst_csaw_right",
+          "value": "CSAWRIGHT WALKST CSAW RIGHT",
+          "group": "Chainsaw right",
+          "ifpId": 60,
+          "animId": 4
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.chainsaw_left",
+      "entries": [
+        {
+          "name": "scene.animation.vc.chainsaw_left.csawleft_walk_csaw_left",
+          "value": "CSAWLEFT WALK CSAW LEFT",
+          "group": "Chainsaw left",
+          "ifpId": 59,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.chainsaw_left.csawleft_run_csaw_left",
+          "value": "CSAWLEFT RUN CSAW LEFT",
+          "group": "Chainsaw left",
+          "ifpId": 59,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.chainsaw_left.csawleft_run_csaw_left_1",
+          "value": "CSAWLEFT RUN CSAW LEFT 1",
+          "group": "Chainsaw left",
+          "ifpId": 59,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.chainsaw_left.csawleft_idle_csaw",
+          "value": "CSAWLEFT IDLE CSAW",
+          "group": "Chainsaw left",
+          "ifpId": 59,
+          "animId": 3
+        },
+        {
+          "name": "scene.animation.vc.chainsaw_left.csawleft_walkst_csaw_left",
+          "value": "CSAWLEFT WALKST CSAW LEFT",
+          "group": "Chainsaw left",
+          "ifpId": 59,
+          "animId": 4
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.chainsaw_back",
+      "entries": [
+        {
+          "name": "scene.animation.vc.chainsaw_back.csawback_walk_csaw_back",
+          "value": "CSAWBACK WALK CSAW BACK",
+          "group": "Chainsaw back",
+          "ifpId": 58,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.chainsaw_back.csawback_run_csaw_back",
+          "value": "CSAWBACK RUN CSAW BACK",
+          "group": "Chainsaw back",
+          "ifpId": 58,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.chainsaw_back.csawback_run_csaw_back_1",
+          "value": "CSAWBACK RUN CSAW BACK 1",
+          "group": "Chainsaw back",
+          "ifpId": 58,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.chainsaw_back.csawback_idle_csaw",
+          "value": "CSAWBACK IDLE CSAW",
+          "group": "Chainsaw back",
+          "ifpId": 58,
+          "animId": 3
+        },
+        {
+          "name": "scene.animation.vc.chainsaw_back.csawback_walkst_csaw_back",
+          "value": "CSAWBACK WALKST CSAW BACK",
+          "group": "Chainsaw back",
+          "ifpId": 58,
+          "animId": 4
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.rocket_right",
+      "entries": [
+        {
+          "name": "scene.animation.vc.rocket_right.rocketright_walk_rocket_right",
+          "value": "ROCKETRIGHT WALK ROCKET RIGHT",
+          "group": "Rocket right",
+          "ifpId": 57,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.rocket_right.rocketright_run_rocket_right",
+          "value": "ROCKETRIGHT RUN ROCKET RIGHT",
+          "group": "Rocket right",
+          "ifpId": 57,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.rocket_right.rocketright_run_rocket_right_1",
+          "value": "ROCKETRIGHT RUN ROCKET RIGHT 1",
+          "group": "Rocket right",
+          "ifpId": 57,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.rocket_right.rocketright_idle_rocket",
+          "value": "ROCKETRIGHT IDLE ROCKET",
+          "group": "Rocket right",
+          "ifpId": 57,
+          "animId": 3
+        },
+        {
+          "name": "scene.animation.vc.rocket_right.rocketright_walkst_rocket_right",
+          "value": "ROCKETRIGHT WALKST ROCKET RIGHT",
+          "group": "Rocket right",
+          "ifpId": 57,
+          "animId": 4
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.rocket_left",
+      "entries": [
+        {
+          "name": "scene.animation.vc.rocket_left.rocketleft_walk_rocket_left",
+          "value": "ROCKETLEFT WALK ROCKET LEFT",
+          "group": "Rocket left",
+          "ifpId": 56,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.rocket_left.rocketleft_run_rocket_left",
+          "value": "ROCKETLEFT RUN ROCKET LEFT",
+          "group": "Rocket left",
+          "ifpId": 56,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.rocket_left.rocketleft_run_rocket_left_1",
+          "value": "ROCKETLEFT RUN ROCKET LEFT 1",
+          "group": "Rocket left",
+          "ifpId": 56,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.rocket_left.rocketleft_idle_rocket",
+          "value": "ROCKETLEFT IDLE ROCKET",
+          "group": "Rocket left",
+          "ifpId": 56,
+          "animId": 3
+        },
+        {
+          "name": "scene.animation.vc.rocket_left.rocketleft_walkst_rocket_left",
+          "value": "ROCKETLEFT WALKST ROCKET LEFT",
+          "group": "Rocket left",
+          "ifpId": 56,
+          "animId": 4
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.rocket_back",
+      "entries": [
+        {
+          "name": "scene.animation.vc.rocket_back.rocketback_walk_rocket_back",
+          "value": "ROCKETBACK WALK ROCKET BACK",
+          "group": "Rocket back",
+          "ifpId": 55,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.rocket_back.rocketback_run_rocket_back",
+          "value": "ROCKETBACK RUN ROCKET BACK",
+          "group": "Rocket back",
+          "ifpId": 55,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.rocket_back.rocketback_run_rocket_back_1",
+          "value": "ROCKETBACK RUN ROCKET BACK 1",
+          "group": "Rocket back",
+          "ifpId": 55,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.rocket_back.rocketback_idle_rocket",
+          "value": "ROCKETBACK IDLE ROCKET",
+          "group": "Rocket back",
+          "ifpId": 55,
+          "animId": 3
+        },
+        {
+          "name": "scene.animation.vc.rocket_back.rocketback_walkst_rocket_back",
+          "value": "ROCKETBACK WALKST ROCKET BACK",
+          "group": "Rocket back",
+          "ifpId": 55,
+          "animId": 4
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.player_right",
+      "entries": [
+        {
+          "name": "scene.animation.vc.player_right.playerright_walk_right",
+          "value": "PLAYERRIGHT WALK RIGHT",
+          "group": "Player right",
+          "ifpId": 54,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.player_right.playerright_run_right",
+          "value": "PLAYERRIGHT RUN RIGHT",
+          "group": "Player right",
+          "ifpId": 54,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.player_right.playerright_run_right_1",
+          "value": "PLAYERRIGHT RUN RIGHT 1",
+          "group": "Player right",
+          "ifpId": 54,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.player_right.playerright_idle_stance",
+          "value": "PLAYERRIGHT IDLE STANCE",
+          "group": "Player right",
+          "ifpId": 54,
+          "animId": 3
+        },
+        {
+          "name": "scene.animation.vc.player_right.playerright_walk_start_right",
+          "value": "PLAYERRIGHT WALK START RIGHT",
+          "group": "Player right",
+          "ifpId": 54,
+          "animId": 4
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.player_left",
+      "entries": [
+        {
+          "name": "scene.animation.vc.player_left.playerleft_walk_left",
+          "value": "PLAYERLEFT WALK LEFT",
+          "group": "Player left",
+          "ifpId": 53,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.player_left.playerleft_run_left",
+          "value": "PLAYERLEFT RUN LEFT",
+          "group": "Player left",
+          "ifpId": 53,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.player_left.playerleft_run_left_1",
+          "value": "PLAYERLEFT RUN LEFT 1",
+          "group": "Player left",
+          "ifpId": 53,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.player_left.playerleft_idle_stance",
+          "value": "PLAYERLEFT IDLE STANCE",
+          "group": "Player left",
+          "ifpId": 53,
+          "animId": 3
+        },
+        {
+          "name": "scene.animation.vc.player_left.playerleft_walk_start_left",
+          "value": "PLAYERLEFT WALK START LEFT",
+          "group": "Player left",
+          "ifpId": 53,
+          "animId": 4
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.player_back",
+      "entries": [
+        {
+          "name": "scene.animation.vc.player_back.playerback_walk_back",
+          "value": "PLAYERBACK WALK BACK",
+          "group": "Player back",
+          "ifpId": 52,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.player_back.playerback_run_back",
+          "value": "PLAYERBACK RUN BACK",
+          "group": "Player back",
+          "ifpId": 52,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.player_back.playerback_run_back_1",
+          "value": "PLAYERBACK RUN BACK 1",
+          "group": "Player back",
+          "ifpId": 52,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.player_back.playerback_idle_stance",
+          "value": "PLAYERBACK IDLE STANCE",
+          "group": "Player back",
+          "ifpId": 52,
+          "animId": 3
+        },
+        {
+          "name": "scene.animation.vc.player_back.playerback_walk_start_back",
+          "value": "PLAYERBACK WALK START BACK",
+          "group": "Player back",
+          "ifpId": 52,
+          "animId": 4
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.skate",
+      "entries": [
+        {
+          "name": "scene.animation.vc.skate.skate_skate_run",
+          "value": "SKATE SKATE RUN",
+          "group": "Skate",
+          "ifpId": 51,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.skate.skate_skate_sprint",
+          "value": "SKATE SKATE SPRINT",
+          "group": "Skate",
+          "ifpId": 51,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.skate.skate_skate_sprint_1",
+          "value": "SKATE SKATE SPRINT 1",
+          "group": "Skate",
+          "ifpId": 51,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.skate.skate_skate_idle",
+          "value": "SKATE SKATE IDLE",
+          "group": "Skate",
+          "ifpId": 51,
+          "animId": 3
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.panic_chinky",
+      "entries": [
+        {
+          "name": "scene.animation.vc.panic_chinky.panicchunky_run_fatold",
+          "value": "PANICCHUNKY RUN FATOLD",
+          "group": "Panic chinky",
+          "ifpId": 50,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.panic_chinky.panicchunky_woman_runpanic",
+          "value": "PANICCHUNKY WOMAN RUNPANIC",
+          "group": "Panic chinky",
+          "ifpId": 50,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.panic_chinky.panicchunky_woman_runpanic_1",
+          "value": "PANICCHUNKY WOMAN RUNPANIC 1",
+          "group": "Panic chinky",
+          "ifpId": 50,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.panic_chinky.panicchunky_idle_stance",
+          "value": "PANICCHUNKY IDLE STANCE",
+          "group": "Panic chinky",
+          "ifpId": 50,
+          "animId": 3
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.jog_woman",
+      "entries": [
+        {
+          "name": "scene.animation.vc.jog_woman.jogwoman_jog_maleb",
+          "value": "JOGWOMAN JOG MALEB",
+          "group": "Jog woman",
+          "ifpId": 49,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.jog_woman.jogwoman_woman_run",
+          "value": "JOGWOMAN WOMAN RUN",
+          "group": "Jog woman",
+          "ifpId": 49,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.jog_woman.jogwoman_woman_runpanic",
+          "value": "JOGWOMAN WOMAN RUNPANIC",
+          "group": "Jog woman",
+          "ifpId": 49,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.jog_woman.jogwoman_woman_idlestance",
+          "value": "JOGWOMAN WOMAN IDLESTANCE",
+          "group": "Jog woman",
+          "ifpId": 49,
+          "animId": 3
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.old_woman",
+      "entries": [
+        {
+          "name": "scene.animation.vc.old_woman.oldwoman_woman_walkold",
+          "value": "OLDWOMAN WOMAN WALKOLD",
+          "group": "Old woman",
+          "ifpId": 48,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.old_woman.oldwoman_woman_run",
+          "value": "OLDWOMAN WOMAN RUN",
+          "group": "Old woman",
+          "ifpId": 48,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.old_woman.oldwoman_woman_runpanic",
+          "value": "OLDWOMAN WOMAN RUNPANIC",
+          "group": "Old woman",
+          "ifpId": 48,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.old_woman.oldwoman_woman_idlestance",
+          "value": "OLDWOMAN WOMAN IDLESTANCE",
+          "group": "Old woman",
+          "ifpId": 48,
+          "animId": 3
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.fat_woman",
+      "entries": [
+        {
+          "name": "scene.animation.vc.fat_woman.fatwoman_walk_fat",
+          "value": "FATWOMAN WALK FAT",
+          "group": "Fat woman",
+          "ifpId": 47,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.fat_woman.fatwoman_woman_run",
+          "value": "FATWOMAN WOMAN RUN",
+          "group": "Fat woman",
+          "ifpId": 47,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.fat_woman.fatwoman_woman_runpanic",
+          "value": "FATWOMAN WOMAN RUNPANIC",
+          "group": "Fat woman",
+          "ifpId": 47,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.fat_woman.fatwoman_woman_idlestance",
+          "value": "FATWOMAN WOMAN IDLESTANCE",
+          "group": "Fat woman",
+          "ifpId": 47,
+          "animId": 3
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.sexy_woman",
+      "entries": [
+        {
+          "name": "scene.animation.vc.sexy_woman.sexywoman_woman_walksexy",
+          "value": "SEXYWOMAN WOMAN WALKSEXY",
+          "group": "Sexy woman",
+          "ifpId": 46,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.sexy_woman.sexywoman_woman_run",
+          "value": "SEXYWOMAN WOMAN RUN",
+          "group": "Sexy woman",
+          "ifpId": 46,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.sexy_woman.sexywoman_woman_runpanic",
+          "value": "SEXYWOMAN WOMAN RUNPANIC",
+          "group": "Sexy woman",
+          "ifpId": 46,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.sexy_woman.sexywoman_woman_idlestance",
+          "value": "SEXYWOMAN WOMAN IDLESTANCE",
+          "group": "Sexy woman",
+          "ifpId": 46,
+          "animId": 3
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.busy_woman",
+      "entries": [
+        {
+          "name": "scene.animation.vc.busy_woman.busywoman_woman_walkbusy",
+          "value": "BUSYWOMAN WOMAN WALKBUSY",
+          "group": "Busy woman",
+          "ifpId": 45,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.busy_woman.busywoman_woman_run",
+          "value": "BUSYWOMAN WOMAN RUN",
+          "group": "Busy woman",
+          "ifpId": 45,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.busy_woman.busywoman_woman_runpanic",
+          "value": "BUSYWOMAN WOMAN RUNPANIC",
+          "group": "Busy woman",
+          "ifpId": 45,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.busy_woman.busywoman_woman_idlestance",
+          "value": "BUSYWOMAN WOMAN IDLESTANCE",
+          "group": "Busy woman",
+          "ifpId": 45,
+          "animId": 3
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.shopping",
+      "entries": [
+        {
+          "name": "scene.animation.vc.shopping.shopping_woman_walkshop",
+          "value": "SHOPPING WOMAN WALKSHOP",
+          "group": "Shopping",
+          "ifpId": 44,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.shopping.shopping_woman_run",
+          "value": "SHOPPING WOMAN RUN",
+          "group": "Shopping",
+          "ifpId": 44,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.shopping.shopping_woman_run_1",
+          "value": "SHOPPING WOMAN RUN 1",
+          "group": "Shopping",
+          "ifpId": 44,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.shopping.shopping_woman_idlestance",
+          "value": "SHOPPING WOMAN IDLESTANCE",
+          "group": "Shopping",
+          "ifpId": 44,
+          "animId": 3
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.woman",
+      "entries": [
+        {
+          "name": "scene.animation.vc.woman.woman_woman_walknorm",
+          "value": "WOMAN WOMAN WALKNORM",
+          "group": "Woman",
+          "ifpId": 43,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.woman.woman_woman_run",
+          "value": "WOMAN WOMAN RUN",
+          "group": "Woman",
+          "ifpId": 43,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.woman.woman_woman_runpanic",
+          "value": "WOMAN WOMAN RUNPANIC",
+          "group": "Woman",
+          "ifpId": 43,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.woman.woman_woman_idlestance",
+          "value": "WOMAN WOMAN IDLESTANCE",
+          "group": "Woman",
+          "ifpId": 43,
+          "animId": 3
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.jogger",
+      "entries": [
+        {
+          "name": "scene.animation.vc.jogger.jogger_jog_malea",
+          "value": "JOGGER JOG MALEA",
+          "group": "Jogger",
+          "ifpId": 42,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.jogger.jogger_run_civi",
+          "value": "JOGGER RUN CIVI",
+          "group": "Jogger",
+          "ifpId": 42,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.jogger.jogger_sprint_civi",
+          "value": "JOGGER SPRINT CIVI",
+          "group": "Jogger",
+          "ifpId": 42,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.jogger.jogger_idle_stance",
+          "value": "JOGGER IDLE STANCE",
+          "group": "Jogger",
+          "ifpId": 42,
+          "animId": 3
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.old_fatman",
+      "entries": [
+        {
+          "name": "scene.animation.vc.old_fatman.oldfatman_walk_fatold",
+          "value": "OLDFATMAN WALK FATOLD",
+          "group": "Old fatman",
+          "ifpId": 41,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.old_fatman.oldfatman_run_fatold",
+          "value": "OLDFATMAN RUN FATOLD",
+          "group": "Old fatman",
+          "ifpId": 41,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.old_fatman.oldfatman_woman_runpanic",
+          "value": "OLDFATMAN WOMAN RUNPANIC",
+          "group": "Old fatman",
+          "ifpId": 41,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.old_fatman.oldfatman_idle_stance",
+          "value": "OLDFATMAN IDLE STANCE",
+          "group": "Old fatman",
+          "ifpId": 41,
+          "animId": 3
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.fatman",
+      "entries": [
+        {
+          "name": "scene.animation.vc.fatman.fatman_walk_fat",
+          "value": "FATMAN WALK FAT",
+          "group": "Fatman",
+          "ifpId": 40,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.fatman.fatman_run_civi",
+          "value": "FATMAN RUN CIVI",
+          "group": "Fatman",
+          "ifpId": 40,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.fatman.fatman_woman_runpanic",
+          "value": "FATMAN WOMAN RUNPANIC",
+          "group": "Fatman",
+          "ifpId": 40,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.fatman.fatman_idle_stance",
+          "value": "FATMAN IDLE STANCE",
+          "group": "Fatman",
+          "ifpId": 40,
+          "animId": 3
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.gang2",
+      "entries": [
+        {
+          "name": "scene.animation.vc.gang2.gang2_walk_gang2",
+          "value": "GANG2 WALK GANG2",
+          "group": "Gang2",
+          "ifpId": 39,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.gang2.gang2_run_gang1",
+          "value": "GANG2 RUN GANG1",
+          "group": "Gang2",
+          "ifpId": 39,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.gang2.gang2_sprint_civi",
+          "value": "GANG2 SPRINT CIVI",
+          "group": "Gang2",
+          "ifpId": 39,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.gang2.gang2_idle_stance",
+          "value": "GANG2 IDLE STANCE",
+          "group": "Gang2",
+          "ifpId": 39,
+          "animId": 3
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.gang1",
+      "entries": [
+        {
+          "name": "scene.animation.vc.gang1.gang1_walk_gang1",
+          "value": "GANG1 WALK GANG1",
+          "group": "Gang1",
+          "ifpId": 38,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.gang1.gang1_run_gang1",
+          "value": "GANG1 RUN GANG1",
+          "group": "Gang1",
+          "ifpId": 38,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.gang1.gang1_sprint_civi",
+          "value": "GANG1 SPRINT CIVI",
+          "group": "Gang1",
+          "ifpId": 38,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.gang1.gang1_idle_stance",
+          "value": "GANG1 IDLE STANCE",
+          "group": "Gang1",
+          "ifpId": 38,
+          "animId": 3
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.oldman",
+      "entries": [
+        {
+          "name": "scene.animation.vc.oldman.oldman_walk_old",
+          "value": "OLDMAN WALK OLD",
+          "group": "Oldman",
+          "ifpId": 37,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.oldman.oldman_run_civi",
+          "value": "OLDMAN RUN CIVI",
+          "group": "Oldman",
+          "ifpId": 37,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.oldman.oldman_sprint_civi",
+          "value": "OLDMAN SPRINT CIVI",
+          "group": "Oldman",
+          "ifpId": 37,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.oldman.oldman_idle_stance",
+          "value": "OLDMAN IDLE STANCE",
+          "group": "Oldman",
+          "ifpId": 37,
+          "animId": 3
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.shuffle",
+      "entries": [
+        {
+          "name": "scene.animation.vc.shuffle.shuffle_walk_shuffle",
+          "value": "SHUFFLE WALK SHUFFLE",
+          "group": "Shuffle",
+          "ifpId": 36,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.shuffle.shuffle_run_civi",
+          "value": "SHUFFLE RUN CIVI",
+          "group": "Shuffle",
+          "ifpId": 36,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.shuffle.shuffle_sprint_civi",
+          "value": "SHUFFLE SPRINT CIVI",
+          "group": "Shuffle",
+          "ifpId": 36,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.shuffle.shuffle_idle_stance",
+          "value": "SHUFFLE IDLE STANCE",
+          "group": "Shuffle",
+          "ifpId": 36,
+          "animId": 3
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.player_chainsaw",
+      "entries": [
+        {
+          "name": "scene.animation.vc.player_chainsaw.playercsaw_walk_csaw",
+          "value": "PLAYERCSAW WALK CSAW",
+          "group": "Player chainsaw",
+          "ifpId": 35,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.player_chainsaw.playercsaw_run_csaw",
+          "value": "PLAYERCSAW RUN CSAW",
+          "group": "Player chainsaw",
+          "ifpId": 35,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.player_chainsaw.playercsaw_run_csaw_1",
+          "value": "PLAYERCSAW RUN CSAW 1",
+          "group": "Player chainsaw",
+          "ifpId": 35,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.player_chainsaw.playercsaw_idle_csaw",
+          "value": "PLAYERCSAW IDLE CSAW",
+          "group": "Player chainsaw",
+          "ifpId": 35,
+          "animId": 3
+        },
+        {
+          "name": "scene.animation.vc.player_chainsaw.playercsaw_walk_start_csaw",
+          "value": "PLAYERCSAW WALK START CSAW",
+          "group": "Player chainsaw",
+          "ifpId": 35,
+          "animId": 4
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.player_baseball_bat",
+      "entries": [
+        {
+          "name": "scene.animation.vc.player_baseball_bat.playerbbbat_walk_player",
+          "value": "PLAYERBBBAT WALK PLAYER",
+          "group": "Player baseball bat",
+          "ifpId": 34,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.player_baseball_bat.playerbbbat_run_player",
+          "value": "PLAYERBBBAT RUN PLAYER",
+          "group": "Player baseball bat",
+          "ifpId": 34,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.player_baseball_bat.playerbbbat_run_player_1",
+          "value": "PLAYERBBBAT RUN PLAYER 1",
+          "group": "Player baseball bat",
+          "ifpId": 34,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.player_baseball_bat.playerbbbat_idle_stance",
+          "value": "PLAYERBBBAT IDLE STANCE",
+          "group": "Player baseball bat",
+          "ifpId": 34,
+          "animId": 3
+        },
+        {
+          "name": "scene.animation.vc.player_baseball_bat.playerbbbat_walk_start",
+          "value": "PLAYERBBBAT WALK START",
+          "group": "Player baseball bat",
+          "ifpId": 34,
+          "animId": 4
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.player_2_armed",
+      "entries": [
+        {
+          "name": "scene.animation.vc.player_2_armed.player2armed_walk_armed",
+          "value": "PLAYER2ARMED WALK ARMED",
+          "group": "Player 2 armed",
+          "ifpId": 33,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.player_2_armed.player2armed_run_armed",
+          "value": "PLAYER2ARMED RUN ARMED",
+          "group": "Player 2 armed",
+          "ifpId": 33,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.player_2_armed.player2armed_run_armed_1",
+          "value": "PLAYER2ARMED RUN ARMED 1",
+          "group": "Player 2 armed",
+          "ifpId": 33,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.player_2_armed.player2armed_idle_armed",
+          "value": "PLAYER2ARMED IDLE ARMED",
+          "group": "Player 2 armed",
+          "ifpId": 33,
+          "animId": 3
+        },
+        {
+          "name": "scene.animation.vc.player_2_armed.player2armed_walk_start_armed",
+          "value": "PLAYER2ARMED WALK START ARMED",
+          "group": "Player 2 armed",
+          "ifpId": 33,
+          "animId": 4
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.player_1_armed",
+      "entries": [
+        {
+          "name": "scene.animation.vc.player_1_armed.player1armed_walk_player",
+          "value": "PLAYER1ARMED WALK PLAYER",
+          "group": "Player 1 armed",
+          "ifpId": 32,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.player_1_armed.player1armed_run_1armed",
+          "value": "PLAYER1ARMED RUN 1ARMED",
+          "group": "Player 1 armed",
+          "ifpId": 32,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.player_1_armed.player1armed_sprint_civi",
+          "value": "PLAYER1ARMED SPRINT CIVI",
+          "group": "Player 1 armed",
+          "ifpId": 32,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.player_1_armed.player1armed_idle_stance",
+          "value": "PLAYER1ARMED IDLE STANCE",
+          "group": "Player 1 armed",
+          "ifpId": 32,
+          "animId": 3
+        },
+        {
+          "name": "scene.animation.vc.player_1_armed.player1armed_walk_start",
+          "value": "PLAYER1ARMED WALK START",
+          "group": "Player 1 armed",
+          "ifpId": 32,
+          "animId": 4
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.player_rocket",
+      "entries": [
+        {
+          "name": "scene.animation.vc.player_rocket.playerrocket_walk_rocket",
+          "value": "PLAYERROCKET WALK ROCKET",
+          "group": "Player rocket",
+          "ifpId": 31,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.player_rocket.playerrocket_run_rocket",
+          "value": "PLAYERROCKET RUN ROCKET",
+          "group": "Player rocket",
+          "ifpId": 31,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.player_rocket.playerrocket_run_rocket_1",
+          "value": "PLAYERROCKET RUN ROCKET 1",
+          "group": "Player rocket",
+          "ifpId": 31,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.player_rocket.playerrocket_idle_rocket",
+          "value": "PLAYERROCKET IDLE ROCKET",
+          "group": "Player rocket",
+          "ifpId": 31,
+          "animId": 3
+        },
+        {
+          "name": "scene.animation.vc.player_rocket.playerrocket_walk_start_rocket",
+          "value": "PLAYERROCKET WALK START ROCKET",
+          "group": "Player rocket",
+          "ifpId": 31,
+          "animId": 4
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.player",
+      "entries": [
+        {
+          "name": "scene.animation.vc.player.player_walk_player",
+          "value": "PLAYER WALK PLAYER",
+          "group": "Player",
+          "ifpId": 30,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.player.player_run_player",
+          "value": "PLAYER RUN PLAYER",
+          "group": "Player",
+          "ifpId": 30,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.player.player_sprint_civi",
+          "value": "PLAYER SPRINT CIVI",
+          "group": "Player",
+          "ifpId": 30,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.player.player_idle_stance",
+          "value": "PLAYER IDLE STANCE",
+          "group": "Player",
+          "ifpId": 30,
+          "animId": 3
+        },
+        {
+          "name": "scene.animation.vc.player.player_walk_start",
+          "value": "PLAYER WALK START",
+          "group": "Player",
+          "ifpId": 30,
+          "animId": 4
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.lance",
+      "entries": [
+        {
+          "name": "scene.animation.vc.lance.lance",
+          "value": "LANCE",
+          "group": "Lance",
+          "ifpId": 29,
+          "animId": 210
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.strip",
+      "entries": [
+        {
+          "name": "scene.animation.vc.strip.strip_a",
+          "value": "STRIP A",
+          "group": "Strip",
+          "ifpId": 28,
+          "animId": 226
+        },
+        {
+          "name": "scene.animation.vc.strip.strip_b",
+          "value": "STRIP B",
+          "group": "Strip",
+          "ifpId": 28,
+          "animId": 227
+        },
+        {
+          "name": "scene.animation.vc.strip.strip_c",
+          "value": "STRIP C",
+          "group": "Strip",
+          "ifpId": 28,
+          "animId": 228
+        },
+        {
+          "name": "scene.animation.vc.strip.strip_d",
+          "value": "STRIP D",
+          "group": "Strip",
+          "ifpId": 28,
+          "animId": 229
+        },
+        {
+          "name": "scene.animation.vc.strip.strip_e",
+          "value": "STRIP E",
+          "group": "Strip",
+          "ifpId": 28,
+          "animId": 230
+        },
+        {
+          "name": "scene.animation.vc.strip.strip_f",
+          "value": "STRIP F",
+          "group": "Strip",
+          "ifpId": 28,
+          "animId": 231
+        },
+        {
+          "name": "scene.animation.vc.strip.strip_g",
+          "value": "STRIP G",
+          "group": "Strip",
+          "ifpId": 28,
+          "animId": 232
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.riot",
+      "entries": [
+        {
+          "name": "scene.animation.vc.riot.riot_angry",
+          "value": "RIOT ANGRY",
+          "group": "Riot",
+          "ifpId": 27,
+          "animId": 219
+        },
+        {
+          "name": "scene.animation.vc.riot.riot_angry_b",
+          "value": "RIOT ANGRY B",
+          "group": "Riot",
+          "ifpId": 27,
+          "animId": 220
+        },
+        {
+          "name": "scene.animation.vc.riot.riot_chant",
+          "value": "RIOT CHANT",
+          "group": "Riot",
+          "ifpId": 27,
+          "animId": 221
+        },
+        {
+          "name": "scene.animation.vc.riot.riot_punches",
+          "value": "RIOT PUNCHES",
+          "group": "Riot",
+          "ifpId": 27,
+          "animId": 222
+        },
+        {
+          "name": "scene.animation.vc.riot.riot_shout",
+          "value": "RIOT SHOUT",
+          "group": "Riot",
+          "ifpId": 27,
+          "animId": 223
+        },
+        {
+          "name": "scene.animation.vc.riot.riot_challenge",
+          "value": "RIOT CHALLENGE",
+          "group": "Riot",
+          "ifpId": 27,
+          "animId": 224
+        },
+        {
+          "name": "scene.animation.vc.riot.riot_fuku",
+          "value": "RIOT FUKU",
+          "group": "Riot",
+          "ifpId": 27,
+          "animId": 225
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.playidles",
+      "entries": [
+        {
+          "name": "scene.animation.vc.playidles.playidles_stretch",
+          "value": "PLAYIDLES STRETCH",
+          "group": "Playidles",
+          "ifpId": 26,
+          "animId": 215
+        },
+        {
+          "name": "scene.animation.vc.playidles.playidles_time",
+          "value": "PLAYIDLES TIME",
+          "group": "Playidles",
+          "ifpId": 26,
+          "animId": 216
+        },
+        {
+          "name": "scene.animation.vc.playidles.playidles_shldr",
+          "value": "PLAYIDLES SHLDR",
+          "group": "Playidles",
+          "ifpId": 26,
+          "animId": 217
+        },
+        {
+          "name": "scene.animation.vc.playidles.playidles_strleg",
+          "value": "PLAYIDLES STRLEG",
+          "group": "Playidles",
+          "ifpId": 26,
+          "animId": 218
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.sunbathe",
+      "entries": [
+        {
+          "name": "scene.animation.vc.sunbathe.sunbathe_bather",
+          "value": "SUNBATHE BATHER",
+          "group": "Sunbathe",
+          "ifpId": 25,
+          "animId": 210
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.medic",
+      "entries": [
+        {
+          "name": "scene.animation.vc.medic.medic_cpr",
+          "value": "MEDIC CPR",
+          "group": "Medic",
+          "ifpId": 24,
+          "animId": 214
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.flamethrower",
+      "entries": [
+        {
+          "name": "scene.animation.vc.flamethrower.flame_fire",
+          "value": "FLAME FIRE",
+          "group": "Flamethrower",
+          "ifpId": 23,
+          "animId": 205
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.grenade",
+      "entries": [
+        {
+          "name": "scene.animation.vc.grenade.grenade_weapon_throw",
+          "value": "GRENADE WEAPON THROW",
+          "group": "Grenade",
+          "ifpId": 22,
+          "animId": 205
+        },
+        {
+          "name": "scene.animation.vc.grenade.grenade_weapon_throwu",
+          "value": "GRENADE WEAPON THROWU",
+          "group": "Grenade",
+          "ifpId": 22,
+          "animId": 206
+        },
+        {
+          "name": "scene.animation.vc.grenade.grenade_weapon_start_throw",
+          "value": "GRENADE WEAPON START THROW",
+          "group": "Grenade",
+          "ifpId": 22,
+          "animId": 207
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.sniper",
+      "entries": [
+        {
+          "name": "scene.animation.vc.sniper.sniper_weapon_sniper",
+          "value": "SNIPER WEAPON SNIPER",
+          "group": "Sniper",
+          "ifpId": 21,
+          "animId": 205
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.m60",
+      "entries": [
+        {
+          "name": "scene.animation.vc.m60.m60_fire",
+          "value": "M60 FIRE",
+          "group": "M60",
+          "ifpId": 20,
+          "animId": 205
+        },
+        {
+          "name": "scene.animation.vc.m60.m60_fire_1",
+          "value": "M60 FIRE 1",
+          "group": "M60",
+          "ifpId": 20,
+          "animId": 206
+        },
+        {
+          "name": "scene.animation.vc.m60.m60_reload",
+          "value": "M60 RELOAD",
+          "group": "M60",
+          "ifpId": 20,
+          "animId": 207
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.rifle",
+      "entries": [
+        {
+          "name": "scene.animation.vc.rifle.rifle_fire",
+          "value": "RIFLE FIRE",
+          "group": "Rifle",
+          "ifpId": 19,
+          "animId": 205
+        },
+        {
+          "name": "scene.animation.vc.rifle.rifle_crouchfire",
+          "value": "RIFLE CROUCHFIRE",
+          "group": "Rifle",
+          "ifpId": 19,
+          "animId": 206
+        },
+        {
+          "name": "scene.animation.vc.rifle.rifle_load",
+          "value": "RIFLE LOAD",
+          "group": "Rifle",
+          "ifpId": 19,
+          "animId": 207
+        },
+        {
+          "name": "scene.animation.vc.rifle.rifle_crouchload",
+          "value": "RIFLE CROUCHLOAD",
+          "group": "Rifle",
+          "ifpId": 19,
+          "animId": 208
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.uzi",
+      "entries": [
+        {
+          "name": "scene.animation.vc.uzi.uzi_fire",
+          "value": "UZI FIRE",
+          "group": "Uzi",
+          "ifpId": 18,
+          "animId": 205
+        },
+        {
+          "name": "scene.animation.vc.uzi.uzi_crouchfire",
+          "value": "UZI CROUCHFIRE",
+          "group": "Uzi",
+          "ifpId": 18,
+          "animId": 206
+        },
+        {
+          "name": "scene.animation.vc.uzi.uzi_reload",
+          "value": "UZI RELOAD",
+          "group": "Uzi",
+          "ifpId": 18,
+          "animId": 207
+        },
+        {
+          "name": "scene.animation.vc.uzi.uzi_crouchreload",
+          "value": "UZI CROUCHRELOAD",
+          "group": "Uzi",
+          "ifpId": 18,
+          "animId": 208
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.tec",
+      "entries": [
+        {
+          "name": "scene.animation.vc.tec.tec_fire",
+          "value": "TEC FIRE",
+          "group": "Tec",
+          "ifpId": 17,
+          "animId": 205
+        },
+        {
+          "name": "scene.animation.vc.tec.tec_crouchfire",
+          "value": "TEC CROUCHFIRE",
+          "group": "Tec",
+          "ifpId": 17,
+          "animId": 206
+        },
+        {
+          "name": "scene.animation.vc.tec.tec_reload",
+          "value": "TEC RELOAD",
+          "group": "Tec",
+          "ifpId": 17,
+          "animId": 207
+        },
+        {
+          "name": "scene.animation.vc.tec.tec_crouchreload",
+          "value": "TEC CROUCHRELOAD",
+          "group": "Tec",
+          "ifpId": 17,
+          "animId": 208
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.buddy",
+      "entries": [
+        {
+          "name": "scene.animation.vc.buddy.buddy_fire",
+          "value": "BUDDY FIRE",
+          "group": "Buddy",
+          "ifpId": 16,
+          "animId": 205
+        },
+        {
+          "name": "scene.animation.vc.buddy.buddy_crouchfire",
+          "value": "BUDDY CROUCHFIRE",
+          "group": "Buddy",
+          "ifpId": 16,
+          "animId": 206
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.shotgun",
+      "entries": [
+        {
+          "name": "scene.animation.vc.shotgun.shotgun_fire",
+          "value": "SHOTGUN FIRE",
+          "group": "Shotgun",
+          "ifpId": 15,
+          "animId": 205
+        },
+        {
+          "name": "scene.animation.vc.shotgun.shotgun_crouchfire",
+          "value": "SHOTGUN CROUCHFIRE",
+          "group": "Shotgun",
+          "ifpId": 15,
+          "animId": 206
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.colt45",
+      "entries": [
+        {
+          "name": "scene.animation.vc.colt45.colt45_fire",
+          "value": "COLT45 FIRE",
+          "group": "Colt45",
+          "ifpId": 14,
+          "animId": 205
+        },
+        {
+          "name": "scene.animation.vc.colt45.colt45_crouchfire",
+          "value": "COLT45 CROUCHFIRE",
+          "group": "Colt45",
+          "ifpId": 14,
+          "animId": 206
+        },
+        {
+          "name": "scene.animation.vc.colt45.colt45_reload",
+          "value": "COLT45 RELOAD",
+          "group": "Colt45",
+          "ifpId": 14,
+          "animId": 207
+        },
+        {
+          "name": "scene.animation.vc.colt45.colt45_crouchreload",
+          "value": "COLT45 CROUCHRELOAD",
+          "group": "Colt45",
+          "ifpId": 14,
+          "animId": 208
+        },
+        {
+          "name": "scene.animation.vc.colt45.colt45_cop",
+          "value": "COLT45 COP",
+          "group": "Colt45",
+          "ifpId": 14,
+          "animId": 209
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.python",
+      "entries": [
+        {
+          "name": "scene.animation.vc.python.python_fire",
+          "value": "PYTHON FIRE",
+          "group": "Python",
+          "ifpId": 13,
+          "animId": 205
+        },
+        {
+          "name": "scene.animation.vc.python.python_crouchfire",
+          "value": "PYTHON CROUCHFIRE",
+          "group": "Python",
+          "ifpId": 13,
+          "animId": 206
+        },
+        {
+          "name": "scene.animation.vc.python.python_reload",
+          "value": "PYTHON RELOAD",
+          "group": "Python",
+          "ifpId": 13,
+          "animId": 207
+        },
+        {
+          "name": "scene.animation.vc.python.python_crouchreload",
+          "value": "PYTHON CROUCHRELOAD",
+          "group": "Python",
+          "ifpId": 13,
+          "animId": 208
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.chainsaw",
+      "entries": [
+        {
+          "name": "scene.animation.vc.chainsaw.chainsaw_weapon_csaw",
+          "value": "CHAINSAW WEAPON CSAW",
+          "group": "Chainsaw",
+          "ifpId": 12,
+          "animId": 205
+        },
+        {
+          "name": "scene.animation.vc.chainsaw.chainsaw_weapon_csawlo",
+          "value": "CHAINSAW WEAPON CSAWLO",
+          "group": "Chainsaw",
+          "ifpId": 12,
+          "animId": 206
+        },
+        {
+          "name": "scene.animation.vc.chainsaw.chainsaw_csaw_part",
+          "value": "CHAINSAW CSAW PART",
+          "group": "Chainsaw",
+          "ifpId": 12,
+          "animId": 207
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.golfclub",
+      "entries": [
+        {
+          "name": "scene.animation.vc.golfclub.golfclub_weapon_bat_h",
+          "value": "GOLFCLUB WEAPON BAT H",
+          "group": "Golfclub",
+          "ifpId": 11,
+          "animId": 205
+        },
+        {
+          "name": "scene.animation.vc.golfclub.golfclub_weapon_golfclub",
+          "value": "GOLFCLUB WEAPON GOLFCLUB",
+          "group": "Golfclub",
+          "ifpId": 11,
+          "animId": 206
+        },
+        {
+          "name": "scene.animation.vc.golfclub.golfclub_bat_part",
+          "value": "GOLFCLUB BAT PART",
+          "group": "Golfclub",
+          "ifpId": 11,
+          "animId": 207
+        },
+        {
+          "name": "scene.animation.vc.golfclub.golfclub_weapon_bat_h_1",
+          "value": "GOLFCLUB WEAPON BAT H 1",
+          "group": "Golfclub",
+          "ifpId": 11,
+          "animId": 208
+        },
+        {
+          "name": "scene.animation.vc.golfclub.golfclub_weapon_bat_v",
+          "value": "GOLFCLUB WEAPON BAT V",
+          "group": "Golfclub",
+          "ifpId": 11,
+          "animId": 209
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.baseball",
+      "entries": [
+        {
+          "name": "scene.animation.vc.baseball.baseball_weapon_bat_h",
+          "value": "BASEBALL WEAPON BAT H",
+          "group": "Baseball",
+          "ifpId": 10,
+          "animId": 205
+        },
+        {
+          "name": "scene.animation.vc.baseball.baseball_weapon_bat_v",
+          "value": "BASEBALL WEAPON BAT V",
+          "group": "Baseball",
+          "ifpId": 10,
+          "animId": 206
+        },
+        {
+          "name": "scene.animation.vc.baseball.baseball_bat_part",
+          "value": "BASEBALL BAT PART",
+          "group": "Baseball",
+          "ifpId": 10,
+          "animId": 207
+        },
+        {
+          "name": "scene.animation.vc.baseball.baseball_weapon_bat_h_1",
+          "value": "BASEBALL WEAPON BAT H 1",
+          "group": "Baseball",
+          "ifpId": 10,
+          "animId": 208
+        },
+        {
+          "name": "scene.animation.vc.baseball.baseball_weapon_golfclub",
+          "value": "BASEBALL WEAPON GOLFCLUB",
+          "group": "Baseball",
+          "ifpId": 10,
+          "animId": 209
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.knife",
+      "entries": [
+        {
+          "name": "scene.animation.vc.knife.weapon_knife_1",
+          "value": "WEAPON KNIFE 1",
+          "group": "Knife",
+          "ifpId": 9,
+          "animId": 205
+        },
+        {
+          "name": "scene.animation.vc.knife.weapon_knife_2",
+          "value": "WEAPON KNIFE 2",
+          "group": "Knife",
+          "ifpId": 9,
+          "animId": 206
+        },
+        {
+          "name": "scene.animation.vc.knife.knife_part",
+          "value": "KNIFE PART",
+          "group": "Knife",
+          "ifpId": 9,
+          "animId": 207
+        },
+        {
+          "name": "scene.animation.vc.knife.weapon_knifeidle",
+          "value": "WEAPON KNIFEIDLE",
+          "group": "Knife",
+          "ifpId": 9,
+          "animId": 208
+        },
+        {
+          "name": "scene.animation.vc.knife.weapon_knife_3",
+          "value": "WEAPON KNIFE 3",
+          "group": "Knife",
+          "ifpId": 9,
+          "animId": 209
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.screwdriver",
+      "entries": [
+        {
+          "name": "scene.animation.vc.screwdriver.screwdrv_fightbodyblow",
+          "value": "SCREWDRV FIGHTBODYBLOW",
+          "group": "Screwdriver",
+          "ifpId": 8,
+          "animId": 205
+        },
+        {
+          "name": "scene.animation.vc.screwdriver.screwdrv_fightbodyblow_1",
+          "value": "SCREWDRV FIGHTBODYBLOW 1",
+          "group": "Screwdriver",
+          "ifpId": 8,
+          "animId": 206
+        },
+        {
+          "name": "scene.animation.vc.screwdriver.screwdrv_fightppunch",
+          "value": "SCREWDRV FIGHTPPUNCH",
+          "group": "Screwdriver",
+          "ifpId": 8,
+          "animId": 207
+        },
+        {
+          "name": "scene.animation.vc.screwdriver.screwdrv_fightidle",
+          "value": "SCREWDRV FIGHTIDLE",
+          "group": "Screwdriver",
+          "ifpId": 8,
+          "animId": 208
+        },
+        {
+          "name": "scene.animation.vc.screwdriver.screwdrv_fightbodyblow_2",
+          "value": "SCREWDRV FIGHTBODYBLOW 2",
+          "group": "Screwdriver",
+          "ifpId": 8,
+          "animId": 209
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.unarmed",
+      "entries": [
+        {
+          "name": "scene.animation.vc.unarmed.unarmed_punchr",
+          "value": "UNARMED PUNCHR",
+          "group": "Unarmed",
+          "ifpId": 7,
+          "animId": 205
+        },
+        {
+          "name": "scene.animation.vc.unarmed.unarmed_kick_floor",
+          "value": "UNARMED KICK FLOOR",
+          "group": "Unarmed",
+          "ifpId": 7,
+          "animId": 206
+        },
+        {
+          "name": "scene.animation.vc.unarmed.unarmed_fightppunch",
+          "value": "UNARMED FIGHTPPUNCH",
+          "group": "Unarmed",
+          "ifpId": 7,
+          "animId": 207
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.biked",
+      "entries": [
+        {
+          "name": "scene.animation.vc.biked.biked_ride",
+          "value": "BIKED RIDE",
+          "group": "BikeD",
+          "ifpId": 6,
+          "animId": 187
+        },
+        {
+          "name": "scene.animation.vc.biked.biked_still",
+          "value": "BIKED STILL",
+          "group": "BikeD",
+          "ifpId": 6,
+          "animId": 188
+        },
+        {
+          "name": "scene.animation.vc.biked.biked_left",
+          "value": "BIKED LEFT",
+          "group": "BikeD",
+          "ifpId": 6,
+          "animId": 189
+        },
+        {
+          "name": "scene.animation.vc.biked.biked_right",
+          "value": "BIKED RIGHT",
+          "group": "BikeD",
+          "ifpId": 6,
+          "animId": 190
+        },
+        {
+          "name": "scene.animation.vc.biked.biked_back",
+          "value": "BIKED BACK",
+          "group": "BikeD",
+          "ifpId": 6,
+          "animId": 191
+        },
+        {
+          "name": "scene.animation.vc.biked.biked_fwd",
+          "value": "BIKED FWD",
+          "group": "BikeD",
+          "ifpId": 6,
+          "animId": 192
+        },
+        {
+          "name": "scene.animation.vc.biked.biked_pushes",
+          "value": "BIKED PUSHES",
+          "group": "BikeD",
+          "ifpId": 6,
+          "animId": 193
+        },
+        {
+          "name": "scene.animation.vc.biked.biked_jumponr",
+          "value": "BIKED JUMPONR",
+          "group": "BikeD",
+          "ifpId": 6,
+          "animId": 194
+        },
+        {
+          "name": "scene.animation.vc.biked.biked_jumponl",
+          "value": "BIKED JUMPONL",
+          "group": "BikeD",
+          "ifpId": 6,
+          "animId": 195
+        },
+        {
+          "name": "scene.animation.vc.biked.biked_kick",
+          "value": "BIKED KICK",
+          "group": "BikeD",
+          "ifpId": 6,
+          "animId": 196
+        },
+        {
+          "name": "scene.animation.vc.biked.biked_hit",
+          "value": "BIKED HIT",
+          "group": "BikeD",
+          "ifpId": 6,
+          "animId": 197
+        },
+        {
+          "name": "scene.animation.vc.biked.biked_getoffrhs",
+          "value": "BIKED GETOFFRHS",
+          "group": "BikeD",
+          "ifpId": 6,
+          "animId": 198
+        },
+        {
+          "name": "scene.animation.vc.biked.biked_getofflhs",
+          "value": "BIKED GETOFFLHS",
+          "group": "BikeD",
+          "ifpId": 6,
+          "animId": 199
+        },
+        {
+          "name": "scene.animation.vc.biked.biked_getoffback",
+          "value": "BIKED GETOFFBACK",
+          "group": "BikeD",
+          "ifpId": 6,
+          "animId": 200
+        },
+        {
+          "name": "scene.animation.vc.biked.biked_drivebylhs",
+          "value": "BIKED DRIVEBYLHS",
+          "group": "BikeD",
+          "ifpId": 6,
+          "animId": 201
+        },
+        {
+          "name": "scene.animation.vc.biked.biked_drivebyrhs",
+          "value": "BIKED DRIVEBYRHS",
+          "group": "BikeD",
+          "ifpId": 6,
+          "animId": 202
+        },
+        {
+          "name": "scene.animation.vc.biked.biked_drivebyft",
+          "value": "BIKED DRIVEBYFT",
+          "group": "BikeD",
+          "ifpId": 6,
+          "animId": 203
+        },
+        {
+          "name": "scene.animation.vc.biked.biked_passenger",
+          "value": "BIKED PASSENGER",
+          "group": "BikeD",
+          "ifpId": 6,
+          "animId": 204
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.bikeh",
+      "entries": [
+        {
+          "name": "scene.animation.vc.bikeh.bikeh_ride",
+          "value": "BIKEH RIDE",
+          "group": "BikeH",
+          "ifpId": 5,
+          "animId": 187
+        },
+        {
+          "name": "scene.animation.vc.bikeh.bikeh_still",
+          "value": "BIKEH STILL",
+          "group": "BikeH",
+          "ifpId": 5,
+          "animId": 188
+        },
+        {
+          "name": "scene.animation.vc.bikeh.bikeh_left",
+          "value": "BIKEH LEFT",
+          "group": "BikeH",
+          "ifpId": 5,
+          "animId": 189
+        },
+        {
+          "name": "scene.animation.vc.bikeh.bikeh_right",
+          "value": "BIKEH RIGHT",
+          "group": "BikeH",
+          "ifpId": 5,
+          "animId": 190
+        },
+        {
+          "name": "scene.animation.vc.bikeh.bikeh_back",
+          "value": "BIKEH BACK",
+          "group": "BikeH",
+          "ifpId": 5,
+          "animId": 191
+        },
+        {
+          "name": "scene.animation.vc.bikeh.bikeh_fwd",
+          "value": "BIKEH FWD",
+          "group": "BikeH",
+          "ifpId": 5,
+          "animId": 192
+        },
+        {
+          "name": "scene.animation.vc.bikeh.bikeh_pushes",
+          "value": "BIKEH PUSHES",
+          "group": "BikeH",
+          "ifpId": 5,
+          "animId": 193
+        },
+        {
+          "name": "scene.animation.vc.bikeh.bikeh_jumponr",
+          "value": "BIKEH JUMPONR",
+          "group": "BikeH",
+          "ifpId": 5,
+          "animId": 194
+        },
+        {
+          "name": "scene.animation.vc.bikeh.bikeh_jumponl",
+          "value": "BIKEH JUMPONL",
+          "group": "BikeH",
+          "ifpId": 5,
+          "animId": 195
+        },
+        {
+          "name": "scene.animation.vc.bikeh.bikeh_kick",
+          "value": "BIKEH KICK",
+          "group": "BikeH",
+          "ifpId": 5,
+          "animId": 196
+        },
+        {
+          "name": "scene.animation.vc.bikeh.bikeh_hit",
+          "value": "BIKEH HIT",
+          "group": "BikeH",
+          "ifpId": 5,
+          "animId": 197
+        },
+        {
+          "name": "scene.animation.vc.bikeh.bikeh_getoffrhs",
+          "value": "BIKEH GETOFFRHS",
+          "group": "BikeH",
+          "ifpId": 5,
+          "animId": 198
+        },
+        {
+          "name": "scene.animation.vc.bikeh.bikeh_getofflhs",
+          "value": "BIKEH GETOFFLHS",
+          "group": "BikeH",
+          "ifpId": 5,
+          "animId": 199
+        },
+        {
+          "name": "scene.animation.vc.bikeh.bikeh_getoffback",
+          "value": "BIKEH GETOFFBACK",
+          "group": "BikeH",
+          "ifpId": 5,
+          "animId": 200
+        },
+        {
+          "name": "scene.animation.vc.bikeh.bikeh_drivebylhs",
+          "value": "BIKEH DRIVEBYLHS",
+          "group": "BikeH",
+          "ifpId": 5,
+          "animId": 201
+        },
+        {
+          "name": "scene.animation.vc.bikeh.bikeh_drivebyrhs",
+          "value": "BIKEH DRIVEBYRHS",
+          "group": "BikeH",
+          "ifpId": 5,
+          "animId": 202
+        },
+        {
+          "name": "scene.animation.vc.bikeh.bikeh_drivebyft",
+          "value": "BIKEH DRIVEBYFT",
+          "group": "BikeH",
+          "ifpId": 5,
+          "animId": 203
+        },
+        {
+          "name": "scene.animation.vc.bikeh.bikeh_passenger",
+          "value": "BIKEH PASSENGER",
+          "group": "BikeH",
+          "ifpId": 5,
+          "animId": 204
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.bikev",
+      "entries": [
+        {
+          "name": "scene.animation.vc.bikev.bikev_ride",
+          "value": "BIKEV RIDE",
+          "group": "BikeV",
+          "ifpId": 4,
+          "animId": 187
+        },
+        {
+          "name": "scene.animation.vc.bikev.bikev_still",
+          "value": "BIKEV STILL",
+          "group": "BikeV",
+          "ifpId": 4,
+          "animId": 188
+        },
+        {
+          "name": "scene.animation.vc.bikev.bikev_left",
+          "value": "BIKEV LEFT",
+          "group": "BikeV",
+          "ifpId": 4,
+          "animId": 189
+        },
+        {
+          "name": "scene.animation.vc.bikev.bikev_right",
+          "value": "BIKEV RIGHT",
+          "group": "BikeV",
+          "ifpId": 4,
+          "animId": 190
+        },
+        {
+          "name": "scene.animation.vc.bikev.bikev_back",
+          "value": "BIKEV BACK",
+          "group": "BikeV",
+          "ifpId": 4,
+          "animId": 191
+        },
+        {
+          "name": "scene.animation.vc.bikev.bikev_fwd",
+          "value": "BIKEV FWD",
+          "group": "BikeV",
+          "ifpId": 4,
+          "animId": 192
+        },
+        {
+          "name": "scene.animation.vc.bikev.bikev_pushes",
+          "value": "BIKEV PUSHES",
+          "group": "BikeV",
+          "ifpId": 4,
+          "animId": 193
+        },
+        {
+          "name": "scene.animation.vc.bikev.bikev_jumponr",
+          "value": "BIKEV JUMPONR",
+          "group": "BikeV",
+          "ifpId": 4,
+          "animId": 194
+        },
+        {
+          "name": "scene.animation.vc.bikev.bikev_jumponl",
+          "value": "BIKEV JUMPONL",
+          "group": "BikeV",
+          "ifpId": 4,
+          "animId": 195
+        },
+        {
+          "name": "scene.animation.vc.bikev.bikev_kick",
+          "value": "BIKEV KICK",
+          "group": "BikeV",
+          "ifpId": 4,
+          "animId": 196
+        },
+        {
+          "name": "scene.animation.vc.bikev.bikev_hit",
+          "value": "BIKEV HIT",
+          "group": "BikeV",
+          "ifpId": 4,
+          "animId": 197
+        },
+        {
+          "name": "scene.animation.vc.bikev.bikev_getoffrhs",
+          "value": "BIKEV GETOFFRHS",
+          "group": "BikeV",
+          "ifpId": 4,
+          "animId": 198
+        },
+        {
+          "name": "scene.animation.vc.bikev.bikev_getofflhs",
+          "value": "BIKEV GETOFFLHS",
+          "group": "BikeV",
+          "ifpId": 4,
+          "animId": 199
+        },
+        {
+          "name": "scene.animation.vc.bikev.bikev_getoffback",
+          "value": "BIKEV GETOFFBACK",
+          "group": "BikeV",
+          "ifpId": 4,
+          "animId": 200
+        },
+        {
+          "name": "scene.animation.vc.bikev.bikev_drivebylhs",
+          "value": "BIKEV DRIVEBYLHS",
+          "group": "BikeV",
+          "ifpId": 4,
+          "animId": 201
+        },
+        {
+          "name": "scene.animation.vc.bikev.bikev_drivebyrhs",
+          "value": "BIKEV DRIVEBYRHS",
+          "group": "BikeV",
+          "ifpId": 4,
+          "animId": 202
+        },
+        {
+          "name": "scene.animation.vc.bikev.bikev_drivebyft",
+          "value": "BIKEV DRIVEBYFT",
+          "group": "BikeV",
+          "ifpId": 4,
+          "animId": 203
+        },
+        {
+          "name": "scene.animation.vc.bikev.bikev_passenger",
+          "value": "BIKEV PASSENGER",
+          "group": "BikeV",
+          "ifpId": 4,
+          "animId": 204
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.bikes",
+      "entries": [
+        {
+          "name": "scene.animation.vc.bikes.bikes_ride",
+          "value": "BIKES RIDE",
+          "group": "BikeS",
+          "ifpId": 3,
+          "animId": 187
+        },
+        {
+          "name": "scene.animation.vc.bikes.bikes_still",
+          "value": "BIKES STILL",
+          "group": "BikeS",
+          "ifpId": 3,
+          "animId": 188
+        },
+        {
+          "name": "scene.animation.vc.bikes.bikes_left",
+          "value": "BIKES LEFT",
+          "group": "BikeS",
+          "ifpId": 3,
+          "animId": 189
+        },
+        {
+          "name": "scene.animation.vc.bikes.bikes_right",
+          "value": "BIKES RIGHT",
+          "group": "BikeS",
+          "ifpId": 3,
+          "animId": 190
+        },
+        {
+          "name": "scene.animation.vc.bikes.bikes_back",
+          "value": "BIKES BACK",
+          "group": "BikeS",
+          "ifpId": 3,
+          "animId": 191
+        },
+        {
+          "name": "scene.animation.vc.bikes.bikes_fwd",
+          "value": "BIKES FWD",
+          "group": "BikeS",
+          "ifpId": 3,
+          "animId": 192
+        },
+        {
+          "name": "scene.animation.vc.bikes.bikes_pushes",
+          "value": "BIKES PUSHES",
+          "group": "BikeS",
+          "ifpId": 3,
+          "animId": 193
+        },
+        {
+          "name": "scene.animation.vc.bikes.bikes_jumponr",
+          "value": "BIKES JUMPONR",
+          "group": "BikeS",
+          "ifpId": 3,
+          "animId": 194
+        },
+        {
+          "name": "scene.animation.vc.bikes.bikes_jumponl",
+          "value": "BIKES JUMPONL",
+          "group": "BikeS",
+          "ifpId": 3,
+          "animId": 195
+        },
+        {
+          "name": "scene.animation.vc.bikes.bikes_kick",
+          "value": "BIKES KICK",
+          "group": "BikeS",
+          "ifpId": 3,
+          "animId": 196
+        },
+        {
+          "name": "scene.animation.vc.bikes.bikes_hit",
+          "value": "BIKES HIT",
+          "group": "BikeS",
+          "ifpId": 3,
+          "animId": 197
+        },
+        {
+          "name": "scene.animation.vc.bikes.bikes_getoffrhs",
+          "value": "BIKES GETOFFRHS",
+          "group": "BikeS",
+          "ifpId": 3,
+          "animId": 198
+        },
+        {
+          "name": "scene.animation.vc.bikes.bikes_getofflhs",
+          "value": "BIKES GETOFFLHS",
+          "group": "BikeS",
+          "ifpId": 3,
+          "animId": 199
+        },
+        {
+          "name": "scene.animation.vc.bikes.bikes_getoffback",
+          "value": "BIKES GETOFFBACK",
+          "group": "BikeS",
+          "ifpId": 3,
+          "animId": 200
+        },
+        {
+          "name": "scene.animation.vc.bikes.bikes_drivebylhs",
+          "value": "BIKES DRIVEBYLHS",
+          "group": "BikeS",
+          "ifpId": 3,
+          "animId": 201
+        },
+        {
+          "name": "scene.animation.vc.bikes.bikes_drivebyrhs",
+          "value": "BIKES DRIVEBYRHS",
+          "group": "BikeS",
+          "ifpId": 3,
+          "animId": 202
+        },
+        {
+          "name": "scene.animation.vc.bikes.bikes_drivebyft",
+          "value": "BIKES DRIVEBYFT",
+          "group": "BikeS",
+          "ifpId": 3,
+          "animId": 203
+        },
+        {
+          "name": "scene.animation.vc.bikes.bikes_passenger",
+          "value": "BIKES PASSENGER",
+          "group": "BikeS",
+          "ifpId": 3,
+          "animId": 204
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.coach",
+      "entries": [
+        {
+          "name": "scene.animation.vc.coach.coach_opnl",
+          "value": "COACH OPNL",
+          "group": "Coach",
+          "ifpId": 2,
+          "animId": 182
+        },
+        {
+          "name": "scene.animation.vc.coach.coach_opnl_1",
+          "value": "COACH OPNL 1",
+          "group": "Coach",
+          "ifpId": 2,
+          "animId": 183
+        },
+        {
+          "name": "scene.animation.vc.coach.coach_inl",
+          "value": "COACH INL",
+          "group": "Coach",
+          "ifpId": 2,
+          "animId": 184
+        },
+        {
+          "name": "scene.animation.vc.coach.coach_inl_1",
+          "value": "COACH INL 1",
+          "group": "Coach",
+          "ifpId": 2,
+          "animId": 185
+        },
+        {
+          "name": "scene.animation.vc.coach.coach_outl",
+          "value": "COACH OUTL",
+          "group": "Coach",
+          "ifpId": 2,
+          "animId": 186
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.van",
+      "entries": [
+        {
+          "name": "scene.animation.vc.van.van_openl",
+          "value": "VAN OPENL",
+          "group": "Van",
+          "ifpId": 1,
+          "animId": 174
+        },
+        {
+          "name": "scene.animation.vc.van.van_getinl",
+          "value": "VAN GETINL",
+          "group": "Van",
+          "ifpId": 1,
+          "animId": 175
+        },
+        {
+          "name": "scene.animation.vc.van.van_closel",
+          "value": "VAN CLOSEL",
+          "group": "Van",
+          "ifpId": 1,
+          "animId": 176
+        },
+        {
+          "name": "scene.animation.vc.van.van_getoutl",
+          "value": "VAN GETOUTL",
+          "group": "Van",
+          "ifpId": 1,
+          "animId": 177
+        },
+        {
+          "name": "scene.animation.vc.van.van_open",
+          "value": "VAN OPEN",
+          "group": "Van",
+          "ifpId": 1,
+          "animId": 178
+        },
+        {
+          "name": "scene.animation.vc.van.van_getin",
+          "value": "VAN GETIN",
+          "group": "Van",
+          "ifpId": 1,
+          "animId": 179
+        },
+        {
+          "name": "scene.animation.vc.van.van_close",
+          "value": "VAN CLOSE",
+          "group": "Van",
+          "ifpId": 1,
+          "animId": 180
+        },
+        {
+          "name": "scene.animation.vc.van.van_getout",
+          "value": "VAN GETOUT",
+          "group": "Van",
+          "ifpId": 1,
+          "animId": 181
+        }
+      ]
+    },
+    {
+      "category": "scene.animation.category.vc.man",
+      "entries": [
+        {
+          "name": "scene.animation.vc.man.walk_civi",
+          "value": "WALK CIVI",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 0
+        },
+        {
+          "name": "scene.animation.vc.man.run_civi",
+          "value": "RUN CIVI",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 1
+        },
+        {
+          "name": "scene.animation.vc.man.sprint_panic",
+          "value": "SPRINT PANIC",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 2
+        },
+        {
+          "name": "scene.animation.vc.man.idle_stance",
+          "value": "IDLE STANCE",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 3
+        },
+        {
+          "name": "scene.animation.vc.man.walk_start",
+          "value": "WALK START",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 4
+        },
+        {
+          "name": "scene.animation.vc.man.run_stop",
+          "value": "RUN STOP",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 5
+        },
+        {
+          "name": "scene.animation.vc.man.run_stopr",
+          "value": "RUN STOPR",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 6
+        },
+        {
+          "name": "scene.animation.vc.man.idle_hbhb",
+          "value": "IDLE HBHB",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 7
+        },
+        {
+          "name": "scene.animation.vc.man.idle_hbhb_1",
+          "value": "IDLE HBHB 1",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 8
+        },
+        {
+          "name": "scene.animation.vc.man.idle_tired",
+          "value": "IDLE TIRED",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 9
+        },
+        {
+          "name": "scene.animation.vc.man.idle_armed",
+          "value": "IDLE ARMED",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 10
+        },
+        {
+          "name": "scene.animation.vc.man.idle_chat",
+          "value": "IDLE CHAT",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 11
+        },
+        {
+          "name": "scene.animation.vc.man.idle_taxi",
+          "value": "IDLE TAXI",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 12
+        },
+        {
+          "name": "scene.animation.vc.man.ko_shot_front",
+          "value": "KO SHOT FRONT",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 13
+        },
+        {
+          "name": "scene.animation.vc.man.ko_shot_front_1",
+          "value": "KO SHOT FRONT 1",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 14
+        },
+        {
+          "name": "scene.animation.vc.man.ko_shot_front_2",
+          "value": "KO SHOT FRONT 2",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 15
+        },
+        {
+          "name": "scene.animation.vc.man.ko_shot_front_3",
+          "value": "KO SHOT FRONT 3",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 16
+        },
+        {
+          "name": "scene.animation.vc.man.ko_shot_face",
+          "value": "KO SHOT FACE",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 17
+        },
+        {
+          "name": "scene.animation.vc.man.ko_shot_stom",
+          "value": "KO SHOT STOM",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 18
+        },
+        {
+          "name": "scene.animation.vc.man.ko_shot_arml",
+          "value": "KO SHOT ARML",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 19
+        },
+        {
+          "name": "scene.animation.vc.man.ko_shot_armr",
+          "value": "KO SHOT ARMR",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 20
+        },
+        {
+          "name": "scene.animation.vc.man.ko_shot_legl",
+          "value": "KO SHOT LEGL",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 21
+        },
+        {
+          "name": "scene.animation.vc.man.ko_shot_legr",
+          "value": "KO SHOT LEGR",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 22
+        },
+        {
+          "name": "scene.animation.vc.man.kd_left",
+          "value": "KD LEFT",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 23
+        },
+        {
+          "name": "scene.animation.vc.man.kd_right",
+          "value": "KD RIGHT",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 24
+        },
+        {
+          "name": "scene.animation.vc.man.ko_skid_front",
+          "value": "KO SKID FRONT",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 25
+        },
+        {
+          "name": "scene.animation.vc.man.ko_spin_r",
+          "value": "KO SPIN R",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 26
+        },
+        {
+          "name": "scene.animation.vc.man.ko_skid_back",
+          "value": "KO SKID BACK",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 27
+        },
+        {
+          "name": "scene.animation.vc.man.ko_spin_l",
+          "value": "KO SPIN L",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 28
+        },
+        {
+          "name": "scene.animation.vc.man.shot_partial",
+          "value": "SHOT PARTIAL",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 29
+        },
+        {
+          "name": "scene.animation.vc.man.shot_leftp",
+          "value": "SHOT LEFTP",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 30
+        },
+        {
+          "name": "scene.animation.vc.man.shot_partial_1",
+          "value": "SHOT PARTIAL 1",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 31
+        },
+        {
+          "name": "scene.animation.vc.man.shot_rightp",
+          "value": "SHOT RIGHTP",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 32
+        },
+        {
+          "name": "scene.animation.vc.man.hit_front",
+          "value": "HIT FRONT",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 33
+        },
+        {
+          "name": "scene.animation.vc.man.hit_l",
+          "value": "HIT L",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 34
+        },
+        {
+          "name": "scene.animation.vc.man.hit_back",
+          "value": "HIT BACK",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 35
+        },
+        {
+          "name": "scene.animation.vc.man.hit_r",
+          "value": "HIT R",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 36
+        },
+        {
+          "name": "scene.animation.vc.man.floor_hit",
+          "value": "FLOOR HIT",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 37
+        },
+        {
+          "name": "scene.animation.vc.man.hit_bodyblow",
+          "value": "HIT BODYBLOW",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 38
+        },
+        {
+          "name": "scene.animation.vc.man.hit_chest",
+          "value": "HIT CHEST",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 39
+        },
+        {
+          "name": "scene.animation.vc.man.hit_head",
+          "value": "HIT HEAD",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 40
+        },
+        {
+          "name": "scene.animation.vc.man.hit_walk",
+          "value": "HIT WALK",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 41
+        },
+        {
+          "name": "scene.animation.vc.man.hit_wall",
+          "value": "HIT WALL",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 42
+        },
+        {
+          "name": "scene.animation.vc.man.floor_hit_f",
+          "value": "FLOOR HIT F",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 43
+        },
+        {
+          "name": "scene.animation.vc.man.hit_behind",
+          "value": "HIT BEHIND",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 44
+        },
+        {
+          "name": "scene.animation.vc.man.fightidle",
+          "value": "FIGHTIDLE",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 45
+        },
+        {
+          "name": "scene.animation.vc.man.fight2idle",
+          "value": "FIGHT2IDLE",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 46
+        },
+        {
+          "name": "scene.animation.vc.man.fightsh_f",
+          "value": "FIGHTSH F",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 47
+        },
+        {
+          "name": "scene.animation.vc.man.fightbodyblow",
+          "value": "FIGHTBODYBLOW",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 48
+        },
+        {
+          "name": "scene.animation.vc.man.fighthead",
+          "value": "FIGHTHEAD",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 49
+        },
+        {
+          "name": "scene.animation.vc.man.fightkick",
+          "value": "FIGHTKICK",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 50
+        },
+        {
+          "name": "scene.animation.vc.man.fightknee",
+          "value": "FIGHTKNEE",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 51
+        },
+        {
+          "name": "scene.animation.vc.man.fightlhook",
+          "value": "FIGHTLHOOK",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 52
+        },
+        {
+          "name": "scene.animation.vc.man.fightpunch",
+          "value": "FIGHTPUNCH",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 53
+        },
+        {
+          "name": "scene.animation.vc.man.fightrndhse",
+          "value": "FIGHTRNDHSE",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 54
+        },
+        {
+          "name": "scene.animation.vc.man.fightlngkck",
+          "value": "FIGHTLNGKCK",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 55
+        },
+        {
+          "name": "scene.animation.vc.man.fightppunch",
+          "value": "FIGHTPPUNCH",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 56
+        },
+        {
+          "name": "scene.animation.vc.man.fightjab",
+          "value": "FIGHTJAB",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 57
+        },
+        {
+          "name": "scene.animation.vc.man.fightelbowl",
+          "value": "FIGHTELBOWL",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 58
+        },
+        {
+          "name": "scene.animation.vc.man.fightelbowr",
+          "value": "FIGHTELBOWR",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 59
+        },
+        {
+          "name": "scene.animation.vc.man.fightbkickl",
+          "value": "FIGHTBKICKL",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 60
+        },
+        {
+          "name": "scene.animation.vc.man.fightbkickr",
+          "value": "FIGHTBKICKR",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 61
+        },
+        {
+          "name": "scene.animation.vc.man.bomber",
+          "value": "BOMBER",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 62
+        },
+        {
+          "name": "scene.animation.vc.man.punchr",
+          "value": "PUNCHR",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 63
+        },
+        {
+          "name": "scene.animation.vc.man.fightppunch_1",
+          "value": "FIGHTPPUNCH 1",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 64
+        },
+        {
+          "name": "scene.animation.vc.man.kick_floor",
+          "value": "KICK FLOOR",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 65
+        },
+        {
+          "name": "scene.animation.vc.man.weapon_throwu",
+          "value": "WEAPON THROWU",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 66
+        },
+        {
+          "name": "scene.animation.vc.man.fightsh_back",
+          "value": "FIGHTSH BACK",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 67
+        },
+        {
+          "name": "scene.animation.vc.man.car_jackedrhs",
+          "value": "CAR JACKEDRHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 68
+        },
+        {
+          "name": "scene.animation.vc.man.car_ljackedrhs",
+          "value": "CAR LJACKEDRHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 69
+        },
+        {
+          "name": "scene.animation.vc.man.car_jackedlhs",
+          "value": "CAR JACKEDLHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 70
+        },
+        {
+          "name": "scene.animation.vc.man.car_ljackedlhs",
+          "value": "CAR LJACKEDLHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 71
+        },
+        {
+          "name": "scene.animation.vc.man.car_qjack",
+          "value": "CAR QJACK",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 72
+        },
+        {
+          "name": "scene.animation.vc.man.car_qjacked",
+          "value": "CAR QJACKED",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 73
+        },
+        {
+          "name": "scene.animation.vc.man.car_align_lhs",
+          "value": "CAR ALIGN LHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 74
+        },
+        {
+          "name": "scene.animation.vc.man.car_alignhi_lhs",
+          "value": "CAR ALIGNHI LHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 75
+        },
+        {
+          "name": "scene.animation.vc.man.car_open_lhs",
+          "value": "CAR OPEN LHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 76
+        },
+        {
+          "name": "scene.animation.vc.man.car_doorlocked_lhs",
+          "value": "CAR DOORLOCKED LHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 77
+        },
+        {
+          "name": "scene.animation.vc.man.car_pullout_lhs",
+          "value": "CAR PULLOUT LHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 78
+        },
+        {
+          "name": "scene.animation.vc.man.car_pulloutl_lhs",
+          "value": "CAR PULLOUTL LHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 79
+        },
+        {
+          "name": "scene.animation.vc.man.car_getin_lhs",
+          "value": "CAR GETIN LHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 80
+        },
+        {
+          "name": "scene.animation.vc.man.car_getinl_lhs",
+          "value": "CAR GETINL LHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 81
+        },
+        {
+          "name": "scene.animation.vc.man.car_closedoor_lhs",
+          "value": "CAR CLOSEDOOR LHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 82
+        },
+        {
+          "name": "scene.animation.vc.man.car_closedoorl_lhs",
+          "value": "CAR CLOSEDOORL LHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 83
+        },
+        {
+          "name": "scene.animation.vc.man.car_rolldoor",
+          "value": "CAR ROLLDOOR",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 84
+        },
+        {
+          "name": "scene.animation.vc.man.car_rolldoorlo",
+          "value": "CAR ROLLDOORLO",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 85
+        },
+        {
+          "name": "scene.animation.vc.man.car_jumpin_lhs",
+          "value": "CAR JUMPIN LHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 86
+        },
+        {
+          "name": "scene.animation.vc.man.car_getout_lhs",
+          "value": "CAR GETOUT LHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 87
+        },
+        {
+          "name": "scene.animation.vc.man.car_getoutl_lhs",
+          "value": "CAR GETOUTL LHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 88
+        },
+        {
+          "name": "scene.animation.vc.man.car_close_lhs",
+          "value": "CAR CLOSE LHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 89
+        },
+        {
+          "name": "scene.animation.vc.man.car_align_rhs",
+          "value": "CAR ALIGN RHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 90
+        },
+        {
+          "name": "scene.animation.vc.man.car_alignhi_rhs",
+          "value": "CAR ALIGNHI RHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 91
+        },
+        {
+          "name": "scene.animation.vc.man.car_open_rhs",
+          "value": "CAR OPEN RHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 92
+        },
+        {
+          "name": "scene.animation.vc.man.car_doorlocked_rhs",
+          "value": "CAR DOORLOCKED RHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 93
+        },
+        {
+          "name": "scene.animation.vc.man.car_pullout_rhs",
+          "value": "CAR PULLOUT RHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 94
+        },
+        {
+          "name": "scene.animation.vc.man.car_pulloutl_rhs",
+          "value": "CAR PULLOUTL RHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 95
+        },
+        {
+          "name": "scene.animation.vc.man.car_getin_rhs",
+          "value": "CAR GETIN RHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 96
+        },
+        {
+          "name": "scene.animation.vc.man.car_getinl_rhs",
+          "value": "CAR GETINL RHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 97
+        },
+        {
+          "name": "scene.animation.vc.man.car_closedoor_rhs",
+          "value": "CAR CLOSEDOOR RHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 98
+        },
+        {
+          "name": "scene.animation.vc.man.car_closedoorl_rhs",
+          "value": "CAR CLOSEDOORL RHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 99
+        },
+        {
+          "name": "scene.animation.vc.man.car_shuffle_rhs",
+          "value": "CAR SHUFFLE RHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 100
+        },
+        {
+          "name": "scene.animation.vc.man.car_lshuffle_rhs",
+          "value": "CAR LSHUFFLE RHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 101
+        },
+        {
+          "name": "scene.animation.vc.man.car_sit",
+          "value": "CAR SIT",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 102
+        },
+        {
+          "name": "scene.animation.vc.man.car_lsit",
+          "value": "CAR LSIT",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 103
+        },
+        {
+          "name": "scene.animation.vc.man.car_sitp",
+          "value": "CAR SITP",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 104
+        },
+        {
+          "name": "scene.animation.vc.man.car_sitplo",
+          "value": "CAR SITPLO",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 105
+        },
+        {
+          "name": "scene.animation.vc.man.drive_l",
+          "value": "DRIVE L",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 106
+        },
+        {
+          "name": "scene.animation.vc.man.drive_r",
+          "value": "DRIVE R",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 107
+        },
+        {
+          "name": "scene.animation.vc.man.drive_lo_l",
+          "value": "DRIVE LO L",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 108
+        },
+        {
+          "name": "scene.animation.vc.man.drive_lo_r",
+          "value": "DRIVE LO R",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 109
+        },
+        {
+          "name": "scene.animation.vc.man.driveby_l",
+          "value": "DRIVEBY L",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 110
+        },
+        {
+          "name": "scene.animation.vc.man.driveby_r",
+          "value": "DRIVEBY R",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 111
+        },
+        {
+          "name": "scene.animation.vc.man.drivebyl_l",
+          "value": "DRIVEBYL L",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 112
+        },
+        {
+          "name": "scene.animation.vc.man.drivebyl_r",
+          "value": "DRIVEBYL R",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 113
+        },
+        {
+          "name": "scene.animation.vc.man.car_lb",
+          "value": "CAR LB",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 114
+        },
+        {
+          "name": "scene.animation.vc.man.drive_boat",
+          "value": "DRIVE BOAT",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 115
+        },
+        {
+          "name": "scene.animation.vc.man.drive_boat_l",
+          "value": "DRIVE BOAT L",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 116
+        },
+        {
+          "name": "scene.animation.vc.man.drive_boat_r",
+          "value": "DRIVE BOAT R",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 117
+        },
+        {
+          "name": "scene.animation.vc.man.drive_boat_back",
+          "value": "DRIVE BOAT BACK",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 118
+        },
+        {
+          "name": "scene.animation.vc.man.bike_pickupr",
+          "value": "BIKE PICKUPR",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 119
+        },
+        {
+          "name": "scene.animation.vc.man.bike_pickupl",
+          "value": "BIKE PICKUPL",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 120
+        },
+        {
+          "name": "scene.animation.vc.man.bike_pullupr",
+          "value": "BIKE PULLUPR",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 121
+        },
+        {
+          "name": "scene.animation.vc.man.bike_pullupl",
+          "value": "BIKE PULLUPL",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 122
+        },
+        {
+          "name": "scene.animation.vc.man.bike_elbowr",
+          "value": "BIKE ELBOWR",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 123
+        },
+        {
+          "name": "scene.animation.vc.man.bike_elbowl",
+          "value": "BIKE ELBOWL",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 124
+        },
+        {
+          "name": "scene.animation.vc.man.bike_fall_off",
+          "value": "BIKE FALL OFF",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 125
+        },
+        {
+          "name": "scene.animation.vc.man.bike_fallr",
+          "value": "BIKE FALLR",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 126
+        },
+        {
+          "name": "scene.animation.vc.man.car_getout_rhs",
+          "value": "CAR GETOUT RHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 127
+        },
+        {
+          "name": "scene.animation.vc.man.car_getoutl_rhs",
+          "value": "CAR GETOUTL RHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 128
+        },
+        {
+          "name": "scene.animation.vc.man.car_close_rhs",
+          "value": "CAR CLOSE RHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 129
+        },
+        {
+          "name": "scene.animation.vc.man.car_hookertalk",
+          "value": "CAR HOOKERTALK",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 130
+        },
+        {
+          "name": "scene.animation.vc.man.idle_stance_1",
+          "value": "IDLE STANCE 1",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 131
+        },
+        {
+          "name": "scene.animation.vc.man.idle_stance_2",
+          "value": "IDLE STANCE 2",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 132
+        },
+        {
+          "name": "scene.animation.vc.man.car_crawloutrhs",
+          "value": "CAR CRAWLOUTRHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 133
+        },
+        {
+          "name": "scene.animation.vc.man.car_crawloutrhs_1",
+          "value": "CAR CRAWLOUTRHS 1",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 134
+        },
+        {
+          "name": "scene.animation.vc.man.car_rollout_lhs",
+          "value": "CAR ROLLOUT LHS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 135
+        },
+        {
+          "name": "scene.animation.vc.man.car_rollout_lhs_1",
+          "value": "CAR ROLLOUT LHS 1",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 136
+        },
+        {
+          "name": "scene.animation.vc.man.getup",
+          "value": "GETUP",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 137
+        },
+        {
+          "name": "scene.animation.vc.man.getup_1",
+          "value": "GETUP 1",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 138
+        },
+        {
+          "name": "scene.animation.vc.man.getup_2",
+          "value": "GETUP 2",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 139
+        },
+        {
+          "name": "scene.animation.vc.man.getup_front",
+          "value": "GETUP FRONT",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 140
+        },
+        {
+          "name": "scene.animation.vc.man.jump_launch",
+          "value": "JUMP LAUNCH",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 141
+        },
+        {
+          "name": "scene.animation.vc.man.jump_glide",
+          "value": "JUMP GLIDE",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 142
+        },
+        {
+          "name": "scene.animation.vc.man.jump_land",
+          "value": "JUMP LAND",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 143
+        },
+        {
+          "name": "scene.animation.vc.man.fall_fall",
+          "value": "FALL FALL",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 144
+        },
+        {
+          "name": "scene.animation.vc.man.fall_glide",
+          "value": "FALL GLIDE",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 145
+        },
+        {
+          "name": "scene.animation.vc.man.fall_land",
+          "value": "FALL LAND",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 146
+        },
+        {
+          "name": "scene.animation.vc.man.fall_collapse",
+          "value": "FALL COLLAPSE",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 147
+        },
+        {
+          "name": "scene.animation.vc.man.fall_back",
+          "value": "FALL BACK",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 148
+        },
+        {
+          "name": "scene.animation.vc.man.fall_front",
+          "value": "FALL FRONT",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 149
+        },
+        {
+          "name": "scene.animation.vc.man.ev_step",
+          "value": "EV STEP",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 150
+        },
+        {
+          "name": "scene.animation.vc.man.ev_dive",
+          "value": "EV DIVE",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 151
+        },
+        {
+          "name": "scene.animation.vc.man.xpressscratch",
+          "value": "XPRESSSCRATCH",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 152
+        },
+        {
+          "name": "scene.animation.vc.man.roadcross",
+          "value": "ROADCROSS",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 153
+        },
+        {
+          "name": "scene.animation.vc.man.turn_180",
+          "value": "TURN 180",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 154
+        },
+        {
+          "name": "scene.animation.vc.man.arrestgun",
+          "value": "ARRESTGUN",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 155
+        },
+        {
+          "name": "scene.animation.vc.man.drown",
+          "value": "DROWN",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 156
+        },
+        {
+          "name": "scene.animation.vc.man.duck_down",
+          "value": "DUCK DOWN",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 157
+        },
+        {
+          "name": "scene.animation.vc.man.duck_low",
+          "value": "DUCK LOW",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 158
+        },
+        {
+          "name": "scene.animation.vc.man.weapon_crouch",
+          "value": "WEAPON CROUCH",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 159
+        },
+        {
+          "name": "scene.animation.vc.man.rblock_cshoot",
+          "value": "RBLOCK CSHOOT",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 160
+        },
+        {
+          "name": "scene.animation.vc.man.handsup",
+          "value": "HANDSUP",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 161
+        },
+        {
+          "name": "scene.animation.vc.man.handscower",
+          "value": "HANDSCOWER",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 162
+        },
+        {
+          "name": "scene.animation.vc.man.fucku",
+          "value": "FUCKU",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 163
+        },
+        {
+          "name": "scene.animation.vc.man.phone_in",
+          "value": "PHONE IN",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 164
+        },
+        {
+          "name": "scene.animation.vc.man.phone_out",
+          "value": "PHONE OUT",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 165
+        },
+        {
+          "name": "scene.animation.vc.man.phone_talk",
+          "value": "PHONE TALK",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 166
+        },
+        {
+          "name": "scene.animation.vc.man.seat_down",
+          "value": "SEAT DOWN",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 167
+        },
+        {
+          "name": "scene.animation.vc.man.seat_up",
+          "value": "SEAT UP",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 168
+        },
+        {
+          "name": "scene.animation.vc.man.seat_idle",
+          "value": "SEAT IDLE",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 169
+        },
+        {
+          "name": "scene.animation.vc.man.seat_down_1",
+          "value": "SEAT DOWN 1",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 170
+        },
+        {
+          "name": "scene.animation.vc.man.atm",
+          "value": "ATM",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 171
+        },
+        {
+          "name": "scene.animation.vc.man.abseil",
+          "value": "ABSEIL",
+          "group": "Man",
+          "ifpId": 0,
+          "animId": 172
+        }
+      ]
+    }
+  ]
+}

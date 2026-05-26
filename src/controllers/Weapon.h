@@ -7,6 +7,7 @@ namespace Controllers::Weapon {
     void ClearAll();
     void DropWeapon();
     void DropCurrent();
+    void RemovePickups();
     void Give(unsigned int weaponType, unsigned int ammo);
     void GiveModel(unsigned int weaponModel, unsigned int ammo);
     void ResetStats();

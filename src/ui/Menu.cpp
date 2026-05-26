@@ -1,7 +1,12 @@
 #include "Menu.h"
+#include <array>
 #include <windows.h>
 #include <cstdio>
 #include <cstring>
+#include <string>
+#include <unordered_map>
+#include <vector>
+#include "game/Runtime.h"
 #include "utils/Log.h"
 #include "utils/D3DHook.h"
 #include "utils/I18n.h"
@@ -16,6 +21,13 @@
 #include "ui/pages/Teleport.h"
 #include "ui/pages/Weapon.h"
 #include "ui/pages/World.h"
+#include "ui/pages/Ped.h"
+#include "ui/pages/Scene.h"
+#include "ui/pages/Visual.h"
+#include "controllers/Hotkeys.h"
+#include "controllers/Overlay.h"
+#include "controllers/Command.h"
+#include "controllers/Teleport.h"
 
 extern const bool XMENU_DEBUG_MODE;
 extern const char* XMENU_VERSION;
@@ -35,8 +47,11 @@ namespace {
     enum class Page {
         Player,
         Vehicle,
+        Ped,
         Weapon,
         World,
+        Scene,
+        Visual,
         Teleport,
         Settings,
         About
@@ -53,26 +68,58 @@ namespace {
     char configImportText[65536] = "";
     char configExportText[65536] = "";
     char configStatus[256] = "";
+    struct PersistentRestoreDialogState {
+        std::vector<AppConfig::PersistentFeatureState> features;
+        std::vector<bool> selected;
+        bool open = false;
+    };
+
+    PersistentRestoreDialogState persistentRestoreDialog;
     bool openConfigImportPopup = false;
     bool openConfigExportPopup = false;
+    constexpr const char* PersistentStatePopupId = "PersistentStatePopup";
     constexpr const char* ConfigImportPopupId = "ConfigImportTextPopup";
     constexpr const char* ConfigExportPopupId = "ConfigExportTextPopup";
 
     const NavItem navItems[] = {
         {Page::Player, "tab.player", "player"},
         {Page::Vehicle, "tab.vehicle", "vehicle"},
+        {Page::Ped, "tab.ped", "ped"},
         {Page::Weapon, "tab.weapon", "weapon"},
         {Page::World, "tab.world", "world"},
+        {Page::Scene, "tab.scene", "scene"},
+        {Page::Visual, "tab.visual", "visual"},
         {Page::Teleport, "tab.teleport", "teleport"},
         {Page::Settings, "tab.settings", "settings"},
         {Page::About, "tab.about", "about"}
     };
+
+    bool IsSaRuntime() {
+        return GameRuntime::Current().target == GameRuntime::Target::SA;
+    }
+
+    bool IsPageAvailable(Page page) {
+        if (page == Page::Scene) {
+            return IsSaRuntime();
+        }
+        return true;
+    }
+
+    void EnsureActivePageAvailable() {
+        if (!IsPageAvailable(activePage)) {
+            activePage = Page::Player;
+        }
+    }
 
     void LabelWithStableId(char* output, std::size_t outputSize, const char* textKey, const char* id) {
         std::snprintf(output, outputSize, "%s###%s", T(textKey), id);
     }
 
     void DrawSettings();
+    void DrawRuntimeSettings();
+    void DrawPersistentStateSettings();
+    void DrawPersistentStatePopup();
+    void DrawActionHotkeys();
     void DrawConfigSettings();
     void DrawConfigImportPopup();
     void DrawConfigExportPopup();
@@ -158,7 +205,13 @@ namespace {
         ImGui::Separator();
         ImGui::Spacing();
 
+        EnsureActivePageAvailable();
+
         for (const NavItem& item : navItems) {
+            if (!IsPageAvailable(item.page)) {
+                continue;
+            }
+
             char label[96] = {};
             LabelWithStableId(label, sizeof(label), item.textKey, item.id);
             const bool selected = activePage == item.page;
@@ -179,25 +232,31 @@ namespace {
     void DrawActivePage() {
         const char* titleKey = "tab.player";
         switch (activePage) {
-        case Page::Player: titleKey = "tab.player"; break;
-        case Page::Vehicle: titleKey = "tab.vehicle"; break;
-        case Page::Weapon: titleKey = "tab.weapon"; break;
-        case Page::World: titleKey = "tab.world"; break;
-        case Page::Teleport: titleKey = "tab.teleport"; break;
-        case Page::Settings: titleKey = "tab.settings"; break;
-        case Page::About: titleKey = "tab.about"; break;
+            case Page::Player: titleKey = "tab.player"; break;
+            case Page::Vehicle: titleKey = "tab.vehicle"; break;
+            case Page::Ped: titleKey = "tab.ped"; break;
+            case Page::Weapon: titleKey = "tab.weapon"; break;
+            case Page::World: titleKey = "tab.world"; break;
+            case Page::Scene: titleKey = "tab.scene"; break;
+            case Page::Visual: titleKey = "tab.visual"; break;
+            case Page::Teleport: titleKey = "tab.teleport"; break;
+            case Page::Settings: titleKey = "tab.settings"; break;
+            case Page::About: titleKey = "tab.about"; break;
         }
 
         DrawPageHeader(titleKey);
 
         switch (activePage) {
-        case Page::Player: Pages::Player::Draw(); break;
-        case Page::Vehicle: Pages::Vehicle::Draw(); break;
-        case Page::Weapon: Pages::Weapon::Draw(); break;
-        case Page::World: Pages::World::Draw(); break;
-        case Page::Teleport: Pages::Teleport::Draw(); break;
-        case Page::Settings: DrawSettings(); break;
-        case Page::About: DrawAbout(); break;
+            case Page::Player: Pages::Player::Draw(); break;
+            case Page::Vehicle: Pages::Vehicle::Draw(); break;
+            case Page::Ped: Pages::Ped::Draw(); break;
+            case Page::Weapon: Pages::Weapon::Draw(); break;
+            case Page::World: Pages::World::Draw(); break;
+            case Page::Scene: Pages::Scene::Draw(); break;
+            case Page::Visual: Pages::Visual::Draw(); break;
+            case Page::Teleport: Pages::Teleport::Draw(); break;
+            case Page::Settings: DrawSettings(); break;
+            case Page::About: DrawAbout(); break;
         }
     }
 
@@ -205,19 +264,13 @@ namespace {
         ImGui::TextUnformatted(T("settings.interfaceLanguage"));
         ImGui::Spacing();
 
-        const I18n::Language languages[] = {
-            I18n::Language::Zh,
-            I18n::Language::En,
-            I18n::Language::Jp,
-            I18n::Language::Ru
-        };
-
-        I18n::Language currentLanguage = I18n::GetLanguage();
-        if (ImGui::BeginCombo("##InterfaceLanguage", I18n::GetLanguageName(currentLanguage))) {
-            for (const I18n::Language language : languages) {
-                const bool selected = currentLanguage == language;
-                if (ImGui::Selectable(I18n::GetLanguageName(language), selected)) {
-                    I18n::SetLanguage(language);
+        const std::vector<I18n::LanguageInfo>& languages = I18n::GetAvailableLanguages();
+        const std::string currentLanguageCode = I18n::GetCurrentLanguageCode();
+        if (ImGui::BeginCombo("##InterfaceLanguage", I18n::GetLanguageName(currentLanguageCode))) {
+            for (const I18n::LanguageInfo& language : languages) {
+                const bool selected = currentLanguageCode == language.code;
+                if (ImGui::Selectable(language.name.c_str(), selected)) {
+                    I18n::SetLanguage(language.code);
                 }
                 if (selected) {
                     ImGui::SetItemDefaultFocus();
@@ -225,6 +278,23 @@ namespace {
             }
             ImGui::EndCombo();
         }
+
+        ImGui::Spacing();
+        ImGui::TextUnformatted(T("settings.fallbackLanguage"));
+        const std::string fallbackLanguageCode = AppConfig::GetFallbackLanguageCode();
+        if (ImGui::BeginCombo("##FallbackLanguage", I18n::GetLanguageName(fallbackLanguageCode))) {
+            for (const I18n::LanguageInfo& language : languages) {
+                const bool selected = fallbackLanguageCode == language.code;
+                if (ImGui::Selectable(language.name.c_str(), selected)) {
+                    AppConfig::SetFallbackLanguageCode(language.code);
+                }
+                if (selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+        ImGui::TextDisabled("%s", T("settings.fallbackLanguageHint"));
 
         ImGui::Spacing();
         ImGui::TextDisabled("%s", T("settings.applyImmediately"));
@@ -243,6 +313,15 @@ namespace {
         ImGui::TextDisabled(T("settings.currentHotkey"), AppConfig::GetMenuKeyName().c_str());
 
         UI::SpacingSeparator();
+        DrawRuntimeSettings();
+
+        UI::SpacingSeparator();
+        DrawPersistentStateSettings();
+
+        UI::SpacingSeparator();
+        DrawActionHotkeys();
+
+        UI::SpacingSeparator();
         DrawConfigSettings();
 
         UI::SpacingSeparator();
@@ -253,6 +332,184 @@ namespace {
         }
         UI::SpacingSeparator();
         DrawLogViewer();
+    }
+
+    void DrawRuntimeSettings() {
+        ImGui::TextUnformatted(T("settings.runtime"));
+        ImGui::Checkbox(T("overlay.enabled"), &MenuState::OverlayEnabled);
+        ImGui::SameLine();
+        ImGui::Checkbox(T("overlay.showPosition"), &MenuState::OverlayShowPosition);
+        ImGui::SameLine();
+        ImGui::Checkbox(T("overlay.showVehicle"), &MenuState::OverlayShowVehicle);
+
+        ImGui::Checkbox(T("command.enabled"), &MenuState::CommandWindowEnabled);
+    }
+
+    void DrawPersistentStateSettings() {
+        ImGui::TextUnformatted(T("settings.persistentState"));
+        ImGui::TextDisabled("%s", T("settings.persistentStateHint"));
+
+        const std::size_t restoreCount = AppConfig::GetPersistentRestoreCount();
+        ImGui::TextDisabled(T("settings.persistentState.restoreCount"), static_cast<int>(restoreCount));
+
+        if (ImGui::Button(T("settings.persistentState.captureCurrent"), ImVec2(190.0f, 0.0f))) {
+            AppConfig::CaptureEnabledPersistentFeatures();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button(T("settings.persistentState.manage"), ImVec2(140.0f, 0.0f))) {
+            persistentRestoreDialog.features = AppConfig::GetPersistentFeatureStates();
+            persistentRestoreDialog.selected.clear();
+            persistentRestoreDialog.selected.reserve(persistentRestoreDialog.features.size());
+            for (const AppConfig::PersistentFeatureState& feature : persistentRestoreDialog.features) {
+                persistentRestoreDialog.selected.push_back(feature.restoreNextLaunch);
+            }
+            persistentRestoreDialog.open = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button(T("settings.persistentState.clear"), ImVec2(110.0f, 0.0f))) {
+            AppConfig::ClearPersistentRestoreSelection();
+        }
+
+        DrawPersistentStatePopup();
+    }
+
+    void DrawPersistentStatePopup() {
+        if (persistentRestoreDialog.open) {
+            ImGui::OpenPopup(PersistentStatePopupId);
+            persistentRestoreDialog.open = false;
+        }
+
+        if (ImGui::BeginPopupModal(PersistentStatePopupId, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::TextUnformatted(T("settings.persistentState.title"));
+            ImGui::TextWrapped("%s", T("settings.persistentState.description"));
+            ImGui::Spacing();
+
+            if (ImGui::Button(T("settings.persistentState.selectEnabled"), ImVec2(150.0f, 0.0f))) {
+                for (std::size_t i = 0; i < persistentRestoreDialog.features.size(); ++i) {
+                    persistentRestoreDialog.selected[i] = persistentRestoreDialog.features[i].enabledNow;
+                }
+            }
+            ImGui::SameLine();
+            if (ImGui::Button(T("settings.persistentState.selectNone"), ImVec2(120.0f, 0.0f))) {
+                for (std::size_t i = 0; i < persistentRestoreDialog.selected.size(); ++i) {
+                    persistentRestoreDialog.selected[i] = false;
+                }
+            }
+
+            ImGui::Spacing();
+            if (persistentRestoreDialog.features.empty()) {
+                ImGui::TextDisabled("%s", T("settings.persistentState.noneAvailable"));
+            } else if (ImGui::BeginTable("PersistentRestoreTable", 3, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp)) {
+                ImGui::TableSetupColumn(T("settings.feature"));
+                ImGui::TableSetupColumn(T("settings.persistentState.currentState"));
+                ImGui::TableSetupColumn(T("settings.persistentState.restoreNextLaunch"));
+                ImGui::TableHeadersRow();
+
+                std::string currentGroup;
+                for (std::size_t i = 0; i < persistentRestoreDialog.features.size(); ++i) {
+                    const AppConfig::PersistentFeatureState& feature = persistentRestoreDialog.features[i];
+                    if (feature.group != currentGroup) {
+                        currentGroup = feature.group;
+                        ImGui::TableNextRow();
+                        ImGui::TableNextColumn();
+                        ImGui::TextDisabled("%s", T((std::string("settings.persistentState.group.") + currentGroup).c_str()));
+                        ImGui::TableNextColumn();
+                        ImGui::TableNextColumn();
+                    }
+
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    ImGui::TextUnformatted(T(feature.name.c_str()));
+
+                    ImGui::TableNextColumn();
+                    ImGui::TextUnformatted(T(feature.enabledNow ? "settings.enabled" : "settings.disabled"));
+
+                    ImGui::TableNextColumn();
+                    char checkboxId[128] = {};
+                    bool selected = persistentRestoreDialog.selected[i];
+                    std::snprintf(checkboxId, sizeof(checkboxId), "##restore_%s", feature.id.c_str());
+                    if (ImGui::Checkbox(checkboxId, &selected)) {
+                        persistentRestoreDialog.selected[i] = selected;
+                    }
+                }
+
+                ImGui::EndTable();
+            }
+
+            UI::SpacingSeparator();
+            if (ImGui::Button(T("settings.persistentState.apply"), ImVec2(110.0f, 0.0f))) {
+                std::vector<std::string> selectedIds;
+                for (std::size_t i = 0; i < persistentRestoreDialog.features.size(); ++i) {
+                    if (persistentRestoreDialog.selected[i]) {
+                        selectedIds.push_back(persistentRestoreDialog.features[i].id);
+                    }
+                }
+                AppConfig::ApplyPersistentRestoreSelection(selectedIds);
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button(T("settings.persistentState.cancel"), ImVec2(110.0f, 0.0f))) {
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+    }
+
+    struct ActionHotkeyInputState {
+        std::array<char, 32> value{};
+        std::string lastSavedValue;
+    };
+
+    std::unordered_map<std::string, ActionHotkeyInputState> actionHotkeyInputs;
+
+    ActionHotkeyInputState& ActionHotkeyInput(const AppConfig::ActionHotkey& action) {
+        ActionHotkeyInputState& state = actionHotkeyInputs[action.id];
+        const std::string current = AppConfig::FormatHotkey(action.hotkey);
+        if (state.value[0] == '\0' || state.lastSavedValue != current) {
+            std::snprintf(state.value.data(), state.value.size(), "%s", current.c_str());
+            state.lastSavedValue = current;
+        }
+        return state;
+    }
+
+    void DrawActionHotkeys() {
+        ImGui::TextUnformatted(T("settings.actionHotkeys"));
+        ImGui::TextDisabled("%s", T("settings.hotkeyHint"));
+
+        const std::vector<AppConfig::ActionHotkey>& actions = AppConfig::GetActionHotkeys();
+        if (ImGui::BeginTable("ActionHotkeyTable", 3, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp)) {
+            ImGui::TableSetupColumn(T("settings.action"));
+            ImGui::TableSetupColumn(T("settings.hotkey"));
+            ImGui::TableSetupColumn(T("settings.apply"));
+            ImGui::TableHeadersRow();
+
+            for (const AppConfig::ActionHotkey& action : actions) {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted(T(action.name.c_str()));
+
+                ImGui::TableNextColumn();
+                char inputId[96] = {};
+                std::snprintf(inputId, sizeof(inputId), "##actionHotkey_%s", action.id.c_str());
+                ActionHotkeyInputState& input = ActionHotkeyInput(action);
+                ImGui::PushItemWidth(-1.0f);
+                ImGui::InputText(inputId, input.value.data(), input.value.size());
+                ImGui::PopItemWidth();
+
+                ImGui::TableNextColumn();
+                char buttonId[96] = {};
+                std::snprintf(buttonId, sizeof(buttonId), "%s##apply_%s", T("settings.apply"), action.id.c_str());
+                if (ImGui::SmallButton(buttonId)) {
+                    AppConfig::SetActionHotkeyName(action.id, input.value.data());
+                    const std::string current = AppConfig::GetActionHotkeyName(action.id);
+                    std::snprintf(input.value.data(), input.value.size(), "%s", current.c_str());
+                    input.lastSavedValue = current;
+                }
+            }
+
+            ImGui::EndTable();
+        }
     }
 
     void DrawConfigSettings() {
@@ -501,53 +758,69 @@ namespace {
 void Menu::Process() {
     Pages::Player::Process();
     Pages::Vehicle::Process();
+    Pages::Ped::Process();
     Pages::Weapon::Process();
     Pages::World::Process();
+    if (IsSaRuntime()) {
+        Pages::Scene::Process();
+    }
+    Pages::Visual::Process();
+    Pages::Teleport::Process();
+    Controllers::Overlay::Process();
+    Controllers::Command::Process();
+    D3DHook::SetBackgroundRenderActive(MenuState::OverlayEnabled || MenuState::CommandWindowEnabled || MenuState::QuickTeleportMapActive);
 }
 
 void Menu::Draw() {
-    bool menuVisible = D3DHook::IsMenuVisible();
+    const bool menuVisible = D3DHook::IsMenuVisible();
     char windowTitle[160] = {};
 
     char visibleTitle[128] = {};
     std::snprintf(visibleTitle, sizeof(visibleTitle), T("window.title"), XMENU_AUTHOR);
     std::snprintf(windowTitle, sizeof(windowTitle), "%s###XMenuMainWindow", visibleTitle);
 
-    ImGui::SetNextWindowSize(ImVec2(780.0f, 520.0f), ImGuiCond_FirstUseEver);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 12.0f));
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 8.0f));
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.055f, 0.060f, 0.075f, 0.98f));
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.075f, 0.082f, 0.100f, 1.00f));
-    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.180f, 0.280f, 0.420f, 0.85f));
-    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.220f, 0.340f, 0.520f, 0.95f));
-    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.260f, 0.420f, 0.650f, 1.00f));
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.170f, 0.270f, 0.400f, 0.90f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.220f, 0.350f, 0.540f, 1.00f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.260f, 0.420f, 0.650f, 1.00f));
+    if (menuVisible) {
+        ImGui::SetNextWindowSize(ImVec2(780.0f, 520.0f), ImGuiCond_FirstUseEver);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 12.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 8.0f));
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.055f, 0.060f, 0.075f, 0.98f));
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.075f, 0.082f, 0.100f, 1.00f));
+        ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.180f, 0.280f, 0.420f, 0.85f));
+        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.220f, 0.340f, 0.520f, 0.95f));
+        ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.260f, 0.420f, 0.650f, 1.00f));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.170f, 0.270f, 0.400f, 0.90f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.220f, 0.350f, 0.540f, 1.00f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.260f, 0.420f, 0.650f, 1.00f));
 
-    if (ImGui::Begin(windowTitle, &menuVisible, ImGuiWindowFlags_NoCollapse)) {
-        HandleMainWindowDrag();
-        ImGui::BeginChild("XMenuSidebar", ImVec2(170.0f, 0.0f), true);
-        DrawNavigation();
-        ImGui::EndChild();
+        bool windowOpen = true;
+        if (ImGui::Begin(windowTitle, &windowOpen, ImGuiWindowFlags_NoCollapse)) {
+            HandleMainWindowDrag();
+            ImGui::BeginChild("XMenuSidebar", ImVec2(170.0f, 0.0f), true);
+            DrawNavigation();
+            ImGui::EndChild();
 
-        ImGui::SameLine();
+            ImGui::SameLine();
 
-        ImGui::BeginChild("XMenuContent", ImVec2(0.0f, 0.0f), true);
-        DrawActivePage();
-        ImGui::EndChild();
+            ImGui::BeginChild("XMenuContent", ImVec2(0.0f, 0.0f), true);
+            DrawActivePage();
+            ImGui::EndChild();
 
-        DrawUpdateDialog();
-        DrawConfigImportPopup();
-        DrawConfigExportPopup();
+            DrawUpdateDialog();
+            DrawConfigImportPopup();
+            DrawConfigExportPopup();
+        }
+        ImGui::End();
+
+        ImGui::PopStyleColor(8);
+        ImGui::PopStyleVar(3);
+
+        if (!windowOpen) {
+            D3DHook::SetMenuVisible(false);
+        }
     }
-    ImGui::End();
 
-    ImGui::PopStyleColor(8);
-    ImGui::PopStyleVar(3);
-
-    if (!menuVisible) {
-        D3DHook::SetMenuVisible(false);
-    }
+    Controllers::Overlay::Draw();
+    Controllers::Command::Draw();
+    Controllers::Teleport::DrawQuickMap();
 }

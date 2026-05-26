@@ -1,0 +1,101 @@
+{
+  "visuals": [
+    {
+      "category": "visual.category.sa.weather",
+      "entries": [
+        {
+          "name": "visual.sa.weather.extrasunny_la",
+          "id": 0
+        },
+        {
+          "name": "visual.sa.weather.sunny_la",
+          "id": 1
+        },
+        {
+          "name": "visual.sa.weather.extrasunny_smog_la",
+          "id": 2
+        },
+        {
+          "name": "visual.sa.weather.sunny_smog_la",
+          "id": 3
+        },
+        {
+          "name": "visual.sa.weather.cloudy_la",
+          "id": 4
+        },
+        {
+          "name": "visual.sa.weather.sunny_sf",
+          "id": 5
+        },
+        {
+          "name": "visual.sa.weather.extrasunny_sf",
+          "id": 6
+        },
+        {
+          "name": "visual.sa.weather.cloudy_sf",
+          "id": 7
+        },
+        {
+          "name": "visual.sa.weather.rainy_sf",
+          "id": 8
+        },
+        {
+          "name": "visual.sa.weather.foggy_sf",
+          "id": 9
+        },
+        {
+          "name": "visual.sa.weather.sunny_vegas",
+          "id": 10
+        },
+        {
+          "name": "visual.sa.weather.extrasunny_vegas",
+          "id": 11
+        },
+        {
+          "name": "visual.sa.weather.cloudy_vegas",
+          "id": 12
+        },
+        {
+          "name": "visual.sa.weather.extrasunny_countryside",
+          "id": 13
+        },
+        {
+          "name": "visual.sa.weather.sunny_countryside",
+          "id": 14
+        },
+        {
+          "name": "visual.sa.weather.cloudy_countryside",
+          "id": 15
+        },
+        {
+          "name": "visual.sa.weather.rainy_countryside",
+          "id": 16
+        },
+        {
+          "name": "visual.sa.weather.extrasunny_desert",
+          "id": 17
+        },
+        {
+          "name": "visual.sa.weather.sunny_desert",
+          "id": 18
+        },
+        {
+          "name": "visual.sa.weather.sandstorm_desert",
+          "id": 19
+        },
+        {
+          "name": "visual.sa.weather.underwater",
+          "id": 20
+        },
+        {
+          "name": "visual.sa.weather.extracolours_1",
+          "id": 21
+        },
+        {
+          "name": "visual.sa.weather.extracolours_2",
+          "id": 22
+        }
+      ]
+    }
+  ]
+}

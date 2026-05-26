@@ -60,6 +60,7 @@ function createPayloadProject(projectID)
         kind "SharedLib"
         targetname ("XMenu" .. upperID)
         targetextension ".dll"
+        targetdir "build/bin/XMenu"
 
         includedirs {
             PSDK_DIR .. "/plugin_" .. projectID .. "/",
@@ -85,27 +86,26 @@ function createPayloadProject(projectID)
             "include/**.c"
         }
 
-        -- Embed i18n JSON files as resources
         files {
-            "src/resources/I18nResources.rc",
-            "src/data/i18n/zh.json",
-            "src/data/i18n/en.json",
-            "src/data/i18n/jp.json",
-            "src/data/i18n/ru.json",
             "src/data/sa/maps.json",
             "src/data/sa/weapons.json",
             "src/data/sa/vehicles.json",
+            "src/data/sa/peds.json",
             "src/data/vc/maps.json",
             "src/data/vc/weapons.json",
             "src/data/vc/vehicles.json",
+            "src/data/vc/peds.json",
             "src/data/iii/maps.json",
             "src/data/iii/weapons.json",
-            "src/data/iii/vehicles.json"
+            "src/data/iii/vehicles.json",
+            "src/data/iii/peds.json"
         }
 
         removefiles {
             "src/loader/**.h",
-            "src/loader/**.cpp"
+            "src/loader/**.cpp",
+            "src/core/**.h",
+            "src/core/**.cpp"
         }
 
         if (upperID ~= "SA") then
@@ -160,8 +160,7 @@ function createUnifiedProject()
 
         files {
             "src/loader/**.h",
-            "src/loader/**.cpp",
-            "build/Payloads.rc"
+            "src/loader/**.cpp"
         }
 
         includedirs {

@@ -1,0 +1,21 @@
+{
+  "scene.animation": "アニメーション",
+  "scene.animGroup": "アニメグループ",
+  "scene.animName": "アニメ名",
+  "scene.loop": "ループ",
+  "scene.playAnim": "アニメ再生",
+  "scene.stopAnim": "アニメ停止",
+  "scene.particle": "パーティクル",
+  "scene.particleName": "パーティクル名",
+  "scene.spawnParticle": "パーティクル生成",
+  "scene.cutscene": "カットシーン",
+  "scene.cutsceneName": "カットシーン名",
+  "scene.startCutscene": "カットシーン開始",
+  "scene.stopCutscene": "カットシーン停止",
+  "scene.cutsceneRunning": "カットシーン実行中",
+  "scene.mission": "ミッション状態",
+  "scene.noListData": "利用可能なリストデータがありません。",
+  "scene.animationListHint": "リスト項目をクリックすると、アニメグループと名前を入力して即時再生します。",
+  "scene.particleListHint": "リスト項目をクリックすると、パーティクル名を入力してプレイヤー付近に即時生成します。",
+  "scene.cutsceneListHint": "リスト項目をクリックすると、カットシーン名を入力して即時開始します。"
+}

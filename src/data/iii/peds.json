@@ -1,0 +1,335 @@
+{
+  "peds": [
+    {
+      "category": "gang",
+      "entries": [
+        {
+          "name": "Mafia Member 1",
+          "id": 10
+        },
+        {
+          "name": "Mafia Member 2",
+          "id": 11
+        },
+        {
+          "name": "Triad Member 1",
+          "id": 12
+        },
+        {
+          "name": "Triad Member 2",
+          "id": 13
+        },
+        {
+          "name": "Diablo Member 1",
+          "id": 14
+        },
+        {
+          "name": "Diablo Member 2",
+          "id": 15
+        },
+        {
+          "name": "Yakuza Member 1",
+          "id": 16
+        },
+        {
+          "name": "Yakuza Member 2",
+          "id": 17
+        },
+        {
+          "name": "Yardie Member 1",
+          "id": 18
+        },
+        {
+          "name": "Yardie Member 2",
+          "id": 19
+        },
+        {
+          "name": "Cartel Soldier 1",
+          "id": 20
+        },
+        {
+          "name": "Cartel Soldier 2",
+          "id": 21
+        },
+        {
+          "name": "Cia Agent",
+          "id": 61
+        }
+      ]
+    },
+    {
+      "category": "worker",
+      "entries": [
+        {
+          "name": "Police Officer 1",
+          "id": 1
+        },
+        {
+          "name": "SWAT Officer",
+          "id": 2
+        },
+        {
+          "name": "FBI Agent",
+          "id": 3
+        },
+        {
+          "name": "Army Soldier",
+          "id": 4
+        },
+        {
+          "name": "Paramedic",
+          "id": 5
+        },
+        {
+          "name": "Firefighter",
+          "id": 6
+        },
+        {
+          "name": "Taxi Driver",
+          "id": 8
+        },
+        {
+          "name": "Prostitute 1",
+          "id": 39
+        },
+        {
+          "name": "Prostitute 2",
+          "id": 40
+        },
+        {
+          "name": "Docks Worker 1",
+          "id": 53
+        },
+        {
+          "name": "Docks Worker 2",
+          "id": 54
+        },
+        {
+          "name": "Male Street Bum",
+          "id": 55
+        },
+        {
+          "name": "Female Street Bum",
+          "id": 56
+        },
+        {
+          "name": "Delivery Guy 1",
+          "id": 57
+        },
+        {
+          "name": "Delivery Guy 2",
+          "id": 58
+        },
+        {
+          "name": "Male Paramedics Assistant",
+          "id": 72
+        },
+        {
+          "name": "Female Paramedics Assistant",
+          "id": 73
+        },
+        {
+          "name": "Construction Worker 1",
+          "id": 74
+        },
+        {
+          "name": "Construction Worker 2",
+          "id": 75
+        }
+      ]
+    },
+    {
+      "category": "misc",
+      "entries": [
+        {
+          "name": "Claude",
+          "id": 0
+        },
+        {
+          "name": "Wise Guy",
+          "id": 7
+        },
+        {
+          "name": "Pimp",
+          "id": 9
+        },
+        {
+          "name": "Red Jacks Thug",
+          "id": 22
+        },
+        {
+          "name": "Purple Nines Thug",
+          "id": 23
+        },
+        {
+          "name": "Street Criminal 1",
+          "id": 24
+        },
+        {
+          "name": "Street Criminal 2",
+          "id": 25
+        },
+        {
+          "name": "Male Client",
+          "id": 30
+        },
+        {
+          "name": "Random Guy 1",
+          "id": 31
+        },
+        {
+          "name": "Vacationist",
+          "id": 32
+        },
+        {
+          "name": "DJ",
+          "id": 33
+        },
+        {
+          "name": "Young Woman 1",
+          "id": 34
+        },
+        {
+          "name": "Young Woman 2",
+          "id": 35
+        },
+        {
+          "name": "Business Woman 1",
+          "id": 36
+        },
+        {
+          "name": "Elder Woman 1",
+          "id": 37
+        },
+        {
+          "name": "Elder Woman 2",
+          "id": 38
+        },
+        {
+          "name": "Random Guy 2",
+          "id": 41
+        },
+        {
+          "name": "Diseased Man",
+          "id": 42
+        },
+        {
+          "name": "Deseased Woman",
+          "id": 43
+        },
+        {
+          "name": "Young Woman 3",
+          "id": 44
+        },
+        {
+          "name": "Old Man 1",
+          "id": 45
+        },
+        {
+          "name": "Random Guy 3",
+          "id": 46
+        },
+        {
+          "name": "Old Woman 1",
+          "id": 47
+        },
+        {
+          "name": "Old Woman 2",
+          "id": 48
+        },
+        {
+          "name": "Old Man 2",
+          "id": 49
+        },
+        {
+          "name": "Random Guy",
+          "id": 50
+        },
+        {
+          "name": "Old Woman",
+          "id": 51
+        },
+        {
+          "name": "Young Woman 4",
+          "id": 52
+        },
+        {
+          "name": "Business Man 1",
+          "id": 59
+        },
+        {
+          "name": "Marty Chonks",
+          "id": 60
+        },
+        {
+          "name": "Female Client 1",
+          "id": 62
+        },
+        {
+          "name": "Young Woman",
+          "id": 63
+        },
+        {
+          "name": "Business Woman",
+          "id": 64
+        },
+        {
+          "name": "Business Man",
+          "id": 65
+        },
+        {
+          "name": "Female Client 2",
+          "id": 66
+        },
+        {
+          "name": "Male Steward",
+          "id": 67
+        },
+        {
+          "name": "Female Steward",
+          "id": 68
+        },
+        {
+          "name": "Male Cocks Fan 1",
+          "id": 69
+        },
+        {
+          "name": "Male Cocks Fan 2",
+          "id": 70
+        },
+        {
+          "name": "Female Cocks Fan",
+          "id": 71
+        },
+        {
+          "name": "Zip Customer",
+          "id": 76
+        },
+        {
+          "name": "Party Woman 1",
+          "id": 77
+        },
+        {
+          "name": "Party Woman 2",
+          "id": 78
+        },
+        {
+          "name": "Male College Student",
+          "id": 79
+        },
+        {
+          "name": "Female College Student",
+          "id": 80
+        },
+        {
+          "name": "Old Man",
+          "id": 81
+        },
+        {
+          "name": "Female Jogger",
+          "id": 82
+        }
+      ]
+    }
+  ]
+}

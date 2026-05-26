@@ -8,16 +8,19 @@
     #define MAPS_RESOURCE_ID IDR_DATA_SA_MAPS
     #define WEAPONS_RESOURCE_ID IDR_DATA_SA_WEAPONS
     #define VEHICLES_RESOURCE_ID IDR_DATA_SA_VEHICLES
+    #define PEDS_RESOURCE_ID IDR_DATA_SA_PEDS
 #elif GTAVC
     #define GAME_DIR "vc"
     #define MAPS_RESOURCE_ID IDR_DATA_VC_MAPS
     #define WEAPONS_RESOURCE_ID IDR_DATA_VC_WEAPONS
     #define VEHICLES_RESOURCE_ID IDR_DATA_VC_VEHICLES
+    #define PEDS_RESOURCE_ID IDR_DATA_VC_PEDS
 #else
     #define GAME_DIR "iii"
     #define MAPS_RESOURCE_ID IDR_DATA_III_MAPS
     #define WEAPONS_RESOURCE_ID IDR_DATA_III_WEAPONS
     #define VEHICLES_RESOURCE_ID IDR_DATA_III_VEHICLES
+    #define PEDS_RESOURCE_ID IDR_DATA_III_PEDS
 #endif
 
 namespace {
@@ -61,10 +64,10 @@ namespace DataManager {
 std::string GetDataFilePath(const std::string& filename) {
     const std::string directory = XMenuModuleDirectory();
     if (!directory.empty()) {
-        return directory + "data/" GAME_DIR "/" + filename;
+        return directory + "XMenu/data/" GAME_DIR "/" + filename;
     }
 
-    return std::string("data/") + GAME_DIR + "/" + filename;
+    return std::string("XMenu/data/") + GAME_DIR + "/" + filename;
 }
 
 JsonLoader::JsonValue LoadDataJson(const std::string& filename, int resourceId, const char* label) {
@@ -197,6 +200,43 @@ std::vector<VehicleData> LoadVehicles() {
     
     Log::Info(std::string("成功加载 ") + std::to_string(vehicles.size()) + " 辆车辆");
     return vehicles;
+}
+
+std::vector<PedData> LoadPeds() {
+    std::vector<PedData> peds;
+
+    JsonLoader::JsonValue data = LoadDataJson("peds.json", PEDS_RESOURCE_ID, "行人");
+    if (data.type != JsonLoader::JsonValue::OBJECT) {
+        Log::Warn("行人数据加载失败，使用空数据");
+        return peds;
+    }
+
+    const auto& pedCategories = JsonLoader::GetArray(data, "peds");
+
+    for (const auto& category : pedCategories) {
+        if (category.type != JsonLoader::JsonValue::OBJECT) {
+            continue;
+        }
+
+        std::string categoryName = JsonLoader::GetString(category, "category", "unknown");
+        const auto& entries = JsonLoader::GetArray(category, "entries");
+
+        for (const auto& entry : entries) {
+            if (entry.type != JsonLoader::JsonValue::OBJECT) {
+                continue;
+            }
+
+            PedData ped;
+            ped.category = categoryName;
+            ped.name = JsonLoader::GetString(entry, "name", "unknown");
+            ped.id = static_cast<int>(JsonLoader::GetNumber(entry, "id", 0));
+
+            peds.push_back(ped);
+        }
+    }
+
+    Log::Info(std::string("成功加载 ") + std::to_string(peds.size()) + " 个行人");
+    return peds;
 }
 
 } // namespace DataManager

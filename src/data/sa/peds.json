@@ -1,0 +1,1201 @@
+{
+  "peds": [
+    {
+      "category": "common",
+      "entries": [
+        {
+          "name": "CJ",
+          "id": 0
+        },
+        {
+          "name": "TRUTH",
+          "id": 1
+        },
+        {
+          "name": "MACCER",
+          "id": 2
+        },
+        {
+          "name": "ANDRE",
+          "id": 3
+        },
+        {
+          "name": "BBTHIN",
+          "id": 4
+        },
+        {
+          "name": "BB",
+          "id": 5
+        },
+        {
+          "name": "EMMET",
+          "id": 6
+        },
+        {
+          "name": "MALE01",
+          "id": 7
+        },
+        {
+          "name": "JANITOR",
+          "id": 8
+        },
+        {
+          "name": "BFORI",
+          "id": 9
+        },
+        {
+          "name": "BFOST",
+          "id": 10
+        },
+        {
+          "name": "VBFYCRP",
+          "id": 11
+        },
+        {
+          "name": "BFYRI",
+          "id": 12
+        },
+        {
+          "name": "BFYST",
+          "id": 13
+        },
+        {
+          "name": "BMORI",
+          "id": 14
+        },
+        {
+          "name": "BMOST",
+          "id": 15
+        },
+        {
+          "name": "BMYAP",
+          "id": 16
+        },
+        {
+          "name": "BMYBU",
+          "id": 17
+        },
+        {
+          "name": "BMYBE",
+          "id": 18
+        },
+        {
+          "name": "BMYDJ",
+          "id": 19
+        },
+        {
+          "name": "BMYRI",
+          "id": 20
+        },
+        {
+          "name": "BMYCR",
+          "id": 21
+        },
+        {
+          "name": "BMYST",
+          "id": 22
+        },
+        {
+          "name": "WMYBMX",
+          "id": 23
+        },
+        {
+          "name": "WBDYG1",
+          "id": 24
+        },
+        {
+          "name": "WBDYG2",
+          "id": 25
+        },
+        {
+          "name": "WMYBP",
+          "id": 26
+        },
+        {
+          "name": "WMYCON",
+          "id": 27
+        },
+        {
+          "name": "BMYDRUG",
+          "id": 28
+        },
+        {
+          "name": "WMYDRUG",
+          "id": 29
+        },
+        {
+          "name": "HMYDRUG",
+          "id": 30
+        },
+        {
+          "name": "DWFOLC",
+          "id": 31
+        },
+        {
+          "name": "DWMOLC1",
+          "id": 32
+        },
+        {
+          "name": "DWMOLC2",
+          "id": 33
+        },
+        {
+          "name": "DWMYLC1",
+          "id": 34
+        },
+        {
+          "name": "HMOGAR",
+          "id": 35
+        },
+        {
+          "name": "WMYGOL1",
+          "id": 36
+        },
+        {
+          "name": "WMYGOL2",
+          "id": 37
+        },
+        {
+          "name": "HFORI",
+          "id": 38
+        },
+        {
+          "name": "HFOST",
+          "id": 39
+        },
+        {
+          "name": "HFYRI",
+          "id": 40
+        },
+        {
+          "name": "HFYST",
+          "id": 41
+        },
+        {
+          "name": "JETHRO",
+          "id": 42
+        },
+        {
+          "name": "HMORI",
+          "id": 43
+        },
+        {
+          "name": "HMOST",
+          "id": 44
+        },
+        {
+          "name": "HMYBE",
+          "id": 45
+        },
+        {
+          "name": "HMYRI",
+          "id": 46
+        },
+        {
+          "name": "HMYCR",
+          "id": 47
+        },
+        {
+          "name": "HMYST",
+          "id": 48
+        },
+        {
+          "name": "OMOKUNG",
+          "id": 49
+        },
+        {
+          "name": "WMYMECH",
+          "id": 50
+        },
+        {
+          "name": "BMYMOUN",
+          "id": 51
+        },
+        {
+          "name": "WMYMOUN",
+          "id": 52
+        },
+        {
+          "name": "OFORI",
+          "id": 53
+        },
+        {
+          "name": "OFOST",
+          "id": 54
+        },
+        {
+          "name": "OFYRI",
+          "id": 55
+        },
+        {
+          "name": "OFYST",
+          "id": 56
+        },
+        {
+          "name": "OMORI",
+          "id": 57
+        },
+        {
+          "name": "OMOST",
+          "id": 58
+        },
+        {
+          "name": "OMYRI",
+          "id": 59
+        },
+        {
+          "name": "OMYST",
+          "id": 60
+        },
+        {
+          "name": "WMYPLT",
+          "id": 61
+        },
+        {
+          "name": "WMOPJ",
+          "id": 62
+        },
+        {
+          "name": "BFYPRO",
+          "id": 63
+        },
+        {
+          "name": "HFYPRO",
+          "id": 64
+        },
+        {
+          "name": "KENDL",
+          "id": 65
+        },
+        {
+          "name": "BMYPOL1",
+          "id": 66
+        },
+        {
+          "name": "BMYPOL2",
+          "id": 67
+        },
+        {
+          "name": "WMOPREA",
+          "id": 68
+        },
+        {
+          "name": "SBFYST",
+          "id": 69
+        },
+        {
+          "name": "WMOSCI",
+          "id": 70
+        },
+        {
+          "name": "WMYSGRD",
+          "id": 71
+        },
+        {
+          "name": "SWMYHP1",
+          "id": 72
+        },
+        {
+          "name": "SWMYHP2",
+          "id": 73
+        },
+        {
+          "name": "SWFOPRO",
+          "id": 75
+        },
+        {
+          "name": "WFYSTEW",
+          "id": 76
+        },
+        {
+          "name": "SWMOTR1",
+          "id": 77
+        },
+        {
+          "name": "WMOTR1",
+          "id": 78
+        },
+        {
+          "name": "BMOTR1",
+          "id": 79
+        },
+        {
+          "name": "VBMYBOX",
+          "id": 80
+        },
+        {
+          "name": "VWMYBOX",
+          "id": 81
+        },
+        {
+          "name": "VHMYELV",
+          "id": 82
+        },
+        {
+          "name": "VBMYELV",
+          "id": 83
+        },
+        {
+          "name": "VIMYELV",
+          "id": 84
+        },
+        {
+          "name": "VWFYPRO",
+          "id": 85
+        },
+        {
+          "name": "VWFYST1",
+          "id": 87
+        },
+        {
+          "name": "WFORI",
+          "id": 88
+        },
+        {
+          "name": "WFOST",
+          "id": 89
+        },
+        {
+          "name": "WFYJG",
+          "id": 90
+        },
+        {
+          "name": "WFYRI",
+          "id": 91
+        },
+        {
+          "name": "WFYRO",
+          "id": 92
+        },
+        {
+          "name": "WFYST",
+          "id": 93
+        },
+        {
+          "name": "WMORI",
+          "id": 94
+        },
+        {
+          "name": "WMOST",
+          "id": 95
+        },
+        {
+          "name": "WMYJG",
+          "id": 96
+        },
+        {
+          "name": "WMYLG",
+          "id": 97
+        },
+        {
+          "name": "WMYRI",
+          "id": 98
+        },
+        {
+          "name": "WMYRO",
+          "id": 99
+        },
+        {
+          "name": "WMYCR",
+          "id": 100
+        },
+        {
+          "name": "WMYST",
+          "id": 101
+        },
+        {
+          "name": "BALLAS1",
+          "id": 102
+        },
+        {
+          "name": "BALLAS2",
+          "id": 103
+        },
+        {
+          "name": "BALLAS3",
+          "id": 104
+        },
+        {
+          "name": "FAM1",
+          "id": 105
+        },
+        {
+          "name": "FAM2",
+          "id": 106
+        },
+        {
+          "name": "FAM3",
+          "id": 107
+        },
+        {
+          "name": "LSV1",
+          "id": 108
+        },
+        {
+          "name": "LSV2",
+          "id": 109
+        },
+        {
+          "name": "LSV3",
+          "id": 110
+        },
+        {
+          "name": "MAFFA",
+          "id": 111
+        },
+        {
+          "name": "MAFFB",
+          "id": 112
+        },
+        {
+          "name": "MAFBOSS",
+          "id": 113
+        },
+        {
+          "name": "VLA1",
+          "id": 114
+        },
+        {
+          "name": "VLA2",
+          "id": 115
+        },
+        {
+          "name": "VLA3",
+          "id": 116
+        },
+        {
+          "name": "TRIADA",
+          "id": 117
+        },
+        {
+          "name": "TRIADB",
+          "id": 118
+        },
+        {
+          "name": "SINDACO",
+          "id": 119
+        },
+        {
+          "name": "TRIBOSS",
+          "id": 120
+        },
+        {
+          "name": "DNB1",
+          "id": 121
+        },
+        {
+          "name": "DNB2",
+          "id": 122
+        },
+        {
+          "name": "DNB3",
+          "id": 123
+        },
+        {
+          "name": "VMAFF1",
+          "id": 124
+        },
+        {
+          "name": "VMAFF2",
+          "id": 125
+        },
+        {
+          "name": "VMAFF3",
+          "id": 126
+        },
+        {
+          "name": "VMAFF4",
+          "id": 127
+        },
+        {
+          "name": "DNMYLC",
+          "id": 128
+        },
+        {
+          "name": "DNFOLC1",
+          "id": 129
+        },
+        {
+          "name": "DNFOLC2",
+          "id": 130
+        },
+        {
+          "name": "DNFYLC",
+          "id": 131
+        },
+        {
+          "name": "DNMOLC1",
+          "id": 132
+        },
+        {
+          "name": "DNMOLC2",
+          "id": 133
+        },
+        {
+          "name": "SBMOTR2",
+          "id": 134
+        },
+        {
+          "name": "SWMOTR2",
+          "id": 135
+        },
+        {
+          "name": "SBMYTR3",
+          "id": 136
+        },
+        {
+          "name": "SWMOTR3",
+          "id": 137
+        },
+        {
+          "name": "WFYBE",
+          "id": 138
+        },
+        {
+          "name": "BFYBE",
+          "id": 139
+        },
+        {
+          "name": "HFYBE",
+          "id": 140
+        },
+        {
+          "name": "SOFYBU",
+          "id": 141
+        },
+        {
+          "name": "SBMYST",
+          "id": 142
+        },
+        {
+          "name": "SBMYCR",
+          "id": 143
+        },
+        {
+          "name": "BMYCG",
+          "id": 144
+        },
+        {
+          "name": "WFYCRK",
+          "id": 145
+        },
+        {
+          "name": "HMYCM",
+          "id": 146
+        },
+        {
+          "name": "WMYBU",
+          "id": 147
+        },
+        {
+          "name": "BFYBU",
+          "id": 148
+        },
+        {
+          "name": "SMOKEV",
+          "id": 149
+        },
+        {
+          "name": "WFYBU",
+          "id": 150
+        },
+        {
+          "name": "DWFYLC1",
+          "id": 151
+        },
+        {
+          "name": "WFYPRO",
+          "id": 152
+        },
+        {
+          "name": "WMYCONB",
+          "id": 153
+        },
+        {
+          "name": "WMYBE",
+          "id": 154
+        },
+        {
+          "name": "WMYPIZZ",
+          "id": 155
+        },
+        {
+          "name": "BMOBAR",
+          "id": 156
+        },
+        {
+          "name": "CWFYHB",
+          "id": 157
+        },
+        {
+          "name": "CWMOFR",
+          "id": 158
+        },
+        {
+          "name": "CWMOHB1",
+          "id": 159
+        },
+        {
+          "name": "CWMOHB2",
+          "id": 160
+        },
+        {
+          "name": "CWMYFR",
+          "id": 161
+        },
+        {
+          "name": "CWMYHB1",
+          "id": 162
+        },
+        {
+          "name": "BMYBOUN",
+          "id": 163
+        },
+        {
+          "name": "WMYBOUN",
+          "id": 164
+        },
+        {
+          "name": "WMOMIB",
+          "id": 165
+        },
+        {
+          "name": "BMYMIB",
+          "id": 166
+        },
+        {
+          "name": "WMYBELL",
+          "id": 167
+        },
+        {
+          "name": "BMOCHIL",
+          "id": 168
+        },
+        {
+          "name": "SOFYRI",
+          "id": 169
+        },
+        {
+          "name": "SOMYST",
+          "id": 170
+        },
+        {
+          "name": "VWMYBJD",
+          "id": 171
+        },
+        {
+          "name": "VWFYCRP",
+          "id": 172
+        },
+        {
+          "name": "SFR1",
+          "id": 173
+        },
+        {
+          "name": "SFR2",
+          "id": 174
+        },
+        {
+          "name": "SFR3",
+          "id": 175
+        },
+        {
+          "name": "BMYBAR",
+          "id": 176
+        },
+        {
+          "name": "WMYBAR",
+          "id": 177
+        },
+        {
+          "name": "WFYSEX",
+          "id": 178
+        },
+        {
+          "name": "WMYAMMO",
+          "id": 179
+        },
+        {
+          "name": "BMYTATT",
+          "id": 180
+        },
+        {
+          "name": "VWMYCR",
+          "id": 181
+        },
+        {
+          "name": "VBMOCD",
+          "id": 182
+        },
+        {
+          "name": "VBMYCR",
+          "id": 183
+        },
+        {
+          "name": "VHMYCR",
+          "id": 184
+        },
+        {
+          "name": "SBMYRI",
+          "id": 185
+        },
+        {
+          "name": "SOMYRI",
+          "id": 186
+        },
+        {
+          "name": "SOMYBU",
+          "id": 187
+        },
+        {
+          "name": "SWMYST",
+          "id": 188
+        },
+        {
+          "name": "WMYVA",
+          "id": 189
+        },
+        {
+          "name": "COPGRL3",
+          "id": 190
+        },
+        {
+          "name": "GUNGRL3",
+          "id": 191
+        },
+        {
+          "name": "MECGRL3",
+          "id": 192
+        },
+        {
+          "name": "NURGRL3",
+          "id": 193
+        },
+        {
+          "name": "CROGRL3",
+          "id": 194
+        },
+        {
+          "name": "GANGRL3",
+          "id": 195
+        },
+        {
+          "name": "CWFOFR",
+          "id": 196
+        },
+        {
+          "name": "CWFOHB",
+          "id": 197
+        },
+        {
+          "name": "CWFYFR1",
+          "id": 198
+        },
+        {
+          "name": "CWFYFR2",
+          "id": 199
+        },
+        {
+          "name": "CWMYHB2",
+          "id": 200
+        },
+        {
+          "name": "DWFYLC2",
+          "id": 201
+        },
+        {
+          "name": "DWMYLC2",
+          "id": 202
+        },
+        {
+          "name": "OMYKARA",
+          "id": 203
+        },
+        {
+          "name": "WMYKARA",
+          "id": 204
+        },
+        {
+          "name": "WFYBURG",
+          "id": 205
+        },
+        {
+          "name": "VWMYCD",
+          "id": 206
+        },
+        {
+          "name": "VHFYPRO",
+          "id": 207
+        },
+        {
+          "name": "SUZIE",
+          "id": 208
+        },
+        {
+          "name": "OMONOOD",
+          "id": 209
+        },
+        {
+          "name": "OMOBOAT",
+          "id": 210
+        },
+        {
+          "name": "WFYCLOT",
+          "id": 211
+        },
+        {
+          "name": "VWMOTR1",
+          "id": 212
+        },
+        {
+          "name": "VWMOTR2",
+          "id": 213
+        },
+        {
+          "name": "VWFYWAI",
+          "id": 214
+        },
+        {
+          "name": "SBFORI",
+          "id": 215
+        },
+        {
+          "name": "SWFYRI",
+          "id": 216
+        },
+        {
+          "name": "WMYCLOT",
+          "id": 217
+        },
+        {
+          "name": "SBFOST",
+          "id": 218
+        },
+        {
+          "name": "SBFYRI",
+          "id": 219
+        },
+        {
+          "name": "SBMOCD",
+          "id": 220
+        },
+        {
+          "name": "SBMORI",
+          "id": 221
+        },
+        {
+          "name": "SBMOST",
+          "id": 222
+        },
+        {
+          "name": "SHMYCR",
+          "id": 223
+        },
+        {
+          "name": "SOFORI",
+          "id": 224
+        },
+        {
+          "name": "SOFOST",
+          "id": 225
+        },
+        {
+          "name": "SOFYST",
+          "id": 226
+        },
+        {
+          "name": "SOMOBU",
+          "id": 227
+        },
+        {
+          "name": "SOMORI",
+          "id": 228
+        },
+        {
+          "name": "SOMOST",
+          "id": 229
+        },
+        {
+          "name": "SWMOTR5",
+          "id": 230
+        },
+        {
+          "name": "SWFORI",
+          "id": 231
+        },
+        {
+          "name": "SWFOST",
+          "id": 232
+        },
+        {
+          "name": "SWFYST",
+          "id": 233
+        },
+        {
+          "name": "SWMOCD",
+          "id": 234
+        },
+        {
+          "name": "SWMORI",
+          "id": 235
+        },
+        {
+          "name": "SWMOST",
+          "id": 236
+        },
+        {
+          "name": "SHFYPRO",
+          "id": 237
+        },
+        {
+          "name": "SBFYPRO",
+          "id": 238
+        },
+        {
+          "name": "SWMOTR4",
+          "id": 239
+        },
+        {
+          "name": "SWMYRI",
+          "id": 240
+        },
+        {
+          "name": "SMYST",
+          "id": 241
+        },
+        {
+          "name": "SMYST2",
+          "id": 242
+        },
+        {
+          "name": "SFYPRO",
+          "id": 243
+        },
+        {
+          "name": "VBFYST2",
+          "id": 244
+        },
+        {
+          "name": "VBFYPRO",
+          "id": 245
+        },
+        {
+          "name": "VHFYST3",
+          "id": 246
+        },
+        {
+          "name": "BIKERA",
+          "id": 247
+        },
+        {
+          "name": "BIKERB",
+          "id": 248
+        },
+        {
+          "name": "BMYPIMP",
+          "id": 249
+        },
+        {
+          "name": "SWMYCR",
+          "id": 250
+        },
+        {
+          "name": "WFYLG",
+          "id": 251
+        },
+        {
+          "name": "WMYVA2",
+          "id": 252
+        },
+        {
+          "name": "BMOSEC",
+          "id": 253
+        },
+        {
+          "name": "BIKDRUG",
+          "id": 254
+        },
+        {
+          "name": "WMYCH",
+          "id": 255
+        },
+        {
+          "name": "SBFYSTR",
+          "id": 256
+        },
+        {
+          "name": "SWFYSTR",
+          "id": 257
+        },
+        {
+          "name": "HECK1",
+          "id": 258
+        },
+        {
+          "name": "HECK2",
+          "id": 259
+        },
+        {
+          "name": "BMYCON",
+          "id": 260
+        },
+        {
+          "name": "WMYCD1",
+          "id": 261
+        },
+        {
+          "name": "BMOCD",
+          "id": 262
+        },
+        {
+          "name": "VWFYWA2",
+          "id": 263
+        },
+        {
+          "name": "WMOICE",
+          "id": 264
+        },
+        {
+          "name": "TENPEN",
+          "id": 265
+        },
+        {
+          "name": "PULASKI",
+          "id": 266
+        },
+        {
+          "name": "HERN",
+          "id": 267
+        },
+        {
+          "name": "DWAYNE",
+          "id": 268
+        },
+        {
+          "name": "SMOKE",
+          "id": 269
+        },
+        {
+          "name": "SWEET",
+          "id": 270
+        },
+        {
+          "name": "RYDER",
+          "id": 271
+        },
+        {
+          "name": "FORELLI",
+          "id": 272
+        },
+        {
+          "name": "TBONE",
+          "id": 273
+        },
+        {
+          "name": "LAEMT1",
+          "id": 274
+        },
+        {
+          "name": "LVEMT1",
+          "id": 275
+        },
+        {
+          "name": "SFEMT1",
+          "id": 276
+        },
+        {
+          "name": "LAFD1",
+          "id": 277
+        },
+        {
+          "name": "LVFD1",
+          "id": 278
+        },
+        {
+          "name": "SFFD1",
+          "id": 279
+        },
+        {
+          "name": "LAPD1",
+          "id": 280
+        },
+        {
+          "name": "SFPD1",
+          "id": 281
+        },
+        {
+          "name": "LVPD1",
+          "id": 282
+        },
+        {
+          "name": "CSHER",
+          "id": 283
+        },
+        {
+          "name": "LAPDM1",
+          "id": 284
+        },
+        {
+          "name": "SWAT",
+          "id": 285
+        },
+        {
+          "name": "FBI",
+          "id": 286
+        },
+        {
+          "name": "ARMY",
+          "id": 287
+        },
+        {
+          "name": "DSHER",
+          "id": 288
+        },
+        {
+          "name": "ZERO",
+          "id": 289
+        },
+        {
+          "name": "ROSE",
+          "id": 290
+        },
+        {
+          "name": "PAUL",
+          "id": 291
+        },
+        {
+          "name": "CESAR",
+          "id": 292
+        },
+        {
+          "name": "OGLOC",
+          "id": 293
+        },
+        {
+          "name": "WUZIMU",
+          "id": 294
+        },
+        {
+          "name": "TORINO",
+          "id": 295
+        },
+        {
+          "name": "JIZZY",
+          "id": 296
+        },
+        {
+          "name": "MADDOGG",
+          "id": 297
+        },
+        {
+          "name": "CAT",
+          "id": 298
+        },
+        {
+          "name": "CLAUDE",
+          "id": 299
+        }
+      ]
+    }
+  ]
+}

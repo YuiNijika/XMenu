@@ -9,6 +9,12 @@ namespace Controllers::Vehicle {
     void Repair();
     void Start();
     void Stop();
+    void ApplyAppearance();
+    void OpenDoor();
+    void PopDoor();
+    void WarpToSeat();
+    void SetTrafficDensity(float density);
+    void SetFlyingCars(bool enable);
     void SetEngine(bool enable);
     void Unflip();
     void SetHeavy(bool enable);

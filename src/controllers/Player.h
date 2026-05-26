@@ -1,10 +1,7 @@
 #pragma once
-#include "features/GameLogic.h"
-
-class CPlayerPed;
+#include "game/Types.h"
 
 namespace Controllers::Player {
-    CPlayerPed* GetPlayer();
     void Process();
     void Heal();
     void GiveArmour();
@@ -19,8 +16,8 @@ namespace Controllers::Player {
     void SetHealth(float value);
     float GetArmour();
     void SetArmour(float value);
-    GameLogic::ProofState GetProofState();
-    void SetProofState(const GameLogic::ProofState& state);
+    GameTypes::ProofState GetProofState();
+    void SetProofState(const GameTypes::ProofState& state);
     void CopyCoordinates();
     bool RequestSaveGame();
     void SetInfiniteSprint(bool enable);
@@ -29,4 +26,7 @@ namespace Controllers::Player {
     void SetFreeHealthcare(bool enable);
     bool GetFreeJail();
     void SetFreeJail(bool enable);
+    bool SetSkin(unsigned int modelId);
+    bool ApplyClothes(int textureId, int modelId, int bodyPart);
+    bool SetStat(int statId, float value);
 }

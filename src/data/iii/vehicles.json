@@ -3,94 +3,253 @@
     {
       "category": "boat",
       "entries": [
-        {"name": "vehicle.predator", "id": 120},
-        {"name": "vehicle.speeder", "id": 142},
-        {"name": "vehicle.reefer", "id": 143}
+        {
+          "name": "vehicle.predator",
+          "id": 120
+        },
+        {
+          "name": "vehicle.speeder",
+          "id": 142
+        },
+        {
+          "name": "vehicle.reefer",
+          "id": 143
+        }
       ]
     },
     {
       "category": "transport",
       "entries": [
-        {"name": "vehicle.taxi", "id": 110},
-        {"name": "vehicle.bus", "id": 121},
-        {"name": "vehicle.coach", "id": 127},
-        {"name": "vehicle.cabbie", "id": 128},
-        {"name": "vehicle.mrwhoopee", "id": 113}
+        {
+          "name": "vehicle.taxi",
+          "id": 110
+        },
+        {
+          "name": "vehicle.bus",
+          "id": 121
+        },
+        {
+          "name": "vehicle.coach",
+          "id": 127
+        },
+        {
+          "name": "vehicle.cabbie",
+          "id": 128
+        },
+        {
+          "name": "vehicle.mrwhoopee",
+          "id": 113
+        }
       ]
     },
     {
       "category": "worker",
       "entries": [
-        {"name": "vehicle.linerun", "id": 93},
-        {"name": "vehicle.trash", "id": 98},
-        {"name": "vehicle.pony", "id": 103},
-        {"name": "vehicle.mule", "id": 104},
-        {"name": "vehicle.bobcat", "id": 112},
-        {"name": "vehicle.barracks", "id": 123},
-        {"name": "vehicle.rumpo", "id": 130},
-        {"name": "vehicle.flatbed", "id": 145},
-        {"name": "vehicle.yankee", "id": 146}
+        {
+          "name": "vehicle.linerun",
+          "id": 93
+        },
+        {
+          "name": "vehicle.trash",
+          "id": 98
+        },
+        {
+          "name": "vehicle.pony",
+          "id": 103
+        },
+        {
+          "name": "vehicle.mule",
+          "id": 104
+        },
+        {
+          "name": "vehicle.bobcat",
+          "id": 112
+        },
+        {
+          "name": "vehicle.barracks",
+          "id": 123
+        },
+        {
+          "name": "vehicle.rumpo",
+          "id": 130
+        },
+        {
+          "name": "vehicle.flatbed",
+          "id": 145
+        },
+        {
+          "name": "vehicle.yankee",
+          "id": 146
+        }
       ]
     },
     {
       "category": "sport",
       "entries": [
-        {"name": "vehicle.stinger", "id": 92},
-        {"name": "vehicle.infernus", "id": 101},
-        {"name": "vehicle.cheetah", "id": 105},
-        {"name": "vehicle.banshee", "id": 119},
-        {"name": "vehicle.bfinject", "id": 114}
+        {
+          "name": "vehicle.stinger",
+          "id": 92
+        },
+        {
+          "name": "vehicle.infernus",
+          "id": 101
+        },
+        {
+          "name": "vehicle.cheetah",
+          "id": 105
+        },
+        {
+          "name": "vehicle.banshee",
+          "id": 119
+        },
+        {
+          "name": "vehicle.bfinject",
+          "id": 114
+        }
       ]
     },
     {
       "category": "sedan",
       "entries": [
-        {"name": "vehicle.landstalker", "id": 90},
-        {"name": "vehicle.idaho", "id": 91},
-        {"name": "vehicle.perennial", "id": 94},
-        {"name": "vehicle.sentinel", "id": 95},
-        {"name": "vehicle.patriot", "id": 96},
-        {"name": "vehicle.stretch", "id": 99},
-        {"name": "vehicle.manana", "id": 100},
-        {"name": "vehicle.blista", "id": 102},
-        {"name": "vehicle.moonbeam", "id": 108},
-        {"name": "vehicle.esperanto", "id": 109},
-        {"name": "vehicle.kuruma", "id": 111},
-        {"name": "vehicle.stallion", "id": 129}
+        {
+          "name": "vehicle.landstalker",
+          "id": 90
+        },
+        {
+          "name": "vehicle.idaho",
+          "id": 91
+        },
+        {
+          "name": "vehicle.perennial",
+          "id": 94
+        },
+        {
+          "name": "vehicle.sentinel",
+          "id": 95
+        },
+        {
+          "name": "vehicle.patriot",
+          "id": 96
+        },
+        {
+          "name": "vehicle.stretch",
+          "id": 99
+        },
+        {
+          "name": "vehicle.manana",
+          "id": 100
+        },
+        {
+          "name": "vehicle.blista",
+          "id": 102
+        },
+        {
+          "name": "vehicle.moonbeam",
+          "id": 108
+        },
+        {
+          "name": "vehicle.esperanto",
+          "id": 109
+        },
+        {
+          "name": "vehicle.kuruma",
+          "id": 111
+        },
+        {
+          "name": "vehicle.stallion",
+          "id": 129
+        }
       ]
     },
     {
       "category": "emergency",
       "entries": [
-        {"name": "vehicle.firetruk", "id": 97},
-        {"name": "vehicle.ambulan", "id": 106},
-        {"name": "vehicle.fbicar", "id": 107},
-        {"name": "vehicle.police", "id": 116},
-        {"name": "vehicle.enforcer", "id": 117},
-        {"name": "vehicle.rhino", "id": 122},
-        {"name": "vehicle.securicar", "id": 118}
+        {
+          "name": "vehicle.firetruk",
+          "id": 97
+        },
+        {
+          "name": "vehicle.ambulan",
+          "id": 106
+        },
+        {
+          "name": "vehicle.fbicar",
+          "id": 107
+        },
+        {
+          "name": "vehicle.police",
+          "id": 116
+        },
+        {
+          "name": "vehicle.enforcer",
+          "id": 117
+        },
+        {
+          "name": "vehicle.rhino",
+          "id": 122
+        },
+        {
+          "name": "vehicle.securicar",
+          "id": 118
+        }
       ]
     },
     {
       "category": "rc",
       "entries": [
-        {"name": "vehicle.rcbandit", "id": 131}
+        {
+          "name": "vehicle.rcbandit",
+          "id": 131
+        }
       ]
     },
     {
       "category": "special",
       "entries": [
-        {"name": "vehicle.bellyup", "id": 132},
-        {"name": "vehicle.mrwongs", "id": 133},
-        {"name": "vehicle.mafia", "id": 134},
-        {"name": "vehicle.yardie", "id": 135},
-        {"name": "vehicle.yakuza", "id": 136},
-        {"name": "vehicle.diablo", "id": 137},
-        {"name": "vehicle.columbian", "id": 138},
-        {"name": "vehicle.hoods", "id": 139},
-        {"name": "vehicle.panlantic", "id": 144},
-        {"name": "vehicle.borgnine", "id": 148},
-        {"name": "vehicle.toyz", "id": 149}
+        {
+          "name": "vehicle.bellyup",
+          "id": 132
+        },
+        {
+          "name": "vehicle.mrwongs",
+          "id": 133
+        },
+        {
+          "name": "vehicle.mafia",
+          "id": 134
+        },
+        {
+          "name": "vehicle.yardie",
+          "id": 135
+        },
+        {
+          "name": "vehicle.yakuza",
+          "id": 136
+        },
+        {
+          "name": "vehicle.diablo",
+          "id": 137
+        },
+        {
+          "name": "vehicle.columbian",
+          "id": 138
+        },
+        {
+          "name": "vehicle.hoods",
+          "id": 139
+        },
+        {
+          "name": "vehicle.panlantic",
+          "id": 144
+        },
+        {
+          "name": "vehicle.borgnine",
+          "id": 148
+        },
+        {
+          "name": "vehicle.toyz",
+          "id": 149
+        }
       ]
     }
   ]

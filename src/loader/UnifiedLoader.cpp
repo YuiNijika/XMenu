@@ -1,6 +1,6 @@
-#include "PayloadResources.h"
 #include <windows.h>
 #include <cstdio>
+#include <cstdint>
 #include <string>
 
 namespace {
@@ -13,7 +13,7 @@ namespace {
 
     HMODULE payloadModule = nullptr;
 
-    bool ReadUInt(unsigned int address, unsigned int& value) {
+    bool ReadUInt(std::uintptr_t address, unsigned int& value) {
         __try {
             value = *reinterpret_cast<const unsigned int*>(address);
             return true;
@@ -23,13 +23,12 @@ namespace {
         }
     }
 
-    bool MatchUInt(unsigned int address, unsigned int expected) {
+    bool MatchUInt(std::uintptr_t address, unsigned int expected) {
         unsigned int value = 0;
         return ReadUInt(address, value) && value == expected;
     }
 
-    GameTarget DetectGameTarget() {
-        // 与 plugin-sdk 的 GameVersion 检测逻辑保持同源：读游戏内固定签名，不依赖 exe 文件名。
+    GameTarget DetectGame() {
         if (MatchUInt(0x401000, 0x53EC8B55) || MatchUInt(0x401000, 0x16197BE9)
             || MatchUInt(0x8245BC, 0x94BF) || MatchUInt(0x8252FC, 0x94BF)
             || MatchUInt(0x82533C, 0x94BF) || MatchUInt(0x858D51, 0x3539F633)
@@ -50,81 +49,46 @@ namespace {
         return GameTarget::Unknown;
     }
 
-    int ResourceIdForTarget(GameTarget target) {
+    const char* PayloadFileName(GameTarget target) {
         switch (target) {
         case GameTarget::SA:
-            return IDR_XMENU_SA;
+            return "XMenuSA.dll";
         case GameTarget::VC:
-            return IDR_XMENU_VC;
+            return "XMenuVC.dll";
         case GameTarget::III:
-            return IDR_XMENU_III;
+            return "XMenuIII.dll";
+        case GameTarget::Unknown:
         default:
-            return 0;
+            return nullptr;
         }
     }
 
-    const char* NameForTarget(GameTarget target) {
-        switch (target) {
-        case GameTarget::SA:
-            return "sa";
-        case GameTarget::VC:
-            return "vc";
-        case GameTarget::III:
-            return "iii";
-        default:
-            return "unknown";
+    std::string DirectoryFromModule(HMODULE module) {
+        char path[MAX_PATH]{};
+        const DWORD size = GetModuleFileNameA(module, path, MAX_PATH);
+        if (size == 0) {
+            return "";
         }
+
+        std::string directory(path, size);
+        const std::size_t slash = directory.find_last_of("\\/");
+        if (slash == std::string::npos) {
+            return "";
+        }
+        return directory.substr(0, slash + 1);
     }
 
-    bool EnsureDirectory(const std::string& path) {
-        if (CreateDirectoryA(path.c_str(), nullptr)) {
-            return true;
-        }
-        return GetLastError() == ERROR_ALREADY_EXISTS;
-    }
-
-    bool WritePayload(HINSTANCE instance, GameTarget target, std::string& outputPath) {
-        const int resourceId = ResourceIdForTarget(target);
-        if (resourceId == 0) {
-            return false;
+    std::string RuntimePayloadPath(HINSTANCE instance, GameTarget target) {
+        const char* fileName = PayloadFileName(target);
+        if (!fileName) {
+            return "";
         }
 
-        HRSRC resource = FindResourceA(instance, MAKEINTRESOURCEA(resourceId), RT_RCDATA);
-        if (!resource) {
-            return false;
+        const std::string asiDirectory = DirectoryFromModule(instance);
+        if (asiDirectory.empty()) {
+            return std::string("XMenu\\") + fileName;
         }
-
-        HGLOBAL loaded = LoadResource(instance, resource);
-        if (!loaded) {
-            return false;
-        }
-
-        const DWORD size = SizeofResource(instance, resource);
-        const void* data = LockResource(loaded);
-        if (!data || size == 0) {
-            return false;
-        }
-
-        char tempPath[MAX_PATH]{};
-        if (GetTempPathA(MAX_PATH, tempPath) == 0) {
-            return false;
-        }
-
-        std::string runtimeDir = std::string(tempPath) + "XMenu";
-        if (!EnsureDirectory(runtimeDir)) {
-            return false;
-        }
-
-        outputPath = runtimeDir + "\\XMenu_" + NameForTarget(target) + ".dll";
-        HANDLE file = CreateFileA(outputPath.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-        if (file == INVALID_HANDLE_VALUE) {
-            return false;
-        }
-
-        DWORD written = 0;
-        const BOOL ok = WriteFile(file, data, size, &written, nullptr);
-        CloseHandle(file);
-        return ok && written == size;
+        return asiDirectory + "XMenu\\" + fileName;
     }
 
     void ShowError(const char* message) {
@@ -132,22 +96,23 @@ namespace {
     }
 
     bool LoadPayload(HINSTANCE instance) {
-        const GameTarget target = DetectGameTarget();
+        const GameTarget target = DetectGame();
         if (target == GameTarget::Unknown) {
-            ShowError("Unsupported game executable. XMenu supports GTA III, GTA VC and GTA SA only.");
+            ShowError("Failed to detect supported GTA runtime.\n\nSupported games: GTA SA, GTA Vice City, GTA III.");
             return false;
         }
 
-        std::string payloadPath;
-        if (!WritePayload(instance, target, payloadPath)) {
-            ShowError("Failed to extract XMenu runtime payload.");
-            return false;
-        }
-
+        const std::string payloadPath = RuntimePayloadPath(instance, target);
         payloadModule = LoadLibraryA(payloadPath.c_str());
         if (!payloadModule) {
-            char message[512]{};
-            std::snprintf(message, sizeof(message), "Failed to load XMenu runtime payload. Error code: %lu", GetLastError());
+            char message[768]{};
+            std::snprintf(
+                message,
+                sizeof(message),
+                "Failed to load XMenu payload.\n\nExpected file:\n%s\n\nError code: %lu",
+                payloadPath.c_str(),
+                GetLastError()
+            );
             ShowError(message);
             return false;
         }

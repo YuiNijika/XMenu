@@ -1,0 +1,21 @@
+{
+  "scene.animation": "Animation",
+  "scene.animGroup": "Animation group",
+  "scene.animName": "Animation name",
+  "scene.loop": "Loop",
+  "scene.playAnim": "Play animation",
+  "scene.stopAnim": "Stop animation",
+  "scene.particle": "Particle",
+  "scene.particleName": "Particle name",
+  "scene.spawnParticle": "Spawn particle",
+  "scene.cutscene": "Cutscene",
+  "scene.cutsceneName": "Cutscene name",
+  "scene.startCutscene": "Start cutscene",
+  "scene.stopCutscene": "Stop cutscene",
+  "scene.cutsceneRunning": "Cutscene running",
+  "scene.mission": "Mission status",
+  "scene.noListData": "No list data available.",
+  "scene.animationListHint": "Click a list entry to fill the animation group/name and play it immediately.",
+  "scene.particleListHint": "Click a list entry to fill the particle name and spawn it near the player immediately.",
+  "scene.cutsceneListHint": "Click a list entry to fill the cutscene name and start it immediately."
+}

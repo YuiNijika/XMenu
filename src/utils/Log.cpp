@@ -58,8 +58,24 @@ namespace {
         return DirectoryFromModule(module);
     }
 
+    bool EnsureDirectory(const std::string& path) {
+        if (path.empty()) {
+            return false;
+        }
+        if (CreateDirectoryA(path.c_str(), nullptr)) {
+            return true;
+        }
+        return GetLastError() == ERROR_ALREADY_EXISTS;
+    }
+
+    std::string XMenuDataDirectory() {
+        return ModuleDirectory() + "XMenu\\";
+    }
+
     std::string LogPath() {
-        return ModuleDirectory() + "XMenu.log";
+        const std::string directory = XMenuDataDirectory();
+        EnsureDirectory(directory);
+        return directory + "debug.log";
     }
 
     std::string BuildTimestamp() {
