@@ -143,9 +143,6 @@ if not exist "build\bin\XMenuInstaller.exe" (
     goto fail
 )
 
-call :stage_i18n
-if errorlevel 1 goto fail
-
 call :stage_data
 if errorlevel 1 goto fail
 
@@ -157,42 +154,24 @@ echo   build\bin\XMenu\XMenuSA.dll
 echo   build\bin\XMenu\XMenuVC.dll
 echo   build\bin\XMenu\XMenuIII.dll
 echo   build\bin\XMenuInstaller.exe
-echo   build\bin\XMenu\i18n\{lang}\index.json
 echo   build\bin\XMenu\data\{sa,vc,iii}\*.json
 echo   build\bin\XMenu\data\i18n\{lang}\index.json
 echo.
 goto success
 
-:stage_i18n
-if exist "build\bin\XMenu\i18n" rmdir /S /Q "build\bin\XMenu\i18n"
-if not exist "build\bin\XMenu" mkdir "build\bin\XMenu"
-if not exist "build\bin\XMenu\i18n" mkdir "build\bin\XMenu\i18n"
-
+:stage_data
 if exist "tools\build_i18n_split.py" (
     py -3 "tools\build_i18n_split.py" >nul 2>nul
     if errorlevel 1 python "tools\build_i18n_split.py" >nul 2>nul
 )
 
-for %%L in (zh en jp ru) do (
-    if not exist "src\data\i18n\%%L\index.json" (
-        echo [Error] Missing language index: src\data\i18n\%%L\index.json
-        exit /b 1
-    )
-    xcopy "src\data\i18n\%%L" "build\bin\XMenu\i18n\%%L\" /E /I /Y >nul
-    if errorlevel 1 (
-        echo [Error] Failed to stage language pack: %%L
-        exit /b 1
-    )
-)
-exit /b 0
-
-:stage_data
 if exist "tools\generate_scene_visual_data.py" (
     py -3 "tools\generate_scene_visual_data.py" >nul 2>nul
     if errorlevel 1 python "tools\generate_scene_visual_data.py" >nul 2>nul
 )
 
 if exist "build\bin\XMenu\data" rmdir /S /Q "build\bin\XMenu\data"
+if exist "build\bin\XMenu\i18n" rmdir /S /Q "build\bin\XMenu\i18n"
 if not exist "build\bin\XMenu" mkdir "build\bin\XMenu"
 if not exist "build\bin\XMenu\data" mkdir "build\bin\XMenu\data"
 
