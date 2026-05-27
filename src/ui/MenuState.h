@@ -38,6 +38,7 @@ namespace MenuState {
     inline float VehicleSpeed = 60.0f;
     inline bool VehicleSpawnAsDriver = true;
     inline bool VehicleSpawnAircraftInAir = true;
+    inline bool VehicleCleanupAfterSpawn = true;
     inline int VehicleSpawnModel = 0;
     inline int VehicleColorPrimary = 0;
     inline int VehicleColorSecondary = 0;
@@ -54,6 +55,8 @@ namespace MenuState {
     inline bool QuickTeleport = false;
     inline bool QuickTeleportMapActive = false;
     inline bool SpawnUnderwater = false;
+    inline float TeleportForwardDistance = 5.0f;
+    inline bool TeleportForwardHold = false;
     inline float TeleportMapWidth = 6000.0f;
     inline float TeleportMapHeight = 6000.0f;
     inline int PedSpawnModel = 7;
@@ -86,6 +89,14 @@ namespace MenuState {
     inline bool OverlayShowPosition = true;
     inline bool OverlayShowVehicle = true;
     inline bool OverlayShowFps = true;
+    inline bool OverlayShowPlayer = true;
+    inline bool OverlayShowTime = true;
+    inline bool OverlayShowWorld = true;
+    inline bool OverlayShowDetails = false;
+    inline bool OverlayShowFeatures = false;
+    inline bool WorldLockTime = false;
+    inline bool FreeFlyEnabled = false;
+    inline float FreeFlySpeed = 1.0f;
     inline bool CommandWindowEnabled = false;
     inline bool LockWeather = false;
     inline bool DisableReplay = false;
@@ -97,6 +108,11 @@ namespace MenuState {
     inline int DaysPassed = 0;
     inline float Gravity = 0.008f;
     inline int FpsLimit = 30;
+    inline int PickupModelId = 1240;
+    inline int PickupType = 3;
+    inline int PickupQuantity = 1;
+    inline int PickupMoneyPerDay = 0;
+    inline bool PickupEmpty = false;
     inline char NoticeText[256] = "";
     inline double NoticeExpireTime = 0.0;
 

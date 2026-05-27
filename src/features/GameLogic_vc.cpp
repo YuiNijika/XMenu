@@ -18,6 +18,7 @@
 #include "CHud.h"
 #include "CWeather.h"
 #include "rw/skeleton.h"
+#include <cmath>
 #include <cstdint>
 #include <windows.h>
 #include <string>
@@ -96,6 +97,69 @@ bool PatchBytesIfExpected(const char* label, std::uintptr_t address, const unsig
     VirtualProtect(target, size, oldProtect, &unusedProtect);
     return true;
 }
+
+    bool IsSpawnPositionClear(const CVector& pos) {
+        for (CVehicle* vehicle : CPools::ms_pVehiclePool) {
+            if (!vehicle) {
+                continue;
+            }
+
+            const CVector other = vehicle->GetPosition();
+            const float dx = other.x - pos.x;
+            const float dy = other.y - pos.y;
+            const float dz = other.z - pos.z;
+            if (dx * dx + dy * dy + dz * dz < 64.0f) {
+                return false;
+            }
+        }
+
+        return !plugin::Command<plugin::Commands::IS_POINT_OBSCURED_BY_A_MISSION_ENTITY>(
+            pos.x - 3.0f, pos.y - 3.0f, pos.z - 1.0f,
+            pos.x + 3.0f, pos.y + 3.0f, pos.z + 3.0f
+        );
+    }
+
+    CVector FindSideSpawnPosition(CPlayerPed* player, const CVector& origin) {
+        if (!player) {
+            return origin;
+        }
+
+        const float heading = player->GetHeading() * 0.01745329252f;
+        const float forwardX = std::sin(heading);
+        const float forwardY = std::cos(heading);
+        const float rightX = forwardY;
+        const float rightY = -forwardX;
+
+        const float offsets[][2] = {
+            { 8.0f, 2.0f },
+            { -8.0f, 2.0f },
+            { 10.0f, -2.0f },
+            { -10.0f, -2.0f },
+            { 0.0f, 12.0f },
+            { 0.0f, -12.0f },
+            { 14.0f, 0.0f },
+            { -14.0f, 0.0f }
+        };
+
+        for (const auto& offset : offsets) {
+            CVector candidate(
+                origin.x + rightX * offset[0] + forwardX * offset[1],
+                origin.y + rightY * offset[0] + forwardY * offset[1],
+                origin.z + 3.0f
+            );
+
+            float groundZ = candidate.z;
+            if (plugin::Command<plugin::Commands::GET_GROUND_Z_FOR_3D_COORD>(candidate.x, candidate.y, candidate.z + 20.0f, &groundZ)) {
+                candidate.z = groundZ + 1.0f;
+            }
+
+            if (IsSpawnPositionClear(candidate)) {
+                return candidate;
+            }
+        }
+
+        return CVector(origin.x + rightX * 14.0f, origin.y + rightY * 14.0f, origin.z + 1.0f);
+    }
 }
 
 namespace GameLogic {
@@ -198,6 +262,23 @@ void SetArmour(CPlayerPed* player, float value) {
 
 CVector GetPlayerPosition(CPlayerPed* player) {
     return player ? player->GetPosition() : CVector(0.0f, 0.0f, 0.0f);
+}
+
+void MovePlayerRelative(CPlayerPed* player, float forward, float right, float up) {
+    if (!player) {
+        return;
+    }
+
+    CVector pos = player->GetPosition();
+    const float angle = player->m_fHeadingCurrent;
+    const float forwardX = -std::sin(angle);
+    const float forwardY = std::cos(angle);
+    const float rightX = forwardY;
+    const float rightY = -forwardX;
+    pos.x += forwardX * forward + rightX * right;
+    pos.y += forwardY * forward + rightY * right;
+    pos.z += up;
+    TeleportPlayer(pos);
 }
 
 bool IsPlayerDead(CPlayerPed* player) {
@@ -549,7 +630,7 @@ CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options)
     CVehicle* previousVehicle = nullptr;
     int previousVehicleHandle = 0;
 
-    if (options.asDriver && plugin::Command<plugin::Commands::IS_CHAR_IN_ANY_CAR>(hplayer)) {
+    if (options.asDriver && options.cleanupPrevious && plugin::Command<plugin::Commands::IS_CHAR_IN_ANY_CAR>(hplayer)) {
         previousVehicle = player->m_pVehicle;
         if (previousVehicle) {
             previousVehicleHandle = CPools::GetVehicleRef(previousVehicle);
@@ -557,12 +638,14 @@ CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options)
             plugin::Command<plugin::Commands::GET_CAR_SPEED>(previousVehicleHandle, &speed);
             plugin::Command<plugin::Commands::WARP_CHAR_FROM_CAR_TO_COORD>(hplayer, pos.x, pos.y, pos.z);
         }
+    } else if (!options.cleanupPrevious) {
+        pos = FindSideSpawnPosition(player, pos);
     }
 
     if (interior == 0) {
         if (options.aircraftInAir && IsAircraftModel(model)) {
             pos.z = 400.0f;
-        } else {
+        } else if (options.cleanupPrevious) {
             pos.z -= 5.0f;
         }
     }
@@ -572,10 +655,12 @@ CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options)
 
     int hveh = 0;
     if (options.asDriver) {
-        plugin::Command<plugin::Commands::CREATE_CAR>(model, pos.x, pos.y, pos.z + 4.0f, &hveh);
+        plugin::Command<plugin::Commands::CREATE_CAR>(model, pos.x, pos.y, pos.z + (options.cleanupPrevious ? 4.0f : 1.0f), &hveh);
     } else {
-        pos = player->TransformFromObjectSpace(CVector(0.0f, 10.0f, 0.0f));
-        plugin::Command<plugin::Commands::CREATE_CAR>(model, pos.x, pos.y, pos.z + 4.0f, &hveh);
+        if (options.cleanupPrevious) {
+            pos = player->TransformFromObjectSpace(CVector(0.0f, 10.0f, 0.0f));
+        }
+        plugin::Command<plugin::Commands::CREATE_CAR>(model, pos.x, pos.y, pos.z + 1.0f, &hveh);
     }
 
     CVehicle* vehicle = CPools::GetVehicle(hveh);
@@ -1028,6 +1113,84 @@ float GetGravity() {
 
 void SetGravity(float gravity) {
     *reinterpret_cast<float*>(0x68F5F0) = gravity;
+}
+
+namespace {
+    int lastXMenuPickupHandle = -1;
+    CVector lastXMenuPickupPosition;
+
+    unsigned char NormalizePickupType(unsigned int type) {
+        if (type > PICKUP_PROPERTY_FORSALE) {
+            return PICKUP_ONCE;
+        }
+        return static_cast<unsigned char>(type);
+    }
+
+    int CreateXMenuPickup(const GameLogic::PickupOptions& options, const CVector& pos) {
+        const int model = static_cast<int>(options.modelId);
+        if (model <= 0) {
+            return -1;
+        }
+
+        CStreaming::RequestModel(model, PRIORITY_REQUEST);
+        CStreaming::LoadAllRequestedModels(false);
+        const int handle = CPickups::GenerateNewOne(
+            pos,
+            static_cast<unsigned int>(model),
+            NormalizePickupType(options.type),
+            options.quantity,
+            options.moneyPerDay,
+            options.empty,
+            nullptr
+        );
+        plugin::Command<plugin::Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(model);
+        return handle;
+    }
+}
+
+int SpawnPickupNearPlayer(const PickupOptions& options) {
+    CPlayerPed* player = FindPlayerPed();
+    if (!player) {
+        return -1;
+    }
+
+    const int hplayer = CPools::GetPedRef(player);
+    CVector pos;
+    plugin::Command<plugin::Commands::GET_OFFSET_FROM_CHAR_IN_WORLD_COORDS>(hplayer, 0.0f, 2.0f, 0.0f, &pos.x, &pos.y, &pos.z);
+    pos.z += 0.2f;
+
+    const int handle = CreateXMenuPickup(options, pos);
+    if (handle >= 0) {
+        lastXMenuPickupHandle = handle;
+        lastXMenuPickupPosition = pos;
+    }
+    return handle;
+}
+
+bool UpdateLastPickup(const PickupOptions& options) {
+    if (lastXMenuPickupHandle < 0) {
+        return false;
+    }
+
+    CPickups::RemovePickUp(lastXMenuPickupHandle);
+    const int handle = CreateXMenuPickup(options, lastXMenuPickupPosition);
+    if (handle < 0) {
+        lastXMenuPickupHandle = -1;
+        return false;
+    }
+
+    lastXMenuPickupHandle = handle;
+    return true;
+}
+
+bool RemoveLastPickup() {
+    if (lastXMenuPickupHandle < 0) {
+        return false;
+    }
+
+    CPickups::RemovePickUp(lastXMenuPickupHandle);
+    lastXMenuPickupHandle = -1;
+    return true;
 }
 
 } // namespace GameLogic

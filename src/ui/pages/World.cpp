@@ -2,6 +2,7 @@
 #include "controllers/World.h"
 #include "ui/MenuState.h"
 #include "ui/Widget.h"
+#include "utils/AppConfig.h"
 #include "utils/I18n.h"
 #include "imgui/imgui.h"
 
@@ -34,6 +35,11 @@ namespace Pages::World {
 
             if (timeChanged) {
                 Controllers::World::SetTime(hour, minute);
+            }
+
+            if (ImGui::Checkbox(T("world.lockCurrentTime"), &MenuState::WorldLockTime)) {
+                Controllers::World::SetLockTime(MenuState::WorldLockTime);
+                AppConfig::Save();
             }
 
             if (UI::Button(T("world.syncRealTime"))) {
@@ -108,6 +114,31 @@ namespace Pages::World {
                 MenuState::FpsLimit = Controllers::World::GetFpsLimit();
             }
             ImGui::PopItemWidth();
+        }
+
+        if (ImGui::CollapsingHeader(T("world.pickup"), ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::TextWrapped("%s", T("world.pickupTip"));
+            ImGui::PushItemWidth(160);
+            ImGui::InputInt(T("world.pickupModelId"), &MenuState::PickupModelId);
+            ImGui::InputInt(T("world.pickupType"), &MenuState::PickupType);
+            ImGui::InputInt(T("world.pickupQuantity"), &MenuState::PickupQuantity);
+#ifndef GTA3
+            ImGui::InputInt(T("world.pickupMoneyPerDay"), &MenuState::PickupMoneyPerDay);
+            ImGui::Checkbox(T("world.pickupEmpty"), &MenuState::PickupEmpty);
+#endif
+            ImGui::PopItemWidth();
+
+            if (UI::Button(T("world.spawnPickup"))) {
+                Controllers::World::SpawnPickup();
+            }
+            ImGui::SameLine();
+            if (UI::Button(T("world.updateLastPickup"))) {
+                Controllers::World::UpdateLastPickup();
+            }
+            ImGui::SameLine();
+            if (UI::Button(T("world.removeLastPickup"))) {
+                Controllers::World::RemoveLastPickup();
+            }
         }
 
         if (ImGui::CollapsingHeader(T("world.gameSpeed"), ImGuiTreeNodeFlags_DefaultOpen)) {

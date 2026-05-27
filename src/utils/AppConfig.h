@@ -67,6 +67,7 @@ namespace AppConfig {
     void SetFallbackLanguageCode(const std::string& code);
 
     const std::vector<ActionHotkey>& GetActionHotkeys();
+    bool IsActionHotkeySupportedForRuntime(const std::string& actionId);
     const Hotkey* GetActionHotkey(const std::string& actionId);
     std::string GetActionHotkeyName(const std::string& actionId);
     void SetActionHotkeyName(const std::string& actionId, const std::string& keyName);

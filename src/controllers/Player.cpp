@@ -1,6 +1,8 @@
 #include "Player.h"
 #include "features/GameLogic.h"
 #include "ui/MenuState.h"
+#include "utils/D3DHook.h"
+#include "utils/AppConfig.h"
 #include "plugin.h"
 #include "CPlayerPed.h"
 #include <cstdio>
@@ -10,7 +12,12 @@
 namespace {
     CPlayerPed* godModePlayer = nullptr;
     GameTypes::ProofState savedPlayerProofs;
+    float savedGodModeHealth = 0.0f;
     bool hasSavedPlayerProofs = false;
+    CPlayerPed* freeFlyPlayer = nullptr;
+    GameTypes::ProofState savedFreeFlyProofs;
+    float savedFreeFlyHealth = 0.0f;
+    bool hasSavedFreeFlyProofs = false;
 
     int ClampWantedLevel(int level) {
         if (level < 0) {
@@ -57,8 +64,52 @@ namespace {
         }
 
         GameLogic::SetPlayerProofState(godModePlayer, ToLogicProof(savedPlayerProofs));
+        savedGodModeHealth = 0.0f;
         godModePlayer = nullptr;
         hasSavedPlayerProofs = false;
+    }
+
+    void RestoreFreeFlyProtection() {
+        if (!hasSavedFreeFlyProofs || !freeFlyPlayer) {
+            return;
+        }
+
+        GameLogic::SetPlayerProofState(freeFlyPlayer, ToLogicProof(savedFreeFlyProofs));
+        savedFreeFlyHealth = 0.0f;
+        freeFlyPlayer = nullptr;
+        hasSavedFreeFlyProofs = false;
+    }
+
+    void ProcessFreeFlyProtection(CPlayerPed* player, bool active) {
+        if (!active || MenuState::GodMode) {
+            RestoreFreeFlyProtection();
+            return;
+        }
+
+        if (!player) {
+            return;
+        }
+
+        if (!hasSavedFreeFlyProofs || freeFlyPlayer != player) {
+            RestoreFreeFlyProtection();
+            savedFreeFlyProofs = ToUiProof(GameLogic::GetPlayerProofState(player));
+            savedFreeFlyHealth = ClampHealth(GameLogic::GetHealth(player));
+            freeFlyPlayer = player;
+            hasSavedFreeFlyProofs = true;
+        }
+
+        const float currentHealth = GameLogic::GetHealth(player);
+        if (currentHealth > savedFreeFlyHealth) {
+            savedFreeFlyHealth = ClampHealth(currentHealth);
+        }
+
+        GameLogic::ProofState protectedState = ToLogicProof(savedFreeFlyProofs);
+        protectedState.collision = true;
+        protectedState.nonPlayer = true;
+        GameLogic::SetPlayerProofState(player, protectedState);
+        if (GameLogic::GetHealth(player) < savedFreeFlyHealth) {
+            GameLogic::SetHealth(player, savedFreeFlyHealth);
+        }
     }
 
     void ProcessGodMode(CPlayerPed* player) {
@@ -74,11 +125,67 @@ namespace {
         if (!hasSavedPlayerProofs || godModePlayer != player) {
             RestoreGodModeState();
             savedPlayerProofs = ToUiProof(GameLogic::GetPlayerProofState(player));
+            savedGodModeHealth = ClampHealth(GameLogic::GetHealth(player));
             godModePlayer = player;
             hasSavedPlayerProofs = true;
         }
 
+        const float currentHealth = GameLogic::GetHealth(player);
+        if (currentHealth > savedGodModeHealth) {
+            savedGodModeHealth = ClampHealth(currentHealth);
+        }
+
         GameLogic::ApplyGodMode(player, true);
+        if (GameLogic::GetHealth(player) < savedGodModeHealth) {
+            GameLogic::SetHealth(player, savedGodModeHealth);
+        }
+    }
+
+    bool IsKeyDown(int key) {
+        return (GetAsyncKeyState(key) & 0x8000) != 0;
+    }
+
+    bool IsAutoFlightHoldActive() {
+        const AppConfig::Hotkey* hotkey = AppConfig::GetActionHotkey("player.autoFlight.hold");
+        return hotkey && AppConfig::IsHotkeyPressed(*hotkey);
+    }
+
+    void ProcessFreeFly(CPlayerPed* player) {
+        const bool menuVisible = D3DHook::IsMenuVisible();
+        const bool active = MenuState::FreeFlyEnabled || (!menuVisible && IsAutoFlightHoldActive());
+        ProcessFreeFlyProtection(player, active);
+
+        if (!player || !active || menuVisible) {
+            return;
+        }
+
+        const float speed = MenuState::FreeFlySpeed > 0.05f ? MenuState::FreeFlySpeed : 0.05f;
+        float forward = 0.0f;
+        float right = 0.0f;
+        float up = 0.0f;
+
+        if (IsKeyDown('W')) {
+            forward += speed;
+        }
+        if (IsKeyDown('S')) {
+            forward -= speed;
+        }
+        if (IsKeyDown('D')) {
+            right += speed;
+        }
+        if (IsKeyDown('A')) {
+            right -= speed;
+        }
+        if (IsKeyDown(VK_SPACE)) {
+            up += speed;
+        }
+        if (IsKeyDown('C')) {
+            up -= speed;
+        }
+
+        if (forward != 0.0f || right != 0.0f || up != 0.0f) {
+            GameLogic::MovePlayerRelative(player, forward, right, up);
+        }
     }
 }
 
@@ -95,6 +202,7 @@ namespace Controllers::Player {
         GameLogic::SetKeepStuff(MenuState::KeepStuff);
 
         if (!player) {
+            ProcessFreeFly(player);
             return;
         }
 
@@ -102,6 +210,7 @@ namespace Controllers::Player {
         GameLogic::ProcessHardMode(player, MenuState::HardMode);
         GameLogic::ProcessRespawnAtDeathPosition(player, MenuState::RespawnAtDeathPosition);
         GameLogic::ProcessFreezeWantedLevel(player, MenuState::FreezeWantedLevel, ClampWantedLevel(MenuState::WantedLevel));
+        ProcessFreeFly(player);
     }
 
     void Heal() {
@@ -200,6 +309,18 @@ namespace Controllers::Player {
 
     bool RequestSaveGame() {
         return GameLogic::RequestSaveGame();
+    }
+
+    void MoveForward(float distance) {
+        GameLogic::MovePlayerRelative(GetPlayer(), distance, 0.0f, 0.0f);
+    }
+
+    void MoveUp(float distance) {
+        GameLogic::MovePlayerRelative(GetPlayer(), 0.0f, 0.0f, distance);
+    }
+
+    void MoveDown(float distance) {
+        GameLogic::MovePlayerRelative(GetPlayer(), 0.0f, 0.0f, -distance);
     }
 
     void SetKeepStuff(bool enable) {

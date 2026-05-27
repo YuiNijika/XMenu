@@ -75,9 +75,48 @@ namespace {
             {"world.freePayNSpray", "world.freePayNSpray", &MenuState::FreePayNSpray, false},
             {"world.fasterClock", "world.fasterClock", &MenuState::FasterClock, false},
             {"world.freezeTime", "world.freezeTime", &MenuState::FreezeTime, false},
-            {"overlay.showFps", "overlay.showFps", &MenuState::OverlayShowFps, true}
+            {"overlay.enabled", "overlay.enabled", &MenuState::OverlayEnabled, false},
+            {"overlay.showPosition", "overlay.showPosition", &MenuState::OverlayShowPosition, true},
+            {"overlay.showVehicle", "overlay.showVehicle", &MenuState::OverlayShowVehicle, true},
+            {"overlay.showFps", "overlay.showFps", &MenuState::OverlayShowFps, true},
+            {"overlay.showPlayer", "overlay.showPlayer", &MenuState::OverlayShowPlayer, true},
+            {"overlay.showTime", "overlay.showTime", &MenuState::OverlayShowTime, true},
+            {"overlay.showWorld", "overlay.showWorld", &MenuState::OverlayShowWorld, true},
+            {"overlay.showDetails", "overlay.showDetails", &MenuState::OverlayShowDetails, false},
+            {"overlay.showFeatures", "overlay.showFeatures", &MenuState::OverlayShowFeatures, false}
         };
         return bindings;
+    }
+
+    bool IsSaRuntime() {
+        return GameRuntime::Current().target == GameRuntime::Target::SA;
+    }
+
+    bool IsPersistentFeatureSupported(const char* id) {
+        if (!id) {
+            return false;
+        }
+
+        const std::string feature = id;
+        if (feature == "weapon.dualWield" || feature == "weapon.moveAim" || feature == "weapon.moveFire"
+            || feature == "world.disableForbiddenAreaWanted" || feature == "world.freePayNSpray") {
+            return IsSaRuntime();
+        }
+
+        return true;
+    }
+
+    bool IsActionHotkeySupportedForRuntime(const char* id) {
+        if (!id) {
+            return false;
+        }
+
+        const std::string action = id;
+        if (action == "teleport.marker" || action == "teleport.quickMap") {
+            return IsSaRuntime();
+        }
+
+        return true;
     }
 
     const PersistentStateBinding* FindPersistentStateBinding(const std::string& id) {
@@ -100,6 +139,9 @@ namespace {
         persistentEnabled.clear();
         persistentValues.clear();
         for (const PersistentStateBinding& binding : PersistentStateBindings()) {
+            if (!IsPersistentFeatureSupported(binding.id)) {
+                continue;
+            }
             persistentEnabled[binding.id] = false;
             persistentValues[binding.id] = binding.defaultValue;
         }
@@ -454,6 +496,8 @@ namespace {
             {"teleport.marker", "action.teleport.marker", "X"},
             {"teleport.quickMap", "action.teleport.quickMap", "Shift+Q"},
             {"teleport.forward", "action.teleport.forward", "Shift+X"},
+            {"player.freeFly.toggle", "action.player.freeFly.toggle", "NUM0"},
+            {"player.autoFlight.hold", "action.player.autoFlight.hold", "None"},
             {"command.toggle", "action.command.toggle", "Ctrl+C"},
             {"overlay.toggle", "action.overlay.toggle", "F7"},
             {"player.heal", "action.player.heal", "F8"},
@@ -483,6 +527,10 @@ namespace {
         std::size_t count = 0;
         const DefaultActionHotkey* defaults = DefaultActions(count);
         for (std::size_t i = 0; i < count; ++i) {
+            if (!IsActionHotkeySupportedForRuntime(defaults[i].id)) {
+                continue;
+            }
+
             bool valid = false;
             AppConfig::ActionHotkey action;
             action.id = defaults[i].id;
@@ -554,7 +602,7 @@ namespace {
 
         for (const auto& item : persistentState.object_values) {
             const PersistentStateBinding* binding = FindPersistentStateBinding(item.first);
-            if (!binding || item.second.type != JsonLoader::JsonValue::OBJECT) {
+            if (!binding || !IsPersistentFeatureSupported(binding->id) || item.second.type != JsonLoader::JsonValue::OBJECT) {
                 continue;
             }
 
@@ -568,13 +616,20 @@ namespace {
     void WritePersistentState(std::ostream& file, bool trailingComma) {
         file << "  \"persistentState\": {\n";
         const std::vector<PersistentStateBinding>& bindings = PersistentStateBindings();
-        for (std::size_t i = 0; i < bindings.size(); ++i) {
-            const PersistentStateBinding& binding = bindings[i];
+        std::vector<const PersistentStateBinding*> supportedBindings;
+        for (const PersistentStateBinding& binding : bindings) {
+            if (IsPersistentFeatureSupported(binding.id)) {
+                supportedBindings.push_back(&binding);
+            }
+        }
+
+        for (std::size_t i = 0; i < supportedBindings.size(); ++i) {
+            const PersistentStateBinding& binding = *supportedBindings[i];
             const bool enabled = persistentEnabled[binding.id];
             const bool value = persistentValues[binding.id];
             file << "    \"" << EscapeJson(binding.id) << "\": {\"enabled\": " << (enabled ? "true" : "false")
                  << ", \"value\": " << (value ? "true" : "false") << "}";
-            if (i + 1 < bindings.size()) {
+            if (i + 1 < supportedBindings.size()) {
                 file << ",";
             }
             file << "\n";
@@ -585,6 +640,10 @@ namespace {
     bool CapturePersistentStateValues() {
         bool changed = false;
         for (const PersistentStateBinding& binding : PersistentStateBindings()) {
+            if (!IsPersistentFeatureSupported(binding.id)) {
+                continue;
+            }
+
             if (!persistentEnabled[binding.id]) {
                 continue;
             }
@@ -654,6 +713,68 @@ namespace {
         }
     }
 
+    void LoadOverlayConfig(const JsonLoader::JsonValue& root) {
+        const JsonLoader::JsonValue& overlay = ObjectOrNull(root, "overlay");
+        if (overlay.type != JsonLoader::JsonValue::OBJECT) {
+            return;
+        }
+
+        MenuState::OverlayEnabled = JsonLoader::GetBool(overlay, "enabled", MenuState::OverlayEnabled);
+        MenuState::OverlayShowPosition = JsonLoader::GetBool(overlay, "showPosition", MenuState::OverlayShowPosition);
+        MenuState::OverlayShowVehicle = JsonLoader::GetBool(overlay, "showVehicle", MenuState::OverlayShowVehicle);
+        MenuState::OverlayShowFps = JsonLoader::GetBool(overlay, "showFps", MenuState::OverlayShowFps);
+        MenuState::OverlayShowPlayer = JsonLoader::GetBool(overlay, "showPlayer", MenuState::OverlayShowPlayer);
+        MenuState::OverlayShowTime = JsonLoader::GetBool(overlay, "showTime", MenuState::OverlayShowTime);
+        MenuState::OverlayShowWorld = JsonLoader::GetBool(overlay, "showWorld", MenuState::OverlayShowWorld);
+        MenuState::OverlayShowDetails = JsonLoader::GetBool(overlay, "showDetails", MenuState::OverlayShowDetails);
+        MenuState::OverlayShowFeatures = JsonLoader::GetBool(overlay, "showFeatures", MenuState::OverlayShowFeatures);
+    }
+
+    void WriteOverlayConfig(std::ostream& file, const std::string& indent, bool trailingComma) {
+        file << indent << "\"overlay\": {\n";
+        file << indent << "  \"enabled\": " << (MenuState::OverlayEnabled ? "true" : "false") << ",\n";
+        file << indent << "  \"showPosition\": " << (MenuState::OverlayShowPosition ? "true" : "false") << ",\n";
+        file << indent << "  \"showVehicle\": " << (MenuState::OverlayShowVehicle ? "true" : "false") << ",\n";
+        file << indent << "  \"showFps\": " << (MenuState::OverlayShowFps ? "true" : "false") << ",\n";
+        file << indent << "  \"showPlayer\": " << (MenuState::OverlayShowPlayer ? "true" : "false") << ",\n";
+        file << indent << "  \"showTime\": " << (MenuState::OverlayShowTime ? "true" : "false") << ",\n";
+        file << indent << "  \"showWorld\": " << (MenuState::OverlayShowWorld ? "true" : "false") << ",\n";
+        file << indent << "  \"showDetails\": " << (MenuState::OverlayShowDetails ? "true" : "false") << ",\n";
+        file << indent << "  \"showFeatures\": " << (MenuState::OverlayShowFeatures ? "true" : "false") << "\n";
+        file << indent << "}" << (trailingComma ? "," : "") << "\n";
+    }
+
+    void LoadTeleportConfig(const JsonLoader::JsonValue& root) {
+        const JsonLoader::JsonValue& teleport = ObjectOrNull(root, "teleport");
+        if (teleport.type != JsonLoader::JsonValue::OBJECT) {
+            return;
+        }
+
+        MenuState::TeleportForwardDistance = static_cast<float>(JsonLoader::GetNumber(teleport, "forwardDistance", MenuState::TeleportForwardDistance));
+        if (MenuState::TeleportForwardDistance < 0.1f) {
+            MenuState::TeleportForwardDistance = 0.1f;
+        }
+        MenuState::TeleportForwardHold = JsonLoader::GetBool(teleport, "forwardHold", MenuState::TeleportForwardHold);
+    }
+
+    void WriteTeleportConfig(std::ostream& file, const std::string& indent, bool trailingComma) {
+        file << indent << "\"teleport\": {\n";
+        file << indent << "  \"forwardDistance\": " << MenuState::TeleportForwardDistance << ",\n";
+        file << indent << "  \"forwardHold\": " << (MenuState::TeleportForwardHold ? "true" : "false") << "\n";
+        file << indent << "}" << (trailingComma ? "," : "") << "\n";
+    }
+
+    void LoadWorldConfig(const JsonLoader::JsonValue& root) {
+        (void)root;
+        MenuState::WorldLockTime = false;
+    }
+
+    void WriteWorldConfig(std::ostream& file, const std::string& indent, bool trailingComma) {
+        file << indent << "\"world\": {\n";
+        file << indent << "  \"lockTime\": false\n";
+        file << indent << "}" << (trailingComma ? "," : "") << "\n";
+    }
+
     void WriteMenuConfig(std::ostream& file, const std::string& indent, bool trailingComma) {
         file << indent << "\"menu\": {\n";
         file << indent << "  \"toggleKey\": \"" << EscapeJson(menuKeyName) << "\",\n";
@@ -683,13 +804,20 @@ namespace {
     void WritePersistentState(std::ostream& file, const std::string& indent, bool trailingComma) {
         file << indent << "\"persistentState\": {\n";
         const std::vector<PersistentStateBinding>& bindings = PersistentStateBindings();
-        for (std::size_t i = 0; i < bindings.size(); ++i) {
-            const PersistentStateBinding& binding = bindings[i];
+        std::vector<const PersistentStateBinding*> supportedBindings;
+        for (const PersistentStateBinding& binding : bindings) {
+            if (IsPersistentFeatureSupported(binding.id)) {
+                supportedBindings.push_back(&binding);
+            }
+        }
+
+        for (std::size_t i = 0; i < supportedBindings.size(); ++i) {
+            const PersistentStateBinding& binding = *supportedBindings[i];
             const bool enabled = persistentEnabled[binding.id];
             const bool value = persistentValues[binding.id];
             file << indent << "  \"" << EscapeJson(binding.id) << "\": {\"enabled\": " << (enabled ? "true" : "false")
                  << ", \"value\": " << (value ? "true" : "false") << "}";
-            if (i + 1 < bindings.size()) {
+            if (i + 1 < supportedBindings.size()) {
                 file << ",";
             }
             file << "\n";
@@ -789,6 +917,9 @@ namespace {
         const JsonLoader::JsonValue& gameConfig = CurrentGameConfigOrLegacyRoot(root);
         LoadActionHotkeys(gameConfig);
         LoadPersistentState(gameConfig);
+        LoadOverlayConfig(gameConfig);
+        LoadTeleportConfig(gameConfig);
+        LoadWorldConfig(gameConfig);
 
         const JsonLoader::JsonValue& menu = ObjectOrNull(gameConfig, "menu");
         ApplyMenuKey(JsonLoader::GetString(menu, "toggleKey", DefaultMenuKey));
@@ -844,6 +975,9 @@ namespace {
             if (game == currentGame) {
                 file << "{\n";
                 WriteMenuConfig(file, "      ", true);
+                WriteOverlayConfig(file, "      ", true);
+                WriteTeleportConfig(file, "      ", true);
+                WriteWorldConfig(file, "      ", true);
                 WriteActionHotkeys(file, "      ", true);
                 WritePersistentState(file, "      ", true);
                 WriteLocationArray(file, "      ", "customLocations", customLocations, false);
@@ -1001,6 +1135,10 @@ namespace AppConfig {
     std::vector<PersistentFeatureState> GetPersistentFeatureStates() {
         std::vector<PersistentFeatureState> features;
         for (const PersistentStateBinding& binding : PersistentStateBindings()) {
+            if (!IsPersistentFeatureSupported(binding.id)) {
+                continue;
+            }
+
             PersistentFeatureState feature;
             feature.id = binding.id;
             feature.name = binding.name;
@@ -1016,6 +1154,10 @@ namespace AppConfig {
     std::size_t GetPersistentRestoreCount() {
         std::size_t count = 0;
         for (const PersistentStateBinding& binding : PersistentStateBindings()) {
+            if (!IsPersistentFeatureSupported(binding.id)) {
+                continue;
+            }
+
             if (persistentEnabled[binding.id]) {
                 ++count;
             }
@@ -1025,6 +1167,10 @@ namespace AppConfig {
 
     void CaptureEnabledPersistentFeatures() {
         for (const PersistentStateBinding& binding : PersistentStateBindings()) {
+            if (!IsPersistentFeatureSupported(binding.id)) {
+                continue;
+            }
+
             const bool currentValue = *binding.value;
             persistentEnabled[binding.id] = currentValue;
             persistentValues[binding.id] = currentValue ? true : binding.defaultValue;
@@ -1041,6 +1187,10 @@ namespace AppConfig {
         }
 
         for (const PersistentStateBinding& binding : PersistentStateBindings()) {
+            if (!IsPersistentFeatureSupported(binding.id)) {
+                continue;
+            }
+
             const bool restore = selected.find(binding.id) != selected.end();
             persistentEnabled[binding.id] = restore;
             persistentValues[binding.id] = restore ? true : binding.defaultValue;
@@ -1052,6 +1202,10 @@ namespace AppConfig {
 
     void ClearPersistentRestoreSelection() {
         for (const PersistentStateBinding& binding : PersistentStateBindings()) {
+            if (!IsPersistentFeatureSupported(binding.id)) {
+                continue;
+            }
+
             persistentEnabled[binding.id] = false;
             persistentValues[binding.id] = binding.defaultValue;
         }
@@ -1114,7 +1268,15 @@ namespace AppConfig {
         return actionHotkeys;
     }
 
+    bool IsActionHotkeySupportedForRuntime(const std::string& actionId) {
+        return ::IsActionHotkeySupportedForRuntime(actionId.c_str());
+    }
+
     const Hotkey* GetActionHotkey(const std::string& actionId) {
+        if (!IsActionHotkeySupportedForRuntime(actionId)) {
+            return nullptr;
+        }
+
         const ActionHotkey* action = FindActionHotkey(actionId);
         return action ? &action->hotkey : nullptr;
     }
@@ -1125,6 +1287,11 @@ namespace AppConfig {
     }
 
     void SetActionHotkeyName(const std::string& actionId, const std::string& keyName) {
+        if (!IsActionHotkeySupportedForRuntime(actionId)) {
+            Log::Warn(std::string("当前游戏不支持动作快捷键: ") + actionId);
+            return;
+        }
+
         ActionHotkey* action = FindActionHotkey(actionId);
         if (!action) {
             Log::Warn(std::string("动作快捷键不存在: ") + actionId);

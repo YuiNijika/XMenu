@@ -2,6 +2,8 @@
   "action.teleport.marker": "Телепорт к маркеру",
   "action.teleport.quickMap": "Открыть быструю карту",
   "action.teleport.forward": "Телепорт вперёд",
+  "action.player.freeFly.toggle": "Переключить свободный полёт",
+  "action.player.autoFlight.hold": "Удерживать свободный полёт",
   "action.command.toggle": "Переключить окно команд",
   "action.overlay.toggle": "Переключить Overlay",
   "action.player.heal": "Вылечить игрока",

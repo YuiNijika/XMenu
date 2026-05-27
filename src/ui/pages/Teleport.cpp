@@ -4,6 +4,7 @@
 #include "resources/ResourceData.h"
 #include "ui/Widget.h"
 #include "utils/I18n.h"
+#include "utils/AppConfig.h"
 #include "imgui/imgui.h"
 #include <cstdio>
 #include <cstring>
@@ -137,8 +138,23 @@ namespace Pages::Teleport {
                 }
 #endif
                 ImGui::SameLine();
-                if (UI::Button(T("teleport.moveForward5m"), 4)) {
-                    Controllers::Teleport::Forward(5.0f);
+                if (UI::Button(T("teleport.moveForward"), 4)) {
+                    Controllers::Teleport::Forward(MenuState::TeleportForwardDistance);
+                }
+
+                ImGui::Spacing();
+                bool teleportSettingsChanged = false;
+                ImGui::PushItemWidth(180.0f);
+                teleportSettingsChanged |= ImGui::InputFloat(T("teleport.forwardDistance"), &MenuState::TeleportForwardDistance, 1.0f, 5.0f, "%.1f");
+                ImGui::PopItemWidth();
+                if (MenuState::TeleportForwardDistance < 0.1f) {
+                    MenuState::TeleportForwardDistance = 0.1f;
+                    teleportSettingsChanged = true;
+                }
+                teleportSettingsChanged |= ImGui::Checkbox(T("teleport.forwardHold"), &MenuState::TeleportForwardHold);
+                ImGui::TextDisabled("%s", T("teleport.forwardHoldHint"));
+                if (teleportSettingsChanged) {
+                    AppConfig::Save();
                 }
 
 #ifdef GTASA

@@ -2,6 +2,8 @@
   "action.teleport.marker": "マーカーへテレポート",
   "action.teleport.quickMap": "クイックマップを開く",
   "action.teleport.forward": "前方へテレポート",
+  "action.player.freeFly.toggle": "自由飛行を切替",
+  "action.player.autoFlight.hold": "自由飛行を押し続ける",
   "action.command.toggle": "コマンドウィンドウ切替",
   "action.overlay.toggle": "Overlay 切替",
   "action.player.heal": "プレイヤー回復",

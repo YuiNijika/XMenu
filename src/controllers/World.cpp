@@ -2,6 +2,7 @@
 #include "features/GameLogic.h"
 #include "ui/MenuState.h"
 #include "utils/Log.h"
+#include "utils/I18n.h"
 #include "CWeather.h"
 #include <string>
 
@@ -10,6 +11,54 @@ namespace {
     bool wasLockingWeather = false;
     int frozenHour = 0;
     int frozenMinute = 0;
+    bool hasLockedTime = false;
+
+    int ClampInt(int value, int minValue, int maxValue) {
+        if (value < minValue) return minValue;
+        if (value > maxValue) return maxValue;
+        return value;
+    }
+
+    struct WeatherSnapshot {
+        short oldType = 0;
+        short newType = 0;
+        short forcedType = 0;
+    };
+
+    WeatherSnapshot CaptureWeatherState() {
+        WeatherSnapshot state;
+        state.oldType = CWeather::OldWeatherType;
+        state.newType = CWeather::NewWeatherType;
+        state.forcedType = CWeather::ForcedWeatherType;
+        return state;
+    }
+
+    void RestoreWeatherState(const WeatherSnapshot& state) {
+        CWeather::OldWeatherType = state.oldType;
+        CWeather::NewWeatherType = state.newType;
+        CWeather::ForcedWeatherType = state.forcedType;
+    }
+
+    void SetTimePreservingWeather(int hour, int minute) {
+        const WeatherSnapshot weather = CaptureWeatherState();
+        GameLogic::SetTime(hour, minute);
+        RestoreWeatherState(weather);
+    }
+
+    GameLogic::PickupOptions GetPickupOptions() {
+        MenuState::PickupModelId = ClampInt(MenuState::PickupModelId, 1, 20000);
+        MenuState::PickupType = ClampInt(MenuState::PickupType, 0, 255);
+        MenuState::PickupQuantity = ClampInt(MenuState::PickupQuantity, 0, 999999);
+        MenuState::PickupMoneyPerDay = ClampInt(MenuState::PickupMoneyPerDay, 0, 999999);
+
+        GameLogic::PickupOptions options;
+        options.modelId = static_cast<unsigned int>(MenuState::PickupModelId);
+        options.type = static_cast<unsigned char>(MenuState::PickupType);
+        options.quantity = static_cast<unsigned int>(MenuState::PickupQuantity);
+        options.moneyPerDay = static_cast<unsigned int>(MenuState::PickupMoneyPerDay);
+        options.empty = MenuState::PickupEmpty;
+        return options;
+    }
 }
 
 namespace Controllers::World {
@@ -29,8 +78,14 @@ namespace Controllers::World {
             CaptureWeather();
         }
 
-        if (MenuState::FreezeTime) {
-            GameLogic::SetTime(frozenHour, frozenMinute);
+        if (MenuState::FreezeTime || MenuState::WorldLockTime) {
+            if (!hasLockedTime) {
+                GameLogic::GetTime(frozenHour, frozenMinute);
+                hasLockedTime = true;
+            }
+            SetTimePreservingWeather(frozenHour, frozenMinute);
+        } else {
+            hasLockedTime = false;
         }
     }
 
@@ -91,9 +146,20 @@ namespace Controllers::World {
     void SetFreezeTime(bool enable) {
         if (enable) {
             GameLogic::GetTime(frozenHour, frozenMinute);
+            hasLockedTime = true;
         }
         GameLogic::SetFreezeTime(enable);
         Log::Info(std::string("冻结时间：") + (enable ? "开启" : "关闭"));
+    }
+
+    void SetLockTime(bool enable) {
+        if (enable) {
+            GameLogic::GetTime(frozenHour, frozenMinute);
+            hasLockedTime = true;
+        } else {
+            hasLockedTime = false;
+        }
+        Log::Info(std::string("锁定当前时间：") + (enable ? "开启" : "关闭"));
     }
 
     int GetDaysPassed() {
@@ -110,5 +176,31 @@ namespace Controllers::World {
 
     void SetGravity(float gravity) {
         GameLogic::SetGravity(gravity);
+    }
+
+    int SpawnPickup() {
+        const int handle = GameLogic::SpawnPickupNearPlayer(GetPickupOptions());
+        if (handle >= 0) {
+            MenuState::ShowNotice(I18n::T("world.pickupSpawned"), 2.0);
+            Log::Info("pickup 已生成，句柄 " + std::to_string(handle));
+        } else {
+            MenuState::ShowNotice(I18n::T("world.pickupFailed"), 2.0);
+            Log::Warn("pickup 生成失败");
+        }
+        return handle;
+    }
+
+    bool UpdateLastPickup() {
+        const bool ok = GameLogic::UpdateLastPickup(GetPickupOptions());
+        MenuState::ShowNotice(I18n::T(ok ? "world.pickupUpdated" : "world.noPickupToUpdate"), 2.0);
+        Log::Info(std::string("修改最近 pickup：") + (ok ? "成功" : "无可修改对象"));
+        return ok;
+    }
+
+    bool RemoveLastPickup() {
+        const bool ok = GameLogic::RemoveLastPickup();
+        MenuState::ShowNotice(I18n::T(ok ? "world.pickupRemoved" : "world.noPickupToRemove"), 2.0);
+        Log::Info(std::string("删除最近 pickup：") + (ok ? "成功" : "无可删除对象"));
+        return ok;
     }
 }

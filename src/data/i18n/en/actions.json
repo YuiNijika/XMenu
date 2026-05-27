@@ -2,6 +2,8 @@
   "action.teleport.marker": "Teleport to marker",
   "action.teleport.quickMap": "Open quick map",
   "action.teleport.forward": "Teleport forward",
+  "action.player.freeFly.toggle": "Toggle free flight",
+  "action.player.autoFlight.hold": "Hold free flight",
   "action.command.toggle": "Toggle command window",
   "action.overlay.toggle": "Toggle overlay",
   "action.player.heal": "Heal player",

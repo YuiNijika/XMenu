@@ -68,6 +68,8 @@ namespace Pages::Player {
                     Controllers::Player::SetKeepStuff(MenuState::KeepStuff);
                 }
                 ImGui::NextColumn();
+                ImGui::Checkbox(T("player.autoFlight"), &MenuState::FreeFlyEnabled);
+                ImGui::NextColumn();
 
                 bool freeHealth = Controllers::Player::GetFreeHealthcare();
                 if (ImGui::Checkbox(T("player.freeHospital"), &freeHealth)) {
@@ -79,6 +81,12 @@ namespace Pages::Player {
                     Controllers::Player::SetFreeJail(freeJail);
                 }
                 ImGui::Columns(1);
+
+                UI::SpacingSeparator();
+                ImGui::TextUnformatted(T("player.autoFlightOptions"));
+                ImGui::PushItemWidth(160);
+                ImGui::SliderFloat(T("player.autoFlightSpeed"), &MenuState::FreeFlySpeed, 0.1f, 5.0f, "%.1f");
+                ImGui::PopItemWidth();
 
                 UI::SpacingSeparator();
                 ImGui::TextUnformatted(T("player.proofFlags"));

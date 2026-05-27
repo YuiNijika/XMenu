@@ -28,6 +28,7 @@
 #include "controllers/Overlay.h"
 #include "controllers/Command.h"
 #include "controllers/Teleport.h"
+#include "controllers/World.h"
 
 extern const bool XMENU_DEBUG_MODE;
 extern const char* XMENU_VERSION;
@@ -117,6 +118,7 @@ namespace {
 
     void DrawSettings();
     void DrawRuntimeSettings();
+    void DrawOverlaySettings();
     void DrawPersistentStateSettings();
     void DrawPersistentStatePopup();
     void DrawActionHotkeys();
@@ -316,6 +318,9 @@ namespace {
         DrawRuntimeSettings();
 
         UI::SpacingSeparator();
+        DrawOverlaySettings();
+
+        UI::SpacingSeparator();
         DrawPersistentStateSettings();
 
         UI::SpacingSeparator();
@@ -336,15 +341,37 @@ namespace {
 
     void DrawRuntimeSettings() {
         ImGui::TextUnformatted(T("settings.runtime"));
-        ImGui::Checkbox(T("overlay.enabled"), &MenuState::OverlayEnabled);
-        ImGui::SameLine();
-        ImGui::Checkbox(T("overlay.showPosition"), &MenuState::OverlayShowPosition);
-        ImGui::SameLine();
-        ImGui::Checkbox(T("overlay.showVehicle"), &MenuState::OverlayShowVehicle);
-        ImGui::SameLine();
-        ImGui::Checkbox(T("overlay.showFps"), &MenuState::OverlayShowFps);
-
         ImGui::Checkbox(T("command.enabled"), &MenuState::CommandWindowEnabled);
+    }
+
+    void DrawOverlaySettings() {
+        ImGui::TextUnformatted(T("settings.overlay"));
+        ImGui::TextDisabled("%s", T("settings.overlayHint"));
+
+        bool changed = false;
+        changed |= ImGui::Checkbox(T("overlay.enabled"), &MenuState::OverlayEnabled);
+        ImGui::SameLine();
+        changed |= ImGui::Checkbox(T("overlay.showDetails"), &MenuState::OverlayShowDetails);
+        ImGui::SameLine();
+        changed |= ImGui::Checkbox(T("overlay.showFeatures"), &MenuState::OverlayShowFeatures);
+
+        ImGui::Columns(2, nullptr, false);
+        changed |= ImGui::Checkbox(T("overlay.showPosition"), &MenuState::OverlayShowPosition);
+        ImGui::NextColumn();
+        changed |= ImGui::Checkbox(T("overlay.showPlayer"), &MenuState::OverlayShowPlayer);
+        ImGui::NextColumn();
+        changed |= ImGui::Checkbox(T("overlay.showVehicle"), &MenuState::OverlayShowVehicle);
+        ImGui::NextColumn();
+        changed |= ImGui::Checkbox(T("overlay.showTime"), &MenuState::OverlayShowTime);
+        ImGui::NextColumn();
+        changed |= ImGui::Checkbox(T("overlay.showWorld"), &MenuState::OverlayShowWorld);
+        ImGui::NextColumn();
+        changed |= ImGui::Checkbox(T("overlay.showFps"), &MenuState::OverlayShowFps);
+        ImGui::Columns(1);
+
+        if (changed) {
+            AppConfig::Save();
+        }
     }
 
     void DrawPersistentStateSettings() {
@@ -381,10 +408,23 @@ namespace {
             persistentRestoreDialog.open = false;
         }
 
-        if (ImGui::BeginPopupModal(PersistentStatePopupId, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::SetNextWindowSize(ImVec2(720.0f, 520.0f), ImGuiCond_Appearing);
+        if (ImGui::BeginPopupModal(PersistentStatePopupId, nullptr, ImGuiWindowFlags_NoResize)) {
             ImGui::TextUnformatted(T("settings.persistentState.title"));
             ImGui::TextWrapped("%s", T("settings.persistentState.description"));
             ImGui::Spacing();
+
+            int selectedCount = 0;
+            int enabledCount = 0;
+            for (std::size_t i = 0; i < persistentRestoreDialog.features.size(); ++i) {
+                if (persistentRestoreDialog.features[i].enabledNow) {
+                    ++enabledCount;
+                }
+                if (i < persistentRestoreDialog.selected.size() && persistentRestoreDialog.selected[i]) {
+                    ++selectedCount;
+                }
+            }
+            ImGui::TextDisabled(T("settings.persistentState.dialogCounts"), enabledCount, selectedCount, static_cast<int>(persistentRestoreDialog.features.size()));
 
             if (ImGui::Button(T("settings.persistentState.selectEnabled"), ImVec2(150.0f, 0.0f))) {
                 for (std::size_t i = 0; i < persistentRestoreDialog.features.size(); ++i) {
@@ -397,14 +437,25 @@ namespace {
                     persistentRestoreDialog.selected[i] = false;
                 }
             }
+            ImGui::SameLine();
+            if (ImGui::Button(T("settings.persistentState.selectOverlay"), ImVec2(150.0f, 0.0f))) {
+                for (std::size_t i = 0; i < persistentRestoreDialog.features.size(); ++i) {
+                    persistentRestoreDialog.selected[i] = persistentRestoreDialog.features[i].group == "overlay";
+                }
+            }
 
             ImGui::Spacing();
+            const float footerHeight = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y * 3.0f;
+            const float tableHeight = ImGui::GetContentRegionAvail().y - footerHeight;
             if (persistentRestoreDialog.features.empty()) {
+                ImGui::BeginChild("PersistentRestoreEmpty", ImVec2(0.0f, tableHeight), true);
                 ImGui::TextDisabled("%s", T("settings.persistentState.noneAvailable"));
-            } else if (ImGui::BeginTable("PersistentRestoreTable", 3, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp)) {
-                ImGui::TableSetupColumn(T("settings.feature"));
-                ImGui::TableSetupColumn(T("settings.persistentState.currentState"));
-                ImGui::TableSetupColumn(T("settings.persistentState.restoreNextLaunch"));
+                ImGui::EndChild();
+            } else if (ImGui::BeginTable("PersistentRestoreTable", 3, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY, ImVec2(0.0f, tableHeight))) {
+                ImGui::TableSetupColumn(T("settings.feature"), ImGuiTableColumnFlags_WidthStretch, 0.55f);
+                ImGui::TableSetupColumn(T("settings.persistentState.currentState"), ImGuiTableColumnFlags_WidthStretch, 0.22f);
+                ImGui::TableSetupColumn(T("settings.persistentState.restoreNextLaunch"), ImGuiTableColumnFlags_WidthStretch, 0.23f);
+                ImGui::TableSetupScrollFreeze(0, 1);
                 ImGui::TableHeadersRow();
 
                 std::string currentGroup;
@@ -475,6 +526,177 @@ namespace {
         return state;
     }
 
+    std::string pendingCaptureActionId;
+    std::string pendingCaptureActionName;
+    std::string pendingCaptureValue;
+    bool openActionHotkeyCapturePopup = false;
+    ULONGLONG actionHotkeyCaptureReadyTick = 0;
+    constexpr const char* ActionHotkeyCapturePopupId = "ActionHotkeyCapturePopup";
+
+    const char* VirtualKeyName(int key) {
+        if (key >= 'A' && key <= 'Z') {
+            static char value[2] = {};
+            value[0] = static_cast<char>(key);
+            value[1] = '\0';
+            return value;
+        }
+        if (key >= '0' && key <= '9') {
+            static char value[2] = {};
+            value[0] = static_cast<char>(key);
+            value[1] = '\0';
+            return value;
+        }
+
+        switch (key) {
+        case VK_BACK: return "BACKSPACE";
+        case VK_TAB: return "TAB";
+        case VK_RETURN: return "ENTER";
+        case VK_ESCAPE: return "ESC";
+        case VK_SPACE: return "SPACE";
+        case VK_PRIOR: return "PAGEUP";
+        case VK_NEXT: return "PAGEDOWN";
+        case VK_END: return "END";
+        case VK_HOME: return "HOME";
+        case VK_LEFT: return "LEFT";
+        case VK_UP: return "UP";
+        case VK_RIGHT: return "RIGHT";
+        case VK_DOWN: return "DOWN";
+        case VK_INSERT: return "INSERT";
+        case VK_DELETE: return "DELETE";
+        case VK_NUMPAD0: return "NUM0";
+        case VK_NUMPAD1: return "NUM1";
+        case VK_NUMPAD2: return "NUM2";
+        case VK_NUMPAD3: return "NUM3";
+        case VK_NUMPAD4: return "NUM4";
+        case VK_NUMPAD5: return "NUM5";
+        case VK_NUMPAD6: return "NUM6";
+        case VK_NUMPAD7: return "NUM7";
+        case VK_NUMPAD8: return "NUM8";
+        case VK_NUMPAD9: return "NUM9";
+        case VK_MULTIPLY: return "MULTIPLY";
+        case VK_ADD: return "ADD";
+        case VK_SUBTRACT: return "SUBTRACT";
+        case VK_DECIMAL: return "DECIMAL";
+        case VK_DIVIDE: return "DIVIDE";
+        case VK_F1: return "F1";
+        case VK_F2: return "F2";
+        case VK_F3: return "F3";
+        case VK_F4: return "F4";
+        case VK_F5: return "F5";
+        case VK_F6: return "F6";
+        case VK_F7: return "F7";
+        case VK_F8: return "F8";
+        case VK_F9: return "F9";
+        case VK_F10: return "F10";
+        case VK_F11: return "F11";
+        case VK_F12: return "F12";
+        default: break;
+        }
+
+        static char fallback[16] = {};
+        std::snprintf(fallback, sizeof(fallback), "VK_%d", key);
+        return fallback;
+    }
+
+    bool IsModifierKey(int key) {
+        return key == VK_CONTROL || key == VK_LCONTROL || key == VK_RCONTROL
+            || key == VK_MENU || key == VK_LMENU || key == VK_RMENU
+            || key == VK_SHIFT || key == VK_LSHIFT || key == VK_RSHIFT;
+    }
+
+    bool IsIgnoredCaptureKey(int key) {
+        return key == VK_LBUTTON || key == VK_RBUTTON || key == VK_CANCEL || key == VK_MBUTTON
+            || key == VK_XBUTTON1 || key == VK_XBUTTON2;
+    }
+
+    bool CapturePressedHotkey(std::string& value) {
+        if (GetTickCount64() < actionHotkeyCaptureReadyTick) {
+            return false;
+        }
+
+        if ((GetAsyncKeyState(VK_BACK) & 0x0001) != 0 || (GetAsyncKeyState(VK_DELETE) & 0x0001) != 0) {
+            value = "None";
+            return true;
+        }
+
+        for (int key = 1; key < 255; ++key) {
+            if (IsModifierKey(key) || IsIgnoredCaptureKey(key)) {
+                continue;
+            }
+            if ((GetAsyncKeyState(key) & 0x0001) == 0) {
+                continue;
+            }
+
+            std::string result;
+            if ((GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0 || (GetAsyncKeyState(VK_LCONTROL) & 0x8000) != 0 || (GetAsyncKeyState(VK_RCONTROL) & 0x8000) != 0) {
+                result += "Ctrl+";
+            }
+            if ((GetAsyncKeyState(VK_MENU) & 0x8000) != 0 || (GetAsyncKeyState(VK_LMENU) & 0x8000) != 0 || (GetAsyncKeyState(VK_RMENU) & 0x8000) != 0) {
+                result += "Alt+";
+            }
+            if ((GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0 || (GetAsyncKeyState(VK_LSHIFT) & 0x8000) != 0 || (GetAsyncKeyState(VK_RSHIFT) & 0x8000) != 0) {
+                result += "Shift+";
+            }
+            result += VirtualKeyName(key);
+            value = result;
+            return true;
+        }
+
+        return false;
+    }
+
+    void OpenActionHotkeyCapturePopup(const AppConfig::ActionHotkey& action) {
+        pendingCaptureActionId = action.id;
+        pendingCaptureActionName = action.name;
+        pendingCaptureValue = AppConfig::FormatHotkey(action.hotkey);
+        actionHotkeyCaptureReadyTick = GetTickCount64() + 250;
+        openActionHotkeyCapturePopup = true;
+    }
+
+    void DrawActionHotkeyCapturePopup() {
+        if (openActionHotkeyCapturePopup) {
+            ImGui::OpenPopup(ActionHotkeyCapturePopupId);
+            openActionHotkeyCapturePopup = false;
+        }
+
+        if (ImGui::BeginPopupModal(ActionHotkeyCapturePopupId, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::TextUnformatted(T("settings.hotkeyCaptureTitle"));
+            ImGui::Separator();
+            ImGui::Text(T("settings.hotkeyCaptureAction"), T(pendingCaptureActionName.c_str()));
+            ImGui::Text(T("settings.hotkeyCaptureCurrent"), pendingCaptureValue.c_str());
+            ImGui::TextDisabled("%s", T("settings.hotkeyCaptureHint"));
+
+            std::string captured;
+            if (CapturePressedHotkey(captured)) {
+                pendingCaptureValue = captured;
+            }
+
+            ImGui::Spacing();
+            if (ImGui::Button(T("settings.apply"), ImVec2(120.0f, 0.0f))) {
+                if (!pendingCaptureActionId.empty() && !pendingCaptureValue.empty()) {
+                    AppConfig::SetActionHotkeyName(pendingCaptureActionId, pendingCaptureValue);
+                    ActionHotkeyInputState& input = actionHotkeyInputs[pendingCaptureActionId];
+                    const std::string current = AppConfig::GetActionHotkeyName(pendingCaptureActionId);
+                    std::snprintf(input.value.data(), input.value.size(), "%s", current.c_str());
+                    input.lastSavedValue = current;
+                }
+                pendingCaptureActionId.clear();
+                pendingCaptureActionName.clear();
+                pendingCaptureValue.clear();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button(T("settings.cancel"), ImVec2(120.0f, 0.0f))) {
+                pendingCaptureActionId.clear();
+                pendingCaptureActionName.clear();
+                pendingCaptureValue.clear();
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+    }
+
     void DrawActionHotkeys() {
         ImGui::TextUnformatted(T("settings.actionHotkeys"));
         ImGui::TextDisabled("%s", T("settings.hotkeyHint"));
@@ -483,7 +705,7 @@ namespace {
         if (ImGui::BeginTable("ActionHotkeyTable", 3, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp)) {
             ImGui::TableSetupColumn(T("settings.action"));
             ImGui::TableSetupColumn(T("settings.hotkey"));
-            ImGui::TableSetupColumn(T("settings.apply"));
+            ImGui::TableSetupColumn(T("settings.capture"));
             ImGui::TableHeadersRow();
 
             for (const AppConfig::ActionHotkey& action : actions) {
@@ -492,26 +714,21 @@ namespace {
                 ImGui::TextUnformatted(T(action.name.c_str()));
 
                 ImGui::TableNextColumn();
-                char inputId[96] = {};
-                std::snprintf(inputId, sizeof(inputId), "##actionHotkey_%s", action.id.c_str());
                 ActionHotkeyInputState& input = ActionHotkeyInput(action);
-                ImGui::PushItemWidth(-1.0f);
-                ImGui::InputText(inputId, input.value.data(), input.value.size());
-                ImGui::PopItemWidth();
+                ImGui::TextUnformatted(input.value.data());
 
                 ImGui::TableNextColumn();
                 char buttonId[96] = {};
-                std::snprintf(buttonId, sizeof(buttonId), "%s##apply_%s", T("settings.apply"), action.id.c_str());
+                std::snprintf(buttonId, sizeof(buttonId), "%s##capture_%s", T("settings.setHotkey"), action.id.c_str());
                 if (ImGui::SmallButton(buttonId)) {
-                    AppConfig::SetActionHotkeyName(action.id, input.value.data());
-                    const std::string current = AppConfig::GetActionHotkeyName(action.id);
-                    std::snprintf(input.value.data(), input.value.size(), "%s", current.c_str());
-                    input.lastSavedValue = current;
+                    OpenActionHotkeyCapturePopup(action);
                 }
             }
 
             ImGui::EndTable();
         }
+
+        DrawActionHotkeyCapturePopup();
     }
 
     void DrawConfigSettings() {

@@ -27,12 +27,12 @@ namespace {
     constexpr DWORD SpawnRateWindowMs = 3000;
     constexpr unsigned int MaxSpawnsPerWindow = 2;
     constexpr DWORD LimitMessageCooldownMs = 1000;
-    constexpr DWORD SpawnedVehicleCleanupDelayMs = 1500;
 
     GameLogic::SpawnVehicleOptions GetCurrentSpawnOptions() {
         GameLogic::SpawnVehicleOptions options;
         options.asDriver = MenuState::VehicleSpawnAsDriver;
         options.aircraftInAir = MenuState::VehicleSpawnAircraftInAir;
+        options.cleanupPrevious = MenuState::VehicleCleanupAfterSpawn;
         return options;
     }
 
@@ -94,15 +94,18 @@ namespace {
         return plugin::Command<plugin::Commands::IS_CHAR_IN_ANY_CAR>(hplayer) && player->m_pVehicle == vehicle;
     }
 
-    void TrackSpawnedVehicle(CVehicle* vehicle) {
+    void TrackSpawnedVehicle(CVehicle* vehicle, bool cleanupPrevious) {
         if (!vehicle || !IsVehicleInPool(vehicle)) {
             return;
         }
 
-        if (trackedSpawnedVehicle && trackedSpawnedVehicle != vehicle && IsVehicleInPool(trackedSpawnedVehicle)) {
-            pendingCleanupVehicle = trackedSpawnedVehicle;
-            pendingCleanupReadyTick = GetTickCount() + SpawnedVehicleCleanupDelayMs;
-            Log::Info("旧 XMenu 载具进入延迟清理");
+        if (cleanupPrevious && trackedSpawnedVehicle && trackedSpawnedVehicle != vehicle && IsVehicleInPool(trackedSpawnedVehicle)) {
+            if (IsPlayerUsingVehicle(trackedSpawnedVehicle)) {
+                Log::Warn("跳过立即清理旧 XMenu 载具：玩家正在使用");
+            } else {
+                GameLogic::DeleteVehicle(trackedSpawnedVehicle);
+                Log::Info("旧 XMenu 载具已立即清理");
+            }
         }
 
         trackedSpawnedVehicle = vehicle;
@@ -110,6 +113,12 @@ namespace {
     }
 
     void ProcessSpawnedVehicleCleanup() {
+        if (!MenuState::VehicleCleanupAfterSpawn) {
+            pendingCleanupVehicle = nullptr;
+            pendingCleanupReadyTick = 0;
+            return;
+        }
+
         if (!pendingCleanupVehicle) {
             return;
         }
@@ -126,8 +135,9 @@ namespace {
         }
 
         if (IsPlayerUsingVehicle(pendingCleanupVehicle)) {
-            pendingCleanupReadyTick = now + SpawnedVehicleCleanupDelayMs;
             Log::Warn("跳过清理旧 XMenu 载具：玩家正在使用");
+            pendingCleanupVehicle = nullptr;
+            pendingCleanupReadyTick = 0;
             return;
         }
 
@@ -160,7 +170,7 @@ namespace {
         CVehicle* spawnedVehicle = GameLogic::SpawnVehicle(modelId, options);
         const bool ok = spawnedVehicle != nullptr;
         if (ok) {
-            TrackSpawnedVehicle(spawnedVehicle);
+            TrackSpawnedVehicle(spawnedVehicle, options.cleanupPrevious);
         }
         spawnInProgress = false;
         return ok;
@@ -435,6 +445,10 @@ namespace Controllers::Vehicle {
 
     void BlowUpAll() {
         GameLogic::BlowUpAllVehicles();
+    }
+
+    void ApplySpeedLock() {
+        GameLogic::SetVehicleSpeedLock(GetCurrentVehicle(), MenuState::VehicleSpeedLock, MenuState::VehicleSpeed);
     }
 
     bool Spawn(unsigned int modelId) {

@@ -20,6 +20,9 @@ namespace Controllers::Player {
     void SetProofState(const GameTypes::ProofState& state);
     void CopyCoordinates();
     bool RequestSaveGame();
+    void MoveForward(float distance);
+    void MoveUp(float distance);
+    void MoveDown(float distance);
     void SetInfiniteSprint(bool enable);
     void SetKeepStuff(bool enable);
     bool GetFreeHealthcare();

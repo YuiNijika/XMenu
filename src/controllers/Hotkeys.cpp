@@ -9,12 +9,29 @@
 #include "utils/D3DHook.h"
 #include "utils/I18n.h"
 #include "imgui/imgui.h"
+#include <windows.h>
 #include <unordered_map>
 #include <cstdio>
 #include <string>
 
 namespace {
     std::unordered_map<std::string, bool> previousActionStates;
+    constexpr float ForwardTeleportBaseIntervalMs = 180.0f;
+
+    float ForwardTeleportFrameScale() {
+        if (!ImGui::GetCurrentContext()) {
+            return 16.6667f / ForwardTeleportBaseIntervalMs;
+        }
+
+        float deltaMs = ImGui::GetIO().DeltaTime * 1000.0f;
+        if (deltaMs < 1.0f) {
+            deltaMs = 1.0f;
+        }
+        if (deltaMs > 50.0f) {
+            deltaMs = 50.0f;
+        }
+        return deltaMs / ForwardTeleportBaseIntervalMs;
+    }
 
     bool HasBlockingUiInput() {
         if (D3DHook::IsMenuVisible()) {
@@ -43,6 +60,10 @@ namespace {
     }
 
     void Dispatch(const std::string& actionId) {
+        if (!AppConfig::IsActionHotkeySupportedForRuntime(actionId)) {
+            return;
+        }
+
         if (actionId == "teleport.marker") {
             Controllers::Teleport::Marker(MenuState::SpawnUnderwater);
             return;
@@ -56,7 +77,13 @@ namespace {
         }
 
         if (actionId == "teleport.forward") {
-            Controllers::Teleport::Forward(5.0f);
+            Controllers::Teleport::Forward(MenuState::TeleportForwardDistance);
+            return;
+        }
+
+        if (actionId == "player.freeFly.toggle") {
+            MenuState::FreeFlyEnabled = !MenuState::FreeFlyEnabled;
+            MenuState::ShowNotice(I18n::T(MenuState::FreeFlyEnabled ? "player.freeFlyEnabled" : "player.freeFlyDisabled"), 1.5);
             return;
         }
 
@@ -124,9 +151,27 @@ namespace Controllers::Hotkeys {
         for (const AppConfig::ActionHotkey& action : actions) {
             const bool pressed = AppConfig::IsHotkeyPressed(action.hotkey);
             const bool wasPressed = previousActionStates[action.id];
-            if (pressed && !wasPressed) {
-                Dispatch(action.id);
-                if (action.id != "teleport.quickMap") {
+            if (action.id == "player.autoFlight.hold") {
+                previousActionStates[action.id] = pressed;
+                continue;
+            }
+            if (action.id == "teleport.forward") {
+                if (pressed && MenuState::TeleportForwardHold) {
+                    const float continuousDistance = MenuState::TeleportForwardDistance * ForwardTeleportFrameScale();
+                    Controllers::Teleport::Forward(continuousDistance);
+                } else if (pressed && !wasPressed) {
+                    Dispatch(action.id);
+                    ShowActionNotice(action);
+                }
+                previousActionStates[action.id] = pressed;
+                continue;
+            }
+
+            if (pressed) {
+                if (!wasPressed) {
+                    Dispatch(action.id);
+                }
+                if (!wasPressed && action.id != "teleport.quickMap") {
                     ShowActionNotice(action);
                 }
             }

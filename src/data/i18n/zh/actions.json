@@ -2,6 +2,8 @@
   "action.teleport.marker": "传送到标记点",
   "action.teleport.quickMap": "打开快速地图",
   "action.teleport.forward": "向前传送",
+  "action.player.freeFly.toggle": "切换自由飞行",
+  "action.player.autoFlight.hold": "按住自由飞行",
   "action.command.toggle": "切换命令窗口",
   "action.overlay.toggle": "切换 Overlay",
   "action.player.heal": "玩家回血",

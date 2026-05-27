@@ -19,6 +19,7 @@ namespace GameLogic {
     struct SpawnVehicleOptions {
         bool asDriver = true;
         bool aircraftInAir = true;
+        bool cleanupPrevious = true;
     };
 
     struct PedSpawnOptions {
@@ -31,6 +32,14 @@ namespace GameLogic {
         bool freeze = false;
         bool hostile = false;
         unsigned int weaponModel = 0;
+    };
+
+    struct PickupOptions {
+        unsigned int modelId = 1240;
+        unsigned char type = 3;
+        unsigned int quantity = 1;
+        unsigned int moneyPerDay = 0;
+        bool empty = false;
     };
 
     struct VehicleAppearanceOptions {
@@ -69,6 +78,7 @@ namespace GameLogic {
     float GetArmour(CPlayerPed* player);
     void SetArmour(CPlayerPed* player, float value);
     CVector GetPlayerPosition(CPlayerPed* player);
+    void MovePlayerRelative(CPlayerPed* player, float forward, float right, float up);
     bool IsPlayerDead(CPlayerPed* player);
     void SetKeepStuff(bool enable);
     void HealPlayer(CPlayerPed* player);
@@ -184,6 +194,9 @@ namespace GameLogic {
     void SetDaysPassed(int days);
     float GetGravity();
     void SetGravity(float gravity);
+    int SpawnPickupNearPlayer(const PickupOptions& options);
+    bool UpdateLastPickup(const PickupOptions& options);
+    bool RemoveLastPickup();
 
     // 通用
     void Init();

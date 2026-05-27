@@ -196,9 +196,13 @@ namespace Pages::Vehicle {
                 ImGui::SameLine();
                 ImGui::Checkbox(T("vehicle.watertight"), &MenuState::VehicleWatertight);
 
-                ImGui::Checkbox(T("vehicle.lockSpeed"), &MenuState::VehicleSpeedLock);
+                if (ImGui::Checkbox(T("vehicle.lockSpeed"), &MenuState::VehicleSpeedLock)) {
+                    Controllers::Vehicle::ApplySpeedLock();
+                }
                 ImGui::PushItemWidth(150);
-                ImGui::SliderFloat(T("vehicle.targetSpeed"), &MenuState::VehicleSpeed, 5.0f, 300.0f, "%.0f");
+                if (ImGui::SliderFloat(T("vehicle.targetSpeed"), &MenuState::VehicleSpeed, 5.0f, 300.0f, "%.0f")) {
+                    Controllers::Vehicle::ApplySpeedLock();
+                }
                 ImGui::PopItemWidth();
                 ImGui::EndTabItem();
             }
@@ -207,6 +211,8 @@ namespace Pages::Vehicle {
                 ImGui::Checkbox(T("vehicle.spawnAsDriver"), &MenuState::VehicleSpawnAsDriver);
                 ImGui::SameLine();
                 ImGui::Checkbox(T("vehicle.spawnAircraftInAir"), &MenuState::VehicleSpawnAircraftInAir);
+                ImGui::SameLine();
+                ImGui::Checkbox(T("vehicle.cleanupAfterSpawn"), &MenuState::VehicleCleanupAfterSpawn);
 
                 ImGui::TextWrapped("%s", T("vehicle.spawnIdTip"));
                 ImGui::PushItemWidth(160);

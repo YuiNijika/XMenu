@@ -17,8 +17,12 @@ namespace Controllers::World {
     void SetFreePayNSpray(bool enable);
     void SetFasterClock(bool enable);
     void SetFreezeTime(bool enable);
+    void SetLockTime(bool enable);
     int GetDaysPassed();
     void SetDaysPassed(int days);
     float GetGravity();
     void SetGravity(float gravity);
+    int SpawnPickup();
+    bool UpdateLastPickup();
+    bool RemoveLastPickup();
 }

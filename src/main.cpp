@@ -1,13 +1,15 @@
 /**
+ * --------------------------------------------------------------------------------------------
  * XMenu
  * 作者：鼠子(YuiNijika)
- * 测试：枫林、狂风晨、IIScar
- * 版本：v0.0.1-alpha3
+ * 测试：枫林、狂风晨、IIScar、Happy
+ * 版本：v0.0.1-rc
  * 网站：https://gtamodx.com/mods/xmenu
  * GitHub：https://github.com/YuiNijika/XMenu
  * QQ群：https://gtamodx.com/qqun
  * 声明：永久免费禁止倒卖，禁止用于商业用途。
  * 若有任何问题, 请加入QQ群或前往GitHub发布issue反馈。
+ * --------------------------------------------------------------------------------------------
  */
 
 #include <windows.h>
@@ -25,9 +27,9 @@
 #include "CHud.h"
 
 extern const bool XMENU_DEBUG_MODE = false;
-const char* XMENU_VERSION = "v0.0.1-alpha3";
+const char* XMENU_VERSION = "v0.0.1-rc";
 const char* XMENU_AUTHOR = "鼠子(YuiNijika)";
-const char* XMENU_AUTHOR_TEST = "枫林、狂风晨、IIScar";
+const char* XMENU_AUTHOR_TEST = "枫林、狂风晨、IIScar、Happy";
 const char* XMENU_URL = "https://gtamodx.com/mods/xmenu";
 const char* XMENU_GITHUB = "https://github.com/YuiNijika/XMenu";
 const char* XMENU_GITHUB_API = "https://api.github.com/repos/YuiNijika/XMenu/releases/latest";
@@ -104,7 +106,7 @@ namespace {
 
             CPad* pad = CPad::GetPad(0);
             if (pad) {
-                pad->DisablePlayerControls = D3DHook::IsInitialized() && D3DHook::IsMenuVisible();
+                pad->DisablePlayerControls = false;
             }
         };
     }
