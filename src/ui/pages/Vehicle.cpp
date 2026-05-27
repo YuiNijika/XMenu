@@ -204,6 +204,14 @@ namespace Pages::Vehicle {
                     Controllers::Vehicle::ApplySpeedLock();
                 }
                 ImGui::PopItemWidth();
+                ImGui::SameLine();
+                if (ImGui::Button(T("vehicle.applyTargetSpeed"))) {
+                    Controllers::Vehicle::ApplyTargetSpeed();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button(T("vehicle.restoreDefaultSpeed"))) {
+                    Controllers::Vehicle::RestoreDefaultTargetSpeed();
+                }
                 ImGui::EndTabItem();
             }
 

@@ -29,6 +29,8 @@
   "vehicle.lockSpeed": "Зафиксировать скорость",
   "vehicle.flyingCars": "Летающие машины",
   "vehicle.targetSpeed": "Целевая скорость",
+  "vehicle.applyTargetSpeed": "Применить целевую скорость",
+  "vehicle.restoreDefaultSpeed": "Вернуть скорость по умолчанию",
   "vehicle.spawnAsDriver": "После создания сесть за руль",
   "vehicle.spawnAircraftInAir": "Создавать самолет/вертолет в воздухе",
   "vehicle.cleanupAfterSpawn": "Удалять предыдущий созданный транспорт",

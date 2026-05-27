@@ -919,21 +919,34 @@ namespace {
 
 void GiveAllWeapons(CPlayerPed* player) {
     if (!player) return;
-    const unsigned int models[] = { 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 287, 288, 279, 278, 280, 281, 282, 274, 285, 286, 283, 284, 290, 289, 258, 275, 276, 277, 291, 292, 293 };
-    for (const unsigned int model : models) {
-        GiveWeaponModel(player, model, 99999);
+    const unsigned int weapons[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34 };
+    for (const unsigned int weapon : weapons) {
+        GiveWeapon(player, weapon, 99999);
     }
 }
 
 void GiveWeapon(CPlayerPed* player, unsigned int weaponType, unsigned int ammo) {
     if (!player) return;
-    GiveWeaponModel(player, static_cast<unsigned int>(GetWeaponModel(static_cast<eWeaponType>(weaponType))), ammo);
+    const int model = GetWeaponModel(static_cast<eWeaponType>(weaponType));
+    if (model <= 0) {
+        Log::Warn("VC 武器发放被拒绝：武器类型未映射到有效模型，武器类型 " + std::to_string(weaponType));
+        return;
+    }
+    const int hplayer = CPools::GetPedRef(player);
+    CStreaming::RequestModel(model, PRIORITY_REQUEST);
+    CStreaming::LoadAllRequestedModels(false);
+    plugin::Command<plugin::Commands::GIVE_WEAPON_TO_CHAR>(hplayer, static_cast<eWeaponType>(weaponType), ammo);
+    plugin::Command<plugin::Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(model);
 }
 
 void GiveWeaponModel(CPlayerPed* player, unsigned int weaponModel, unsigned int ammo) {
     if (!player) return;
     const int hplayer = CPools::GetPedRef(player);
     const int model = static_cast<int>(weaponModel);
+    if (model <= 0) {
+        Log::Warn("VC 武器发放被拒绝：无效模型 ID " + std::to_string(model));
+        return;
+    }
     CStreaming::RequestModel(model, PRIORITY_REQUEST);
     CStreaming::LoadAllRequestedModels(false);
 

@@ -29,6 +29,8 @@
   "vehicle.lockSpeed": "速度固定",
   "vehicle.flyingCars": "空飛ぶ車",
   "vehicle.targetSpeed": "目標速度",
+  "vehicle.applyTargetSpeed": "目標速度を適用",
+  "vehicle.restoreDefaultSpeed": "既定速度に戻す",
   "vehicle.spawnAsDriver": "生成後に運転席へ乗る",
   "vehicle.spawnAircraftInAir": "航空機/ヘリを空中に生成",
   "vehicle.cleanupAfterSpawn": "前回生成した車両を削除",

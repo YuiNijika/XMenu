@@ -29,6 +29,8 @@
   "vehicle.lockSpeed": "锁定车速",
   "vehicle.flyingCars": "飞车模式",
   "vehicle.targetSpeed": "目标速度",
+  "vehicle.applyTargetSpeed": "应用目标速度",
+  "vehicle.restoreDefaultSpeed": "恢复默认速度",
   "vehicle.spawnAsDriver": "生成后坐上驾驶位",
   "vehicle.spawnAircraftInAir": "飞机/直升机生成在空中",
   "vehicle.cleanupAfterSpawn": "清理上一辆生成载具",

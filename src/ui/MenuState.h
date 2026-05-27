@@ -87,11 +87,11 @@ namespace MenuState {
     inline float PlayerStatValue = 0.0f;
     inline bool OverlayEnabled = false;
     inline bool OverlayShowPosition = true;
-    inline bool OverlayShowVehicle = true;
+    inline bool OverlayShowVehicle = false;
     inline bool OverlayShowFps = true;
     inline bool OverlayShowPlayer = true;
     inline bool OverlayShowTime = true;
-    inline bool OverlayShowWorld = true;
+    inline bool OverlayShowWorld = false;
     inline bool OverlayShowDetails = false;
     inline bool OverlayShowFeatures = false;
     inline bool WorldLockTime = false;

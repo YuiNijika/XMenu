@@ -29,6 +29,8 @@
   "vehicle.lockSpeed": "Lock speed",
   "vehicle.flyingCars": "Flying cars",
   "vehicle.targetSpeed": "Target speed",
+  "vehicle.applyTargetSpeed": "Apply target speed",
+  "vehicle.restoreDefaultSpeed": "Restore default speed",
   "vehicle.spawnAsDriver": "Spawn as driver",
   "vehicle.spawnAircraftInAir": "Spawn aircraft in air",
   "vehicle.cleanupAfterSpawn": "Clean previous spawned vehicle",

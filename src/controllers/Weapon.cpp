@@ -40,15 +40,12 @@ namespace Controllers::Weapon {
     }
 
     void GiveAll() {
-        const Resources::WeaponTable table = Resources::GetWeapons();
-        for (std::size_t i = 0; i < table.count; ++i) {
-            const Resources::WeaponEntry& weapon = table.entries->at(i);
-            if (weapon.id > 0) {
-                GameLogic::GiveWeapon(FindPlayerPed(), static_cast<unsigned int>(weapon.id), 99999);
-            } else if (weapon.isModel) {
-                GameLogic::GiveWeaponModel(FindPlayerPed(), static_cast<unsigned int>(weapon.modelId), 99999);
-            }
+        CPlayerPed* player = FindPlayerPed();
+        if (!player) {
+            return;
         }
+
+        GameLogic::GiveAllWeapons(player);
         ShowWeaponMessage("XMenu: All weapons added", I18n::T("weapon.allGiven"));
     }
 

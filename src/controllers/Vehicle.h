@@ -45,5 +45,7 @@ namespace Controllers::Vehicle {
     void SetTakeLessDamage(bool enable);
     void BlowUpAll();
     void ApplySpeedLock();
+    void ApplyTargetSpeed();
+    void RestoreDefaultTargetSpeed();
     bool Spawn(unsigned int modelId);
 }

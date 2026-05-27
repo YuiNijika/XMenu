@@ -451,6 +451,16 @@ namespace Controllers::Vehicle {
         GameLogic::SetVehicleSpeedLock(GetCurrentVehicle(), MenuState::VehicleSpeedLock, MenuState::VehicleSpeed);
     }
 
+    void ApplyTargetSpeed() {
+        GameLogic::SetVehicleForwardSpeed(GetCurrentVehicle(), MenuState::VehicleSpeed);
+    }
+
+    void RestoreDefaultTargetSpeed() {
+        MenuState::VehicleSpeed = 60.0f;
+        ApplyTargetSpeed();
+        ApplySpeedLock();
+    }
+
     bool Spawn(unsigned int modelId) {
         const GameLogic::SpawnVehicleOptions options = GetCurrentSpawnOptions();
         return ExecuteSpawnNow(modelId, options);

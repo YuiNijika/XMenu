@@ -77,11 +77,11 @@ namespace {
             {"world.freezeTime", "world.freezeTime", &MenuState::FreezeTime, false},
             {"overlay.enabled", "overlay.enabled", &MenuState::OverlayEnabled, false},
             {"overlay.showPosition", "overlay.showPosition", &MenuState::OverlayShowPosition, true},
-            {"overlay.showVehicle", "overlay.showVehicle", &MenuState::OverlayShowVehicle, true},
+            {"overlay.showVehicle", "overlay.showVehicle", &MenuState::OverlayShowVehicle, false},
             {"overlay.showFps", "overlay.showFps", &MenuState::OverlayShowFps, true},
             {"overlay.showPlayer", "overlay.showPlayer", &MenuState::OverlayShowPlayer, true},
             {"overlay.showTime", "overlay.showTime", &MenuState::OverlayShowTime, true},
-            {"overlay.showWorld", "overlay.showWorld", &MenuState::OverlayShowWorld, true},
+            {"overlay.showWorld", "overlay.showWorld", &MenuState::OverlayShowWorld, false},
             {"overlay.showDetails", "overlay.showDetails", &MenuState::OverlayShowDetails, false},
             {"overlay.showFeatures", "overlay.showFeatures", &MenuState::OverlayShowFeatures, false}
         };
