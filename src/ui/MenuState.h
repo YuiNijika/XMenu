@@ -30,6 +30,8 @@ namespace MenuState {
     inline bool NoSpread = false;
     inline int WeaponAmmo = 9999;
     inline int WeaponSpawnId = 0;
+    inline int WeaponCyclerId = 1;
+    inline bool WeaponCyclerEnabled = false;
     inline bool VehicleNoDamage = false;
     inline bool VehicleAutoUnflip = false;
     inline bool VehicleHeavy = false;
@@ -68,6 +70,8 @@ namespace MenuState {
     inline bool PedSpawnAsGang = false;
     inline bool PedFreeze = false;
     inline bool PedHostile = false;
+    inline bool SmokingEffect = false;
+    inline bool FliesEffect = false;
     inline char SceneAnimGroup[64] = "PED";
     inline char SceneAnimName[64] = "WALK_player";
     inline bool SceneAnimLoop = false;

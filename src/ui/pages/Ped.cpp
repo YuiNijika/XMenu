@@ -68,6 +68,10 @@ namespace Pages::Ped {
         ImGui::SameLine();
         ImGui::Checkbox(T("ped.hostile"), &MenuState::PedHostile);
 
+        ImGui::Checkbox(T("ped.smoking"), &MenuState::SmokingEffect);
+        ImGui::SameLine();
+        ImGui::Checkbox(T("ped.flies"), &MenuState::FliesEffect);
+
         UI::SpacingSeparator();
         if (UI::Button(T("ped.spawnNear"), 3)) {
             Controllers::Ped::SpawnNearPlayer();

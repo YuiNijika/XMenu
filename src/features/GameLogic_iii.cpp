@@ -418,6 +418,13 @@ void UnflipVehicle(CVehicle* vehicle) {
 
 void SetVehicleForwardSpeed(CVehicle* vehicle, float speed) {
     if (!vehicle) return;
+
+    CPlayerPed* player = FindPlayerPed();
+    if (!player || player->m_pVehicle != vehicle) return;
+
+    CPad* pad = CPad::GetPad(0);
+    if (!pad || pad->GetAccelerate() <= 0) return;
+
     const CVector forward = vehicle->GetForward();
     const float velocity = speed / 50.0f;
     vehicle->m_vecMoveSpeed = CVector(forward.x * velocity, forward.y * velocity, forward.z * velocity);
@@ -793,6 +800,10 @@ bool SpawnParticleAtPlayer(const char*) {
     Log::Warn("III 暂不支持粒子页，已安全降级");
     return false;
 }
+
+void ProcessSmokingEffect(CPlayerPed*, bool) {}
+
+void ProcessFliesEffect(CPlayerPed*, bool) {}
 
 bool StartCutscene(const char*) {
     Log::Warn("III 暂不支持 cutscene 页，已安全降级");

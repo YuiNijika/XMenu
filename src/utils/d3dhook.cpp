@@ -262,6 +262,7 @@ bool D3DHook::backgroundRenderActive = false;
 LPDIRECT3DDEVICE9 D3DHook::device = nullptr;
 const char* D3DHook::initStatus = "not initialized";
 std::function<void()> D3DHook::renderCallback = nullptr;
+static float g_rawWheelDelta = 0.0f;
 
 bool D3DHook::IsMenuVisible() {
     return menuVisible;
@@ -317,6 +318,12 @@ void D3DHook::SetBackgroundRenderActive(bool active) {
 bool D3DHook::IsBackgroundRenderActive() {
     return backgroundRenderActive;
 }
+float D3DHook::ConsumeRawWheelDelta() {
+    const float value = g_rawWheelDelta;
+    g_rawWheelDelta = 0.0f;
+    return value;
+}
+
 
 void D3DHook::SetMenuVisible(bool visible) {
     if (!hookInstalled) {
@@ -412,6 +419,22 @@ LRESULT __stdcall D3DHook::hkWndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, 
         if (uMsg == WM_MOUSEMOVE || uMsg == WM_LBUTTONDOWN || uMsg == WM_LBUTTONUP || uMsg == WM_RBUTTONDOWN || uMsg == WM_RBUTTONUP || uMsg == WM_MOUSEWHEEL) {
             return true;
         }
+    } else {
+        // Capture wheel events when menu is closed (weapon cycler)
+        if (uMsg == WM_MOUSEWHEEL) {
+            g_rawWheelDelta += static_cast<float>(static_cast<short>(HIWORD(wParam))) / static_cast<float>(WHEEL_DELTA);
+        }
+#ifdef GTASA
+        else if (uMsg == WM_INPUT) {
+            RAWINPUT raw;
+            UINT size = sizeof(raw);
+            if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, &raw, &size, sizeof(RAWINPUTHEADER)) == sizeof(raw)
+                && raw.header.dwType == RIM_TYPEMOUSE
+                && (raw.data.mouse.usButtonFlags & RI_MOUSE_WHEEL)) {
+                g_rawWheelDelta += static_cast<float>(static_cast<SHORT>(raw.data.mouse.usButtonData)) / static_cast<float>(WHEEL_DELTA);
+            }
+        }
+#endif
     }
     return CallWindowProc(oWndProc, hWnd, uMsg, wParam, lParam);
 }

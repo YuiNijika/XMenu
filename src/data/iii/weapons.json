@@ -9,58 +9,10 @@
           "isModel": false
         },
         {
-          "name": "weapon.brass_knuckle",
+          "name": "weapon.baseball_bat",
           "id": 1,
           "isModel": true,
-          "modelId": 331
-        },
-        {
-          "name": "weapon.golf_club",
-          "id": 2,
-          "isModel": true,
-          "modelId": 333
-        },
-        {
-          "name": "weapon.nightstick",
-          "id": 3,
-          "isModel": true,
-          "modelId": 334
-        },
-        {
-          "name": "weapon.knife",
-          "id": 4,
-          "isModel": true,
-          "modelId": 335
-        },
-        {
-          "name": "weapon.baseball_bat",
-          "id": 5,
-          "isModel": true,
-          "modelId": 336
-        },
-        {
-          "name": "weapon.shovel",
-          "id": 6,
-          "isModel": true,
-          "modelId": 337
-        },
-        {
-          "name": "weapon.pool_cue",
-          "id": 7,
-          "isModel": true,
-          "modelId": 338
-        },
-        {
-          "name": "weapon.katana",
-          "id": 8,
-          "isModel": true,
-          "modelId": 339
-        },
-        {
-          "name": "weapon.chainsaw",
-          "id": 9,
-          "isModel": true,
-          "modelId": 341
+          "modelId": 172
         }
       ]
     },
@@ -69,15 +21,15 @@
       "entries": [
         {
           "name": "weapon.grenade",
-          "id": 16,
+          "id": 11,
           "isModel": true,
-          "modelId": 342
+          "modelId": 170
         },
         {
           "name": "weapon.molotov",
-          "id": 18,
+          "id": 10,
           "isModel": true,
-          "modelId": 344
+          "modelId": 174
         }
       ]
     },
@@ -86,15 +38,9 @@
       "entries": [
         {
           "name": "weapon.colt45",
-          "id": 22,
+          "id": 2,
           "isModel": true,
-          "modelId": 346
-        },
-        {
-          "name": "weapon.python",
-          "id": 24,
-          "isModel": true,
-          "modelId": 348
+          "modelId": 173
         }
       ]
     },
@@ -103,9 +49,9 @@
       "entries": [
         {
           "name": "weapon.uzi",
-          "id": 28,
+          "id": 3,
           "isModel": true,
-          "modelId": 352
+          "modelId": 178
         }
       ]
     },
@@ -113,22 +59,10 @@
       "category": "shotgun",
       "entries": [
         {
-          "name": "weapon.shotgun_pump",
-          "id": 25,
+          "name": "weapon.shotgun_normal",
+          "id": 4,
           "isModel": true,
-          "modelId": 349
-        },
-        {
-          "name": "weapon.shotgun_sawnoff",
-          "id": 26,
-          "isModel": true,
-          "modelId": 350
-        },
-        {
-          "name": "weapon.shotgun_combat",
-          "id": 27,
-          "isModel": true,
-          "modelId": 351
+          "modelId": 176
         }
       ]
     },
@@ -137,21 +71,26 @@
       "entries": [
         {
           "name": "weapon.ak47",
-          "id": 30,
+          "id": 5,
           "isModel": true,
-          "modelId": 355
+          "modelId": 171
         },
         {
           "name": "weapon.m16",
-          "id": 31,
+          "id": 6,
           "isModel": true,
-          "modelId": 356
-        },
+          "modelId": 180
+        }
+      ]
+    },
+    {
+      "category": "sniper",
+      "entries": [
         {
           "name": "weapon.sniper",
-          "id": 33,
+          "id": 7,
           "isModel": true,
-          "modelId": 358
+          "modelId": 177
         }
       ]
     },
@@ -160,21 +99,26 @@
       "entries": [
         {
           "name": "weapon.rocket",
-          "id": 35,
+          "id": 8,
           "isModel": true,
-          "modelId": 360
+          "modelId": 175
         },
         {
           "name": "weapon.flamethrower",
-          "id": 37,
+          "id": 9,
           "isModel": true,
-          "modelId": 362
+          "modelId": 181
         },
         {
-          "name": "weapon.minigun",
-          "id": 38,
+          "name": "weapon.bomb",
+          "id": 12,
           "isModel": true,
-          "modelId": 363
+          "modelId": 182
+        },
+        {
+          "name": "weapon.helicannon",
+          "id": 13,
+          "isModel": false
         }
       ]
     }

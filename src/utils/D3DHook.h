@@ -20,6 +20,7 @@ public:
     static bool IsInitialized();
     static bool IsReady();
     static bool HadInitFailure();
+    static float ConsumeRawWheelDelta();
     static const char* GetInitStatus();
     static const char* GetStatusText();
 

@@ -419,6 +419,13 @@ void UnflipVehicle(CVehicle* vehicle) {
 
 void SetVehicleForwardSpeed(CVehicle* vehicle, float speed) {
     if (!vehicle) return;
+
+    CPlayerPed* player = FindPlayerPed();
+    if (!player || player->m_pVehicle != vehicle) return;
+
+    CPad* pad = CPad::GetPad(0);
+    if (!pad || pad->GetAccelerate() <= 0) return;
+
     const CVector forward = vehicle->GetForward();
     const float velocity = speed / 50.0f;
     vehicle->m_vecMoveSpeed = CVector(forward.x * velocity, forward.y * velocity, forward.z * velocity);
@@ -827,6 +834,10 @@ bool SpawnParticleAtPlayer(const char*) {
     return false;
 }
 
+void ProcessSmokingEffect(CPlayerPed*, bool) {}
+
+void ProcessFliesEffect(CPlayerPed*, bool) {}
+
 bool StartCutscene(const char*) {
     static bool logged = false;
     if (!logged) {
@@ -919,7 +930,7 @@ namespace {
 
 void GiveAllWeapons(CPlayerPed* player) {
     if (!player) return;
-    const unsigned int weapons[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34 };
+    const unsigned int weapons[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33 };
     for (const unsigned int weapon : weapons) {
         GiveWeapon(player, weapon, 99999);
     }

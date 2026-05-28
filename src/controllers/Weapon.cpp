@@ -82,6 +82,14 @@ namespace Controllers::Weapon {
         ShowWeaponMessage("XMenu: Weapon added", I18n::T("weapon.weaponGiven"));
     }
 
+    void GiveSilent(unsigned int weaponType, unsigned int ammo) {
+        GameLogic::GiveWeapon(FindPlayerPed(), weaponType, ammo);
+    }
+
+    void GiveModelSilent(unsigned int weaponModel, unsigned int ammo) {
+        GameLogic::GiveWeaponModel(FindPlayerPed(), weaponModel, ammo);
+    }
+
     void ResetStats() {
         GameLogic::ResetWeaponStats();
     }

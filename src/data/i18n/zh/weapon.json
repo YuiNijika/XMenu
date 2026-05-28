@@ -24,6 +24,10 @@
   "weapon.ammo": "弹药",
   "weapon.typeId": "武器类型 ID",
   "weapon.modelId": "武器模型 ID",
+  "weapon.getById": "按 ID 获取",
+  "weapon.cyclerTitle": "武器生成器",
+  "weapon.cyclerGive": "给予",
+  "weapon.cyclerEnable": "启用滚轮刷出",
   "weapon.weaponGiven": "已获取武器",
   "weapon.allGiven": "已获取全部武器",
   "weapon.weaponsCleared": "武器已清空",
@@ -92,5 +96,8 @@
   "weapon.camera": "相机",
   "weapon.nightvision": "夜视仪",
   "weapon.infrared": "热成像",
-  "weapon.parachute": "降落伞"
+  "weapon.parachute": "降落伞",
+  "weapon.ruger": "鲁格步枪",
+  "weapon.detonator_grenade": "遥控手雷",
+  "weapon.helicannon": "直升机机关炮"
 }

@@ -10,5 +10,7 @@ namespace Controllers::Weapon {
     void RemovePickups();
     void Give(unsigned int weaponType, unsigned int ammo);
     void GiveModel(unsigned int weaponModel, unsigned int ammo);
+    void GiveSilent(unsigned int weaponType, unsigned int ammo);
+    void GiveModelSilent(unsigned int weaponModel, unsigned int ammo);
     void ResetStats();
 }

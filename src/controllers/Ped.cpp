@@ -57,5 +57,11 @@ namespace Controllers::Ped {
         if (lastSpawnedPed) {
             GameLogic::ApplyPedOptions(lastSpawnedPed, CurrentOptions());
         }
+
+        CPlayerPed* player = FindPlayerPed();
+        if (player) {
+            GameLogic::ProcessSmokingEffect(player, MenuState::SmokingEffect);
+            GameLogic::ProcessFliesEffect(player, MenuState::FliesEffect);
+        }
     }
 }

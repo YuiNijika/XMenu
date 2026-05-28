@@ -24,6 +24,10 @@
   "weapon.ammo": "Патроны",
   "weapon.typeId": "ID типа оружия",
   "weapon.modelId": "ID модели оружия",
+  "weapon.getById": "Получить по ID",
+  "weapon.cyclerTitle": "Генератор оружия",
+  "weapon.cyclerGive": "Выдать",
+  "weapon.cyclerEnable": "Колёсико: выдать всё",
   "weapon.weaponGiven": "Оружие добавлено",
   "weapon.allGiven": "Всё оружие добавлено",
   "weapon.weaponsCleared": "Оружие очищено",
@@ -92,5 +96,8 @@
   "weapon.camera": "Камера",
   "weapon.nightvision": "Прибор ночного видения",
   "weapon.infrared": "Инфракрасные очки",
-  "weapon.parachute": "Парашют"
+  "weapon.parachute": "Парашют",
+  "weapon.ruger": "Ruger",
+  "weapon.detonator_grenade": "Дистанционная граната",
+  "weapon.helicannon": "Вертолётная пушка"
 }

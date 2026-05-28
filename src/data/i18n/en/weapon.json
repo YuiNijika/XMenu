@@ -24,6 +24,10 @@
   "weapon.ammo": "Ammo",
   "weapon.typeId": "Weapon type ID",
   "weapon.modelId": "Weapon model ID",
+  "weapon.getById": "Get by ID",
+  "weapon.cyclerTitle": "Weapon cycler",
+  "weapon.cyclerGive": "Give",
+  "weapon.cyclerEnable": "Scroll-wheel spawn all",
   "weapon.weaponGiven": "Weapon added",
   "weapon.allGiven": "All weapons added",
   "weapon.weaponsCleared": "Weapons cleared",
@@ -92,5 +96,8 @@
   "weapon.camera": "Camera",
   "weapon.nightvision": "Night Vision",
   "weapon.infrared": "Thermal Vision",
-  "weapon.parachute": "Parachute"
+  "weapon.parachute": "Parachute",
+  "weapon.ruger": "Ruger",
+  "weapon.detonator_grenade": "Remote Grenade",
+  "weapon.helicannon": "Helicannon"
 }

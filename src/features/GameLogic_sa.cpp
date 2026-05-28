@@ -377,6 +377,13 @@ void UnflipVehicle(CVehicle* vehicle) {
 
 void SetVehicleForwardSpeed(CVehicle* vehicle, float speed) {
     if (!vehicle) return;
+
+    CPlayerPed* player = FindPlayerPed();
+    if (!player || player->m_pVehicle != vehicle) return;
+
+    CPad* pad = CPad::GetPad(0);
+    if (!pad || pad->GetAccelerate() <= 0) return;
+
     const CVector forward = vehicle->GetForward();
     const float velocity = speed / 50.0f;
     vehicle->m_vecMoveSpeed = CVector(forward.x * velocity, forward.y * velocity, forward.z * velocity);
@@ -956,6 +963,33 @@ bool SpawnParticleAtPlayer(const char* name) {
     return true;
 }
 
+void ProcessSmokingEffect(CPlayerPed* player, bool enable) {
+    if (!enable || !player) return;
+    static DWORD lastSmokeTick = 0;
+    const DWORD now = GetTickCount();
+    if (now - lastSmokeTick < 200) return;
+    lastSmokeTick = now;
+    const CVector pos = player->GetPosition();
+    int fx = 0;
+    plugin::Command<plugin::Commands::CREATE_FX_SYSTEM>("cigarette_smoke", pos.x, pos.y, pos.z + 0.7f, 0, &fx);
+    plugin::Command<plugin::Commands::PLAY_AND_KILL_FX_SYSTEM>(fx);
+}
+
+void ProcessFliesEffect(CPlayerPed* player, bool enable) {
+    if (!enable || !player) return;
+    static DWORD lastFliesTick = 0;
+    const DWORD now = GetTickCount();
+    if (now - lastFliesTick < 500) return;
+    lastFliesTick = now;
+    const CVector pos = player->GetPosition();
+    const float rx = static_cast<float>((rand() % 200 - 100)) / 100.0f;
+    const float ry = static_cast<float>((rand() % 200 - 100)) / 100.0f;
+    const float rz = static_cast<float>((rand() % 100)) / 100.0f + 1.0f;
+    int fx = 0;
+    plugin::Command<plugin::Commands::CREATE_FX_SYSTEM>("insects", pos.x + rx, pos.y + ry, pos.z + rz, 0, &fx);
+    plugin::Command<plugin::Commands::PLAY_AND_KILL_FX_SYSTEM>(fx);
+}
+
 bool StartCutscene(const char* name) {
     if (!name || name[0] == '\0') return false;
     CCutsceneMgr::DeleteCutsceneData();
@@ -1057,7 +1091,23 @@ void GiveWeapon(CPlayerPed* player, unsigned int weaponType, unsigned int ammo) 
 }
 
 void GiveWeaponModel(CPlayerPed* player, unsigned int weaponModel, unsigned int ammo) {
-    GiveWeapon(player, weaponModel, ammo);
+    if (!player) return;
+    const int model = static_cast<int>(weaponModel);
+    if (model <= 0) return;
+
+    // Find weapon type from model ID (SA lacks GetWeaponTypeFromModel)
+    eWeaponType weaponType = WEAPONTYPE_UNARMED;
+    for (int t = WEAPONTYPE_UNARMED; t < WEAPONINFO_NUM_WEAPONS; ++t) {
+        CWeaponInfo* info = CWeaponInfo::GetWeaponInfo(static_cast<eWeaponType>(t), 0);
+        if (info && info->m_nModelId == model) {
+            weaponType = static_cast<eWeaponType>(t);
+            break;
+        }
+    }
+    if (weaponType == WEAPONTYPE_UNARMED) return;
+
+    GiveWeapon(player, static_cast<unsigned int>(weaponType), ammo);
+    plugin::Command<plugin::Commands::SET_CURRENT_PLAYER_WEAPON>(0, weaponType);
 }
 
 void DropWeapon(CPlayerPed* player) {

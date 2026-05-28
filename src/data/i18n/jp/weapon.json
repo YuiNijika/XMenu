@@ -24,6 +24,10 @@
   "weapon.ammo": "弾薬",
   "weapon.typeId": "武器タイプ ID",
   "weapon.modelId": "武器モデル ID",
+  "weapon.getById": "ID で取得",
+  "weapon.cyclerTitle": "武器サイクラー",
+  "weapon.cyclerGive": "付与",
+  "weapon.cyclerEnable": "ホイールで全武器付与",
   "weapon.weaponGiven": "武器を取得しました",
   "weapon.allGiven": "全武器を取得しました",
   "weapon.weaponsCleared": "武器を消去しました",
@@ -92,5 +96,8 @@
   "weapon.camera": "カメラ",
   "weapon.nightvision": "暗視ゴーグル",
   "weapon.infrared": "赤外線ゴーグル",
-  "weapon.parachute": "パラシュート"
+  "weapon.parachute": "パラシュート",
+  "weapon.ruger": "ルガーライフル",
+  "weapon.detonator_grenade": "リモートグレネード",
+  "weapon.helicannon": "ヘリキャノン"
 }

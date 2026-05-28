@@ -261,6 +261,9 @@ namespace Log {
 
         logFile.open(LogPath(), std::ios::out | std::ios::trunc);
         if (logFile.is_open()) {
+            // UTF-8 BOM so editors auto-detect encoding on Chinese Windows
+            const char bom[] = { '\xEF', '\xBB', '\xBF' };
+            logFile.write(bom, sizeof(bom));
             const std::string line = "[" + BuildTimestamp() + "] [INFO] XMenu 日志启动";
             PushEntryUnlocked("INFO", line);
             logFile << line << '\n';

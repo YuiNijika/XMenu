@@ -149,6 +149,8 @@ namespace GameLogic {
     bool PlayPlayerAnimation(const char* group, const char* name, bool loop);
     void StopPlayerAnimation();
     bool SpawnParticleAtPlayer(const char* name);
+    void ProcessSmokingEffect(CPlayerPed* player, bool enable);
+    void ProcessFliesEffect(CPlayerPed* player, bool enable);
     bool StartCutscene(const char* name);
     void StopCutscene();
     bool IsCutsceneRunning();

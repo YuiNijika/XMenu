@@ -81,19 +81,24 @@
       "entries": [
         {
           "name": "weapon.grenade",
-          "id": 16,
+          "id": 12,
           "isModel": true,
           "modelId": 270
         },
         {
+          "name": "weapon.detonator_grenade",
+          "id": 13,
+          "isModel": false
+        },
+        {
           "name": "weapon.teargas",
-          "id": 17,
+          "id": 14,
           "isModel": true,
           "modelId": 271
         },
         {
           "name": "weapon.molotov",
-          "id": 18,
+          "id": 15,
           "isModel": true,
           "modelId": 272
         }
@@ -104,13 +109,13 @@
       "entries": [
         {
           "name": "weapon.colt45",
-          "id": 22,
+          "id": 17,
           "isModel": true,
           "modelId": 274
         },
         {
           "name": "weapon.python",
-          "id": 24,
+          "id": 18,
           "isModel": true,
           "modelId": 275
         }
@@ -120,22 +125,22 @@
       "category": "shotgun",
       "entries": [
         {
-          "name": "weapon.shotgun_sawnoff",
-          "id": 25,
+          "name": "weapon.shotgun_normal",
+          "id": 19,
           "isModel": true,
-          "modelId": 279
+          "modelId": 277
         },
         {
           "name": "weapon.shotgun_combat",
-          "id": 26,
+          "id": 20,
           "isModel": true,
           "modelId": 278
         },
         {
-          "name": "weapon.shotgun_normal",
-          "id": 27,
+          "name": "weapon.shotgun_sawnoff",
+          "id": 21,
           "isModel": true,
-          "modelId": 277
+          "modelId": 279
         }
       ]
     },
@@ -143,16 +148,28 @@
       "category": "smg",
       "entries": [
         {
+          "name": "weapon.tec9",
+          "id": 22,
+          "isModel": true,
+          "modelId": 281
+        },
+        {
           "name": "weapon.uzi",
-          "id": 28,
+          "id": 23,
           "isModel": true,
           "modelId": 282
         },
         {
           "name": "weapon.mac10",
-          "id": 29,
+          "id": 24,
           "isModel": true,
           "modelId": 283
+        },
+        {
+          "name": "weapon.mp5",
+          "id": 25,
+          "isModel": true,
+          "modelId": 284
         }
       ]
     },
@@ -161,21 +178,15 @@
       "entries": [
         {
           "name": "weapon.m4",
-          "id": 30,
+          "id": 26,
           "isModel": true,
           "modelId": 280
         },
         {
-          "name": "weapon.tec9",
-          "id": 31,
+          "name": "weapon.ruger",
+          "id": 27,
           "isModel": true,
-          "modelId": 281
-        },
-        {
-          "name": "weapon.mp5",
-          "id": 32,
-          "isModel": true,
-          "modelId": 284
+          "modelId": 276
         }
       ]
     },
@@ -184,13 +195,13 @@
       "entries": [
         {
           "name": "weapon.sniper",
-          "id": 33,
+          "id": 28,
           "isModel": true,
           "modelId": 285
         },
         {
           "name": "weapon.sniper_laser",
-          "id": 34,
+          "id": 29,
           "isModel": true,
           "modelId": 286
         }
@@ -201,27 +212,27 @@
       "entries": [
         {
           "name": "weapon.rocket",
-          "id": 35,
+          "id": 30,
           "isModel": true,
           "modelId": 287
         },
         {
           "name": "weapon.flamethrower",
-          "id": 37,
+          "id": 31,
           "isModel": true,
           "modelId": 288
         },
         {
-          "name": "weapon.minigun",
-          "id": 38,
-          "isModel": true,
-          "modelId": 290
-        },
-        {
           "name": "weapon.m60",
-          "id": 39,
+          "id": 32,
           "isModel": true,
           "modelId": 289
+        },
+        {
+          "name": "weapon.minigun",
+          "id": 33,
+          "isModel": true,
+          "modelId": 290
         }
       ]
     }

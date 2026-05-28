@@ -9,6 +9,8 @@
   "ped.asGang": "ギャング扱い",
   "ped.freeze": "固定",
   "ped.hostile": "敵対",
+  "ped.smoking": "口にタバコ",
+  "ped.flies": "ハエがいる",
   "ped.spawnNear": "近くに生成",
   "ped.spawnMarker": "マーカーに生成",
   "ped.deleteLast": "最後の生成を削除",
