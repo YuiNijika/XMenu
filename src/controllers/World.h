@@ -25,4 +25,11 @@ namespace Controllers::World {
     int SpawnPickup();
     bool UpdateLastPickup();
     bool RemoveLastPickup();
+
+    // Freecam
+    void EnableFreecam();
+    void DisableFreecam();
+    void DisableTopDownCam();
+
+    void DrawRandomCheatsList();
 }

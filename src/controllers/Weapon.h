@@ -12,5 +12,7 @@ namespace Controllers::Weapon {
     void GiveModel(unsigned int weaponModel, unsigned int ammo);
     void GiveSilent(unsigned int weaponType, unsigned int ammo);
     void GiveModelSilent(unsigned int weaponModel, unsigned int ammo);
+    bool IsValidWeaponTypeId(unsigned int weaponType);
+    bool IsValidWeaponModelId(unsigned int weaponModel);
     void ResetStats();
 }

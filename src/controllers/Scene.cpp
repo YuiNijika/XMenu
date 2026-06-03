@@ -2,6 +2,11 @@
 #include "features/GameLogic.h"
 #include "ui/MenuState.h"
 
+#ifdef GTASA
+#include "cutscene_sa.h"
+#include "particle_sa.h"
+#endif
+
 namespace Controllers::Scene {
     void Process() {
     }
@@ -18,26 +23,57 @@ namespace Controllers::Scene {
     }
 
     bool SpawnParticleAtPlayer() {
+#ifdef GTASA
+        Particle.Play(MenuState::SceneParticleName);
+        MenuState::ShowNotice("Particle spawned", 1.8);
+        return true;
+#else
         const bool ok = GameLogic::SpawnParticleAtPlayer(MenuState::SceneParticleName);
         MenuState::ShowNotice(ok ? "Particle spawned" : "Particle unavailable", 1.8);
         return ok;
+#endif
     }
 
     bool StartCutscene() {
+#ifdef GTASA
+        Cutscene.Play(MenuState::SceneCutsceneName, MenuState::SceneCutsceneInterior);
+        return true;
+#else
         const bool ok = GameLogic::StartCutscene(MenuState::SceneCutsceneName);
         MenuState::ShowNotice(ok ? "Cutscene started" : "Cutscene unavailable", 1.8);
         return ok;
+#endif
     }
 
     void StopCutscene() {
+#ifdef GTASA
+        Cutscene.Stop();
+#else
         GameLogic::StopCutscene();
+#endif
     }
 
     bool IsCutsceneRunning() {
+#ifdef GTASA
+        return Cutscene.IsRunning();
+#else
         return GameLogic::IsCutsceneRunning();
+#endif
     }
 
     const char* GetMissionStatus() {
         return GameLogic::GetMissionStatus();
+    }
+
+    void RemoveAllParticles() {
+#ifdef GTASA
+        Particle.RemoveAll();
+#endif
+    }
+
+    void RemoveLatestParticle() {
+#ifdef GTASA
+        Particle.RemoveLatest();
+#endif
     }
 }

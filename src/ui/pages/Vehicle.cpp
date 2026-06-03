@@ -6,6 +6,10 @@
 #include "ui/Widget.h"
 #include "utils/I18n.h"
 #include "imgui/imgui.h"
+#include "extensions/ScriptCommands.h"
+#include "CPools.h"
+#include "CPlayerPed.h"
+#include "plugin.h"
 #include <cstring>
 #include <cstdio>
 
@@ -44,6 +48,41 @@ namespace {
             }
             UI::SameLineEvery(index++, 3);
         }
+
+#ifdef GTASA
+        if (ImGui::CollapsingHeader(T("vehicle.paint"), ImGuiTreeNodeFlags_DefaultOpen)) {
+            CVehicle* vehicle = Controllers::Vehicle::GetCurrentVehicle();
+            if (!vehicle) {
+                ImGui::TextDisabled("%s", T("vehicle.notInVehicle"));
+            } else {
+                bool applyCarcols = false;
+                ImGui::PushItemWidth(120);
+                if (ImGui::InputInt(T("vehicle.color1"), &MenuState::VehicleColorPrimary)) {
+                    applyCarcols = true;
+                }
+                ImGui::SameLine();
+                if (ImGui::InputInt(T("vehicle.color2"), &MenuState::VehicleColorSecondary)) {
+                    applyCarcols = true;
+                }
+                if (ImGui::InputInt(T("vehicle.color3"), &MenuState::VehicleColorTertiary)) {
+                    applyCarcols = true;
+                }
+                ImGui::SameLine();
+                if (ImGui::InputInt(T("vehicle.color4"), &MenuState::VehicleColorQuaternary)) {
+                    applyCarcols = true;
+                }
+                ImGui::PopItemWidth();
+
+                if (applyCarcols) {
+                    Controllers::Vehicle::ApplyCarcols();
+                }
+
+                if (UI::Button(T("vehicle.resetColors"))) {
+                    Controllers::Vehicle::ResetColors();
+                }
+            }
+        }
+#endif
     }
 }
 
@@ -195,6 +234,26 @@ namespace Pages::Vehicle {
                 ImGui::Checkbox(T("vehicle.heavy"), &MenuState::VehicleHeavy);
                 ImGui::SameLine();
                 ImGui::Checkbox(T("vehicle.watertight"), &MenuState::VehicleWatertight);
+                ImGui::SameLine();
+#ifdef GTASA
+                ImGui::Checkbox(T("vehicle.neon"), &MenuState::VehicleNeon);
+                if (MenuState::VehicleNeon) {
+                    ImGui::PushItemWidth(200);
+                    ImGui::SliderInt(T("vehicle.neonR"), &MenuState::VehicleNeonColorR, 0, 255);
+                    ImGui::SliderInt(T("vehicle.neonG"), &MenuState::VehicleNeonColorG, 0, 255);
+                    ImGui::SliderInt(T("vehicle.neonB"), &MenuState::VehicleNeonColorB, 0, 255);
+                    ImGui::PopItemWidth();
+                }
+
+                if (ImGui::Checkbox(T("vehicle.autoDrive"), &MenuState::VehicleAutoDrive)) {
+                    if (!MenuState::VehicleAutoDrive) {
+                        CVehicle* veh = Controllers::Vehicle::GetCurrentVehicle();
+                        if (veh) {
+                            plugin::Command<plugin::Commands::WARP_CHAR_INTO_CAR>(CPools::GetPedRef(FindPlayerPed()), CPools::GetVehicleRef(veh));
+                        }
+                    }
+                }
+#endif
 
                 if (ImGui::Checkbox(T("vehicle.lockSpeed"), &MenuState::VehicleSpeedLock)) {
                     Controllers::Vehicle::ApplySpeedLock();

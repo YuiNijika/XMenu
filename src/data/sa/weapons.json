@@ -11,91 +11,91 @@
         {
           "name": "weapon.brass_knuckle",
           "id": 1,
-          "isModel": true,
+          "isModel": false,
           "modelId": 331
         },
         {
           "name": "weapon.golf_club",
           "id": 2,
-          "isModel": true,
+          "isModel": false,
           "modelId": 333
         },
         {
           "name": "weapon.nightstick",
           "id": 3,
-          "isModel": true,
+          "isModel": false,
           "modelId": 334
         },
         {
           "name": "weapon.knife",
           "id": 4,
-          "isModel": true,
+          "isModel": false,
           "modelId": 335
         },
         {
           "name": "weapon.baseball_bat",
           "id": 5,
-          "isModel": true,
+          "isModel": false,
           "modelId": 336
         },
         {
           "name": "weapon.shovel",
           "id": 6,
-          "isModel": true,
+          "isModel": false,
           "modelId": 337
         },
         {
           "name": "weapon.pool_cue",
           "id": 7,
-          "isModel": true,
+          "isModel": false,
           "modelId": 338
         },
         {
           "name": "weapon.katana",
           "id": 8,
-          "isModel": true,
+          "isModel": false,
           "modelId": 339
         },
         {
           "name": "weapon.chainsaw",
           "id": 9,
-          "isModel": true,
+          "isModel": false,
           "modelId": 341
         },
         {
           "name": "weapon.dildo_purple",
           "id": 10,
-          "isModel": true,
+          "isModel": false,
           "modelId": 321
         },
         {
           "name": "weapon.dildo_white",
           "id": 11,
-          "isModel": true,
+          "isModel": false,
           "modelId": 322
         },
         {
           "name": "weapon.vibe_white",
           "id": 12,
-          "isModel": true,
+          "isModel": false,
           "modelId": 323
         },
         {
           "name": "weapon.vibe_silver",
           "id": 13,
-          "isModel": true,
+          "isModel": false,
           "modelId": 324
         },
         {
           "name": "weapon.flowers",
           "id": 14,
-          "isModel": true,
+          "isModel": false,
           "modelId": 325
         },
         {
           "name": "weapon.cane",
           "id": 15,
-          "isModel": true,
+          "isModel": false,
           "modelId": 326
         }
       ]
@@ -106,19 +106,19 @@
         {
           "name": "weapon.grenade",
           "id": 16,
-          "isModel": true,
+          "isModel": false,
           "modelId": 342
         },
         {
           "name": "weapon.teargas",
           "id": 17,
-          "isModel": true,
+          "isModel": false,
           "modelId": 343
         },
         {
           "name": "weapon.molotov",
           "id": 18,
-          "isModel": true,
+          "isModel": false,
           "modelId": 344
         }
       ]
@@ -129,19 +129,19 @@
         {
           "name": "weapon.pistol_9mm",
           "id": 22,
-          "isModel": true,
+          "isModel": false,
           "modelId": 346
         },
         {
           "name": "weapon.pistol_silenced",
           "id": 23,
-          "isModel": true,
+          "isModel": false,
           "modelId": 347
         },
         {
           "name": "weapon.desert_eagle",
           "id": 24,
-          "isModel": true,
+          "isModel": false,
           "modelId": 348
         }
       ]
@@ -152,19 +152,19 @@
         {
           "name": "weapon.shotgun_normal",
           "id": 25,
-          "isModel": true,
+          "isModel": false,
           "modelId": 349
         },
         {
           "name": "weapon.shotgun_sawnoff",
           "id": 26,
-          "isModel": true,
+          "isModel": false,
           "modelId": 350
         },
         {
           "name": "weapon.shotgun_combat",
           "id": 27,
-          "isModel": true,
+          "isModel": false,
           "modelId": 351
         }
       ]
@@ -175,19 +175,19 @@
         {
           "name": "weapon.uzi",
           "id": 28,
-          "isModel": true,
+          "isModel": false,
           "modelId": 352
         },
         {
           "name": "weapon.mp5",
           "id": 29,
-          "isModel": true,
+          "isModel": false,
           "modelId": 353
         },
         {
           "name": "weapon.tec9",
           "id": 32,
-          "isModel": true,
+          "isModel": false,
           "modelId": 372
         }
       ]
@@ -198,25 +198,25 @@
         {
           "name": "weapon.ak47",
           "id": 30,
-          "isModel": true,
+          "isModel": false,
           "modelId": 355
         },
         {
           "name": "weapon.m4",
           "id": 31,
-          "isModel": true,
+          "isModel": false,
           "modelId": 356
         },
         {
           "name": "weapon.rifle_country",
           "id": 33,
-          "isModel": true,
+          "isModel": false,
           "modelId": 357
         },
         {
           "name": "weapon.sniper",
           "id": 34,
-          "isModel": true,
+          "isModel": false,
           "modelId": 358
         }
       ]
@@ -227,25 +227,25 @@
         {
           "name": "weapon.rocket",
           "id": 35,
-          "isModel": true,
+          "isModel": false,
           "modelId": 359
         },
         {
           "name": "weapon.rocket_hs",
           "id": 36,
-          "isModel": true,
+          "isModel": false,
           "modelId": 360
         },
         {
           "name": "weapon.flamethrower",
           "id": 37,
-          "isModel": true,
+          "isModel": false,
           "modelId": 361
         },
         {
           "name": "weapon.minigun",
           "id": 38,
-          "isModel": true,
+          "isModel": false,
           "modelId": 362
         }
       ]
@@ -256,50 +256,65 @@
         {
           "name": "weapon.bomb",
           "id": 39,
-          "isModel": true,
+          "isModel": false,
           "modelId": 363
         },
         {
           "name": "weapon.detector",
           "id": 40,
-          "isModel": true,
+          "isModel": false,
           "modelId": 364
         },
         {
           "name": "weapon.spraycan",
           "id": 41,
-          "isModel": true,
+          "isModel": false,
           "modelId": 365
         },
         {
           "name": "weapon.extinguisher",
           "id": 42,
-          "isModel": true,
+          "isModel": false,
           "modelId": 366
         },
         {
           "name": "weapon.camera",
           "id": 43,
-          "isModel": true,
+          "isModel": false,
           "modelId": 367
         },
         {
           "name": "weapon.nightvision",
           "id": 44,
-          "isModel": true,
+          "isModel": false,
           "modelId": 368
         },
         {
           "name": "weapon.infrared",
           "id": 45,
-          "isModel": true,
+          "isModel": false,
           "modelId": 369
         },
         {
           "name": "weapon.parachute",
           "id": 46,
-          "isModel": true,
+          "isModel": false,
           "modelId": 371
+        }
+      ]
+    },
+    {
+      "category": "special",
+      "entries": [
+        {
+          "name": "weapon.cellphone",
+          "id": -2,
+          "isModel": false
+        },
+        {
+          "name": "weapon.jetpack",
+          "id": -1,
+          "isModel": false
         }
       ]
     }

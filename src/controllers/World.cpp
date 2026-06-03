@@ -6,6 +6,12 @@
 #include "CWeather.h"
 #include <string>
 
+#ifdef GTASA
+#include "freecam_sa.h"
+#include "topdowncam_sa.h"
+#include "randomcheats_sa.h"
+#endif
+
 namespace {
     short lockedWeatherType = 0;
     bool wasLockingWeather = false;
@@ -87,6 +93,18 @@ namespace Controllers::World {
         } else {
             hasLockedTime = false;
         }
+
+#ifdef GTASA
+        if (MenuState::FreecamEnabled) {
+            Freecam.Process();
+        }
+        if (MenuState::TopDownCamEnabled) {
+            TopDownCam.Process();
+        }
+        if (MenuState::RandomCheatsEnabled) {
+            RandomCheats.Process();
+        }
+#endif
     }
 
     void SetTime(int hour, int minute) {
@@ -202,5 +220,32 @@ namespace Controllers::World {
         MenuState::ShowNotice(I18n::T(ok ? "world.pickupRemoved" : "world.noPickupToRemove"), 2.0);
         Log::Info(std::string("删除最近 pickup：") + (ok ? "成功" : "无可删除对象"));
         return ok;
+    }
+
+    void EnableFreecam() {
+#ifdef GTASA
+        Freecam.Enable();
+        Log::Info("Freecam enabled");
+#endif
+    }
+
+    void DisableFreecam() {
+#ifdef GTASA
+        Freecam.Disable();
+        Log::Info("Freecam disabled");
+#endif
+    }
+
+    void DisableTopDownCam() {
+#ifdef GTASA
+        TopDownCam.Disable();
+        Log::Info("TopDownCam disabled");
+#endif
+    }
+
+    void DrawRandomCheatsList() {
+#ifdef GTASA
+        RandomCheats.DrawList();
+#endif
     }
 }

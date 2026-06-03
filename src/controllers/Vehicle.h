@@ -10,6 +10,8 @@ namespace Controllers::Vehicle {
     void Start();
     void Stop();
     void ApplyAppearance();
+    void ApplyCarcols();
+    void ResetColors();
     void OpenDoor();
     void PopDoor();
     void WarpToSeat();

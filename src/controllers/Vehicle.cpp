@@ -12,6 +12,14 @@
 #include <windows.h>
 #include <string>
 
+#ifdef GTASA
+#include "CRadar.h"
+#include "CMenuManager.h"
+#include "CModelInfo.h"
+#include "neon_sa.h"
+#include "paint_sa.h"
+#endif
+
 namespace {
     CVehicle* savedVehicle = nullptr;
     CVehicle* effectVehicle = nullptr;
@@ -286,7 +294,54 @@ namespace Controllers::Vehicle {
         }
 
         GameLogic::SetVehicleSpeedLock(vehicle, MenuState::VehicleSpeedLock, MenuState::VehicleSpeed);
+
+#ifdef GTASA
+        if (MenuState::VehicleNeon) {
+            Neon.Install(vehicle, MenuState::VehicleNeonColorR, MenuState::VehicleNeonColorG, MenuState::VehicleNeonColorB);
+        } else {
+            Neon.Remove(vehicle);
+        }
+
+        if (MenuState::VehicleAutoDrive) {
+            int hVeh = CPools::GetVehicleRef(vehicle);
+            int model = vehicle->m_nModelIndex;
+            float targetX = 0.0f, targetY = 0.0f, targetZ = 0.0f;
+            bool hasTarget = false;
+
+            // Target from waypoint
+            tRadarTrace targetBlip = CRadar::ms_RadarTrace[LOWORD(FrontEndMenuManager.m_nTargetBlipIndex)];
+            if (targetBlip.m_nRadarSprite == RADAR_SPRITE_WAYPOINT) {
+                targetX = targetBlip.m_vecPos.x;
+                targetY = targetBlip.m_vecPos.y;
+                targetZ = targetBlip.m_vecPos.z;
+                hasTarget = true;
+            }
+
+            if (hasTarget) {
+                if (CModelInfo::IsBoatModel(model)) {
+                    plugin::Command<plugin::Commands::BOAT_GOTO_COORDS>(hVeh, targetX, targetY, targetZ);
+                } else if (CModelInfo::IsPlaneModel(model)) {
+                    CVector p = vehicle->GetPosition();
+                    p.z = 300.0f;
+                    vehicle->SetPosn(p);
+                    plugin::Command<plugin::Commands::PLANE_GOTO_COORDS>(hVeh, targetX, targetY, 300.0f, 30, 200);
+                } else if (CModelInfo::IsHeliModel(model)) {
+                    CVector p = vehicle->GetPosition();
+                    p.z = 300.0f;
+                    vehicle->SetPosn(p);
+                    plugin::Command<plugin::Commands::HELI_GOTO_COORDS>(hVeh, targetX, targetY, 300.0f, 30, 200);
+                } else if (!CModelInfo::IsTrainModel(model)) {
+                    plugin::Command<plugin::Commands::CAR_GOTO_COORDINATES>(hVeh, targetX, targetY, targetZ);
+                }
+            } else {
+                plugin::Command<plugin::Commands::WARP_CHAR_INTO_CAR>(CPools::GetPedRef(FindPlayerPed()), hVeh);
+                MenuState::VehicleAutoDrive = false; // Turn off if no target
+            }
+        }
+#else
         GameLogic::ProcessAutoDrive(vehicle, MenuState::VehicleAutoDrive, MenuState::VehicleAutoDriveSpeed);
+#endif
+
         ProcessVehicleEffects(vehicle);
     }
 
@@ -309,6 +364,24 @@ namespace Controllers::Vehicle {
         options.paintjob = MenuState::VehiclePaintjob;
         options.modId = MenuState::VehicleModId;
         GameLogic::ApplyVehicleAppearance(GetCurrentVehicle(), options);
+    }
+
+    void ApplyCarcols() {
+#ifdef GTASA
+        CVehicle* veh = GetCurrentVehicle();
+        if (veh) {
+            Paint.SetCarcols(veh, MenuState::VehicleColorPrimary, MenuState::VehicleColorSecondary, MenuState::VehicleColorTertiary, MenuState::VehicleColorQuaternary, true);
+        }
+#endif
+    }
+
+    void ResetColors() {
+#ifdef GTASA
+        CVehicle* veh = GetCurrentVehicle();
+        if (veh) {
+            Paint.ResetColor(veh);
+        }
+#endif
     }
 
     void OpenDoor() {

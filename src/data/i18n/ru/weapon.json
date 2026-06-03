@@ -25,9 +25,11 @@
   "weapon.typeId": "ID типа оружия",
   "weapon.modelId": "ID модели оружия",
   "weapon.getById": "Получить по ID",
-  "weapon.cyclerTitle": "Генератор оружия",
+  "weapon.cyclerTitle": "Выдать по ID",
   "weapon.cyclerGive": "Выдать",
   "weapon.cyclerEnable": "Колёсико: выдать всё",
+  "weapon.safeMode": "Безопасный диапазон ID",
+  "weapon.invalidId": "Недопустимый ID оружия",
   "weapon.weaponGiven": "Оружие добавлено",
   "weapon.allGiven": "Всё оружие добавлено",
   "weapon.weaponsCleared": "Оружие очищено",
@@ -42,6 +44,7 @@
   "weapon.category.sniper": "Снайперские винтовки",
   "weapon.category.heavy": "Тяжёлое оружие",
   "weapon.category.tools": "Инструменты",
+  "weapon.category.special": "Особое",
   "weapon.fist": "Кулаки",
   "weapon.brass_knuckle": "Кастет",
   "weapon.golf_club": "Клюшка для гольфа",
@@ -99,5 +102,7 @@
   "weapon.parachute": "Парашют",
   "weapon.ruger": "Ruger",
   "weapon.detonator_grenade": "Дистанционная граната",
+  "weapon.cellphone": "Телефон",
+  "weapon.jetpack": "Реактивный ранец",
   "weapon.helicannon": "Вертолётная пушка"
 }

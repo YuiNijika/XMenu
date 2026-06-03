@@ -3,7 +3,7 @@
  * XMenu
  * 作者：鼠子(YuiNijika)
  * 测试：枫林、狂风晨、IIScar、Happy
- * 版本：v0.0.1-rc
+ * 版本：v0.0.2-alpha1
  * 网站：https://gtamodx.com/mods/xmenu
  * GitHub：https://github.com/YuiNijika/XMenu
  * QQ群：https://gtamodx.com/qqun
@@ -24,10 +24,15 @@
 #include "utils/I18n.h"
 #include "utils/UpdateChecker.h"
 #include "utils/AppConfig.h"
+#include "utils/rpc.h"
 #include "CHud.h"
 
+#ifdef GTASA
+#include "fla/Main.h"
+#endif
+
 extern const bool XMENU_DEBUG_MODE = false;
-const char* XMENU_VERSION = "v0.0.1-rc";
+const char* XMENU_VERSION = "v0.0.2-alpha1";
 const char* XMENU_AUTHOR = "鼠子(YuiNijika)";
 const char* XMENU_AUTHOR_TEST = "枫林、狂风晨、IIScar、Happy";
 const char* XMENU_URL = "https://gtamodx.com/mods/xmenu";
@@ -58,9 +63,16 @@ namespace {
             Log::Info("游戏初始化事件触发，开始初始化功能模块");
             I18n::Init();
             AppConfig::Init();
+
+#ifdef GTASA
+            CFastman92limitAdjuster::Init();
+            Log::Info("FLA 初始化完成");
+#endif
+
             Resources::InitData();  // 初始化游戏数据
             UpdateChecker::Start(XMENU_GITHUB_API, XMENU_VERSION);
             GameLogic::Init();
+            RPC::Init();
             const bool hookReady = D3DHook::Init([]() {
                 Menu::Draw();
             });
@@ -79,6 +91,7 @@ namespace {
         plugin::Events::processScriptsEvent += []() {
             GameLogic::Process();
             Menu::Process();
+            RPC::Process();
             D3DHook::MaintainInputState();
 
             if (!xMenuActive) {
@@ -106,7 +119,7 @@ namespace {
 
             CPad* pad = CPad::GetPad(0);
             if (pad) {
-                pad->DisablePlayerControls = false;
+                pad->DisablePlayerControls = D3DHook::IsInitialized() && D3DHook::IsMenuVisible();
             }
         };
     }
@@ -124,6 +137,7 @@ BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved) {
             Log::Error("启动校验失败, XMenu 已停止初始化");
         }
     } else if (nReason == DLL_PROCESS_DETACH) {
+        RPC::Shutdown();
         D3DHook::Shutdown();
         Log::Shutdown();
     }

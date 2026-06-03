@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 namespace Controllers::Scene {
     void Process();
@@ -9,4 +10,7 @@ namespace Controllers::Scene {
     void StopCutscene();
     bool IsCutsceneRunning();
     const char* GetMissionStatus();
+
+    void RemoveAllParticles();
+    void RemoveLatestParticle();
 }

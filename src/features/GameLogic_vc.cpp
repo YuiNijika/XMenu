@@ -423,9 +423,6 @@ void SetVehicleForwardSpeed(CVehicle* vehicle, float speed) {
     CPlayerPed* player = FindPlayerPed();
     if (!player || player->m_pVehicle != vehicle) return;
 
-    CPad* pad = CPad::GetPad(0);
-    if (!pad || pad->GetAccelerate() <= 0) return;
-
     const CVector forward = vehicle->GetForward();
     const float velocity = speed / 50.0f;
     vehicle->m_vecMoveSpeed = CVector(forward.x * velocity, forward.y * velocity, forward.z * velocity);
@@ -433,6 +430,10 @@ void SetVehicleForwardSpeed(CVehicle* vehicle, float speed) {
 
 void SetVehicleSpeedLock(CVehicle* vehicle, bool enable, float speed) {
     if (!enable || !vehicle) return;
+    
+    CPad* pad = CPad::GetPad(0);
+    if (!pad || pad->GetAccelerate() <= 0) return;
+
     SetVehicleForwardSpeed(vehicle, speed);
 }
 

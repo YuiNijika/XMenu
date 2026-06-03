@@ -381,9 +381,6 @@ void SetVehicleForwardSpeed(CVehicle* vehicle, float speed) {
     CPlayerPed* player = FindPlayerPed();
     if (!player || player->m_pVehicle != vehicle) return;
 
-    CPad* pad = CPad::GetPad(0);
-    if (!pad || pad->GetAccelerate() <= 0) return;
-
     const CVector forward = vehicle->GetForward();
     const float velocity = speed / 50.0f;
     vehicle->m_vecMoveSpeed = CVector(forward.x * velocity, forward.y * velocity, forward.z * velocity);
@@ -391,6 +388,10 @@ void SetVehicleForwardSpeed(CVehicle* vehicle, float speed) {
 
 void SetVehicleSpeedLock(CVehicle* vehicle, bool enable, float speed) {
     if (!enable || !vehicle) return;
+    
+    CPad* pad = CPad::GetPad(0);
+    if (!pad || pad->GetAccelerate() <= 0) return;
+
     SetVehicleForwardSpeed(vehicle, speed);
 }
 
@@ -1097,9 +1098,10 @@ void GiveWeaponModel(CPlayerPed* player, unsigned int weaponModel, unsigned int 
 
     // Find weapon type from model ID (SA lacks GetWeaponTypeFromModel)
     eWeaponType weaponType = WEAPONTYPE_UNARMED;
-    for (int t = WEAPONTYPE_UNARMED; t < WEAPONINFO_NUM_WEAPONS; ++t) {
-        CWeaponInfo* info = CWeaponInfo::GetWeaponInfo(static_cast<eWeaponType>(t), 0);
-        if (info && info->m_nModelId == model) {
+    for (int t = 0; t <= 46; ++t) {
+        int checkModel = -1;
+        plugin::Command<plugin::Commands::GET_WEAPONTYPE_MODEL>(t, &checkModel);
+        if (checkModel == model) {
             weaponType = static_cast<eWeaponType>(t);
             break;
         }

@@ -11,7 +11,7 @@
         {
           "name": "weapon.baseball_bat",
           "id": 1,
-          "isModel": true,
+          "isModel": false,
           "modelId": 172
         }
       ]
@@ -22,13 +22,13 @@
         {
           "name": "weapon.grenade",
           "id": 11,
-          "isModel": true,
+          "isModel": false,
           "modelId": 170
         },
         {
           "name": "weapon.molotov",
           "id": 10,
-          "isModel": true,
+          "isModel": false,
           "modelId": 174
         }
       ]
@@ -39,7 +39,7 @@
         {
           "name": "weapon.colt45",
           "id": 2,
-          "isModel": true,
+          "isModel": false,
           "modelId": 173
         }
       ]
@@ -50,7 +50,7 @@
         {
           "name": "weapon.uzi",
           "id": 3,
-          "isModel": true,
+          "isModel": false,
           "modelId": 178
         }
       ]
@@ -61,7 +61,7 @@
         {
           "name": "weapon.shotgun_normal",
           "id": 4,
-          "isModel": true,
+          "isModel": false,
           "modelId": 176
         }
       ]
@@ -72,13 +72,13 @@
         {
           "name": "weapon.ak47",
           "id": 5,
-          "isModel": true,
+          "isModel": false,
           "modelId": 171
         },
         {
           "name": "weapon.m16",
           "id": 6,
-          "isModel": true,
+          "isModel": false,
           "modelId": 180
         }
       ]
@@ -89,7 +89,7 @@
         {
           "name": "weapon.sniper",
           "id": 7,
-          "isModel": true,
+          "isModel": false,
           "modelId": 177
         }
       ]
@@ -100,19 +100,19 @@
         {
           "name": "weapon.rocket",
           "id": 8,
-          "isModel": true,
+          "isModel": false,
           "modelId": 175
         },
         {
           "name": "weapon.flamethrower",
           "id": 9,
-          "isModel": true,
+          "isModel": false,
           "modelId": 181
         },
         {
           "name": "weapon.bomb",
           "id": 12,
-          "isModel": true,
+          "isModel": false,
           "modelId": 182
         },
         {

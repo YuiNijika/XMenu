@@ -150,5 +150,47 @@ namespace Pages::World {
                 Controllers::World::SetGameSpeed(1.0f);
             }
         }
+
+#ifdef GTASA
+        if (ImGui::CollapsingHeader(T("world.freecam"), ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::Checkbox(T("world.enableFreecam"), &MenuState::FreecamEnabled)) {
+                if (MenuState::FreecamEnabled) {
+                    Controllers::World::EnableFreecam();
+                } else {
+                    Controllers::World::DisableFreecam();
+                }
+            }
+
+            if (MenuState::FreecamEnabled) {
+                ImGui::TextWrapped("%s", T("world.freecamControls"));
+                ImGui::SliderFloat(T("world.freecamFov"), &MenuState::FreecamFov, 10.0f, 115.0f);
+                ImGui::SliderInt(T("world.freecamSpeedMul"), &MenuState::FreecamSpeedMul, 1, 10);
+            }
+        }
+
+        if (ImGui::CollapsingHeader(T("world.topDownCam"), ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::Checkbox(T("world.enableTopDownCam"), &MenuState::TopDownCamEnabled)) {
+                if (!MenuState::TopDownCamEnabled) {
+                    Controllers::World::DisableTopDownCam();
+                }
+            }
+            if (MenuState::TopDownCamEnabled) {
+                ImGui::SliderInt(T("world.topDownCamZoom"), &MenuState::TopDownCamZoom, 10, 100);
+            }
+        }
+
+        if (ImGui::CollapsingHeader(T("world.randomCheats"), ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Checkbox(T("world.enableRandomCheats"), &MenuState::RandomCheatsEnabled);
+            if (MenuState::RandomCheatsEnabled) {
+                ImGui::Checkbox(T("world.showRandomCheatsProgress"), &MenuState::RandomCheatsProgressBar);
+                ImGui::SliderInt(T("world.randomCheatsInterval"), &MenuState::RandomCheatsInterval, 1, 60);
+                
+                if (ImGui::TreeNode(T("world.randomCheatsList"))) {
+                    Controllers::World::DrawRandomCheatsList();
+                    ImGui::TreePop();
+                }
+            }
+        }
+#endif
     }
 }

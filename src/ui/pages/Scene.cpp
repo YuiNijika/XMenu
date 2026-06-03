@@ -177,7 +177,9 @@ namespace {
     }
 
     void ApplyCutscene(const NamedValueEntry& entry) {
-        std::snprintf(MenuState::SceneCutsceneName, sizeof(MenuState::SceneCutsceneName), "%s", entry.value.c_str());
+        std::snprintf(MenuState::SceneCutsceneName, sizeof(MenuState::SceneCutsceneName), "%s", entry.name.c_str());
+        // Cheat-Menu uses 'name' for cutscene id and 'interior' (which maps to 'value' here via LoadNamedValues) for interior ID
+        std::snprintf(MenuState::SceneCutsceneInterior, sizeof(MenuState::SceneCutsceneInterior), "%s", entry.value.c_str());
         Controllers::Scene::StartCutscene();
     }
 }
@@ -213,6 +215,14 @@ namespace Pages::Scene {
                 if (UI::Button(T("scene.spawnParticle"))) {
                     Controllers::Scene::SpawnParticleAtPlayer();
                 }
+                ImGui::SameLine();
+                if (UI::Button("Remove Last")) {
+                    Controllers::Scene::RemoveLatestParticle();
+                }
+                ImGui::SameLine();
+                if (UI::Button("Remove All")) {
+                    Controllers::Scene::RemoveAllParticles();
+                }
                 UI::SpacingSeparator();
                 ImGui::TextWrapped("%s", T("scene.particleListHint"));
                 DrawNamedValueList(particles, "scene.noListData", "particle", ApplyParticle);
@@ -223,6 +233,7 @@ namespace Pages::Scene {
                 static LiveList<NamedValueEntry> cutscenes;
                 LoadNamedValues(cutscenes, "cutscenes.json", "cutscenes", "interior");
                 ImGui::InputText(T("scene.cutsceneName"), MenuState::SceneCutsceneName, sizeof(MenuState::SceneCutsceneName));
+                ImGui::InputText("Interior ID", MenuState::SceneCutsceneInterior, sizeof(MenuState::SceneCutsceneInterior));
                 if (UI::Button(T("scene.startCutscene"), 2)) {
                     Controllers::Scene::StartCutscene();
                 }
