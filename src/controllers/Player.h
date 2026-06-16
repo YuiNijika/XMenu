@@ -1,7 +1,10 @@
 #pragma once
 #include "game/Types.h"
 
+class CPlayerPed;
+
 namespace Controllers::Player {
+    CPlayerPed* GetPlayer();
     void Process();
     void Heal();
     void GiveArmour();
@@ -30,6 +33,7 @@ namespace Controllers::Player {
     bool GetFreeJail();
     void SetFreeJail(bool enable);
     bool SetSkin(unsigned int modelId);
+    bool SetCustomSkin(const char* name);
     bool ApplyClothes(int textureId, int modelId, int bodyPart);
     bool SetStat(int statId, float value);
 }

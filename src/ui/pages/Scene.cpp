@@ -6,6 +6,7 @@
 #include "utils/I18n.h"
 #include "utils/JsonLoader.h"
 #include "imgui/imgui.h"
+#include "resources/ResourceData.h"
 #include <cstdio>
 #include <filesystem>
 #include <string>
@@ -115,6 +116,9 @@ namespace {
         }
     }
 
+    void DrawMissionList() {
+        ImGui::TextDisabled("%s", T("scene.noMissions"));
+    }
     void DrawAnimationList() {
         static LiveList<AnimationEntry> animations;
         LoadAnimations(animations);
@@ -191,7 +195,7 @@ namespace Pages::Scene {
 
     void Draw() {
         if (UI::BeginTabBar("SceneTabs")) {
-            if (ImGui::BeginTabItem(T("scene.animation"))) {
+            if (UI::BeginTab("scene.animation", T("scene.animation"))) {
                 ImGui::InputText(T("scene.animGroup"), MenuState::SceneAnimGroup, sizeof(MenuState::SceneAnimGroup));
                 ImGui::InputText(T("scene.animName"), MenuState::SceneAnimName, sizeof(MenuState::SceneAnimName));
                 ImGui::Checkbox(T("scene.loop"), &MenuState::SceneAnimLoop);
@@ -205,10 +209,10 @@ namespace Pages::Scene {
                 UI::SpacingSeparator();
                 ImGui::TextWrapped("%s", T("scene.animationListHint"));
                 DrawAnimationList();
-                ImGui::EndTabItem();
+                UI::EndTab();
             }
 
-            if (ImGui::BeginTabItem(T("scene.particle"))) {
+            if (UI::BeginTab("scene.particle", T("scene.particle"))) {
                 static LiveList<NamedValueEntry> particles;
                 LoadNamedValues(particles, "particles.json", "particles", "effect");
                 ImGui::InputText(T("scene.particleName"), MenuState::SceneParticleName, sizeof(MenuState::SceneParticleName));
@@ -216,24 +220,24 @@ namespace Pages::Scene {
                     Controllers::Scene::SpawnParticleAtPlayer();
                 }
                 ImGui::SameLine();
-                if (UI::Button("Remove Last")) {
+                if (UI::Button(T("scene.removeLastParticle"))) {
                     Controllers::Scene::RemoveLatestParticle();
                 }
                 ImGui::SameLine();
-                if (UI::Button("Remove All")) {
+                if (UI::Button(T("scene.removeAllParticles"))) {
                     Controllers::Scene::RemoveAllParticles();
                 }
                 UI::SpacingSeparator();
                 ImGui::TextWrapped("%s", T("scene.particleListHint"));
                 DrawNamedValueList(particles, "scene.noListData", "particle", ApplyParticle);
-                ImGui::EndTabItem();
+                UI::EndTab();
             }
 
-            if (ImGui::BeginTabItem(T("scene.cutscene"))) {
+            if (UI::BeginTab("scene.cutscene", T("scene.cutscene"))) {
                 static LiveList<NamedValueEntry> cutscenes;
                 LoadNamedValues(cutscenes, "cutscenes.json", "cutscenes", "interior");
                 ImGui::InputText(T("scene.cutsceneName"), MenuState::SceneCutsceneName, sizeof(MenuState::SceneCutsceneName));
-                ImGui::InputText("Interior ID", MenuState::SceneCutsceneInterior, sizeof(MenuState::SceneCutsceneInterior));
+                ImGui::InputText(T("scene.interiorId"), MenuState::SceneCutsceneInterior, sizeof(MenuState::SceneCutsceneInterior));
                 if (UI::Button(T("scene.startCutscene"), 2)) {
                     Controllers::Scene::StartCutscene();
                 }
@@ -245,14 +249,22 @@ namespace Pages::Scene {
                 UI::SpacingSeparator();
                 ImGui::TextWrapped("%s", T("scene.cutsceneListHint"));
                 DrawNamedValueList(cutscenes, "scene.noListData", "cutscene", ApplyCutscene);
-                ImGui::EndTabItem();
+                UI::EndTab();
             }
 
-            if (ImGui::BeginTabItem(T("scene.mission"))) {
+            if (UI::BeginTab("scene.missions", T("scene.missions"))) {
                 ImGui::TextWrapped("%s", Controllers::Scene::GetMissionStatus());
-                ImGui::EndTabItem();
+                ImGui::Spacing();
+                
+                if (UI::Button(T("scene.failMission"), 1)) {
+                    Controllers::Scene::FailMission();
+                }
+
+                UI::SpacingSeparator();
+                DrawMissionList();
+                UI::EndTab();
             }
-            ImGui::EndTabBar();
+            UI::EndTabBar();
         }
     }
 }

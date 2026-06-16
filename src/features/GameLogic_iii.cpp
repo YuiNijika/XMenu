@@ -16,6 +16,7 @@
 #include "CClock.h"
 #include "CHud.h"
 #include "CWeather.h"
+#include "CTheScripts.h"
 #include "rw/skeleton.h"
 #include <cmath>
 #include <cstdint>
@@ -617,6 +618,10 @@ bool ApplyPlayerClothes(int textureId, int modelId, int bodyPart) {
     return false;
 }
 
+bool SetPlayerCustomSkin(const char* name) {
+    return false;
+}
+
 bool SetPlayerStat(int statId, float value) {
     Log::Warn("III 不支持 SA stats 接口，已跳过 stat " + std::to_string(statId));
     return false;
@@ -784,10 +789,20 @@ void ApplyPedOptions(CPed* ped, const PedSpawnOptions& options) {
     plugin::Command<plugin::Commands::SET_CHAR_HEALTH>(hped, static_cast<int>(options.health));
     plugin::Command<plugin::Commands::SET_CHAR_ARMOUR>(hped, static_cast<int>(options.armour));
     plugin::Command<plugin::Commands::FREEZE_CHAR_POSITION>(hped, options.freeze);
+    plugin::Command<plugin::Commands::SET_CHAR_PROOFS>(hped, false, false, false, false, false);
     if (options.weaponModel > 0) {
         plugin::Command<plugin::Commands::GIVE_WEAPON_TO_CHAR>(hped, options.weaponModel, 9999);
     }
 }
+
+void SetElvisEverywhere(bool enable) { }
+void SetEveryoneArmed(bool enable) { plugin::patch::Set<bool>(0x95CCF6, enable, false); }
+void SetPedsMayhem(bool enable) { if(enable) plugin::Call<0x4911C0>(); }
+void SetPedsAtkRocket(bool enable) { }
+void SetPedsRiot(bool enable) { if(enable) plugin::Call<0x491270>(); }
+void SetSlutMagnet(bool enable) { }
+void SetGangsControl(bool enable) { }
+void SetGangsEverywhere(bool enable) { }
 
 bool PlayPlayerAnimation(const char*, const char*, bool) {
     Log::Warn("III 暂不支持动画页播放，已安全降级");
@@ -819,7 +834,17 @@ bool IsCutsceneRunning() {
 }
 
 const char* GetMissionStatus() {
-    return "III mission viewer unavailable";
+    static char status[160];
+    std::snprintf(status, sizeof(status), "commands=0 missionFlag=0 activeScripts=%s", CTheScripts::pActiveScripts ? "yes" : "no");
+    return status;
+}
+
+void StartMission(int missionId) {
+    Log::Warn("III 暂不支持加载任务");
+}
+
+void FailMission() {
+    Log::Warn("III 暂不支持强制失败任务");
 }
 
 void DisplayHud(bool enable) {
@@ -1053,6 +1078,12 @@ void SetFreePayNSpray(bool enable) {
 
 void SetFasterClock(bool enable) {
     plugin::patch::Set<bool>(0x95CDBB, enable, false);
+}
+
+void ProcessSolidWater(CPlayerPed* player, bool enable) {
+}
+
+void SetNoWaterPhysics(bool enable) {
 }
 
 void SetFreezeTime(bool enable) {

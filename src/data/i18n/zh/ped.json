@@ -13,6 +13,7 @@
   "ped.flies": "有苍蝇",
   "ped.spawnNear": "生成到身边",
   "ped.spawnMarker": "生成到标记点",
+  "ped.spawnPed": "生成行人",
   "ped.deleteLast": "删除最后生成",
   "ped.lastSpawnedYes": "已有已生成行人",
   "ped.lastSpawnedNo": "还没有生成行人",
@@ -27,5 +28,14 @@
   "ped.category.cop": "警察",
   "ped.category.beach": "海滩",
   "ped.category.driver": "司机",
-  "ped.category.worker": "工作人员"
+  "ped.category.worker": "工作人员",
+  "ped.bigHeadMode": "大头模式",
+  "ped.elvisEverywhere": "满街猫王",
+  "ped.everyoneArmed": "全员武装",
+  "ped.pedsMayhem": "行人大乱斗",
+  "ped.pedsAtkRocket": "行人用火箭筒攻击",
+  "ped.pedsRiot": "暴乱模式",
+  "ped.slutMagnet": "异性相吸",
+  "ped.gangsControl": "帮派控制街道",
+  "ped.gangsEverywhere": "满街都是帮派"
 }

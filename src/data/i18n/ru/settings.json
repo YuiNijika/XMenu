@@ -36,8 +36,9 @@
   "settings.action": "Действие",
   "settings.hotkey": "Клавиша",
   "settings.apply": "Применить",
-  "settings.setHotkey": "Set",
-  "settings.listeningHotkey": "Ожидание клавиши...",
+  "settings.setHotkey": "Установить",
+  "settings.capture": "Захват",
+  "settings.listeningHotkey": "Ожидание нажатия...",
   "settings.hotkeyCaptureTitle": "Настроить горячую клавишу действия",
   "settings.hotkeyCaptureAction": "Действие: %s",
   "settings.hotkeyCaptureCurrent": "Текущий выбор: %s",
@@ -73,5 +74,14 @@
   "settings.persistentState.apply": "Применить",
   "settings.persistentState.cancel": "Отмена",
   "settings.persistentState.clear": "Очистить",
-  "settings.persistentState.restoreCount": "Будет восстановлено при следующем запуске: %d"
+  "settings.persistentState.restoreCount": "Будет восстановлено при следующем запуске: %d",
+  "settings.guiStyle": "Стиль GUI",
+  "settings.theme.default": "Стандартный синий",
+  "settings.theme.darkDeep": "Глубокий тёмный",
+  "settings.theme.classic": "Классический золотой",
+  "settings.theme.light": "Светлая",
+  "settings.interactionMode": "Режим взаимодействия",
+  "settings.interaction.mouse": "Мышь",
+  "settings.interaction.keyboardMouse": "Клавиатура + Мышь",
+  "settings.useListMenu": "Использовать стиль меню в виде списка"
 }

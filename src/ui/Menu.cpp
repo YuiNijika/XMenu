@@ -15,7 +15,9 @@
 #include "resources/ResourceData.h"
 #include "ui/Widget.h"
 #include "ui/MenuState.h"
+#include "ui/GuiTheme.h"
 #include "imgui/imgui.h"
+#include "imgui/imgui_internal.h"
 #include "ui/pages/Player.h"
 #include "ui/pages/Vehicle.h"
 #include "ui/pages/Teleport.h"
@@ -58,17 +60,39 @@ namespace {
         About
     };
 
+}
+
+namespace Menu {
     struct NavItem {
         Page page;
         const char* textKey;
         const char* id;
     };
-
+    
+    bool menuVisible = false;
     Page activePage = Page::Player;
+    std::vector<Page> pageStack;
+
+    void PushPage(Page page) {
+        pageStack.push_back(activePage);
+        activePage = page;
+        UI::ResetListIndex();
+    }
+
+    void PopPage() {
+        if (!pageStack.empty()) {
+            activePage = pageStack.back();
+            pageStack.pop_back();
+            UI::ResetListIndex();
+        }
+    }
+
+
     int configTransferScope = 1;
     char configImportText[65536] = "";
     char configExportText[65536] = "";
     char configStatus[256] = "";
+
     struct PersistentRestoreDialogState {
         std::vector<AppConfig::PersistentFeatureState> features;
         std::vector<bool> selected;
@@ -78,9 +102,9 @@ namespace {
     PersistentRestoreDialogState persistentRestoreDialog;
     bool openConfigImportPopup = false;
     bool openConfigExportPopup = false;
-    constexpr const char* PersistentStatePopupId = "PersistentStatePopup";
-    constexpr const char* ConfigImportPopupId = "ConfigImportTextPopup";
-    constexpr const char* ConfigExportPopupId = "ConfigExportTextPopup";
+    const char* PersistentStatePopupId = "PersistentStatePopup";
+    const char* ConfigImportPopupId = "ConfigImportTextPopup";
+    const char* ConfigExportPopupId = "ConfigExportTextPopup";
 
     const NavItem navItems[] = {
         {Page::Player, "tab.player", "player"},
@@ -117,6 +141,7 @@ namespace {
     }
 
     void DrawSettings();
+    void DrawGuiSettings();
     void DrawRuntimeSettings();
     void DrawOverlaySettings();
     void DrawPersistentStateSettings();
@@ -246,7 +271,9 @@ namespace {
             case Page::About: titleKey = "tab.about"; break;
         }
 
-        DrawPageHeader(titleKey);
+        if (!MenuState::UseNativeMenu) {
+            DrawPageHeader(titleKey);
+        }
 
         switch (activePage) {
             case Page::Player: Pages::Player::Draw(); break;
@@ -315,6 +342,9 @@ namespace {
         ImGui::TextDisabled(T("settings.currentHotkey"), AppConfig::GetMenuKeyName().c_str());
 
         UI::SpacingSeparator();
+        DrawGuiSettings();
+
+        UI::SpacingSeparator();
         DrawRuntimeSettings();
 
         UI::SpacingSeparator();
@@ -337,6 +367,53 @@ namespace {
         }
         UI::SpacingSeparator();
         DrawLogViewer();
+    }
+
+    void DrawGuiSettings() {
+        ImGui::TextUnformatted(T("settings.guiStyle"));
+        ImGui::Spacing();
+
+        ImGui::Checkbox(T("settings.useListMenu"), &MenuState::UseNativeMenu);
+        if (MenuState::UseNativeMenu) {
+            UI::Checkbox(T("settings.enableListMouse"), &MenuState::ListMenuMouseInput);
+        }
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        int currentTheme = GuiTheme::GetThemeIndex();
+        if (ImGui::BeginCombo("##GuiTheme", T(GuiTheme::GetThemeNameKey(currentTheme)))) {
+            for (int i = 0; i < GuiTheme::ThemeCount; ++i) {
+                const bool selected = i == currentTheme;
+                if (ImGui::Selectable(T(GuiTheme::GetThemeNameKey(i)), selected)) {
+                    AppConfig::SetGuiThemeIndex(i);
+                    GuiTheme::ApplyInteraction();
+                }
+                if (selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        if (!MenuState::UseNativeMenu) {
+            ImGui::Spacing();
+            ImGui::TextUnformatted(T("settings.interactionMode"));
+            int currentInteraction = GuiTheme::GetInteractionIndex();
+            if (ImGui::BeginCombo("##InteractionMode", T(GuiTheme::GetInteractionNameKey(currentInteraction)))) {
+                for (int i = 0; i < GuiTheme::InteractionCount; ++i) {
+                    const bool selected = i == currentInteraction;
+                    if (ImGui::Selectable(T(GuiTheme::GetInteractionNameKey(i)), selected)) {
+                        AppConfig::SetInteractionMode(i);
+                        GuiTheme::ApplyInteraction();
+                    }
+                    if (selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+        }
     }
 
     void DrawRuntimeSettings() {
@@ -531,7 +608,7 @@ namespace {
     std::string pendingCaptureValue;
     bool openActionHotkeyCapturePopup = false;
     ULONGLONG actionHotkeyCaptureReadyTick = 0;
-    constexpr const char* ActionHotkeyCapturePopupId = "ActionHotkeyCapturePopup";
+    const char* ActionHotkeyCapturePopupId = "ActionHotkeyCapturePopup";
 
     const char* VirtualKeyName(int key) {
         if (key >= 'A' && key <= 'Z') {
@@ -973,7 +1050,6 @@ namespace {
         }
     }
 }
-
 void Menu::Process() {
     Pages::Player::Process();
     Pages::Vehicle::Process();
@@ -992,51 +1068,153 @@ void Menu::Process() {
 }
 
 void Menu::Draw() {
-    const bool menuVisible = D3DHook::IsMenuVisible();
+    menuVisible = D3DHook::IsMenuVisible();
     char windowTitle[160] = {};
 
     char visibleTitle[128] = {};
     std::snprintf(visibleTitle, sizeof(visibleTitle), T("window.title"), XMENU_AUTHOR);
     std::snprintf(windowTitle, sizeof(windowTitle), "%s###XMenuMainWindow", visibleTitle);
 
+    if (!menuVisible) {
+        // 当菜单关闭时，如果有激活的页面（例如 Player 子菜单），我们重置为 Player 主菜单（或者根菜单）
+        // 这样下次打开菜单时不会停留在深层子页面。也可以保留当前页面，取决于需求。
+        // 对于 overlay 相关的渲染，不能被 return 截断
+    }
+
+    // Process controllers related to UI even when menu is hidden, e.g., overlay.
+    // However, overlay rendering should happen inside D3DHook Present hook independently.
+    // If the overlay is drawn from here, we need to draw it regardless of menuVisible.
+    // if (!menuVisible) return;
+
     if (menuVisible) {
-        ImGui::SetNextWindowSize(ImVec2(780.0f, 520.0f), ImGuiCond_FirstUseEver);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 12.0f));
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 8.0f));
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.055f, 0.060f, 0.075f, 0.98f));
-        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.075f, 0.082f, 0.100f, 1.00f));
-        ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.180f, 0.280f, 0.420f, 0.85f));
-        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.220f, 0.340f, 0.520f, 0.95f));
-        ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.260f, 0.420f, 0.650f, 1.00f));
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.170f, 0.270f, 0.400f, 0.90f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.220f, 0.350f, 0.540f, 1.00f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.260f, 0.420f, 0.650f, 1.00f));
+        if (MenuState::UseNativeMenu) {
+            // Apply global GUI theme to ensure colors match Panel mode
+            GuiTheme::ApplyTheme();
 
-        bool windowOpen = true;
-        if (ImGui::Begin(windowTitle, &windowOpen, ImGuiWindowFlags_NoCollapse)) {
-            HandleMainWindowDrag();
-            ImGui::BeginChild("XMenuSidebar", ImVec2(170.0f, 0.0f), true);
-            DrawNavigation();
-            ImGui::EndChild();
+            // We use our own customized style logic for the List Menu layout
+            ImGui::SetNextWindowPos(ImVec2(50.0f, 50.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(420.0f, 550.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSizeConstraints(ImVec2(280.0f, 300.0f), ImVec2(800.0f, 1000.0f));
 
-            ImGui::SameLine();
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 
-            ImGui::BeginChild("XMenuContent", ImVec2(0.0f, 0.0f), true);
-            DrawActivePage();
-            ImGui::EndChild();
+            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
-            DrawUpdateDialog();
-            DrawConfigImportPopup();
-            DrawConfigExportPopup();
-        }
-        ImGui::End();
+            bool windowOpen = true;
+            // List mode always supports mouse+keyboard
+            ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+            
+            if (ImGui::Begin("XMenu_List", &windowOpen, flags)) {
+                HandleMainWindowDrag();
+                
+                ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]); // Ensure standard font
+                
+                ImVec2 windowPos = ImGui::GetWindowPos();
+                ImDrawList* drawList = ImGui::GetWindowDrawList();
+                ImVec4 titleBgColor = ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive);
+                drawList->AddRectFilled(windowPos, ImVec2(windowPos.x + ImGui::GetWindowWidth(), windowPos.y + 45.0f), ImGui::GetColorU32(titleBgColor));
+                
+                ImGui::SetCursorPos(ImVec2(ImGui::GetStyle().WindowPadding.x, (45.0f - ImGui::GetTextLineHeight()) / 2.0f));
+                
+                // Dynamic text color for title based on title background luminance
+                float luminance = (titleBgColor.x * 0.299f + titleBgColor.y * 0.587f + titleBgColor.z * 0.114f);
+                if (luminance > 0.5f) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+                } else {
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+                }
+                
+                ImGui::Text("%s", visibleTitle);
+                
+                // Align right for page numbers if in a subpage
+                if (!pageStack.empty()) {
+                    char pageText[32];
+                    snprintf(pageText, sizeof(pageText), "%d / %d", UI::listSelectedIndex + 1, UI::listTotalItems > 0 ? UI::listTotalItems : 1);
+                    
+                    float backBtnWidth = ImGui::CalcTextSize(T("tab.back")).x + ImGui::GetStyle().FramePadding.x * 2.0f;
+                    float textWidth = ImGui::CalcTextSize(pageText).x;
+                    
+                    ImGui::SameLine(ImGui::GetWindowWidth() - textWidth - backBtnWidth - ImGui::GetStyle().WindowPadding.x - 8.0f);
+                    
+                    // Transparent back button in navbar
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0,0,0,0));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1,1,1,0.2f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1,1,1,0.3f));
+                    if (ImGui::Button(T("tab.back"))) {
+                        Menu::PopPage();
+                    }
+                    ImGui::PopStyleColor(3);
+                    
+                    ImGui::SameLine();
+                    ImGui::Text("%s", pageText);
+                }
+                
+                ImGui::PopStyleColor(); // Pop title text color
+                
+                ImGui::SetCursorPosY(45.0f);
+                ImGui::PopFont();
+                ImGui::Separator();
+                
+                // Begin scrollable child window for the content to prevent overlapping the navbar
+                if (ImGui::BeginChild("ListMenuContent", ImVec2(0, 0), false, ImGuiWindowFlags_NoScrollWithMouse)) {
+                    ImGui::Spacing();
+                    UI::UpdateListNavigation();
 
-        ImGui::PopStyleColor(8);
-        ImGui::PopStyleVar(3);
+                    if (pageStack.empty()) {
+                        // 主菜单 (Main Menu)
+                        for (const NavItem& item : navItems) {
+                            if (!IsPageAvailable(item.page)) continue;
+                            if (UI::Button(T(item.textKey))) {
+                                PushPage(item.page);
+                            }
+                        }
+                    } else {
+                        // Draw active page contents directly inline
+                        DrawActivePage();
+                    }
 
-        if (!windowOpen) {
-            D3DHook::SetMenuVisible(false);
+                    UI::SetListTotalItems();
+                }
+                ImGui::EndChild();
+            }
+            ImGui::End();
+
+            ImGui::PopStyleColor(1); // Pop Border
+            ImGui::PopStyleVar(1);   // Pop the WindowBorderSize
+            GuiTheme::RestoreTheme();
+
+            if (!windowOpen) {
+                D3DHook::SetMenuVisible(false);
+            }
+        } else {
+            GuiTheme::ApplyTheme();
+
+            ImGui::SetNextWindowSize(ImVec2(780.0f, 520.0f), ImGuiCond_FirstUseEver);
+
+            bool windowOpen = true;
+            if (ImGui::Begin(windowTitle, &windowOpen, ImGuiWindowFlags_NoCollapse)) {
+                HandleMainWindowDrag();
+                ImGui::BeginChild("XMenuSidebar", ImVec2(170.0f, 0.0f), true);
+                DrawNavigation();
+                ImGui::EndChild();
+
+                ImGui::SameLine();
+
+                ImGui::BeginChild("XMenuContent", ImVec2(0.0f, 0.0f), true);
+                DrawActivePage();
+                ImGui::EndChild();
+
+                DrawUpdateDialog();
+                DrawConfigImportPopup();
+                DrawConfigExportPopup();
+            }
+            ImGui::End();
+
+            GuiTheme::RestoreTheme();
+
+            if (!windowOpen) {
+                D3DHook::SetMenuVisible(false);
+            }
         }
     }
 

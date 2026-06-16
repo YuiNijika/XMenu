@@ -10,7 +10,8 @@ namespace Controllers::Scene {
     void StopCutscene();
     bool IsCutsceneRunning();
     const char* GetMissionStatus();
-
     void RemoveAllParticles();
     void RemoveLatestParticle();
+    void FailMission();
+    void StartMission(int missionId);
 }

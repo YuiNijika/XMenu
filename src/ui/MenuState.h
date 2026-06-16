@@ -34,6 +34,8 @@ namespace MenuState {
     inline bool WeaponCyclerEnabled = false;
     inline int WeaponCyclerInputId = 0;
     inline bool WeaponSafeMode = true;
+    inline int GuiThemeIndex = 0;
+    inline int GuiInteractionMode = 0;
     inline bool VehicleNoDamage = false;
     inline bool VehicleAutoUnflip = false;
     inline bool VehicleHeavy = false;
@@ -46,8 +48,14 @@ namespace MenuState {
     inline int VehicleSpawnModel = 0;
     inline int VehicleColorPrimary = 0;
     inline int VehicleColorSecondary = 0;
+    inline int VehicleColorTertiary = 0;
+    inline int VehicleColorQuaternary = 0;
     inline int VehiclePaintjob = -1;
     inline int VehicleModId = 1000;
+    inline bool VehicleNeon = false;
+    inline int VehicleNeonColorR = 255;
+    inline int VehicleNeonColorG = 0;
+    inline int VehicleNeonColorB = 0;
     inline bool VehicleAutoDrive = false;
     inline float VehicleAutoDriveSpeed = 35.0f;
     inline bool VehicleFlyingCars = false;
@@ -74,11 +82,20 @@ namespace MenuState {
     inline bool PedHostile = false;
     inline bool SmokingEffect = false;
     inline bool FliesEffect = false;
+    inline bool ElvisEverywhere = false;
+    inline bool EveryoneArmed = false;
+    inline bool PedsMayhem = false;
+    inline bool PedsAtkRocket = false;
+    inline bool PedsRiot = false;
+    inline bool SlutMagnet = false;
+    inline bool GangsControl = false;
+    inline bool GangsEverywhere = false;
     inline char SceneAnimGroup[64] = "PED";
     inline char SceneAnimName[64] = "WALK_player";
     inline bool SceneAnimLoop = false;
     inline char SceneParticleName[64] = "";
     inline char SceneCutsceneName[64] = "";
+    inline char SceneCutsceneInterior[64] = "0";
     inline int SceneMissionIndex = 0;
     inline bool VisualHud = true;
     inline bool VisualRadar = true;
@@ -101,8 +118,19 @@ namespace MenuState {
     inline bool OverlayShowDetails = false;
     inline bool OverlayShowFeatures = false;
     inline bool WorldLockTime = false;
+    inline bool SolidWater = false;
+    inline bool NoWaterPhysics = false;
+    inline bool BigHeadMode = false;
     inline bool FreeFlyEnabled = false;
     inline float FreeFlySpeed = 1.0f;
+    inline bool FreecamEnabled = false;
+    inline float FreecamFov = 70.0f;
+    inline int FreecamSpeedMul = 1;
+    inline bool TopDownCamEnabled = false;
+    inline int TopDownCamZoom = 40;
+    inline bool RandomCheatsEnabled = false;
+    inline int RandomCheatsInterval = 5;
+    inline bool RandomCheatsProgressBar = false;
     inline bool CommandWindowEnabled = false;
     inline bool LockWeather = false;
     inline bool DisableReplay = false;
@@ -121,6 +149,9 @@ namespace MenuState {
     inline bool PickupEmpty = false;
     inline char NoticeText[256] = "";
     inline double NoticeExpireTime = 0.0;
+
+    inline bool UseNativeMenu = false;
+    inline bool ListMenuMouseInput = false; // 是否在列表模式下开启鼠标输入
 
     inline void ShowNotice(const char* text, double durationSeconds = 2.0) {
         std::snprintf(NoticeText, sizeof(NoticeText), "%s", text ? text : "");

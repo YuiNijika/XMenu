@@ -10,6 +10,7 @@
 #include "freecam_sa.h"
 #include "topdowncam_sa.h"
 #include "randomcheats_sa.h"
+#include "controllers/Player.h"
 #endif
 
 namespace {
@@ -104,6 +105,8 @@ namespace Controllers::World {
         if (MenuState::RandomCheatsEnabled) {
             RandomCheats.Process();
         }
+
+        GameLogic::ProcessSolidWater(Controllers::Player::GetPlayer(), MenuState::SolidWater);
 #endif
     }
 
@@ -178,6 +181,10 @@ namespace Controllers::World {
             hasLockedTime = false;
         }
         Log::Info(std::string("锁定当前时间：") + (enable ? "开启" : "关闭"));
+    }
+
+    void SetNoWaterPhysics(bool enable) {
+        GameLogic::SetNoWaterPhysics(enable);
     }
 
     int GetDaysPassed() {

@@ -5,6 +5,9 @@
 #include "utils/D3DHook.h"
 #include "utils/I18n.h"
 #include "imgui/imgui.h"
+#include <filesystem>
+#include <vector>
+#include <string>
 
 namespace {
     const char* T(const char* key) {
@@ -18,14 +21,16 @@ namespace Pages::Player {
     }
 
     void Draw() {
+        UI::BeginPage("player", "PLAYER", "OPTIONS");
+        
         if (UI::Button(T("player.copyCoordinates"), 3)) {
             Controllers::Player::CopyCoordinates();
         }
-        ImGui::SameLine();
+        UI::SameLine();
         if (UI::Button(T("player.healFully"), 3)) {
             Controllers::Player::Heal();
         }
-        ImGui::SameLine();
+        UI::SameLine();
         if (UI::Button(T("player.refillArmor"), 3)) {
             Controllers::Player::GiveArmour();
         }
@@ -34,62 +39,62 @@ namespace Pages::Player {
                 D3DHook::SetMenuVisible(false);
             }
         }
-        ImGui::SameLine();
+        UI::SameLine();
         if (UI::Button(T("player.addMoney"), 3)) {
             Controllers::Player::GiveMoney();
         }
-        ImGui::SameLine();
+        UI::SameLine();
         if (UI::Button(T("player.kill"), 3)) {
             Controllers::Player::Kill();
         }
 
         UI::SpacingSeparator();
 
-        if (UI::BeginTabBar("PlayerTabs")) {
-            if (ImGui::BeginTabItem(T("player.statusToggles"))) {
-                ImGui::Columns(3, nullptr, false);
-                ImGui::Checkbox(T("player.godMode"), &MenuState::GodMode);
-                ImGui::NextColumn();
-                ImGui::Checkbox(T("player.autoHeal"), &MenuState::AutoHeal);
-                ImGui::NextColumn();
-                ImGui::Checkbox(T("player.hardMode"), &MenuState::HardMode);
-                ImGui::NextColumn();
+        if (UI::BeginTabBar("PlayerTabBar")) {
+            if (UI::BeginTab("player_toggles", T("common.toggles"))) {
+                UI::Columns(3, nullptr, false);
+                UI::Checkbox(T("player.godMode"), &MenuState::GodMode);
+                UI::NextColumn();
+                UI::Checkbox(T("player.autoHeal"), &MenuState::AutoHeal);
+                UI::NextColumn();
+                UI::Checkbox(T("player.hardMode"), &MenuState::HardMode);
+                UI::NextColumn();
 
-                if (ImGui::Checkbox(T("player.infiniteSprint"), &MenuState::InfiniteSprint)) {
+                if (UI::Checkbox(T("player.infiniteSprint"), &MenuState::InfiniteSprint)) {
                     Controllers::Player::SetInfiniteSprint(MenuState::InfiniteSprint);
                 }
-                ImGui::NextColumn();
-                ImGui::Checkbox(T("player.respawnAtDeathPosition"), &MenuState::RespawnAtDeathPosition);
-                ImGui::NextColumn();
-                ImGui::Checkbox(T("player.freezeWantedLevel"), &MenuState::FreezeWantedLevel);
-                ImGui::NextColumn();
+                UI::NextColumn();
+                UI::Checkbox(T("player.respawnAtDeathPosition"), &MenuState::RespawnAtDeathPosition);
+                UI::NextColumn();
+                UI::Checkbox(T("player.freezeWantedLevel"), &MenuState::FreezeWantedLevel);
+                UI::NextColumn();
 
-                if (ImGui::Checkbox(T("player.keepStuff"), &MenuState::KeepStuff)) {
+                if (UI::Checkbox(T("player.keepStuff"), &MenuState::KeepStuff)) {
                     Controllers::Player::SetKeepStuff(MenuState::KeepStuff);
                 }
-                ImGui::NextColumn();
-                ImGui::Checkbox(T("player.autoFlight"), &MenuState::FreeFlyEnabled);
-                ImGui::NextColumn();
+                UI::NextColumn();
+                UI::Checkbox(T("player.autoFlight"), &MenuState::FreeFlyEnabled);
+                UI::NextColumn();
 
                 bool freeHealth = Controllers::Player::GetFreeHealthcare();
-                if (ImGui::Checkbox(T("player.freeHospital"), &freeHealth)) {
+                if (UI::Checkbox(T("player.freeHospital"), &freeHealth)) {
                     Controllers::Player::SetFreeHealthcare(freeHealth);
                 }
-                ImGui::NextColumn();
+                UI::NextColumn();
                 bool freeJail = Controllers::Player::GetFreeJail();
-                if (ImGui::Checkbox(T("player.freeJail"), &freeJail)) {
+                if (UI::Checkbox(T("player.freeJail"), &freeJail)) {
                     Controllers::Player::SetFreeJail(freeJail);
                 }
-                ImGui::Columns(1);
+                UI::Columns(1);
 
                 UI::SpacingSeparator();
-                ImGui::TextUnformatted(T("player.autoFlightOptions"));
-                ImGui::PushItemWidth(160);
-                ImGui::SliderFloat(T("player.autoFlightSpeed"), &MenuState::FreeFlySpeed, 0.1f, 5.0f, "%.1f");
-                ImGui::PopItemWidth();
+                if (!MenuState::UseNativeMenu) ImGui::TextUnformatted(T("player.autoFlightOptions"));
+                UI::PushItemWidth(160);
+                UI::SliderFloat(T("player.autoFlightSpeed"), &MenuState::FreeFlySpeed, 0.1f, 5.0f, "%.1f");
+                UI::PopItemWidth();
 
                 UI::SpacingSeparator();
-                ImGui::TextUnformatted(T("player.proofFlags"));
+                if (!MenuState::UseNativeMenu) ImGui::TextUnformatted(T("player.proofFlags"));
 
                 GameTypes::ProofState proofs = Controllers::Player::GetProofState();
                 MenuState::BulletProof = proofs.bullet;
@@ -98,20 +103,20 @@ namespace Pages::Player {
                 MenuState::FireProof = proofs.fire;
                 MenuState::MeleeProof = proofs.melee;
 
-                ImGui::BeginDisabled(MenuState::GodMode);
-                ImGui::Columns(3, nullptr, false);
+                UI::BeginDisabled(MenuState::GodMode);
+                UI::Columns(3, nullptr, false);
                 bool changedProof = false;
-                changedProof |= ImGui::Checkbox(T("proof.bullet"), &MenuState::BulletProof);
-                ImGui::NextColumn();
-                changedProof |= ImGui::Checkbox(T("proof.collision"), &MenuState::CollisionProof);
-                ImGui::NextColumn();
-                changedProof |= ImGui::Checkbox(T("proof.explosion"), &MenuState::ExplosionProof);
-                ImGui::NextColumn();
-                changedProof |= ImGui::Checkbox(T("proof.fire"), &MenuState::FireProof);
-                ImGui::NextColumn();
-                changedProof |= ImGui::Checkbox(T("proof.melee"), &MenuState::MeleeProof);
-                ImGui::Columns(1);
-                ImGui::EndDisabled();
+                changedProof |= UI::Checkbox(T("proof.bullet"), &MenuState::BulletProof);
+                UI::NextColumn();
+                changedProof |= UI::Checkbox(T("proof.collision"), &MenuState::CollisionProof);
+                UI::NextColumn();
+                changedProof |= UI::Checkbox(T("proof.explosion"), &MenuState::ExplosionProof);
+                UI::NextColumn();
+                changedProof |= UI::Checkbox(T("proof.fire"), &MenuState::FireProof);
+                UI::NextColumn();
+                changedProof |= UI::Checkbox(T("proof.melee"), &MenuState::MeleeProof);
+                UI::Columns(1);
+                UI::EndDisabled();
 
                 if (changedProof) {
                     proofs.bullet = MenuState::BulletProof;
@@ -122,10 +127,10 @@ namespace Pages::Player {
                     Controllers::Player::SetProofState(proofs);
                 }
 
-                ImGui::EndTabItem();
+                UI::EndTab();
             }
 
-            if (ImGui::BeginTabItem(T("player.valueAdjustments"))) {
+            if (UI::BeginTab("player_values", T("player.valueAdjustments"))) {
                 static bool valuesInitialized = false;
                 if (!valuesInitialized) {
                     MenuState::PlayerHealth = Controllers::Player::GetHealth();
@@ -135,9 +140,11 @@ namespace Pages::Player {
                     valuesInitialized = true;
                 }
 
-                ImGui::PushItemWidth(180);
-                ImGui::InputFloat(T("player.health"), &MenuState::PlayerHealth, 1.0f, 10.0f, "%.1f");
-                ImGui::SameLine();
+                UI::PushItemWidth(180);
+                if (UI::InputFloat(T("player.health"), &MenuState::PlayerHealth, 1.0f, 10.0f, "%.1f")) {
+                    if (MenuState::UseNativeMenu) Controllers::Player::SetHealth(MenuState::PlayerHealth);
+                }
+                UI::SameLine();
                 if (UI::Button(T("player.setHealth"), 4)) {
                     if (MenuState::PlayerHealth > 0.0f && MenuState::PlayerHealth < 2.0f) {
                         MenuState::PlayerHealth = 2.0f;
@@ -145,24 +152,30 @@ namespace Pages::Player {
                     Controllers::Player::SetHealth(MenuState::PlayerHealth);
                 }
 
-                ImGui::InputFloat(T("player.armor"), &MenuState::PlayerArmour, 1.0f, 10.0f, "%.1f");
-                ImGui::SameLine();
+                if (UI::InputFloat(T("player.armor"), &MenuState::PlayerArmour, 1.0f, 10.0f, "%.1f")) {
+                    if (MenuState::UseNativeMenu) Controllers::Player::SetArmour(MenuState::PlayerArmour);
+                }
+                UI::SameLine();
                 if (UI::Button(T("player.setArmor"), 4)) {
                     Controllers::Player::SetArmour(MenuState::PlayerArmour);
                 }
 
-                ImGui::InputInt(T("player.money"), &MenuState::PlayerMoney, 1000, 10000);
-                ImGui::SameLine();
+                if (UI::InputInt(T("player.money"), &MenuState::PlayerMoney, 1000, 10000)) {
+                    if (MenuState::UseNativeMenu) Controllers::Player::SetMoney(MenuState::PlayerMoney);
+                }
+                UI::SameLine();
                 if (UI::Button(T("player.setMoney"), 4)) {
                     Controllers::Player::SetMoney(MenuState::PlayerMoney);
                 }
 
-                ImGui::SliderInt(T("player.wantedLevel"), &MenuState::WantedLevel, 0, 6);
-                ImGui::SameLine();
+                if (UI::SliderInt(T("player.wantedLevel"), &MenuState::WantedLevel, 0, 6)) {
+                    if (MenuState::UseNativeMenu) Controllers::Player::SetWantedLevel(MenuState::WantedLevel);
+                }
+                UI::SameLine();
                 if (UI::Button(T("player.setWanted"), 4)) {
                     Controllers::Player::SetWantedLevel(MenuState::WantedLevel);
                 }
-                ImGui::PopItemWidth();
+                UI::PopItemWidth();
 
                 if (UI::Button(T("player.readCurrentValues"), 2)) {
                     MenuState::PlayerHealth = Controllers::Player::GetHealth();
@@ -170,16 +183,80 @@ namespace Pages::Player {
                     MenuState::PlayerMoney = Controllers::Player::GetMoney();
                     MenuState::WantedLevel = Controllers::Player::GetWantedLevel();
                 }
-                ImGui::SameLine();
+                UI::SameLine();
                 if (UI::Button(T("player.clearWanted"), 2)) {
                     MenuState::WantedLevel = 0;
                     Controllers::Player::ClearWantedLevel();
                 }
 
-                ImGui::EndTabItem();
+                UI::EndTab();
             }
 
-            ImGui::EndTabBar();
+#ifdef GTASA
+            if (UI::BeginTab("player_skins", T("player.customSkins"))) {
+                if (!MenuState::UseNativeMenu) {
+                    ImGui::TextWrapped("%s", T("player.customSkinsTip"));
+                    ImGui::Spacing();
+                }
+
+                static std::vector<std::string> customSkins;
+                static bool skinsLoaded = false;
+                static ImGuiTextFilter filter;
+
+                if (!skinsLoaded) {
+                    if (GetModuleHandleA("modloader.asi")) {
+                        std::string path = "modloader/CustomSkinsLoader/";
+                        if (std::filesystem::is_directory(path)) {
+                            for (auto& p : std::filesystem::recursive_directory_iterator(path)) {
+                                if (p.path().extension() == ".dff") {
+                                    std::string name = p.path().stem().string();
+                                    if (name.length() < 9) {
+                                        customSkins.push_back(name);
+                                    }
+                                }
+                            }
+                        } else {
+                            std::error_code ec;
+                            std::filesystem::create_directory(path, ec);
+                        }
+                    }
+                    skinsLoaded = true;
+                }
+
+                if (customSkins.empty()) {
+                    if (!MenuState::UseNativeMenu) ImGui::TextDisabled("%s", T("player.noCustomSkins"));
+                    else UI::Button(T("player.noCustomSkins")); // Native 下作为提示
+                } else {
+                    if (!MenuState::UseNativeMenu) {
+                        filter.Draw(T("common.search"));
+                        ImGui::Spacing();
+                        if (ImGui::BeginChild("CustomSkinsList", ImVec2(0, 0), true)) {
+                            for (const std::string& skin : customSkins) {
+                                if (filter.PassFilter(skin.c_str())) {
+                                    if (ImGui::Selectable(skin.c_str())) {
+                                        Controllers::Player::SetCustomSkin(skin.c_str());
+                                    }
+                                }
+                            }
+                        }
+                        ImGui::EndChild();
+                    } else {
+                        // Native 模式下直接渲染成列表
+                        for (const std::string& skin : customSkins) {
+                            if (UI::Button(skin.c_str())) {
+                                Controllers::Player::SetCustomSkin(skin.c_str());
+                            }
+                        }
+                    }
+                }
+
+                UI::EndTab();
+            }
+#endif
+
+            UI::EndTabBar();
         }
+
+        UI::EndPage();
     }
 }

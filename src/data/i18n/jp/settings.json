@@ -37,6 +37,7 @@
   "settings.hotkey": "快捷キー",
   "settings.apply": "適用",
   "settings.setHotkey": "設定",
+  "settings.capture": "キャプチャ",
   "settings.listeningHotkey": "キー入力待ち...",
   "settings.hotkeyCaptureTitle": "アクション快捷キーを設定",
   "settings.hotkeyCaptureAction": "アクション：%s",
@@ -73,5 +74,14 @@
   "settings.persistentState.apply": "適用",
   "settings.persistentState.cancel": "キャンセル",
   "settings.persistentState.clear": "クリア",
-  "settings.persistentState.restoreCount": "次回起動時に復元：%d 個"
+  "settings.persistentState.restoreCount": "次回起動時に復元：%d 個",
+  "settings.guiStyle": "GUI スタイル",
+  "settings.theme.default": "デフォルトブルー",
+  "settings.theme.darkDeep": "ディープダーク",
+  "settings.theme.classic": "クラシックゴールド",
+  "settings.theme.light": "ライト",
+  "settings.interactionMode": "インタラクションモード",
+  "settings.interaction.mouse": "マウス",
+  "settings.interaction.keyboardMouse": "キーボード + マウス",
+  "settings.useListMenu": "リストメニュースタイルを使用する"
 }

@@ -1,5 +1,6 @@
 #include "AppConfig.h"
 #include "game/Runtime.h"
+#include "ui/GuiTheme.h"
 #include "ui/MenuState.h"
 #include "utils/JsonLoader.h"
 #include "utils/Log.h"
@@ -485,6 +486,28 @@ namespace {
 
     void ApplyMenuKey(const std::string& keyName);
 
+    void LoadGuiConfig(const JsonLoader::JsonValue& root) {
+        const JsonLoader::JsonValue& menu = ObjectOrNull(root, "menu");
+        if (menu.type != JsonLoader::JsonValue::OBJECT) {
+            return;
+        }
+
+        const int themeIndex = static_cast<int>(JsonLoader::GetNumber(menu, "guiTheme", 0.0));
+        if (themeIndex >= 0 && themeIndex < GuiTheme::ThemeCount) {
+            MenuState::GuiThemeIndex = themeIndex;
+        }
+        GuiTheme::SetThemeByIndex(MenuState::GuiThemeIndex);
+
+        const int interactionMode = static_cast<int>(JsonLoader::GetNumber(menu, "interaction", 0.0));
+        if (interactionMode >= 0 && interactionMode < GuiTheme::InteractionCount) {
+            MenuState::GuiInteractionMode = interactionMode;
+        }
+        GuiTheme::SetInteractionByIndex(MenuState::GuiInteractionMode);
+        
+        MenuState::UseNativeMenu = JsonLoader::GetBool(menu, "UseNativeMenu", MenuState::UseNativeMenu);
+        MenuState::ListMenuMouseInput = JsonLoader::GetBool(menu, "ListMenuMouseInput", MenuState::ListMenuMouseInput);
+    }
+
     struct DefaultActionHotkey {
         const char* id;
         const char* name;
@@ -779,6 +802,10 @@ namespace {
         file << indent << "\"menu\": {\n";
         file << indent << "  \"toggleKey\": \"" << EscapeJson(menuKeyName) << "\",\n";
         file << indent << "  \"fallbackLanguage\": \"" << EscapeJson(fallbackLanguageCode) << "\",\n";
+        file << indent << "  \"guiTheme\": " << MenuState::GuiThemeIndex << ",\n";
+        file << indent << "  \"interaction\": " << MenuState::GuiInteractionMode << ",\n";
+        file << indent << "  \"UseNativeMenu\": " << (MenuState::UseNativeMenu ? "true" : "false") << ",\n";
+        file << indent << "  \"ListMenuMouseInput\": " << (MenuState::ListMenuMouseInput ? "true" : "false") << ",\n";
         file << indent << "  \"hotkey\": {\n";
         file << indent << "    \"key\": " << menuHotkey.key << ",\n";
         file << indent << "    \"ctrl\": " << (menuHotkey.ctrl ? "true" : "false") << ",\n";
@@ -920,6 +947,7 @@ namespace {
         LoadOverlayConfig(gameConfig);
         LoadTeleportConfig(gameConfig);
         LoadWorldConfig(gameConfig);
+        LoadGuiConfig(gameConfig);
 
         const JsonLoader::JsonValue& menu = ObjectOrNull(gameConfig, "menu");
         ApplyMenuKey(JsonLoader::GetString(menu, "toggleKey", DefaultMenuKey));
@@ -1023,7 +1051,6 @@ namespace {
         AppConfig::Hotkey parsed = ParseHotkey(keyName, valid);
         if (!valid) {
             Log::Warn(std::string("菜单快捷键无效，已回退到 M: ") + keyName);
-            ParseHotkey(DefaultMenuKey, valid);
             parsed = AppConfig::Hotkey{};
             parsed.key = 'M';
         }
@@ -1345,5 +1372,29 @@ namespace AppConfig {
         Save();
         Log::Info(std::string("已添加自定义地点: ") + trimmedName);
         return true;
+    }
+
+    int GetGuiThemeIndex() {
+        return MenuState::GuiThemeIndex;
+    }
+
+    void SetGuiThemeIndex(int index) {
+        if (index >= 0 && index < GuiTheme::ThemeCount) {
+            MenuState::GuiThemeIndex = index;
+            GuiTheme::SetThemeByIndex(index);
+            Save();
+        }
+    }
+
+    int GetInteractionMode() {
+        return MenuState::GuiInteractionMode;
+    }
+
+    void SetInteractionMode(int mode) {
+        if (mode >= 0 && mode < GuiTheme::InteractionCount) {
+            MenuState::GuiInteractionMode = mode;
+            GuiTheme::SetInteractionByIndex(mode);
+            Save();
+        }
     }
 }

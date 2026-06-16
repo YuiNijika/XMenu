@@ -130,7 +130,7 @@ namespace Pages::Weapon {
         ImGui::Spacing();
 
         if (UI::BeginTabBar("WeaponTabs")) {
-            if (ImGui::BeginTabItem(T("common.toggles"))) {
+            if (UI::BeginTab("weapon.toggles", T("common.toggles"))) {
                 bool weaponStatsChanged = false;
 
                 ImGui::Columns(3, nullptr, false);
@@ -164,10 +164,10 @@ namespace Pages::Weapon {
                     Controllers::Weapon::ResetStats();
                 }
 
-                ImGui::EndTabItem();
+                UI::EndTab();
             }
 
-            if (ImGui::BeginTabItem(T("weapon.getWeapon"))) {
+            if (UI::BeginTab("weapon.getWeapon", T("weapon.getWeapon"))) {
                 ImGui::PushItemWidth(160);
                 ImGui::InputInt(T("weapon.ammo"), &MenuState::WeaponAmmo);
                 if (MenuState::WeaponAmmo < 0) MenuState::WeaponAmmo = 0;
@@ -240,10 +240,9 @@ namespace Pages::Weapon {
 
                 ImGui::Spacing();
                 DrawWeaponList();
-                ImGui::EndTabItem();
+                UI::EndTab();
             }
-
-            ImGui::EndTabBar();
+            UI::EndTabBar();
         }
     }
 }

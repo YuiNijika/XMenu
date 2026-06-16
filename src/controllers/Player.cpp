@@ -347,6 +347,10 @@ namespace Controllers::Player {
         return GameLogic::SetPlayerSkin(modelId);
     }
 
+    bool SetCustomSkin(const char* name) {
+        return GameLogic::SetPlayerCustomSkin(name);
+    }
+
     bool ApplyClothes(int textureId, int modelId, int bodyPart) {
         return GameLogic::ApplyPlayerClothes(textureId, modelId, bodyPart);
     }

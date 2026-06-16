@@ -13,6 +13,7 @@
   "ped.flies": "Мухи",
   "ped.spawnNear": "Создать рядом",
   "ped.spawnMarker": "Создать у маркера",
+  "ped.spawnPed": "Создать ped",
   "ped.deleteLast": "Удалить последнего",
   "ped.lastSpawnedYes": "Созданный ped существует",
   "ped.lastSpawnedNo": "Созданных ped пока нет",
@@ -27,5 +28,14 @@
   "ped.category.cop": "Полиция",
   "ped.category.beach": "Пляж",
   "ped.category.driver": "Водители",
-  "ped.category.worker": "Рабочие"
+  "ped.category.worker": "Рабочие",
+  "ped.bigHeadMode": "Режим большой головы",
+  "ped.elvisEverywhere": "Элвисы повсюду",
+  "ped.everyoneArmed": "Все вооружены",
+  "ped.pedsMayhem": "Безумие педов",
+  "ped.pedsAtkRocket": "Педы с ракетницами",
+  "ped.pedsRiot": "Режим бунта",
+  "ped.slutMagnet": "Магнит для проституток",
+  "ped.gangsControl": "Банды контролируют улицы",
+  "ped.gangsEverywhere": "Банды повсюду"
 }

@@ -23,6 +23,7 @@
 #include "CWeather.h"
 #include "CCutsceneMgr.h"
 #include "CTheScripts.h"
+#include "ui/MenuState.h"
 #include "rw/skeleton.h"
 #include <array>
 #include <cmath>
@@ -137,6 +138,24 @@ bool PatchBytesIfExpected(const char* label, std::uintptr_t address, const std::
 namespace GameLogic {
 
 void Init() {
+    plugin::Events::pedRenderEvent += [](CPed* ped) {
+        if (!ped) return;
+        if (MenuState::BigHeadMode) {
+            auto animHier = GetAnimHierarchyFromSkinClump(ped->m_pRwClump);
+            if (animHier) {
+                auto matrices = RpHAnimHierarchyGetMatrixArray(animHier);
+                if (matrices) {
+                    RwV3d scale = {3.0f, 3.0f, 3.0f};
+                    for (int i = 5; i <= 8; i++) {
+                        int index = RpHAnimIDGetIndex(animHier, i);
+                        if (index >= 0) {
+                            RwMatrixScale(&matrices[index], &scale, rwCOMBINEPRECONCAT);
+                        }
+                    }
+                }
+            }
+        }
+    };
 }
 
 void Process() {
@@ -267,16 +286,36 @@ void GiveArmour(CPlayerPed* player) {
 }
 
 void ProcessAutoHeal(CPlayerPed* player, bool enable) {
-    if (!enable || !player) return;
     static unsigned int lastTimer = 0;
+    static unsigned int lastDmgTimer = 0;
+    static float prevHealth = 0.0f;
+    static float prevArmour = 0.0f;
+
+    if (!player) return;
+
     unsigned int timer = CTimer::m_snTimeInMilliseconds;
-    if (timer - lastTimer > 1000) {
+    
+    float currentHealth = player->m_fHealth;
+    float currentArmour = player->m_fArmour;
+
+    if (currentHealth < prevHealth || currentArmour < prevArmour) {
+        lastDmgTimer = timer;
+    }
+    
+    prevHealth = currentHealth;
+    prevArmour = currentArmour;
+
+    if (!enable) return;
+
+    if (timer - lastDmgTimer > 5000 && timer - lastTimer > 1000) {
         if (player->m_fHealth < player->m_fMaxHealth) {
             player->m_fHealth += 2.0f;
             if (player->m_fHealth > player->m_fMaxHealth) player->m_fHealth = player->m_fMaxHealth;
+            prevHealth = player->m_fHealth;
         } else if (player->m_fArmour < 100.0f && player->m_fArmour > 0.0f) {
             player->m_fArmour += 2.0f;
             if (player->m_fArmour > 100.0f) player->m_fArmour = 100.0f;
+            prevArmour = player->m_fArmour;
         }
         lastTimer = timer;
     }
@@ -291,9 +330,37 @@ int GetWantedLevel(CPlayerPed* player) {
 }
 
 void ProcessHardMode(CPlayerPed* player, bool enable) {
-    if (!enable || !player) return;
-    if (player->m_fHealth > 50.0f) player->m_fHealth = 50.0f;
-    player->m_fArmour = 0.0f;
+    static bool wasHardMode = false;
+    static float savedMaxHealth = 0.0f;
+    static float savedStamina = 0.0f;
+    static float savedHealth = 0.0f;
+    static float savedArmour = 0.0f;
+
+    if (!player) return;
+
+    if (enable && !wasHardMode) {
+        wasHardMode = true;
+        plugin::Command<plugin::Commands::GET_FLOAT_STAT>(24, &savedMaxHealth); // STAT_MAX_HEALTH
+        plugin::Command<plugin::Commands::GET_FLOAT_STAT>(22, &savedStamina);   // STAT_STAMINA
+        savedHealth = player->m_fHealth;
+        savedArmour = player->m_fArmour;
+        
+        player->m_fHealth = 50.0f;
+        player->m_fArmour = 0.0f;
+        plugin::Command<plugin::Commands::SET_FLOAT_STAT>(24, 350.0f);
+        plugin::Command<plugin::Commands::SET_FLOAT_STAT>(22, 0.0f);
+    } else if (!enable && wasHardMode) {
+        wasHardMode = false;
+        plugin::Command<plugin::Commands::SET_FLOAT_STAT>(24, savedMaxHealth);
+        plugin::Command<plugin::Commands::SET_FLOAT_STAT>(22, savedStamina);
+        player->m_fHealth = savedHealth;
+        player->m_fArmour = savedArmour;
+    } else if (enable && wasHardMode) {
+        if (player->m_fHealth > 50.0f) player->m_fHealth = 50.0f;
+        player->m_fArmour = 0.0f;
+        plugin::Command<plugin::Commands::SET_FLOAT_STAT>(24, 350.0f);
+        plugin::Command<plugin::Commands::SET_FLOAT_STAT>(22, 0.0f);
+    }
 }
 
 void ProcessRespawnAtDeathPosition(CPlayerPed* player, bool enable) {
@@ -637,6 +704,18 @@ bool ApplyPlayerClothes(int textureId, int modelId, int bodyPart) {
     return true;
 }
 
+bool SetPlayerCustomSkin(const char* name) {
+    CPlayerPed* player = FindPlayerPed();
+    if (!player || !name || name[0] == '\0') return false;
+
+    CStreaming::RequestSpecialChar(1, name, PRIORITY_REQUEST);
+    CStreaming::LoadAllRequestedModels(true);
+    
+    player->SetModelIndex(291);
+    CStreaming::SetSpecialCharIsDeletable(291);
+    return true;
+}
+
 bool SetPlayerStat(int statId, float value) {
     plugin::Command<plugin::Commands::SET_FLOAT_STAT>(statId, value);
     return true;
@@ -936,6 +1015,15 @@ void ApplyPedOptions(CPed* ped, const PedSpawnOptions& options) {
     }
 }
 
+void SetElvisEverywhere(bool enable) { plugin::patch::Set<bool>(0x969157, enable, false); }
+void SetEveryoneArmed(bool enable) { plugin::patch::Set<bool>(0x969140, enable, false); }
+void SetPedsMayhem(bool enable) { plugin::patch::Set<bool>(0x96913E, enable, false); }
+void SetPedsAtkRocket(bool enable) { plugin::patch::Set<bool>(0x969158, enable, false); }
+void SetPedsRiot(bool enable) { plugin::patch::Set<bool>(0x969175, enable, false); }
+void SetSlutMagnet(bool enable) { plugin::patch::Set<bool>(0x96915D, enable, false); }
+void SetGangsControl(bool enable) { plugin::patch::Set<bool>(0x96915B, enable, false); }
+void SetGangsEverywhere(bool enable) { plugin::patch::Set<bool>(0x96915A, enable, false); }
+
 bool PlayPlayerAnimation(const char* group, const char* name, bool loop) {
     CPlayerPed* player = FindPlayerPed();
     if (!player || !group || !name || group[0] == '\0' || name[0] == '\0') return false;
@@ -1011,6 +1099,26 @@ const char* GetMissionStatus() {
     static char status[160];
     std::snprintf(status, sizeof(status), "commands=%u missionFlag=%d activeScripts=%s", CTheScripts::CommandsExecuted, CTheScripts::OnAMissionFlag, CTheScripts::pActiveScripts ? "yes" : "no");
     return status;
+}
+
+void StartMission(int missionId) {
+    CPlayerPed* player = FindPlayerPed();
+    if (!player) return;
+
+    if (CTheScripts::OnAMissionFlag && player->m_nAreaCode == 0) {
+        player->SetWantedLevel(0);
+        plugin::Command<plugin::Commands::LOAD_AND_LAUNCH_MISSION_INTERNAL>(missionId);
+        Log::Info("任务已强制加载: " + std::to_string(missionId));
+    } else {
+        Log::Warn("任务加载失败：不在任务中或在室内");
+    }
+}
+
+void FailMission() {
+    if (!CCutsceneMgr::ms_running) {
+        plugin::Command<plugin::Commands::FAIL_CURRENT_MISSION>();
+        Log::Info("已强制失败当前任务");
+    }
 }
 
 void DisplayHud(bool enable) {
@@ -1271,6 +1379,43 @@ void SetFreePayNSpray(bool enable) {
 
 void SetFasterClock(bool enable) {
     plugin::patch::Set<bool>(0x96913B, enable, false);
+}
+
+void ProcessSolidWater(CPlayerPed* player, bool enable) {
+    static int solidWaterObj = 0;
+    if (!enable || !player) {
+        if (solidWaterObj) {
+            plugin::Command<plugin::Commands::DELETE_OBJECT>(solidWaterObj);
+            solidWaterObj = 0;
+        }
+        return;
+    }
+
+    CVector pos = player->GetPosition();
+    float waterHeight = 0.0f;
+    plugin::Command<plugin::Commands::GET_WATER_HEIGHT_AT_COORDS>(pos.x, pos.y, false, &waterHeight);
+
+    int hplayer = CPools::GetPedRef(player);
+    if (!plugin::Command<plugin::Commands::IS_CHAR_IN_ANY_BOAT>(hplayer) && waterHeight != -1000.0f && pos.z > waterHeight) {
+        if (solidWaterObj == 0) {
+            plugin::Command<plugin::Commands::CREATE_OBJECT>(3095, pos.x, pos.y, waterHeight, &solidWaterObj);
+            plugin::Command<plugin::Commands::SET_OBJECT_VISIBLE>(solidWaterObj, false);
+            if (pos.z < waterHeight + 1.0f) {
+                player->SetPosn(pos.x, pos.y, waterHeight + 1.0f);
+            }
+        } else {
+            plugin::Command<plugin::Commands::SET_OBJECT_COORDINATES>(solidWaterObj, pos.x, pos.y, waterHeight);
+        }
+    } else {
+        if (solidWaterObj) {
+            plugin::Command<plugin::Commands::DELETE_OBJECT>(solidWaterObj);
+            solidWaterObj = 0;
+        }
+    }
+}
+
+void SetNoWaterPhysics(bool enable) {
+    plugin::patch::Set<uint8_t>(0x6C2759, enable ? 1 : 0, true);
 }
 
 void SetFreezeTime(bool enable) {

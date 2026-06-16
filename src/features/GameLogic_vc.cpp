@@ -17,6 +17,8 @@
 #include "CClock.h"
 #include "CHud.h"
 #include "CWeather.h"
+#include "CCutsceneMgr.h"
+#include "CTheScripts.h"
 #include "rw/skeleton.h"
 #include <cmath>
 #include <cstdint>
@@ -615,6 +617,10 @@ bool ApplyPlayerClothes(int textureId, int modelId, int bodyPart) {
     return false;
 }
 
+bool SetPlayerCustomSkin(const char* name) {
+    return false;
+}
+
 bool SetPlayerStat(int statId, float value) {
     Log::Warn("VC 不支持 SA stats 接口，已跳过 stat " + std::to_string(statId));
     return false;
@@ -809,10 +815,20 @@ void ApplyPedOptions(CPed* ped, const PedSpawnOptions& options) {
     plugin::Command<plugin::Commands::SET_CHAR_HEALTH>(hped, static_cast<int>(options.health));
     plugin::Command<plugin::Commands::SET_CHAR_ARMOUR>(hped, static_cast<int>(options.armour));
     plugin::Command<plugin::Commands::FREEZE_CHAR_POSITION>(hped, options.freeze);
+    plugin::Command<plugin::Commands::SET_CHAR_PROOFS>(hped, false, false, false, false, false);
     if (options.weaponModel > 0) {
         plugin::Command<plugin::Commands::GIVE_WEAPON_TO_CHAR>(hped, options.weaponModel, 9999);
     }
 }
+
+void SetElvisEverywhere(bool enable) { }
+void SetEveryoneArmed(bool enable) { plugin::patch::Set<bool>(0xA10AB3, enable, false); }
+void SetPedsMayhem(bool enable) { }
+void SetPedsAtkRocket(bool enable) { }
+void SetPedsRiot(bool enable) { }
+void SetSlutMagnet(bool enable) { plugin::patch::Set<bool>(0xA10B5F, enable, false); }
+void SetGangsControl(bool enable) { }
+void SetGangsEverywhere(bool enable) { }
 
 bool PlayPlayerAnimation(const char*, const char*, bool) {
     static bool logged = false;
@@ -856,7 +872,20 @@ bool IsCutsceneRunning() {
 }
 
 const char* GetMissionStatus() {
-    return "VC mission viewer unavailable";
+    static char status[160];
+    std::snprintf(status, sizeof(status), "commands=0 missionFlag=0 activeScripts=%s", CTheScripts::pActiveScripts ? "yes" : "no");
+    return status;
+}
+
+void StartMission(int missionId) {
+    Log::Warn("VC 暂不支持加载任务");
+}
+
+void FailMission() {
+    if (!CCutsceneMgr::ms_running) {
+        plugin::Command<plugin::Commands::FAIL_CURRENT_MISSION>();
+        Log::Info("VC 已强制失败当前任务");
+    }
 }
 
 void DisplayHud(bool enable) {
@@ -1118,6 +1147,12 @@ void SetFreePayNSpray(bool enable) {
 
 void SetFasterClock(bool enable) {
     plugin::patch::Set<bool>(0xA10B87, enable, false);
+}
+
+void ProcessSolidWater(CPlayerPed* player, bool enable) {
+}
+
+void SetNoWaterPhysics(bool enable) {
 }
 
 void SetFreezeTime(bool enable) {

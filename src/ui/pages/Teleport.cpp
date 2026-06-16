@@ -89,7 +89,7 @@ namespace Pages::Teleport {
         WriteCurrentPosition(currentCoordText, sizeof(currentCoordText));
 
         if (UI::BeginTabBar("TeleportTabs")) {
-            if (ImGui::BeginTabItem(T("tab.teleport"))) {
+            if (UI::BeginTab("teleport.tab", T("tab.teleport"))) {
 #ifdef GTASA
                 ImGui::Columns(2, nullptr, false);
                 ImGui::Checkbox(T("teleport.quickMapTeleport"), &MenuState::QuickTeleport);
@@ -177,10 +177,10 @@ namespace Pages::Teleport {
                     }
                 }
 #endif
-                ImGui::EndTabItem();
+                UI::EndTab();
             }
 
-            if (ImGui::BeginTabItem(T("teleport.locations"))) {
+            if (UI::BeginTab("teleport.locations", T("teleport.locations"))) {
                 ImGui::InputTextWithHint(T("teleport.locationName"), T("teleport.customLocation"), locationName, sizeof(locationName));
                 ImGui::InputTextWithHint(T("teleport.locationCoordinates"), "x, y, z", currentCoordText, sizeof(currentCoordText), ImGuiInputTextFlags_ReadOnly);
                 if (UI::Button(T("teleport.addLocation"))) {
@@ -194,10 +194,10 @@ namespace Pages::Teleport {
 
                 UI::SpacingSeparator();
                 DrawLocationList();
-                ImGui::EndTabItem();
+                UI::EndTab();
             }
 
-            ImGui::EndTabBar();
+            UI::EndTabBar();
         }
     }
 }

@@ -163,7 +163,7 @@ function createUnifiedProject()
             "src/loader/**.cpp"
         }
 
-        includedirs {
+        includedirs { 
             "src/loader/"
         }
 

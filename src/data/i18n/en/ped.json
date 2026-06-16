@@ -13,6 +13,7 @@
   "ped.flies": "Flies",
   "ped.spawnNear": "Spawn nearby",
   "ped.spawnMarker": "Spawn at marker",
+  "ped.spawnPed": "Spawn ped",
   "ped.deleteLast": "Delete last spawned",
   "ped.lastSpawnedYes": "A spawned ped exists",
   "ped.lastSpawnedNo": "No spawned ped yet",
@@ -27,5 +28,14 @@
   "ped.category.cop": "Cop",
   "ped.category.beach": "Beach",
   "ped.category.driver": "Driver",
-  "ped.category.worker": "Worker"
+  "ped.category.worker": "Worker",
+  "ped.bigHeadMode": "Big Head Mode",
+  "ped.elvisEverywhere": "Elvis Everywhere",
+  "ped.everyoneArmed": "Everyone Armed",
+  "ped.pedsMayhem": "Peds Mayhem",
+  "ped.pedsAtkRocket": "Peds Attack with Rockets",
+  "ped.pedsRiot": "Riot Mode",
+  "ped.slutMagnet": "Slut Magnet",
+  "ped.gangsControl": "Gangs Control Streets",
+  "ped.gangsEverywhere": "Gangs Everywhere"
 }

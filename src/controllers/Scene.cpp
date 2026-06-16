@@ -65,6 +65,14 @@ namespace Controllers::Scene {
         return GameLogic::GetMissionStatus();
     }
 
+    void StartMission(int missionId) {
+        GameLogic::StartMission(missionId);
+    }
+
+    void FailMission() {
+        GameLogic::FailMission();
+    }
+
     void RemoveAllParticles() {
 #ifdef GTASA
         Particle.RemoveAll();

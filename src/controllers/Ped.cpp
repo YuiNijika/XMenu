@@ -64,4 +64,29 @@ namespace Controllers::Ped {
             GameLogic::ProcessFliesEffect(player, MenuState::FliesEffect);
         }
     }
+
+    void SetElvisEverywhere(bool enable) {
+        GameLogic::SetElvisEverywhere(enable);
+    }
+    void SetEveryoneArmed(bool enable) {
+        GameLogic::SetEveryoneArmed(enable);
+    }
+    void SetPedsMayhem(bool enable) {
+        GameLogic::SetPedsMayhem(enable);
+    }
+    void SetPedsAtkRocket(bool enable) {
+        GameLogic::SetPedsAtkRocket(enable);
+    }
+    void SetPedsRiot(bool enable) {
+        GameLogic::SetPedsRiot(enable);
+    }
+    void SetSlutMagnet(bool enable) {
+        GameLogic::SetSlutMagnet(enable);
+    }
+    void SetGangsControl(bool enable) {
+        GameLogic::SetGangsControl(enable);
+    }
+    void SetGangsEverywhere(bool enable) {
+        GameLogic::SetGangsEverywhere(enable);
+    }
 }

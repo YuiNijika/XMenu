@@ -52,43 +52,90 @@ namespace Pages::Ped {
     }
 
     void Draw() {
-        ImGui::TextWrapped("%s", T("ped.hint"));
-        ImGui::PushItemWidth(160.0f);
-        ImGui::InputInt(T("ped.modelId"), &MenuState::PedSpawnModel);
-        ImGui::InputInt(T("ped.type"), &MenuState::PedSpawnType);
-        ImGui::InputInt(T("ped.gangType"), &MenuState::PedGangType);
-        ImGui::InputInt(T("ped.weaponModel"), &MenuState::PedWeaponModel);
-        ImGui::InputFloat(T("ped.health"), &MenuState::PedHealth, 1.0f, 10.0f, "%.1f");
-        ImGui::InputFloat(T("ped.armour"), &MenuState::PedArmour, 1.0f, 10.0f, "%.1f");
-        ImGui::PopItemWidth();
+        if (UI::BeginTabBar("PedTabs")) {
+            if (UI::BeginTab("ped.toggles", T("common.toggles"))) {
+                ImGui::Columns(2, nullptr, false);
+                ImGui::Checkbox(T("ped.bigHeadMode"), &MenuState::BigHeadMode);
+#ifdef GTASA
+                ImGui::NextColumn();
+                if (ImGui::Checkbox(T("ped.elvisEverywhere"), &MenuState::ElvisEverywhere)) {
+                    Controllers::Ped::SetElvisEverywhere(MenuState::ElvisEverywhere);
+                }
+                ImGui::NextColumn();
+                if (ImGui::Checkbox(T("ped.everyoneArmed"), &MenuState::EveryoneArmed)) {
+                    Controllers::Ped::SetEveryoneArmed(MenuState::EveryoneArmed);
+                }
+                ImGui::NextColumn();
+                if (ImGui::Checkbox(T("ped.pedsMayhem"), &MenuState::PedsMayhem)) {
+                    Controllers::Ped::SetPedsMayhem(MenuState::PedsMayhem);
+                }
+                ImGui::NextColumn();
+                if (ImGui::Checkbox(T("ped.pedsAtkRocket"), &MenuState::PedsAtkRocket)) {
+                    Controllers::Ped::SetPedsAtkRocket(MenuState::PedsAtkRocket);
+                }
+                ImGui::NextColumn();
+                if (ImGui::Checkbox(T("ped.pedsRiot"), &MenuState::PedsRiot)) {
+                    Controllers::Ped::SetPedsRiot(MenuState::PedsRiot);
+                }
+                ImGui::NextColumn();
+                if (ImGui::Checkbox(T("ped.slutMagnet"), &MenuState::SlutMagnet)) {
+                    Controllers::Ped::SetSlutMagnet(MenuState::SlutMagnet);
+                }
+                ImGui::NextColumn();
+                if (ImGui::Checkbox(T("ped.gangsControl"), &MenuState::GangsControl)) {
+                    Controllers::Ped::SetGangsControl(MenuState::GangsControl);
+                }
+                ImGui::NextColumn();
+                if (ImGui::Checkbox(T("ped.gangsEverywhere"), &MenuState::GangsEverywhere)) {
+                    Controllers::Ped::SetGangsEverywhere(MenuState::GangsEverywhere);
+                }
+#endif
+                ImGui::Columns(1);
+                UI::EndTab();
+            }
 
-        ImGui::Checkbox(T("ped.asGang"), &MenuState::PedSpawnAsGang);
-        ImGui::SameLine();
-        ImGui::Checkbox(T("ped.freeze"), &MenuState::PedFreeze);
-        ImGui::SameLine();
-        ImGui::Checkbox(T("ped.hostile"), &MenuState::PedHostile);
+            if (UI::BeginTab("ped.spawnPed", T("ped.spawnPed"))) {
+                ImGui::TextWrapped("%s", T("ped.hint"));
+                ImGui::PushItemWidth(160.0f);
+                ImGui::InputInt(T("ped.modelId"), &MenuState::PedSpawnModel);
+                ImGui::InputInt(T("ped.type"), &MenuState::PedSpawnType);
+                ImGui::InputInt(T("ped.gangType"), &MenuState::PedGangType);
+                ImGui::InputInt(T("ped.weaponModel"), &MenuState::PedWeaponModel);
+                ImGui::InputFloat(T("ped.health"), &MenuState::PedHealth, 1.0f, 10.0f, "%.1f");
+                ImGui::InputFloat(T("ped.armour"), &MenuState::PedArmour, 1.0f, 10.0f, "%.1f");
+                ImGui::PopItemWidth();
 
-        ImGui::Checkbox(T("ped.smoking"), &MenuState::SmokingEffect);
-        ImGui::SameLine();
-        ImGui::Checkbox(T("ped.flies"), &MenuState::FliesEffect);
+                ImGui::Checkbox(T("ped.asGang"), &MenuState::PedSpawnAsGang);
+                ImGui::SameLine();
+                ImGui::Checkbox(T("ped.freeze"), &MenuState::PedFreeze);
+                ImGui::SameLine();
+                ImGui::Checkbox(T("ped.hostile"), &MenuState::PedHostile);
 
-        UI::SpacingSeparator();
-        if (UI::Button(T("ped.spawnNear"), 3)) {
-            Controllers::Ped::SpawnNearPlayer();
+                ImGui::Checkbox(T("ped.smoking"), &MenuState::SmokingEffect);
+                ImGui::SameLine();
+                ImGui::Checkbox(T("ped.flies"), &MenuState::FliesEffect);
+
+                UI::SpacingSeparator();
+                if (UI::Button(T("ped.spawnNear"), 3)) {
+                    Controllers::Ped::SpawnNearPlayer();
+                }
+                ImGui::SameLine();
+                if (UI::Button(T("ped.spawnMarker"), 3)) {
+                    Controllers::Ped::SpawnAtMarker();
+                }
+                ImGui::SameLine();
+                if (UI::Button(T("ped.deleteLast"), 3)) {
+                    Controllers::Ped::DeleteLastSpawnedPed();
+                }
+
+                ImGui::TextDisabled("%s", Controllers::Ped::GetLastSpawnedPed() ? T("ped.lastSpawnedYes") : T("ped.lastSpawnedNo"));
+
+                UI::SpacingSeparator();
+                ImGui::TextWrapped("%s", T("ped.listHint"));UI::SpacingSeparator();
+                DrawPedList();
+                UI::EndTab();
+            }
+            UI::EndTabBar();
         }
-        ImGui::SameLine();
-        if (UI::Button(T("ped.spawnMarker"), 3)) {
-            Controllers::Ped::SpawnAtMarker();
-        }
-        ImGui::SameLine();
-        if (UI::Button(T("ped.deleteLast"), 3)) {
-            Controllers::Ped::DeleteLastSpawnedPed();
-        }
-
-        ImGui::TextDisabled("%s", Controllers::Ped::GetLastSpawnedPed() ? T("ped.lastSpawnedYes") : T("ped.lastSpawnedNo"));
-
-        UI::SpacingSeparator();
-        ImGui::TextWrapped("%s", T("ped.listHint"));
-        DrawPedList();
     }
 }

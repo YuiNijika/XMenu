@@ -18,6 +18,7 @@ namespace Controllers::World {
     void SetFasterClock(bool enable);
     void SetFreezeTime(bool enable);
     void SetLockTime(bool enable);
+    void SetNoWaterPhysics(bool enable);
     int GetDaysPassed();
     void SetDaysPassed(int days);
     float GetGravity();

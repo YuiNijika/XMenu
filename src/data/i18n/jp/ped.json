@@ -13,6 +13,7 @@
   "ped.flies": "ハエがいる",
   "ped.spawnNear": "近くに生成",
   "ped.spawnMarker": "マーカーに生成",
+  "ped.spawnPed": "歩行者を生成",
   "ped.deleteLast": "最後の生成を削除",
   "ped.lastSpawnedYes": "生成済み Ped があります",
   "ped.lastSpawnedNo": "生成済み Ped はありません",
@@ -27,5 +28,14 @@
   "ped.category.cop": "警察",
   "ped.category.beach": "ビーチ",
   "ped.category.driver": "運転手",
-  "ped.category.worker": "作業員"
+  "ped.category.worker": "労働者",
+  "ped.bigHeadMode": "ビッグヘッドモード",
+  "ped.elvisEverywhere": "街中にエルヴィス",
+  "ped.everyoneArmed": "全員武装",
+  "ped.pedsMayhem": "市民の暴動",
+  "ped.pedsAtkRocket": "ロケランで攻撃",
+  "ped.pedsRiot": "暴動モード",
+  "ped.slutMagnet": "異性を引き寄せる",
+  "ped.gangsControl": "ギャングが街を支配",
+  "ped.gangsEverywhere": "街中にギャング"
 }

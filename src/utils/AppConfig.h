@@ -76,4 +76,9 @@ namespace AppConfig {
 
     const std::vector<DataManager::LocationData>& GetCustomLocations();
     bool AddCustomLocation(const std::string& name, float x, float y, float z, int interior);
+
+    int GetGuiThemeIndex();
+    void SetGuiThemeIndex(int index);
+    int GetInteractionMode();
+    void SetInteractionMode(int mode);
 }

@@ -72,6 +72,7 @@ namespace GameLogic {
     void SetMoney(int amount);
     bool SetPlayerSkin(unsigned int modelId);
     bool ApplyPlayerClothes(int textureId, int modelId, int bodyPart);
+    bool SetPlayerCustomSkin(const char* name);
     bool SetPlayerStat(int statId, float value);
     float GetHealth(CPlayerPed* player);
     void SetHealth(CPlayerPed* player, float value);
@@ -144,6 +145,14 @@ namespace GameLogic {
     CPed* SpawnPedAtMarker(const PedSpawnOptions& options);
     void DeletePed(CPed* ped);
     void ApplyPedOptions(CPed* ped, const PedSpawnOptions& options);
+    void SetElvisEverywhere(bool enable);
+    void SetEveryoneArmed(bool enable);
+    void SetPedsMayhem(bool enable);
+    void SetPedsAtkRocket(bool enable);
+    void SetPedsRiot(bool enable);
+    void SetSlutMagnet(bool enable);
+    void SetGangsControl(bool enable);
+    void SetGangsEverywhere(bool enable);
     
     // 场景
     bool PlayPlayerAnimation(const char* group, const char* name, bool loop);
@@ -155,6 +164,8 @@ namespace GameLogic {
     void StopCutscene();
     bool IsCutsceneRunning();
     const char* GetMissionStatus();
+    void StartMission(int missionId);
+    void FailMission();
     
     // 视觉
     void DisplayHud(bool enable);
@@ -192,6 +203,8 @@ namespace GameLogic {
     void SetFreePayNSpray(bool enable);
     void SetFasterClock(bool enable);
     void SetFreezeTime(bool enable);
+    void ProcessSolidWater(CPlayerPed* player, bool enable);
+    void SetNoWaterPhysics(bool enable);
     int GetDaysPassed();
     void SetDaysPassed(int days);
     float GetGravity();

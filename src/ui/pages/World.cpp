@@ -80,6 +80,11 @@ namespace Pages::World {
             if (ImGui::Checkbox(T("world.freePayNSpray"), &MenuState::FreePayNSpray)) {
                 Controllers::World::SetFreePayNSpray(MenuState::FreePayNSpray);
             }
+            ImGui::NextColumn();
+            ImGui::Checkbox(T("world.solidWater"), &MenuState::SolidWater);
+            if (ImGui::Checkbox(T("world.noWaterPhysics"), &MenuState::NoWaterPhysics)) {
+                Controllers::World::SetNoWaterPhysics(MenuState::NoWaterPhysics);
+            }
 #endif
             ImGui::Columns(1);
             ImGui::Spacing();
