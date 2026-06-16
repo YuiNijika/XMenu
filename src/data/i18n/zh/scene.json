@@ -8,8 +8,11 @@
   "scene.particle": "粒子",
   "scene.particleName": "粒子名称",
   "scene.spawnParticle": "生成粒子",
+  "scene.removeLastParticle": "移除最后粒子",
+  "scene.removeAllParticles": "移除全部粒子",
   "scene.cutscene": "过场动画",
   "scene.cutsceneName": "过场名称",
+  "scene.interiorId": "室内 ID",
   "scene.startCutscene": "开始过场",
   "scene.stopCutscene": "停止过场",
   "scene.cutsceneRunning": "过场运行中",
@@ -17,5 +20,8 @@
   "scene.noListData": "没有可用的列表数据。",
   "scene.animationListHint": "点击列表项会填入动画组和动画名，并立即播放。",
   "scene.particleListHint": "点击列表项会填入粒子名称，并立即在玩家身边生成。",
-  "scene.cutsceneListHint": "点击列表项会填入过场名称，并立即启动。"
+  "scene.cutsceneListHint": "点击列表项会填入过场名称，并立即启动。",
+  "scene.missions": "任务",
+  "scene.noMissions": "没有正在运行的任务。",
+  "scene.failMission": "失败当前任务"
 }

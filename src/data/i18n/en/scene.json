@@ -8,8 +8,11 @@
   "scene.particle": "Particle",
   "scene.particleName": "Particle name",
   "scene.spawnParticle": "Spawn particle",
+  "scene.removeLastParticle": "Remove Last",
+  "scene.removeAllParticles": "Remove All",
   "scene.cutscene": "Cutscene",
   "scene.cutsceneName": "Cutscene name",
+  "scene.interiorId": "Interior ID",
   "scene.startCutscene": "Start cutscene",
   "scene.stopCutscene": "Stop cutscene",
   "scene.cutsceneRunning": "Cutscene running",
@@ -17,5 +20,8 @@
   "scene.noListData": "No list data available.",
   "scene.animationListHint": "Click a list entry to fill the animation group/name and play it immediately.",
   "scene.particleListHint": "Click a list entry to fill the particle name and spawn it near the player immediately.",
-  "scene.cutsceneListHint": "Click a list entry to fill the cutscene name and start it immediately."
+  "scene.cutsceneListHint": "Click a list entry to fill the cutscene name and start it immediately.",
+  "scene.missions": "Missions",
+  "scene.noMissions": "No mission is currently running.",
+  "scene.failMission": "Fail current mission"
 }

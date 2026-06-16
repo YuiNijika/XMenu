@@ -8,8 +8,11 @@
   "scene.particle": "パーティクル",
   "scene.particleName": "パーティクル名",
   "scene.spawnParticle": "パーティクル生成",
+  "scene.removeLastParticle": "最後のパーティクルを削除",
+  "scene.removeAllParticles": "全てのパーティクルを削除",
   "scene.cutscene": "カットシーン",
   "scene.cutsceneName": "カットシーン名",
+  "scene.interiorId": "インテリア ID",
   "scene.startCutscene": "カットシーン開始",
   "scene.stopCutscene": "カットシーン停止",
   "scene.cutsceneRunning": "カットシーン実行中",
@@ -17,5 +20,8 @@
   "scene.noListData": "利用可能なリストデータがありません。",
   "scene.animationListHint": "リスト項目をクリックすると、アニメグループと名前を入力して即時再生します。",
   "scene.particleListHint": "リスト項目をクリックすると、パーティクル名を入力してプレイヤー付近に即時生成します。",
-  "scene.cutsceneListHint": "リスト項目をクリックすると、カットシーン名を入力して即時開始します。"
+  "scene.cutsceneListHint": "リスト項目をクリックすると、カットシーン名を入力して即時開始します。",
+  "scene.missions": "ミッション",
+  "scene.noMissions": "現在実行中のミッションはありません。",
+  "scene.failMission": "現在のミッションを失敗させる"
 }
