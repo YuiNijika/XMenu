@@ -38,10 +38,6 @@ namespace MenuState {
     inline bool VehicleAutoUnflip = false;
     inline bool VehicleHeavy = false;
     inline bool VehicleWatertight = false;
-    inline bool VehicleNeon = false;
-    inline int VehicleNeonColorR = 255;
-    inline int VehicleNeonColorG = 0;
-    inline int VehicleNeonColorB = 0;
     inline bool VehicleSpeedLock = false;
     inline float VehicleSpeed = 60.0f;
     inline bool VehicleSpawnAsDriver = true;
@@ -50,8 +46,6 @@ namespace MenuState {
     inline int VehicleSpawnModel = 0;
     inline int VehicleColorPrimary = 0;
     inline int VehicleColorSecondary = 0;
-    inline int VehicleColorTertiary = 0;
-    inline int VehicleColorQuaternary = 0;
     inline int VehiclePaintjob = -1;
     inline int VehicleModId = 1000;
     inline bool VehicleAutoDrive = false;
@@ -85,7 +79,6 @@ namespace MenuState {
     inline bool SceneAnimLoop = false;
     inline char SceneParticleName[64] = "";
     inline char SceneCutsceneName[64] = "";
-    inline char SceneCutsceneInterior[64] = "0";
     inline int SceneMissionIndex = 0;
     inline bool VisualHud = true;
     inline bool VisualRadar = true;
@@ -110,14 +103,6 @@ namespace MenuState {
     inline bool WorldLockTime = false;
     inline bool FreeFlyEnabled = false;
     inline float FreeFlySpeed = 1.0f;
-    inline bool FreecamEnabled = false;
-    inline float FreecamFov = 60.0f;
-    inline int FreecamSpeedMul = 1;
-    inline bool TopDownCamEnabled = false;
-    inline int TopDownCamZoom = 40;
-    inline bool RandomCheatsEnabled = false;
-    inline bool RandomCheatsProgressBar = true;
-    inline int RandomCheatsInterval = 10;
     inline bool CommandWindowEnabled = false;
     inline bool LockWeather = false;
     inline bool DisableReplay = false;

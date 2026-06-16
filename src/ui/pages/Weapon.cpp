@@ -174,6 +174,8 @@ namespace Pages::Weapon {
                 if (MenuState::WeaponAmmo > 99999) MenuState::WeaponAmmo = 99999;
                 ImGui::PopItemWidth();
 
+                ImGui::Checkbox(T("weapon.safeMode"), &MenuState::WeaponSafeMode);
+
                 ImGui::PushItemWidth(160);
 #ifdef GTASA
                 ImGui::InputInt(T("weapon.typeId"), &MenuState::WeaponSpawnId);
@@ -200,8 +202,6 @@ namespace Pages::Weapon {
                 } else {
                     ImGui::Checkbox(T("weapon.cyclerEnable"), &MenuState::WeaponCyclerEnabled);
                 }
-
-                ImGui::Checkbox(T("weapon.safeMode"), &MenuState::WeaponSafeMode);
 
                 if (GameRuntime::Current().target != GameRuntime::Target::III) {
                     ImGui::SeparatorText(T("weapon.cyclerTitle"));
