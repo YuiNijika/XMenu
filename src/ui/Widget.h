@@ -2,7 +2,7 @@
 #include "imgui/imgui.h"
 
 namespace UI {
-    // 列表导航状态 (List Navigation State)
+    // 列表导航状态
     extern int listSelectedIndex;
     extern int listTotalItems;
     
@@ -14,10 +14,6 @@ namespace UI {
     void SameLineEvery(int index, int columns);
     void SpacingSeparator();
     void TextCentered(const char* text);
-    
-    // --- 统一双模 UI 接口 (Unified Dual-Mode UI API) ---
-    // 自动兼容 ImGui 传统面板模式 和 列表模式
-
     // 页面级作用域
     void BeginPage(const char* id, const char* title, const char* subtitle = "OPTIONS");
     void EndPage();
@@ -37,7 +33,7 @@ namespace UI {
     bool InputFloat(const char* label, float* v, float step = 1.0f, float step_fast = 10.0f, const char* format = "%.1f");
     bool InputInt(const char* label, int* v, int step = 1, int step_fast = 10);
 
-    // 布局控制 (在 Native 模式下会自动忽略)
+    // 布局控制
     void SameLine();
     void Columns(int count, const char* id = nullptr, bool border = false);
     void NextColumn();
