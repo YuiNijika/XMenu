@@ -962,7 +962,13 @@ void SetTrafficDensity(float density) {
 }
 
 void SetFlyingCars(bool enable) {
-    Log::Warn(std::string("SA 飞车开关暂未接入安全接口，已跳过：") + (enable ? "开启" : "关闭"));
+    static bool initialized = false;
+    static bool lastEnable = false;
+    if (!initialized || lastEnable != enable) {
+        initialized = true;
+        lastEnable = enable;
+        Log::Warn(std::string("SA 飞车开关暂未接入安全接口，已跳过：") + (enable ? "开启" : "关闭"));
+    }
 }
 
 CPed* SpawnPedNearPlayer(const PedSpawnOptions& options) {
