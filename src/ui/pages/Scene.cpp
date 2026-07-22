@@ -199,6 +199,12 @@ namespace Pages::Scene {
                 ImGui::InputText(T("scene.animGroup"), MenuState::SceneAnimGroup, sizeof(MenuState::SceneAnimGroup));
                 ImGui::InputText(T("scene.animName"), MenuState::SceneAnimName, sizeof(MenuState::SceneAnimName));
                 ImGui::Checkbox(T("scene.loop"), &MenuState::SceneAnimLoop);
+#ifdef GTASA
+                ImGui::SameLine();
+                ImGui::Checkbox(T("scene.secondary"), &MenuState::SceneAnimSecondary);
+                ImGui::SameLine();
+                ImGui::Checkbox(T("scene.onTargetPed"), &MenuState::SceneAnimOnPed);
+#endif
                 if (UI::Button(T("scene.playAnim"), 2)) {
                     Controllers::Scene::PlayPlayerAnimation();
                 }
@@ -211,6 +217,23 @@ namespace Pages::Scene {
                 DrawAnimationList();
                 UI::EndTab();
             }
+
+#ifdef GTASA
+            if (UI::BeginTab("scene.styles", T("scene.styles"))) {
+                UI::PushItemWidth(180);
+                UI::SliderInt(T("scene.fightStyle"), &MenuState::SceneFightStyle, 0, 15);
+                UI::SliderInt(T("scene.walkStyle"), &MenuState::SceneWalkStyle, 0, 21);
+                UI::PopItemWidth();
+                if (UI::Button(T("scene.applyFightStyle"), 2)) {
+                    Controllers::Scene::SetFightingStyle(MenuState::SceneFightStyle);
+                }
+                ImGui::SameLine();
+                if (UI::Button(T("scene.applyWalkStyle"), 2)) {
+                    Controllers::Scene::SetWalkingStyle(MenuState::SceneWalkStyle);
+                }
+                UI::EndTab();
+            }
+#endif
 
             if (UI::BeginTab("scene.particle", T("scene.particle"))) {
                 static LiveList<NamedValueEntry> particles;

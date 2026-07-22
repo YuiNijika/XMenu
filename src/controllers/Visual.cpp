@@ -19,5 +19,6 @@ namespace Controllers::Visual {
         ApplyHudState();
         ApplyRadarState();
         ApplyFilterState();
+        GameLogic::ProcessVisualExtras();
     }
 }

@@ -30,6 +30,7 @@
   "ped.category.driver": "Водители",
   "ped.category.worker": "Рабочие",
   "ped.bigHeadMode": "Режим большой головы",
+  "ped.thinBodyMode": "Тонкое тело",
   "ped.elvisEverywhere": "Элвисы повсюду",
   "ped.everyoneArmed": "Все вооружены",
   "ped.pedsMayhem": "Безумие педов",
@@ -37,5 +38,18 @@
   "ped.pedsRiot": "Режим бунта",
   "ped.slutMagnet": "Магнит для проституток",
   "ped.gangsControl": "Банды контролируют улицы",
-  "ped.gangsEverywhere": "Банды повсюду"
+  "ped.gangsEverywhere": "Банды повсюду",
+  "ped.noProstitutes": "Без проституток",
+  "ped.nastyLimbs": "Кровавые конечности",
+  "ped.gangs": "Войны банд",
+  "ped.gangWarsActive": "Войны банд активны",
+  "ped.startGangWar": "Начать войну",
+  "ped.endGangWar": "Закончить войну",
+  "ped.resetGangModels": "Сбросить модели банд",
+  "ped.gangSelected": "ID банды",
+  "ped.gangDensity": "Плотность зоны",
+  "ped.gangMemberIndex": "Слот участника",
+  "ped.gangMemberModel": "Модель участника",
+  "ped.gangWeaponType": "Оружие банды",
+  "ped.applyGangWeapons": "Применить оружие банды"
 }

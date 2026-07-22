@@ -11,6 +11,8 @@
   "world.disableCheats": "Disable cheats",
   "world.fasterClock": "Faster clock",
   "world.freezeTime": "Freeze time",
+  "world.solidWater": "Solid water",
+  "world.noWaterPhysics": "No water physics",
   "world.disableForbiddenAreaWanted": "Disable forbidden-area wanted",
   "world.freePayNSpray": "Free Pay 'n' Spray",
   "world.daysPassed": "Days passed",

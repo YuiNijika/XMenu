@@ -145,6 +145,8 @@ namespace Pages::Weapon {
                 weaponStatsChanged |= ImGui::Checkbox(T("weapon.longRange"), &MenuState::LongWeaponRange);
 #ifdef GTASA
                 ImGui::NextColumn();
+                ImGui::Checkbox(T("weapon.autoAim"), &MenuState::WeaponAutoAim);
+                ImGui::NextColumn();
                 weaponStatsChanged |= ImGui::Checkbox(T("weapon.moveWhileAiming"), &MenuState::MoveAim);
                 ImGui::NextColumn();
                 weaponStatsChanged |= ImGui::Checkbox(T("weapon.moveWhileFiring"), &MenuState::MoveFire);

@@ -10,6 +10,17 @@ namespace MenuState {
     inline bool RespawnAtDeathPosition = false;
     inline bool KeepStuff = false;
     inline bool FreezeWantedLevel = false;
+    inline bool NeverWanted = false;
+    inline bool InvisiblePlayer = false;
+    inline bool MegaJump = false;
+    inline bool MegaPunch = false;
+    inline bool CycleJump = false;
+    inline bool InfiniteOxygen = false;
+    inline bool NeverHungry = false;
+    inline bool FastSprint = false;
+    inline bool DrunkEffect = false;
+    inline bool SprintEverywhere = false;
+    inline bool AimSkinChanger = false;
     inline bool BulletProof = false;
     inline bool CollisionProof = false;
     inline bool ExplosionProof = false;
@@ -21,6 +32,7 @@ namespace MenuState {
     inline int PlayerMoney = 0;
     inline bool InfiniteAmmo = false;
     inline bool FastReload = false;
+    inline bool WeaponAutoAim = false;
     inline bool HugeWeaponDamage = false;
     inline bool LongWeaponRange = false;
     inline bool RapidFire = false;
@@ -59,6 +71,17 @@ namespace MenuState {
     inline bool VehicleAutoDrive = false;
     inline float VehicleAutoDriveSpeed = 35.0f;
     inline bool VehicleFlyingCars = false;
+    inline bool VehicleBoatFly = false;
+    inline bool VehicleBikeFly = false;
+    inline bool VehicleStayOnBike = false;
+    inline bool VehicleDriveWater = false;
+    inline bool VehiclePerfectHandling = false;
+    inline bool VehicleTankMode = false;
+    inline bool VehicleGreenLights = false;
+    inline bool VehicleAimDrive = false;
+    inline bool VehicleNoDerail = false;
+    inline bool VehicleFlipNoBurn = false;
+    inline bool VehicleInfNitro = false;
     inline int VehicleDoorIndex = 0;
     inline int VehicleSeatIndex = 0;
     inline float VehicleTrafficClearRadius = 80.0f;
@@ -93,6 +116,10 @@ namespace MenuState {
     inline char SceneAnimGroup[64] = "PED";
     inline char SceneAnimName[64] = "WALK_player";
     inline bool SceneAnimLoop = false;
+    inline bool SceneAnimSecondary = false;
+    inline bool SceneAnimOnPed = false;
+    inline int SceneFightStyle = 0;
+    inline int SceneWalkStyle = 0;
     inline char SceneParticleName[64] = "";
     inline char SceneCutsceneName[64] = "";
     inline char SceneCutsceneInterior[64] = "0";
@@ -102,6 +129,14 @@ namespace MenuState {
     inline bool VisualFilter = false;
     inline int VisualFilterId = 0;
     inline float VisualTimecycStrength = 1.0f;
+    inline bool VisualSquareRadar = false;
+    inline bool VisualNoRadarRot = false;
+    inline bool VisualFullscreenMap = false;
+    inline bool VisualUnfogMap = false;
+    inline bool VisualHideAreaNames = false;
+    inline bool VisualHideVehicleNames = false;
+    inline bool VisualNightVision = false;
+    inline bool VisualInfrared = false;
     inline int PlayerSkinModel = 0;
     inline int PlayerClothesTexture = 0;
     inline int PlayerClothesModel = 0;
@@ -121,6 +156,14 @@ namespace MenuState {
     inline bool SolidWater = false;
     inline bool NoWaterPhysics = false;
     inline bool BigHeadMode = false;
+    inline bool ThinBodyMode = false;
+    inline bool GangWarsActive = false;
+    inline bool PedNoProstitutes = false;
+    inline bool PedNastyLimbs = false;
+    inline int GangSelected = 0;
+    inline int GangMemberIndex = 0;
+    inline int GangWeaponSlot = 0;
+    inline int GangWeaponType = 0;
     inline bool FreeFlyEnabled = false;
     inline float FreeFlySpeed = 1.0f;
     inline bool FreecamEnabled = false;
@@ -151,7 +194,7 @@ namespace MenuState {
     inline double NoticeExpireTime = 0.0;
 
     inline bool UseNativeMenu = false;
-    inline bool ListMenuMouseInput = false; // 是否在列表模式下开启鼠标输入
+    inline bool ListMenuMouseInput = true; // 列表模式默认允许鼠标（GTA5 PC 交互）
 
     inline void ShowNotice(const char* text, double durationSeconds = 2.0) {
         std::snprintf(NoticeText, sizeof(NoticeText), "%s", text ? text : "");

@@ -5,6 +5,7 @@
 #include "utils/AppConfig.h"
 #include "plugin.h"
 #include "CPlayerPed.h"
+#include "CPools.h"
 #include <cstdio>
 #include <cstring>
 #include <windows.h>
@@ -18,6 +19,18 @@ namespace {
     GameTypes::ProofState savedFreeFlyProofs;
     float savedFreeFlyHealth = 0.0f;
     bool hasSavedFreeFlyProofs = false;
+
+    bool IsPedInPool(CPed* ped) {
+        if (!ped || !CPools::ms_pPedPool) {
+            return false;
+        }
+        for (CPed* poolPed : CPools::ms_pPedPool) {
+            if (poolPed == ped) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     int ClampWantedLevel(int level) {
         if (level < 0) {
@@ -59,22 +72,28 @@ namespace {
     }
 
     void RestoreGodModeState() {
-        if (!hasSavedPlayerProofs || !godModePlayer) {
+        if (!hasSavedPlayerProofs) {
+            GameLogic::ApplyGodMode(nullptr, false);
             return;
         }
 
-        GameLogic::SetPlayerProofState(godModePlayer, ToLogicProof(savedPlayerProofs));
+        if (godModePlayer && IsPedInPool(godModePlayer)) {
+            GameLogic::SetPlayerProofState(godModePlayer, ToLogicProof(savedPlayerProofs));
+        }
+        GameLogic::ApplyGodMode(nullptr, false);
         savedGodModeHealth = 0.0f;
         godModePlayer = nullptr;
         hasSavedPlayerProofs = false;
     }
 
     void RestoreFreeFlyProtection() {
-        if (!hasSavedFreeFlyProofs || !freeFlyPlayer) {
+        if (!hasSavedFreeFlyProofs) {
             return;
         }
 
-        GameLogic::SetPlayerProofState(freeFlyPlayer, ToLogicProof(savedFreeFlyProofs));
+        if (freeFlyPlayer && IsPedInPool(freeFlyPlayer)) {
+            GameLogic::SetPlayerProofState(freeFlyPlayer, ToLogicProof(savedFreeFlyProofs));
+        }
         savedFreeFlyHealth = 0.0f;
         freeFlyPlayer = nullptr;
         hasSavedFreeFlyProofs = false;
@@ -86,7 +105,8 @@ namespace {
             return;
         }
 
-        if (!player) {
+        if (!player || !IsPedInPool(player)) {
+            RestoreFreeFlyProtection();
             return;
         }
 
@@ -118,7 +138,14 @@ namespace {
             return;
         }
 
-        if (!player) {
+        if (!player || !IsPedInPool(player)) {
+            // 玩家指针无效时仍清全局无敌位，并丢弃旧缓存
+            GameLogic::ApplyGodMode(nullptr, false);
+            if (hasSavedPlayerProofs && (!godModePlayer || !IsPedInPool(godModePlayer))) {
+                savedGodModeHealth = 0.0f;
+                godModePlayer = nullptr;
+                hasSavedPlayerProofs = false;
+            }
             return;
         }
 
@@ -210,6 +237,7 @@ namespace Controllers::Player {
         GameLogic::ProcessHardMode(player, MenuState::HardMode);
         GameLogic::ProcessRespawnAtDeathPosition(player, MenuState::RespawnAtDeathPosition);
         GameLogic::ProcessFreezeWantedLevel(player, MenuState::FreezeWantedLevel, ClampWantedLevel(MenuState::WantedLevel));
+        GameLogic::ProcessPlayerCheats(player);
         ProcessFreeFly(player);
     }
 
@@ -357,5 +385,17 @@ namespace Controllers::Player {
 
     bool SetStat(int statId, float value) {
         return GameLogic::SetPlayerStat(statId, value);
+    }
+
+    void MaxWeaponSkills() {
+        GameLogic::MaxWeaponSkills();
+    }
+
+    void MaxVehicleSkills() {
+        GameLogic::MaxVehicleSkills();
+    }
+
+    void ApplyAimSkinChanger() {
+        GameLogic::ApplyAimSkinChanger();
     }
 }

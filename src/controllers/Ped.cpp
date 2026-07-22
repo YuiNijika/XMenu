@@ -63,6 +63,22 @@ namespace Controllers::Ped {
             GameLogic::ProcessSmokingEffect(player, MenuState::SmokingEffect);
             GameLogic::ProcessFliesEffect(player, MenuState::FliesEffect);
         }
+
+        // 粘性：仅 re-assert 内存 flag 型开关（任务脚本可能清掉）
+        // Mayhem/Riot 在 III 是一次性 cheat 调用，不能每帧触发
+        GameLogic::SetElvisEverywhere(MenuState::ElvisEverywhere);
+        GameLogic::SetEveryoneArmed(MenuState::EveryoneArmed);
+        GameLogic::SetPedsAtkRocket(MenuState::PedsAtkRocket);
+        GameLogic::SetSlutMagnet(MenuState::SlutMagnet);
+        GameLogic::SetGangsControl(MenuState::GangsControl);
+        GameLogic::SetGangsEverywhere(MenuState::GangsEverywhere);
+        GameLogic::SetPedNoProstitutes(MenuState::PedNoProstitutes);
+        GameLogic::SetPedNastyLimbs(MenuState::PedNastyLimbs);
+#ifdef GTASA
+        GameLogic::SetPedsMayhem(MenuState::PedsMayhem);
+        GameLogic::SetPedsRiot(MenuState::PedsRiot);
+        GameLogic::SetGangWarsActive(MenuState::GangWarsActive);
+#endif
     }
 
     void SetElvisEverywhere(bool enable) {
@@ -88,5 +104,49 @@ namespace Controllers::Ped {
     }
     void SetGangsEverywhere(bool enable) {
         GameLogic::SetGangsEverywhere(enable);
+    }
+
+    void SetNoProstitutes(bool enable) {
+        GameLogic::SetPedNoProstitutes(enable);
+    }
+
+    void SetNastyLimbs(bool enable) {
+        GameLogic::SetPedNastyLimbs(enable);
+    }
+
+    void SetGangWarsActive(bool enable) {
+        GameLogic::SetGangWarsActive(enable);
+    }
+
+    void StartGangWar(bool offensive) {
+        GameLogic::StartGangWar(offensive);
+    }
+
+    void EndGangWar() {
+        GameLogic::EndGangWar();
+    }
+
+    int GetGangZoneDensity(int gangId) {
+        return GameLogic::GetGangZoneDensity(gangId);
+    }
+
+    void SetGangZoneDensity(int gangId, int density) {
+        GameLogic::SetGangZoneDensity(gangId, density);
+    }
+
+    unsigned int GetGangMemberModel(unsigned int gangId, unsigned int memberId) {
+        return GameLogic::GetGangMemberModel(gangId, memberId);
+    }
+
+    void SetGangMemberModel(unsigned int gangId, unsigned int memberId, unsigned int model) {
+        GameLogic::SetGangMemberModel(gangId, memberId, model);
+    }
+
+    void ResetGangModels() {
+        GameLogic::ResetGangModels();
+    }
+
+    void SetGangWeapons(unsigned int gangId, int weapon1, int weapon2, int weapon3) {
+        GameLogic::SetGangWeapons(gangId, weapon1, weapon2, weapon3);
     }
 }

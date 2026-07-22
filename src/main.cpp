@@ -2,8 +2,7 @@
  * --------------------------------------------------------------------------------------------
  * XMenu
  * 作者：鼠子(YuiNijika)
- * 测试：枫林、狂风晨、IIScar、Happy
- * 版本：v0.0.2-rc
+ * 版本：@XMENU_VERSION
  * 网站：https://gtamodx.com/mods/xmenu
  * GitHub：https://github.com/YuiNijika/XMenu
  * QQ群：https://gtamodx.com/qqun
@@ -31,7 +30,7 @@
 #endif
 
 extern const bool XMENU_DEBUG_MODE = false;
-const char* XMENU_VERSION = "v0.0.2-rc";
+const char* XMENU_VERSION = "v0.0.3-rc";
 const char* XMENU_AUTHOR = "鼠子(YuiNijika)";
 const char* XMENU_AUTHOR_TEST = "枫林、狂风晨、IIScar、Happy";
 const char* XMENU_URL = "https://gtamodx.com/mods/xmenu";

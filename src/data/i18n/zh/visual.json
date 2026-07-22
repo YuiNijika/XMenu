@@ -4,8 +4,18 @@
   "visual.filter": "画面滤镜",
   "visual.filterId": "滤镜 ID",
   "visual.timecycStrength": "Timecyc 强度",
+  "visual.timecycStrengthHint": "占位项（已禁用）：不会改写 timecycle，也不会持久化。",
   "visual.applyFilter": "应用滤镜",
   "visual.filterHint": "SA 支持更完整的滤镜效果；VC/III 会按可用能力安全降级。",
   "visual.listHint": "点击列表项会填入滤镜 ID 并立即应用。",
-  "visual.noListData": "没有可用的视觉列表数据。"
+  "visual.noListData": "没有可用的视觉列表数据。",
+  "visual.squareRadar": "方形雷达",
+  "visual.squareRadarHint": "简化软实现（缩放雷达盘），非完整方形雷达替换。",
+  "visual.noRadarRot": "雷达不旋转",
+  "visual.fullscreenMap": "全屏地图",
+  "visual.unfogMap": "地图除雾",
+  "visual.hideAreaNames": "隐藏区域名",
+  "visual.hideVehicleNames": "隐藏载具名",
+  "visual.nightVision": "夜视",
+  "visual.infrared": "热成像"
 }

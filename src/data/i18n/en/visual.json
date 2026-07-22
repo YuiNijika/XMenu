@@ -4,8 +4,18 @@
   "visual.filter": "Visual filter",
   "visual.filterId": "Filter ID",
   "visual.timecycStrength": "Timecyc strength",
+  "visual.timecycStrengthHint": "Placeholder (disabled): does not rewrite the timecycle and is not persisted.",
   "visual.applyFilter": "Apply filter",
   "visual.filterHint": "SA supports fuller filter effects; VC/III degrade safely according to available capabilities.",
   "visual.listHint": "Click a list entry to fill the filter ID and apply it immediately.",
-  "visual.noListData": "No visual list data available."
+  "visual.noListData": "No visual list data available.",
+  "visual.squareRadar": "Square radar",
+  "visual.squareRadarHint": "Simplified soft mode (radar disc scale), not a full square-radar replacement.",
+  "visual.noRadarRot": "No radar rotation",
+  "visual.fullscreenMap": "Fullscreen map",
+  "visual.unfogMap": "Unfog map",
+  "visual.hideAreaNames": "Hide area names",
+  "visual.hideVehicleNames": "Hide vehicle names",
+  "visual.nightVision": "Night vision",
+  "visual.infrared": "Infrared"
 }

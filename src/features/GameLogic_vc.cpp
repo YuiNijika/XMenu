@@ -19,6 +19,8 @@
 #include "CWeather.h"
 #include "CCutsceneMgr.h"
 #include "CTheScripts.h"
+#include "ui/MenuState.h"
+#include "utils/StdExtras.h"
 #include "rw/skeleton.h"
 #include <cmath>
 #include <cstdint>
@@ -28,6 +30,8 @@
 #include <string>
 
 namespace {
+std::vector<int> g_trackedPickupHandles;
+
 bool PatchByteIfExpected(const char* label, std::uintptr_t address, unsigned char original, unsigned char patched, bool enable) {
     auto* target = reinterpret_cast<unsigned char*>(address);
 
@@ -775,13 +779,16 @@ void SetTrafficDensity(float density) {
 }
 
 void SetFlyingCars(bool enable) {
-    static bool initialized = false;
-    static bool lastEnable = false;
-    if (!initialized || lastEnable != enable) {
-        initialized = true;
-        lastEnable = enable;
-        Log::Warn(std::string("VC 暂未接入飞车开关，已跳过：") + (enable ? "开启" : "关闭"));
-    }
+    plugin::patch::Set<bool>(0xA10B28, enable, false);
+}
+
+void SetVehicleNoDerail(bool) {}
+void SetVehicleFlipNoBurn(bool) {}
+void ProcessVehicleCheats(CVehicle*) {
+    plugin::patch::Set<bool>(0xA10B28, MenuState::VehicleFlyingCars, false);
+    plugin::patch::Set<bool>(0xA10B11, MenuState::VehicleBoatFly, false);
+    plugin::patch::Set<bool>(0xA10B81, MenuState::VehicleDriveWater, false);
+    plugin::patch::Set<bool>(0xA10ADC, MenuState::VehicleGreenLights, false);
 }
 
 CPed* SpawnPedNearPlayer(const PedSpawnOptions& options) {
@@ -829,6 +836,17 @@ void SetPedsRiot(bool enable) { }
 void SetSlutMagnet(bool enable) { plugin::patch::Set<bool>(0xA10B5F, enable, false); }
 void SetGangsControl(bool enable) { }
 void SetGangsEverywhere(bool enable) { }
+void SetPedNoProstitutes(bool enable) { plugin::patch::Set<bool>(0xA10B99, enable, false); }
+void SetPedNastyLimbs(bool) {}
+void SetGangWarsActive(bool) {}
+void StartGangWar(bool) {}
+void EndGangWar() {}
+int GetGangZoneDensity(int) { return 0; }
+void SetGangZoneDensity(int, int) {}
+unsigned int GetGangMemberModel(unsigned int, unsigned int) { return 0; }
+void SetGangMemberModel(unsigned int, unsigned int, unsigned int) {}
+void ResetGangModels() {}
+void SetGangWeapons(unsigned int, int, int, int) {}
 
 bool PlayPlayerAnimation(const char*, const char*, bool) {
     static bool logged = false;
@@ -837,6 +855,10 @@ bool PlayPlayerAnimation(const char*, const char*, bool) {
         Log::Warn("VC 暂不支持动画页播放，已安全降级");
     }
     return false;
+}
+
+bool PlayAnimationEx(const char* group, const char* name, bool loop, bool, bool) {
+    return PlayPlayerAnimation(group, name, loop);
 }
 
 void StopPlayerAnimation() {
@@ -887,6 +909,15 @@ void FailMission() {
         Log::Info("VC 已强制失败当前任务");
     }
 }
+
+void SetFightingStyle(int) {}
+void SetWalkingStyle(int) {}
+void ProcessVisualExtras() {}
+void ProcessPlayerCheats(CPlayerPed*) {}
+void MaxWeaponSkills() {}
+void MaxVehicleSkills() {}
+void ApplyAimSkinChanger() {}
+void ProcessWeaponAutoAim(bool) {}
 
 void DisplayHud(bool enable) {
     CHud::m_Wants_To_Draw_Hud = enable;
@@ -1029,24 +1060,14 @@ void ClearWeapons(CPlayerPed* player) {
 
 int RemoveTrackedPickups() {
     int removed = 0;
-    for (CPickup& pickup : CPickups::aPickUps) {
-        if (pickup.bRemoved || pickup.bPickupType == PICKUP_NONE) {
+    for (int handle : g_trackedPickupHandles) {
+        if (handle < 0) {
             continue;
         }
-
-        if (pickup.pObject) {
-            plugin::Command<plugin::Commands::DELETE_OBJECT>(CPools::GetObjectRef(reinterpret_cast<CObject*>(pickup.pObject)));
-            pickup.pObject = nullptr;
-        }
-        if (pickup.pExtraObject) {
-            plugin::Command<plugin::Commands::DELETE_OBJECT>(CPools::GetObjectRef(reinterpret_cast<CObject*>(pickup.pExtraObject)));
-            pickup.pExtraObject = nullptr;
-        }
-        pickup.bRemoved = true;
-        pickup.bEffects = false;
-        pickup.bPickupType = PICKUP_NONE;
+        CPickups::RemovePickUp(handle);
         ++removed;
     }
+    g_trackedPickupHandles.clear();
     return removed;
 }
 
@@ -1204,6 +1225,9 @@ namespace {
             nullptr
         );
         plugin::Command<plugin::Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(model);
+        if (handle >= 0) {
+            g_trackedPickupHandles.push_back(handle);
+        }
         return handle;
     }
 }
@@ -1233,6 +1257,12 @@ bool UpdateLastPickup(const PickupOptions& options) {
     }
 
     CPickups::RemovePickUp(lastXMenuPickupHandle);
+    for (auto it = g_trackedPickupHandles.begin(); it != g_trackedPickupHandles.end(); ++it) {
+        if (*it == lastXMenuPickupHandle) {
+            g_trackedPickupHandles.erase(it);
+            break;
+        }
+    }
     const int handle = CreateXMenuPickup(options, lastXMenuPickupPosition);
     if (handle < 0) {
         lastXMenuPickupHandle = -1;
@@ -1249,6 +1279,12 @@ bool RemoveLastPickup() {
     }
 
     CPickups::RemovePickUp(lastXMenuPickupHandle);
+    for (auto it = g_trackedPickupHandles.begin(); it != g_trackedPickupHandles.end(); ++it) {
+        if (*it == lastXMenuPickupHandle) {
+            g_trackedPickupHandles.erase(it);
+            break;
+        }
+    }
     lastXMenuPickupHandle = -1;
     return true;
 }

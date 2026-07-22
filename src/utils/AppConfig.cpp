@@ -54,6 +54,18 @@ namespace {
             {"player.respawnAtDeathPosition", "player.respawnAtDeathPosition", &MenuState::RespawnAtDeathPosition, false},
             {"player.freezeWantedLevel", "player.freezeWantedLevel", &MenuState::FreezeWantedLevel, false},
             {"player.keepStuff", "player.keepStuff", &MenuState::KeepStuff, false},
+            {"player.autoFlight", "player.autoFlight", &MenuState::FreeFlyEnabled, false},
+            {"player.neverWanted", "player.neverWanted", &MenuState::NeverWanted, false},
+            {"player.invisible", "player.invisible", &MenuState::InvisiblePlayer, false},
+            {"player.megaJump", "player.megaJump", &MenuState::MegaJump, false},
+            {"player.megaPunch", "player.megaPunch", &MenuState::MegaPunch, false},
+            {"player.cycleJump", "player.cycleJump", &MenuState::CycleJump, false},
+            {"player.infiniteOxygen", "player.infiniteOxygen", &MenuState::InfiniteOxygen, false},
+            {"player.neverHungry", "player.neverHungry", &MenuState::NeverHungry, false},
+            {"player.fastSprint", "player.fastSprint", &MenuState::FastSprint, false},
+            {"player.drunkEffect", "player.drunkEffect", &MenuState::DrunkEffect, false},
+            {"player.sprintEverywhere", "player.sprintEverywhere", &MenuState::SprintEverywhere, false},
+            {"player.aimSkinChanger", "player.aimSkinChanger", &MenuState::AimSkinChanger, false},
             {"weapon.infiniteAmmo", "weapon.infiniteAmmo", &MenuState::InfiniteAmmo, false},
             {"weapon.fastReload", "weapon.fastReload", &MenuState::FastReload, false},
             {"weapon.hugeDamage", "weapon.hugeDamage", &MenuState::HugeWeaponDamage, false},
@@ -63,13 +75,49 @@ namespace {
             {"weapon.moveAim", "weapon.moveAim", &MenuState::MoveAim, false},
             {"weapon.moveFire", "weapon.moveFire", &MenuState::MoveFire, false},
             {"weapon.noSpread", "weapon.noSpread", &MenuState::NoSpread, false},
+            {"weapon.autoAim", "weapon.autoAim", &MenuState::WeaponAutoAim, false},
             {"vehicle.noDamage", "vehicle.noDamage", &MenuState::VehicleNoDamage, false},
             {"vehicle.autoUnflip", "vehicle.autoUnflip", &MenuState::VehicleAutoUnflip, false},
             {"vehicle.heavy", "vehicle.heavy", &MenuState::VehicleHeavy, false},
             {"vehicle.watertight", "vehicle.watertight", &MenuState::VehicleWatertight, false},
             {"vehicle.lockSpeed", "vehicle.lockSpeed", &MenuState::VehicleSpeedLock, false},
             {"vehicle.flyingCars", "vehicle.flyingCars", &MenuState::VehicleFlyingCars, false},
+            {"vehicle.boatFly", "vehicle.boatFly", &MenuState::VehicleBoatFly, false},
+            {"vehicle.bikeFly", "vehicle.bikeFly", &MenuState::VehicleBikeFly, false},
+            {"vehicle.stayOnBike", "vehicle.stayOnBike", &MenuState::VehicleStayOnBike, false},
+            {"vehicle.driveWater", "vehicle.driveWater", &MenuState::VehicleDriveWater, false},
+            {"vehicle.perfectHandling", "vehicle.perfectHandling", &MenuState::VehiclePerfectHandling, false},
+            {"vehicle.tankMode", "vehicle.tankMode", &MenuState::VehicleTankMode, false},
+            {"vehicle.greenLights", "vehicle.greenLights", &MenuState::VehicleGreenLights, false},
+            {"vehicle.aimDrive", "vehicle.aimDrive", &MenuState::VehicleAimDrive, false},
+            {"vehicle.noDerail", "vehicle.noDerail", &MenuState::VehicleNoDerail, false},
+            {"vehicle.flipNoBurn", "vehicle.flipNoBurn", &MenuState::VehicleFlipNoBurn, false},
+            {"vehicle.infNitro", "vehicle.infNitro", &MenuState::VehicleInfNitro, false},
+            {"ped.bigHeadMode", "ped.bigHeadMode", &MenuState::BigHeadMode, false},
+            {"ped.thinBodyMode", "ped.thinBodyMode", &MenuState::ThinBodyMode, false},
+            {"ped.elvisEverywhere", "ped.elvisEverywhere", &MenuState::ElvisEverywhere, false},
+            {"ped.everyoneArmed", "ped.everyoneArmed", &MenuState::EveryoneArmed, false},
+            {"ped.pedsMayhem", "ped.pedsMayhem", &MenuState::PedsMayhem, false},
+            {"ped.pedsAtkRocket", "ped.pedsAtkRocket", &MenuState::PedsAtkRocket, false},
+            {"ped.pedsRiot", "ped.pedsRiot", &MenuState::PedsRiot, false},
+            {"ped.slutMagnet", "ped.slutMagnet", &MenuState::SlutMagnet, false},
+            {"ped.gangsControl", "ped.gangsControl", &MenuState::GangsControl, false},
+            {"ped.gangsEverywhere", "ped.gangsEverywhere", &MenuState::GangsEverywhere, false},
+            {"ped.noProstitutes", "ped.noProstitutes", &MenuState::PedNoProstitutes, false},
+            {"ped.nastyLimbs", "ped.nastyLimbs", &MenuState::PedNastyLimbs, false},
+            {"ped.gangWarsActive", "ped.gangWarsActive", &MenuState::GangWarsActive, false},
+            {"visual.squareRadar", "visual.squareRadar", &MenuState::VisualSquareRadar, false},
+            {"visual.noRadarRot", "visual.noRadarRot", &MenuState::VisualNoRadarRot, false},
+            {"visual.fullscreenMap", "visual.fullscreenMap", &MenuState::VisualFullscreenMap, false},
+            {"visual.unfogMap", "visual.unfogMap", &MenuState::VisualUnfogMap, false},
+            {"visual.hideAreaNames", "visual.hideAreaNames", &MenuState::VisualHideAreaNames, false},
+            {"visual.hideVehicleNames", "visual.hideVehicleNames", &MenuState::VisualHideVehicleNames, false},
+            {"visual.nightVision", "visual.nightVision", &MenuState::VisualNightVision, false},
+            {"visual.infrared", "visual.infrared", &MenuState::VisualInfrared, false},
             {"world.lockCurrentWeather", "world.lockCurrentWeather", &MenuState::LockWeather, false},
+            {"world.lockCurrentTime", "world.lockCurrentTime", &MenuState::WorldLockTime, false},
+            {"world.solidWater", "world.solidWater", &MenuState::SolidWater, false},
+            {"world.noWaterPhysics", "world.noWaterPhysics", &MenuState::NoWaterPhysics, false},
             {"world.disableReplay", "world.disableReplay", &MenuState::DisableReplay, false},
             {"world.disableCheats", "world.disableCheats", &MenuState::DisableCheats, false},
             {"world.disableForbiddenAreaWanted", "world.disableForbiddenAreaWanted", &MenuState::ForbiddenAreaWanted, false},
@@ -100,8 +148,34 @@ namespace {
 
         const std::string feature = id;
         if (feature == "weapon.dualWield" || feature == "weapon.moveAim" || feature == "weapon.moveFire"
-            || feature == "world.disableForbiddenAreaWanted" || feature == "world.freePayNSpray") {
+            || feature == "weapon.autoAim"
+            || feature == "world.disableForbiddenAreaWanted" || feature == "world.freePayNSpray"
+            || feature == "player.megaJump" || feature == "player.megaPunch" || feature == "player.cycleJump"
+            || feature == "player.infiniteOxygen" || feature == "player.neverHungry" || feature == "player.fastSprint"
+            || feature == "player.drunkEffect" || feature == "player.sprintEverywhere" || feature == "player.aimSkinChanger"
+            || feature == "player.invisible" || feature == "player.neverWanted"
+            || feature == "vehicle.bikeFly" || feature == "vehicle.stayOnBike" || feature == "vehicle.tankMode"
+            || feature == "vehicle.aimDrive" || feature == "vehicle.noDerail" || feature == "vehicle.flipNoBurn"
+            || feature == "vehicle.infNitro"
+            || feature == "ped.thinBodyMode" || feature == "ped.gangWarsActive"
+            || feature == "ped.elvisEverywhere" || feature == "ped.pedsAtkRocket" || feature == "ped.gangsControl"
+            || feature == "ped.gangsEverywhere"
+            || feature == "visual.squareRadar" || feature == "visual.noRadarRot" || feature == "visual.fullscreenMap"
+            || feature == "visual.unfogMap" || feature == "visual.hideAreaNames" || feature == "visual.hideVehicleNames"
+            || feature == "visual.nightVision" || feature == "visual.infrared"
+            || feature == "world.solidWater" || feature == "world.noWaterPhysics") {
             return IsSaRuntime();
+        }
+
+        if (feature == "ped.bigHeadMode") {
+            // SA 皮肤缩放 + III pre-render 钩子；VC 无实现
+            return IsSaRuntime() || GameRuntime::Current().target == GameRuntime::Target::III;
+        }
+        if (feature == "ped.noProstitutes") {
+            return GameRuntime::Current().target == GameRuntime::Target::VC;
+        }
+        if (feature == "ped.nastyLimbs") {
+            return GameRuntime::Current().target == GameRuntime::Target::III;
         }
 
         return true;
@@ -113,7 +187,8 @@ namespace {
         }
 
         const std::string action = id;
-        if (action == "teleport.marker" || action == "teleport.quickMap") {
+        if (action == "teleport.marker" || action == "teleport.quickMap"
+            || action == "player.aimSkinChanger" || action == "player.neverWanted.toggle") {
             return IsSaRuntime();
         }
 
@@ -526,6 +601,8 @@ namespace {
             {"player.heal", "action.player.heal", "F8"},
             {"player.armour", "action.player.armour", "Shift+F8"},
             {"player.clearWanted", "action.player.clearWanted", "Ctrl+F8"},
+            {"player.aimSkinChanger", "action.player.aimSkinChanger", "None"},
+            {"player.neverWanted.toggle", "action.player.neverWanted.toggle", "None"},
             {"vehicle.repair", "action.vehicle.repair", "F6"},
             {"vehicle.unflip", "action.vehicle.unflip", "Shift+F6"},
             {"vehicle.stop", "action.vehicle.stop", "Ctrl+F6"},
@@ -788,13 +865,13 @@ namespace {
     }
 
     void LoadWorldConfig(const JsonLoader::JsonValue& root) {
+        // 时间锁定由 features binding 持久化，禁止强制 false
         (void)root;
-        MenuState::WorldLockTime = false;
     }
 
     void WriteWorldConfig(std::ostream& file, const std::string& indent, bool trailingComma) {
         file << indent << "\"world\": {\n";
-        file << indent << "  \"lockTime\": false\n";
+        file << indent << "  \"note\": \"lockTime/freezeTime live under features bindings\"\n";
         file << indent << "}" << (trailingComma ? "," : "") << "\n";
     }
 
@@ -1382,6 +1459,7 @@ namespace AppConfig {
         if (index >= 0 && index < GuiTheme::ThemeCount) {
             MenuState::GuiThemeIndex = index;
             GuiTheme::SetThemeByIndex(index);
+            GuiTheme::ApplyToStyle();
             Save();
         }
     }
@@ -1394,6 +1472,7 @@ namespace AppConfig {
         if (mode >= 0 && mode < GuiTheme::InteractionCount) {
             MenuState::GuiInteractionMode = mode;
             GuiTheme::SetInteractionByIndex(mode);
+            GuiTheme::ApplyInteraction();
             Save();
         }
     }

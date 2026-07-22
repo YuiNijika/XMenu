@@ -11,6 +11,7 @@
 #include <mutex>
 #include <sstream>
 #include <string>
+#include <vector>
 
 namespace {
     constexpr std::size_t MaxLogEntries = 600;
@@ -22,47 +23,123 @@ namespace {
     LPTOP_LEVEL_EXCEPTION_FILTER previousExceptionFilter = nullptr;
     std::terminate_handler previousTerminateHandler = nullptr;
     bool crashHandlersInstalled = false;
+    bool wroteUtf8Bom = false;
+
+    // 宽字符 → UTF-8
+    std::string WideToUtf8(const wchar_t* wide) {
+        if (!wide || !wide[0]) {
+            return {};
+        }
+        const int needed = WideCharToMultiByte(CP_UTF8, 0, wide, -1, nullptr, 0, nullptr, nullptr);
+        if (needed <= 1) {
+            return {};
+        }
+        std::string utf8(static_cast<std::size_t>(needed - 1), '\0');
+        WideCharToMultiByte(CP_UTF8, 0, wide, -1, utf8.data(), needed, nullptr, nullptr);
+        return utf8;
+    }
+
+    // 系统 ANSI(ACP) → UTF-8（兼容外部窄字符串）
+    std::string AcpToUtf8(const char* acp) {
+        if (!acp || !acp[0]) {
+            return {};
+        }
+        const int wideLen = MultiByteToWideChar(CP_ACP, 0, acp, -1, nullptr, 0);
+        if (wideLen <= 1) {
+            return acp;
+        }
+        std::wstring wide(static_cast<std::size_t>(wideLen - 1), L'\0');
+        MultiByteToWideChar(CP_ACP, 0, acp, -1, wide.data(), wideLen);
+        return WideToUtf8(wide.c_str());
+    }
+
+    bool LooksLikeUtf8(const char* text) {
+        if (!text) {
+            return true;
+        }
+        const unsigned char* p = reinterpret_cast<const unsigned char*>(text);
+        while (*p) {
+            if (*p <= 0x7F) {
+                ++p;
+                continue;
+            }
+            if ((*p & 0xE0) == 0xC0) {
+                if ((p[1] & 0xC0) != 0x80) return false;
+                p += 2;
+                continue;
+            }
+            if ((*p & 0xF0) == 0xE0) {
+                if ((p[1] & 0xC0) != 0x80 || (p[2] & 0xC0) != 0x80) return false;
+                p += 3;
+                continue;
+            }
+            if ((*p & 0xF8) == 0xF0) {
+                if ((p[1] & 0xC0) != 0x80 || (p[2] & 0xC0) != 0x80 || (p[3] & 0xC0) != 0x80) return false;
+                p += 4;
+                continue;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    // 日志消息统一成 UTF-8：合法 UTF-8 原样保留，否则按系统 ACP 转码
+    std::string NormalizeToUtf8(const char* message) {
+        if (!message) {
+            return {};
+        }
+        if (LooksLikeUtf8(message)) {
+            return message;
+        }
+        return AcpToUtf8(message);
+    }
 
     std::string DirectoryFromModule(HMODULE module) {
         if (!module) {
-            return "";
+            return {};
         }
 
-        char path[MAX_PATH] = {};
-        const DWORD size = GetModuleFileNameA(module, path, MAX_PATH);
+        wchar_t path[MAX_PATH] = {};
+        const DWORD size = GetModuleFileNameW(module, path, MAX_PATH);
         if (size == 0) {
-            return "";
+            return {};
         }
 
-        std::string directory(path, size);
+        std::string directory = WideToUtf8(path);
         const std::size_t slash = directory.find_last_of("\\/");
         if (slash != std::string::npos) {
             return directory.substr(0, slash + 1);
         }
-        return "";
+        return {};
     }
 
     std::string ModuleDirectory() {
-        const std::string asiDirectory = DirectoryFromModule(GetModuleHandleA("XMenu.asi"));
+        const std::string asiDirectory = DirectoryFromModule(GetModuleHandleW(L"XMenu.asi"));
         if (!asiDirectory.empty()) {
             return asiDirectory;
         }
 
         HMODULE module = nullptr;
-        GetModuleHandleExA(
+        GetModuleHandleExW(
             GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-            reinterpret_cast<LPCSTR>(&ModuleDirectory),
+            reinterpret_cast<LPCWSTR>(&ModuleDirectory),
             &module
         );
 
         return DirectoryFromModule(module);
     }
 
-    bool EnsureDirectory(const std::string& path) {
-        if (path.empty()) {
+    bool EnsureDirectory(const std::string& utf8Path) {
+        if (utf8Path.empty()) {
             return false;
         }
-        if (CreateDirectoryA(path.c_str(), nullptr)) {
+        const int wideLen = MultiByteToWideChar(CP_UTF8, 0, utf8Path.c_str(), -1, nullptr, 0);
+        if (wideLen <= 1) {
+            return false;
+        }
+        std::wstring wide(static_cast<std::size_t>(wideLen - 1), L'\0');
+        MultiByteToWideChar(CP_UTF8, 0, utf8Path.c_str(), -1, wide.data(), wideLen);
+        if (CreateDirectoryW(wide.c_str(), nullptr)) {
             return true;
         }
         return GetLastError() == ERROR_ALREADY_EXISTS;
@@ -72,10 +149,17 @@ namespace {
         return ModuleDirectory() + "XMenu\\";
     }
 
-    std::string LogPath() {
+    std::wstring LogPathW() {
         const std::string directory = XMenuDataDirectory();
         EnsureDirectory(directory);
-        return directory + "debug.log";
+        const std::string utf8 = directory + "debug.log";
+        const int wideLen = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, nullptr, 0);
+        if (wideLen <= 1) {
+            return L"debug.log";
+        }
+        std::wstring wide(static_cast<std::size_t>(wideLen - 1), L'\0');
+        MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, wide.data(), wideLen);
+        return wide;
     }
 
     std::string BuildTimestamp() {
@@ -96,9 +180,9 @@ namespace {
     }
 
     std::string GetCurrentProcessPath() {
-        char path[MAX_PATH] = {};
-        const DWORD size = GetModuleFileNameA(nullptr, path, MAX_PATH);
-        return size > 0 ? std::string(path, size) : std::string("<unknown>");
+        wchar_t path[MAX_PATH] = {};
+        const DWORD size = GetModuleFileNameW(nullptr, path, MAX_PATH);
+        return size > 0 ? WideToUtf8(path) : std::string("<unknown>");
     }
 
     std::string GetModulePathFromAddress(void* address) {
@@ -107,9 +191,9 @@ namespace {
             return "<unknown>";
         }
 
-        char path[MAX_PATH] = {};
-        const DWORD size = GetModuleFileNameA(static_cast<HMODULE>(info.AllocationBase), path, MAX_PATH);
-        return size > 0 ? std::string(path, size) : std::string("<unknown>");
+        wchar_t path[MAX_PATH] = {};
+        const DWORD size = GetModuleFileNameW(static_cast<HMODULE>(info.AllocationBase), path, MAX_PATH);
+        return size > 0 ? WideToUtf8(path) : std::string("<unknown>");
     }
 
     const char* ExceptionCodeName(DWORD code) {
@@ -146,19 +230,51 @@ namespace {
         }
     }
 
-    void WriteLineUnlocked(const char* level, const char* message) {
-        if (!logFile.is_open()) {
-            logFile.open(LogPath(), std::ios::app);
+    bool OpenLogFileUnlocked(bool truncate) {
+        if (logFile.is_open()) {
+            logFile.close();
         }
 
-        const std::string line = "[" + BuildTimestamp() + "] [" + level + "] " + message;
+        const std::wstring path = LogPathW();
+        // binary：避免 text 模式对字节流做本地化转换，稳定写 UTF-8
+        const std::ios::openmode mode = std::ios::binary | (truncate ? std::ios::out | std::ios::trunc : std::ios::out | std::ios::app);
+        logFile.open(path, mode);
+        if (!logFile.is_open()) {
+            wroteUtf8Bom = false;
+            return false;
+        }
+
+        if (truncate) {
+            const char bom[] = { '\xEF', '\xBB', '\xBF' };
+            logFile.write(bom, sizeof(bom));
+            wroteUtf8Bom = true;
+        } else {
+            // append 时检查是否空文件，空则补 BOM
+            logFile.seekp(0, std::ios::end);
+            if (logFile.tellp() == std::streampos(0)) {
+                const char bom[] = { '\xEF', '\xBB', '\xBF' };
+                logFile.write(bom, sizeof(bom));
+                wroteUtf8Bom = true;
+            }
+        }
+        return true;
+    }
+
+    void WriteLineUnlocked(const char* level, const char* message) {
+        if (!logFile.is_open()) {
+            OpenLogFileUnlocked(false);
+        }
+
+        const std::string utf8Message = NormalizeToUtf8(message);
+        const std::string line = "[" + BuildTimestamp() + "] [" + level + "] " + utf8Message;
         PushEntryUnlocked(level, line);
 
         if (!logFile.is_open()) {
             return;
         }
 
-        logFile << line << '\n';
+        logFile.write(line.data(), static_cast<std::streamsize>(line.size()));
+        logFile.put('\n');
         logFile.flush();
     }
 
@@ -168,12 +284,15 @@ namespace {
     }
 
     void WriteCrashLine(const std::string& message) {
-        std::ofstream crashLog(LogPath(), std::ios::app);
+        const std::wstring path = LogPathW();
+        std::ofstream crashLog(path, std::ios::binary | std::ios::app);
         if (!crashLog.is_open()) {
             return;
         }
 
-        crashLog << "[" << BuildTimestamp() << "] [CRASH] " << message << '\n';
+        const std::string line = "[" + BuildTimestamp() + "] [CRASH] " + NormalizeToUtf8(message.c_str());
+        crashLog.write(line.data(), static_cast<std::streamsize>(line.size()));
+        crashLog.put('\n');
         crashLog.flush();
     }
 
@@ -259,24 +378,15 @@ namespace Log {
             return;
         }
 
-        logFile.open(LogPath(), std::ios::out | std::ios::trunc);
-        if (logFile.is_open()) {
-            // UTF-8 BOM so editors auto-detect encoding on Chinese Windows
-            const char bom[] = { '\xEF', '\xBB', '\xBF' };
-            logFile.write(bom, sizeof(bom));
-            const std::string line = "[" + BuildTimestamp() + "] [INFO] XMenu 日志启动";
-            PushEntryUnlocked("INFO", line);
-            logFile << line << '\n';
-
-            std::ostringstream processLine;
-            processLine << "[" << BuildTimestamp() << "] [INFO] 进程: " << GetCurrentProcessPath()
-                        << " pid=" << GetCurrentProcessId()
-                        << " thread=" << GetCurrentThreadId();
-            PushEntryUnlocked("INFO", processLine.str());
-            logFile << processLine.str() << '\n';
-            logFile.flush();
-            InstallCrashHandlers();
+        if (!OpenLogFileUnlocked(true)) {
+            return;
         }
+
+        WriteLineUnlocked("INFO", "XMenu 日志启动 (UTF-8)");
+        WriteLineUnlocked("INFO", ("进程: " + GetCurrentProcessPath()
+            + " pid=" + std::to_string(GetCurrentProcessId())
+            + " thread=" + std::to_string(GetCurrentThreadId())).c_str());
+        InstallCrashHandlers();
     }
 
     void Shutdown() {
@@ -285,6 +395,7 @@ namespace Log {
         if (logFile.is_open()) {
             logFile.close();
         }
+        wroteUtf8Bom = false;
     }
 
     void Info(const char* message) {

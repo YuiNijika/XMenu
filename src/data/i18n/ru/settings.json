@@ -83,5 +83,10 @@
   "settings.interactionMode": "Режим взаимодействия",
   "settings.interaction.mouse": "Мышь",
   "settings.interaction.keyboardMouse": "Клавиатура + Мышь",
-  "settings.useListMenu": "Использовать стиль меню в виде списка"
+  "settings.useListMenu": "Использовать стиль меню в виде списка",
+  "settings.enableListMouse": "Разрешить мышь в режиме списка",
+  "settings.theme": "Тема",
+  "settings.listMouseHint": "Выкл.: только клавиатура/геймпад, без курсора",
+  "settings.listNavHint": "Список: ↑↓ выбор · Enter · ←/Backspace/Esc назад · влево/вправо значение",
+  "settings.interactionHint": "Только мышь — без клавиатурной навигации; Клавиатура+мышь — фокус стрелками"
 }

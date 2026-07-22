@@ -112,6 +112,16 @@ namespace {
             return;
         }
 
+        if (actionId == "player.aimSkinChanger") {
+            Controllers::Player::ApplyAimSkinChanger();
+            return;
+        }
+
+        if (actionId == "player.neverWanted.toggle") {
+            MenuState::NeverWanted = !MenuState::NeverWanted;
+            return;
+        }
+
         if (actionId == "vehicle.repair") {
             Controllers::Vehicle::Repair();
             return;

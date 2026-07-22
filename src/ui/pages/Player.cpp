@@ -76,6 +76,31 @@ namespace Pages::Player {
                 UI::Checkbox(T("player.autoFlight"), &MenuState::FreeFlyEnabled);
                 UI::NextColumn();
 
+#ifdef GTASA
+                UI::Checkbox(T("player.neverWanted"), &MenuState::NeverWanted);
+                UI::NextColumn();
+                UI::Checkbox(T("player.invisible"), &MenuState::InvisiblePlayer);
+                UI::NextColumn();
+                UI::Checkbox(T("player.megaJump"), &MenuState::MegaJump);
+                UI::NextColumn();
+                UI::Checkbox(T("player.megaPunch"), &MenuState::MegaPunch);
+                UI::NextColumn();
+                UI::Checkbox(T("player.cycleJump"), &MenuState::CycleJump);
+                UI::NextColumn();
+                UI::Checkbox(T("player.infiniteOxygen"), &MenuState::InfiniteOxygen);
+                UI::NextColumn();
+                UI::Checkbox(T("player.neverHungry"), &MenuState::NeverHungry);
+                UI::NextColumn();
+                UI::Checkbox(T("player.fastSprint"), &MenuState::FastSprint);
+                UI::NextColumn();
+                UI::Checkbox(T("player.drunkEffect"), &MenuState::DrunkEffect);
+                UI::NextColumn();
+                UI::Checkbox(T("player.sprintEverywhere"), &MenuState::SprintEverywhere);
+                UI::NextColumn();
+                UI::Checkbox(T("player.aimSkinChanger"), &MenuState::AimSkinChanger);
+                UI::NextColumn();
+#endif
+
                 bool freeHealth = Controllers::Player::GetFreeHealthcare();
                 if (UI::Checkbox(T("player.freeHospital"), &freeHealth)) {
                     Controllers::Player::SetFreeHealthcare(freeHealth);
@@ -193,6 +218,49 @@ namespace Pages::Player {
             }
 
 #ifdef GTASA
+            if (UI::BeginTab("player_appearance", T("player.appearance"))) {
+                UI::PushItemWidth(160);
+                UI::InputInt(T("player.skinModel"), &MenuState::PlayerSkinModel);
+                UI::PopItemWidth();
+                UI::SameLine();
+                if (UI::Button(T("player.applySkin"), 4)) {
+                    Controllers::Player::SetSkin(static_cast<unsigned int>(MenuState::PlayerSkinModel < 0 ? 0 : MenuState::PlayerSkinModel));
+                }
+
+                UI::PushItemWidth(120);
+                UI::InputInt(T("player.clothesTexture"), &MenuState::PlayerClothesTexture);
+                UI::SameLine();
+                UI::InputInt(T("player.clothesModel"), &MenuState::PlayerClothesModel);
+                UI::SameLine();
+                UI::InputInt(T("player.clothesBodyPart"), &MenuState::PlayerClothesBodyPart);
+                UI::PopItemWidth();
+                if (UI::Button(T("player.applyClothes"), 2)) {
+                    Controllers::Player::ApplyClothes(
+                        MenuState::PlayerClothesTexture,
+                        MenuState::PlayerClothesModel,
+                        MenuState::PlayerClothesBodyPart);
+                }
+
+                UI::SpacingSeparator();
+                UI::PushItemWidth(160);
+                UI::InputInt(T("player.statId"), &MenuState::PlayerStatId);
+                UI::SameLine();
+                UI::InputFloat(T("player.statValue"), &MenuState::PlayerStatValue, 1.0f, 10.0f, "%.1f");
+                UI::PopItemWidth();
+                UI::SameLine();
+                if (UI::Button(T("player.setStat"), 4)) {
+                    Controllers::Player::SetStat(MenuState::PlayerStatId, MenuState::PlayerStatValue);
+                }
+                if (UI::Button(T("player.maxWeaponSkills"), 2)) {
+                    Controllers::Player::MaxWeaponSkills();
+                }
+                UI::SameLine();
+                if (UI::Button(T("player.maxVehicleSkills"), 2)) {
+                    Controllers::Player::MaxVehicleSkills();
+                }
+                UI::EndTab();
+            }
+
             if (UI::BeginTab("player_skins", T("player.customSkins"))) {
                 if (!MenuState::UseNativeMenu) {
                     ImGui::TextWrapped("%s", T("player.customSkinsTip"));

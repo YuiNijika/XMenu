@@ -85,14 +85,38 @@ namespace {
                 if (ImGui::InputInt(T("vehicle.color4"), &MenuState::VehicleColorQuaternary)) {
                     applyCarcols = true;
                 }
+                ImGui::InputInt(T("vehicle.paintjob"), &MenuState::VehiclePaintjob);
+                ImGui::SameLine();
+                ImGui::InputInt(T("vehicle.modId"), &MenuState::VehicleModId);
                 ImGui::PopItemWidth();
 
                 if (applyCarcols) {
                     Controllers::Vehicle::ApplyCarcols();
                 }
-
+                if (UI::Button(T("vehicle.applyPaintjobMod"), 2)) {
+                    Controllers::Vehicle::ApplyAppearance();
+                }
+                ImGui::SameLine();
                 if (UI::Button(T("vehicle.resetColors"))) {
                     Controllers::Vehicle::ResetColors();
+                }
+
+                UI::SpacingSeparator();
+                ImGui::PushItemWidth(120);
+                ImGui::InputInt(T("vehicle.doorIndex"), &MenuState::VehicleDoorIndex);
+                ImGui::SameLine();
+                ImGui::InputInt(T("vehicle.seatIndex"), &MenuState::VehicleSeatIndex);
+                ImGui::PopItemWidth();
+                if (UI::Button(T("vehicle.openDoor"), 3)) {
+                    Controllers::Vehicle::OpenDoor();
+                }
+                ImGui::SameLine();
+                if (UI::Button(T("vehicle.popDoor"), 3)) {
+                    Controllers::Vehicle::PopDoor();
+                }
+                ImGui::SameLine();
+                if (UI::Button(T("vehicle.warpToSeat"), 3)) {
+                    Controllers::Vehicle::WarpToSeat();
                 }
             }
         }
@@ -249,7 +273,36 @@ namespace Pages::Vehicle {
                 UI::SameLine();
                 UI::Checkbox(T("vehicle.watertight"), &MenuState::VehicleWatertight);
                 UI::SameLine();
+                if (UI::Checkbox(T("vehicle.flyingCars"), &MenuState::VehicleFlyingCars)) {
+                    Controllers::Vehicle::SetFlyingCars(MenuState::VehicleFlyingCars);
+                }
+#if defined(GTASA) || defined(GTAVC)
+                UI::SameLine();
+                UI::Checkbox(T("vehicle.boatFly"), &MenuState::VehicleBoatFly);
+                UI::SameLine();
+                UI::Checkbox(T("vehicle.driveWater"), &MenuState::VehicleDriveWater);
+                UI::SameLine();
+                UI::Checkbox(T("vehicle.greenLights"), &MenuState::VehicleGreenLights);
+#endif
+#if defined(GTASA) || defined(GTA3)
+                UI::SameLine();
+                UI::Checkbox(T("vehicle.perfectHandling"), &MenuState::VehiclePerfectHandling);
+#endif
 #ifdef GTASA
+                UI::SameLine();
+                UI::Checkbox(T("vehicle.bikeFly"), &MenuState::VehicleBikeFly);
+                UI::SameLine();
+                UI::Checkbox(T("vehicle.stayOnBike"), &MenuState::VehicleStayOnBike);
+                UI::SameLine();
+                UI::Checkbox(T("vehicle.tankMode"), &MenuState::VehicleTankMode);
+                UI::SameLine();
+                UI::Checkbox(T("vehicle.aimDrive"), &MenuState::VehicleAimDrive);
+                UI::SameLine();
+                UI::Checkbox(T("vehicle.noDerail"), &MenuState::VehicleNoDerail);
+                UI::SameLine();
+                UI::Checkbox(T("vehicle.flipNoBurn"), &MenuState::VehicleFlipNoBurn);
+                UI::SameLine();
+                UI::Checkbox(T("vehicle.infNitro"), &MenuState::VehicleInfNitro);
                 UI::Checkbox(T("vehicle.neon"), &MenuState::VehicleNeon);
                 if (MenuState::VehicleNeon) {
                     UI::PushItemWidth(200);

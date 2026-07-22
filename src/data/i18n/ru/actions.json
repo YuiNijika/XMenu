@@ -9,6 +9,8 @@
   "action.player.heal": "Вылечить игрока",
   "action.player.armour": "Пополнить броню",
   "action.player.clearWanted": "Снять розыск",
+  "action.player.aimSkinChanger": "Смена скина при прицеле",
+  "action.player.neverWanted.toggle": "Переключить «без розыска»",
   "action.vehicle.repair": "Починить транспорт",
   "action.vehicle.unflip": "Перевернуть транспорт",
   "action.vehicle.stop": "Остановить транспорт",

@@ -6,7 +6,7 @@
 #include "utils/I18n.h"
 #include "imgui/imgui.h"
 #include <cstdio>
-#include <string>
+#include <cstring>
 
 namespace {
     const char* T(const char* key) {
@@ -55,8 +55,12 @@ namespace Pages::Ped {
         if (UI::BeginTabBar("PedTabs")) {
             if (UI::BeginTab("ped.toggles", T("common.toggles"))) {
                 ImGui::Columns(2, nullptr, false);
+#if defined(GTASA) || defined(GTA3)
                 ImGui::Checkbox(T("ped.bigHeadMode"), &MenuState::BigHeadMode);
+                ImGui::NextColumn();
+#endif
 #ifdef GTASA
+                ImGui::Checkbox(T("ped.thinBodyMode"), &MenuState::ThinBodyMode);
                 ImGui::NextColumn();
                 if (ImGui::Checkbox(T("ped.elvisEverywhere"), &MenuState::ElvisEverywhere)) {
                     Controllers::Ped::SetElvisEverywhere(MenuState::ElvisEverywhere);
@@ -89,6 +93,39 @@ namespace Pages::Ped {
                 if (ImGui::Checkbox(T("ped.gangsEverywhere"), &MenuState::GangsEverywhere)) {
                     Controllers::Ped::SetGangsEverywhere(MenuState::GangsEverywhere);
                 }
+                ImGui::NextColumn();
+#endif
+#ifdef GTAVC
+                if (ImGui::Checkbox(T("ped.everyoneArmed"), &MenuState::EveryoneArmed)) {
+                    Controllers::Ped::SetEveryoneArmed(MenuState::EveryoneArmed);
+                }
+                ImGui::NextColumn();
+                if (ImGui::Checkbox(T("ped.slutMagnet"), &MenuState::SlutMagnet)) {
+                    Controllers::Ped::SetSlutMagnet(MenuState::SlutMagnet);
+                }
+                ImGui::NextColumn();
+                if (ImGui::Checkbox(T("ped.noProstitutes"), &MenuState::PedNoProstitutes)) {
+                    Controllers::Ped::SetNoProstitutes(MenuState::PedNoProstitutes);
+                }
+                ImGui::NextColumn();
+#endif
+#ifdef GTA3
+                if (ImGui::Checkbox(T("ped.everyoneArmed"), &MenuState::EveryoneArmed)) {
+                    Controllers::Ped::SetEveryoneArmed(MenuState::EveryoneArmed);
+                }
+                ImGui::NextColumn();
+                if (ImGui::Checkbox(T("ped.pedsMayhem"), &MenuState::PedsMayhem)) {
+                    Controllers::Ped::SetPedsMayhem(MenuState::PedsMayhem);
+                }
+                ImGui::NextColumn();
+                if (ImGui::Checkbox(T("ped.pedsRiot"), &MenuState::PedsRiot)) {
+                    Controllers::Ped::SetPedsRiot(MenuState::PedsRiot);
+                }
+                ImGui::NextColumn();
+                if (ImGui::Checkbox(T("ped.nastyLimbs"), &MenuState::PedNastyLimbs)) {
+                    Controllers::Ped::SetNastyLimbs(MenuState::PedNastyLimbs);
+                }
+                ImGui::NextColumn();
 #endif
                 ImGui::Columns(1);
                 UI::EndTab();
@@ -131,10 +168,62 @@ namespace Pages::Ped {
                 ImGui::TextDisabled("%s", Controllers::Ped::GetLastSpawnedPed() ? T("ped.lastSpawnedYes") : T("ped.lastSpawnedNo"));
 
                 UI::SpacingSeparator();
-                ImGui::TextWrapped("%s", T("ped.listHint"));UI::SpacingSeparator();
+                ImGui::TextWrapped("%s", T("ped.listHint"));
+                UI::SpacingSeparator();
                 DrawPedList();
                 UI::EndTab();
             }
+
+#ifdef GTASA
+            if (UI::BeginTab("ped.gangs", T("ped.gangs"))) {
+                if (ImGui::Checkbox(T("ped.gangWarsActive"), &MenuState::GangWarsActive)) {
+                    Controllers::Ped::SetGangWarsActive(MenuState::GangWarsActive);
+                }
+                if (UI::Button(T("ped.startGangWar"), 3)) {
+                    Controllers::Ped::StartGangWar(true);
+                }
+                ImGui::SameLine();
+                if (UI::Button(T("ped.endGangWar"), 3)) {
+                    Controllers::Ped::EndGangWar();
+                }
+                ImGui::SameLine();
+                if (UI::Button(T("ped.resetGangModels"), 3)) {
+                    Controllers::Ped::ResetGangModels();
+                }
+
+                UI::PushItemWidth(160);
+                UI::SliderInt(T("ped.gangSelected"), &MenuState::GangSelected, 0, 9);
+                const int density = Controllers::Ped::GetGangZoneDensity(MenuState::GangSelected);
+                int densityEdit = density;
+                if (UI::SliderInt(T("ped.gangDensity"), &densityEdit, 0, 127)) {
+                    Controllers::Ped::SetGangZoneDensity(MenuState::GangSelected, densityEdit);
+                }
+
+                UI::SliderInt(T("ped.gangMemberIndex"), &MenuState::GangMemberIndex, 0, 2);
+                int memberModel = static_cast<int>(Controllers::Ped::GetGangMemberModel(
+                    static_cast<unsigned int>(MenuState::GangSelected),
+                    static_cast<unsigned int>(MenuState::GangMemberIndex)));
+                if (UI::InputInt(T("ped.gangMemberModel"), &memberModel)) {
+                    if (memberModel < 0) memberModel = 0;
+                    Controllers::Ped::SetGangMemberModel(
+                        static_cast<unsigned int>(MenuState::GangSelected),
+                        static_cast<unsigned int>(MenuState::GangMemberIndex),
+                        static_cast<unsigned int>(memberModel));
+                }
+
+                UI::InputInt(T("ped.gangWeaponType"), &MenuState::GangWeaponType);
+                UI::PopItemWidth();
+                if (UI::Button(T("ped.applyGangWeapons"), 2)) {
+                    // 简化：三个槽位用同一武器类型，足够日常调参
+                    Controllers::Ped::SetGangWeapons(
+                        static_cast<unsigned int>(MenuState::GangSelected),
+                        MenuState::GangWeaponType,
+                        MenuState::GangWeaponType,
+                        MenuState::GangWeaponType);
+                }
+                UI::EndTab();
+            }
+#endif
             UI::EndTabBar();
         }
     }

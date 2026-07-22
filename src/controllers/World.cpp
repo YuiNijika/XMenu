@@ -168,6 +168,8 @@ namespace Controllers::World {
         if (enable) {
             GameLogic::GetTime(frozenHour, frozenMinute);
             hasLockedTime = true;
+        } else if (!MenuState::WorldLockTime) {
+            hasLockedTime = false;
         }
         GameLogic::SetFreezeTime(enable);
         Log::Info(std::string("冻结时间：") + (enable ? "开启" : "关闭"));
@@ -177,7 +179,7 @@ namespace Controllers::World {
         if (enable) {
             GameLogic::GetTime(frozenHour, frozenMinute);
             hasLockedTime = true;
-        } else {
+        } else if (!MenuState::FreezeTime) {
             hasLockedTime = false;
         }
         Log::Info(std::string("锁定当前时间：") + (enable ? "开启" : "关闭"));

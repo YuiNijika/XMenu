@@ -4,8 +4,18 @@
   "visual.filter": "Визуальный фильтр",
   "visual.filterId": "ID фильтра",
   "visual.timecycStrength": "Сила Timecyc",
+  "visual.timecycStrengthHint": "Заглушка (отключено): не меняет timecycle и не сохраняется.",
   "visual.applyFilter": "Применить фильтр",
-  "visual.filterHint": "SA поддерживает более полные эффекты фильтра; VC/III безопасно деградируют по доступным возможностям.",
-  "visual.listHint": "Нажмите элемент списка, чтобы заполнить ID фильтра и сразу применить его.",
-  "visual.noListData": "Нет доступных данных списка визуальных эффектов."
+  "visual.filterHint": "SA поддерживает более полные эффекты фильтров; VC/III безопасно деградируют.",
+  "visual.listHint": "Нажмите элемент списка, чтобы заполнить ID фильтра и сразу применить.",
+  "visual.noListData": "Нет доступных данных визуального списка.",
+  "visual.squareRadar": "Квадратный радар",
+  "visual.squareRadarHint": "Упрощённый soft-режим (масштаб диска радара), не полная замена квадратного радара.",
+  "visual.noRadarRot": "Без вращения радара",
+  "visual.fullscreenMap": "Полноэкранная карта",
+  "visual.unfogMap": "Развеять туман карты",
+  "visual.hideAreaNames": "Скрыть названия районов",
+  "visual.hideVehicleNames": "Скрыть названия транспорта",
+  "visual.nightVision": "ПНВ",
+  "visual.infrared": "Тепловизор"
 }

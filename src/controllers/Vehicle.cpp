@@ -282,7 +282,7 @@ namespace Controllers::Vehicle {
         ProcessNoDamage(vehicle);
 
         GameLogic::SetTrafficDensity(MenuState::VehicleTrafficClearRadius / 100.0f);
-        GameLogic::SetFlyingCars(MenuState::VehicleFlyingCars);
+        GameLogic::ProcessVehicleCheats(vehicle);
 
         if (!vehicle) {
             ProcessVehicleEffects(nullptr);
@@ -302,41 +302,71 @@ namespace Controllers::Vehicle {
             Neon.Remove(vehicle);
         }
 
+        static CVehicle* s_autoDriveVehicle = nullptr;
+        static float s_lastTargetX = 0.0f;
+        static float s_lastTargetY = 0.0f;
+        static float s_lastTargetZ = 0.0f;
+        static bool s_hasIssuedTask = false;
+
         if (MenuState::VehicleAutoDrive) {
-            int hVeh = CPools::GetVehicleRef(vehicle);
-            int model = vehicle->m_nModelIndex;
+            const int hVeh = CPools::GetVehicleRef(vehicle);
+            const int model = vehicle->m_nModelIndex;
             float targetX = 0.0f, targetY = 0.0f, targetZ = 0.0f;
             bool hasTarget = false;
 
-            // Target from waypoint
-            tRadarTrace targetBlip = CRadar::ms_RadarTrace[LOWORD(FrontEndMenuManager.m_nTargetBlipIndex)];
-            if (targetBlip.m_nRadarSprite == RADAR_SPRITE_WAYPOINT) {
-                targetX = targetBlip.m_vecPos.x;
-                targetY = targetBlip.m_vecPos.y;
-                targetZ = targetBlip.m_vecPos.z;
-                hasTarget = true;
+            // blip 下标 clamp，避免越界
+            const unsigned int blipIndex = static_cast<unsigned int>(LOWORD(FrontEndMenuManager.m_nTargetBlipIndex));
+            if (blipIndex < MAX_RADAR_TRACES) {
+                const tRadarTrace& targetBlip = CRadar::ms_RadarTrace[blipIndex];
+                if (targetBlip.m_nRadarSprite == RADAR_SPRITE_WAYPOINT) {
+                    targetX = targetBlip.m_vecPos.x;
+                    targetY = targetBlip.m_vecPos.y;
+                    targetZ = targetBlip.m_vecPos.z;
+                    hasTarget = true;
+                }
             }
 
-            if (hasTarget) {
-                if (CModelInfo::IsBoatModel(model)) {
-                    plugin::Command<plugin::Commands::BOAT_GOTO_COORDS>(hVeh, targetX, targetY, targetZ);
-                } else if (CModelInfo::IsPlaneModel(model)) {
-                    CVector p = vehicle->GetPosition();
-                    p.z = 300.0f;
-                    vehicle->SetPosn(p);
-                    plugin::Command<plugin::Commands::PLANE_GOTO_COORDS>(hVeh, targetX, targetY, 300.0f, 30, 200);
-                } else if (CModelInfo::IsHeliModel(model)) {
-                    CVector p = vehicle->GetPosition();
-                    p.z = 300.0f;
-                    vehicle->SetPosn(p);
-                    plugin::Command<plugin::Commands::HELI_GOTO_COORDS>(hVeh, targetX, targetY, 300.0f, 30, 200);
-                } else if (!CModelInfo::IsTrainModel(model)) {
-                    plugin::Command<plugin::Commands::CAR_GOTO_COORDINATES>(hVeh, targetX, targetY, targetZ);
-                }
+            if (!hasTarget) {
+                MenuState::VehicleAutoDrive = false;
+                s_hasIssuedTask = false;
+                s_autoDriveVehicle = nullptr;
             } else {
-                plugin::Command<plugin::Commands::WARP_CHAR_INTO_CAR>(CPools::GetPedRef(FindPlayerPed()), hVeh);
-                MenuState::VehicleAutoDrive = false; // Turn off if no target
+                const bool vehicleChanged = (s_autoDriveVehicle != vehicle);
+                const bool targetChanged = !s_hasIssuedTask ||
+                    targetX != s_lastTargetX || targetY != s_lastTargetY || targetZ != s_lastTargetZ;
+
+                // 仅首次开启 / 目标变化 / 换车时下发，禁止每帧刷任务
+                if (vehicleChanged || targetChanged) {
+                    s_autoDriveVehicle = vehicle;
+                    s_lastTargetX = targetX;
+                    s_lastTargetY = targetY;
+                    s_lastTargetZ = targetZ;
+                    s_hasIssuedTask = true;
+
+                    if (CModelInfo::IsBoatModel(model)) {
+                        plugin::Command<plugin::Commands::BOAT_GOTO_COORDS>(hVeh, targetX, targetY, targetZ);
+                    } else if (CModelInfo::IsPlaneModel(model)) {
+                        CVector p = vehicle->GetPosition();
+                        if (p.z < 250.0f) {
+                            p.z = 300.0f;
+                            vehicle->SetPosn(p);
+                        }
+                        plugin::Command<plugin::Commands::PLANE_GOTO_COORDS>(hVeh, targetX, targetY, 300.0f, 30, 200);
+                    } else if (CModelInfo::IsHeliModel(model)) {
+                        CVector p = vehicle->GetPosition();
+                        if (p.z < 150.0f) {
+                            p.z = 200.0f;
+                            vehicle->SetPosn(p);
+                        }
+                        plugin::Command<plugin::Commands::HELI_GOTO_COORDS>(hVeh, targetX, targetY, 200.0f, 30, 200);
+                    } else if (!CModelInfo::IsTrainModel(model)) {
+                        plugin::Command<plugin::Commands::CAR_GOTO_COORDINATES>(hVeh, targetX, targetY, targetZ);
+                    }
+                }
             }
+        } else {
+            s_hasIssuedTask = false;
+            s_autoDriveVehicle = nullptr;
         }
 #else
         GameLogic::ProcessAutoDrive(vehicle, MenuState::VehicleAutoDrive, MenuState::VehicleAutoDriveSpeed);

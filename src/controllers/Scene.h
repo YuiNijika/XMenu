@@ -14,4 +14,6 @@ namespace Controllers::Scene {
     void RemoveLatestParticle();
     void FailMission();
     void StartMission(int missionId);
+    void SetFightingStyle(int styleIndex);
+    void SetWalkingStyle(int styleIndex);
 }

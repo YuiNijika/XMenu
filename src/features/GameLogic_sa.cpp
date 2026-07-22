@@ -25,6 +25,14 @@
 #include "CTheScripts.h"
 #include "ui/MenuState.h"
 #include "rw/skeleton.h"
+#include "CCheat.h"
+#include "CCamera.h"
+#include "CPad.h"
+#include "CGangWars.h"
+#include "CGangs.h"
+#include "CPopulation.h"
+#include "CTheZones.h"
+#include "utils/StdExtras.h"
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -70,6 +78,132 @@ bool PatchBytesIfExpected(const char* label, std::uintptr_t address, const std::
     VirtualProtect(target, Size, oldProtect, &unusedProtect);
     return true;
 }
+
+// 首次启用前备份原字节，关闭时只还原备份，避免硬编码/错版本写坏代码
+struct CodePatch {
+    std::uintptr_t address = 0;
+    std::size_t size = 0;
+    bool backedUp = false;
+    unsigned char backup[32]{};
+
+    bool EnsureBackup() {
+        if (backedUp || size == 0 || size > sizeof(backup) || address == 0) {
+            return backedUp;
+        }
+        auto* target = reinterpret_cast<unsigned char*>(address);
+        MEMORY_BASIC_INFORMATION memoryInfo{};
+        if (VirtualQuery(target, &memoryInfo, sizeof(memoryInfo)) == 0 || memoryInfo.State != MEM_COMMIT ||
+            (memoryInfo.Protect & (PAGE_NOACCESS | PAGE_GUARD)) != 0 ||
+            reinterpret_cast<std::uintptr_t>(target) + size >
+                reinterpret_cast<std::uintptr_t>(memoryInfo.BaseAddress) + memoryInfo.RegionSize) {
+            return false;
+        }
+        std::memcpy(backup, target, size);
+        backedUp = true;
+        return true;
+    }
+
+    bool ApplyBytes(const void* bytes) {
+        if (!bytes || !EnsureBackup()) {
+            return false;
+        }
+        plugin::patch::SetRaw(address, const_cast<void*>(bytes), static_cast<int>(size));
+        return true;
+    }
+
+    bool ApplyNop() {
+        if (!EnsureBackup()) {
+            return false;
+        }
+        plugin::patch::Nop(address, static_cast<int>(size));
+        return true;
+    }
+
+    bool Restore() {
+        if (!backedUp) {
+            return false;
+        }
+        plugin::patch::SetRaw(address, backup, static_cast<int>(size));
+        return true;
+    }
+};
+
+CodePatch MakePatch(std::uintptr_t address, std::size_t size) {
+    CodePatch patch;
+    patch.address = address;
+    patch.size = size;
+    return patch;
+}
+
+// 动画 IFP：禁止同帧 PLAY + REMOVE，延迟卸载
+char g_pendingAnimGroup[32] = {};
+DWORD g_pendingAnimRemoveAt = 0;
+std::string g_activeAnimGroup;
+
+void RequestAnimGroupKeepAlive(const char* group) {
+    if (!group || group[0] == '\0' || std::strcmp(group, "PED") == 0) {
+        return;
+    }
+    if (!g_activeAnimGroup.empty() && g_activeAnimGroup != group) {
+        plugin::Command<plugin::Commands::REMOVE_ANIMATION>(g_activeAnimGroup.c_str());
+    }
+    plugin::Command<plugin::Commands::REQUEST_ANIMATION>(group);
+    plugin::Command<plugin::Commands::LOAD_ALL_MODELS_NOW>();
+    g_activeAnimGroup = group;
+    g_pendingAnimGroup[0] = '\0';
+    g_pendingAnimRemoveAt = 0;
+}
+
+void ScheduleAnimGroupUnload(const char* group, DWORD delayMs = 8000) {
+    if (!group || group[0] == '\0' || std::strcmp(group, "PED") == 0) {
+        return;
+    }
+    if (g_activeAnimGroup == group) {
+        std::snprintf(g_pendingAnimGroup, sizeof(g_pendingAnimGroup), "%s", group);
+        g_pendingAnimRemoveAt = GetTickCount() + delayMs;
+    }
+}
+
+void ProcessDeferredAnimUnload() {
+    if (g_pendingAnimGroup[0] == '\0' || g_pendingAnimRemoveAt == 0) {
+        return;
+    }
+    if (GetTickCount() < g_pendingAnimRemoveAt) {
+        return;
+    }
+    if (g_activeAnimGroup == g_pendingAnimGroup) {
+        plugin::Command<plugin::Commands::REMOVE_ANIMATION>(g_pendingAnimGroup);
+        g_activeAnimGroup.clear();
+    }
+    g_pendingAnimGroup[0] = '\0';
+    g_pendingAnimRemoveAt = 0;
+}
+
+bool IsPedPointerInPool(CPed* ped) {
+    if (!ped || !CPools::ms_pPedPool) {
+        return false;
+    }
+    for (CPed* poolPed : CPools::ms_pPedPool) {
+        if (poolPed == ped) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void ScaleAnimNodeIfValid(RpHAnimHierarchy* animHier, RwMatrix* matrices, int boneId, const RwV3d& scale) {
+    if (!animHier || !matrices) {
+        return;
+    }
+    const int index = RpHAnimIDGetIndex(animHier, boneId);
+    if (index < 0 || index >= animHier->numNodes) {
+        return;
+    }
+    RwMatrixScale(&matrices[index], &scale, rwCOMBINEPRECONCAT);
+}
+
+std::vector<int> g_trackedPickupHandles;
+bool g_weaponTweaksNeedReapply = true;
 
     bool IsSpawnPositionClear(const CVector& pos) {
         for (CVehicle* vehicle : CPools::ms_pVehiclePool) {
@@ -139,26 +273,30 @@ namespace GameLogic {
 
 void Init() {
     plugin::Events::pedRenderEvent += [](CPed* ped) {
-        if (!ped) return;
+        if (!ped || !ped->m_pRwClump) return;
+        auto animHier = GetAnimHierarchyFromSkinClump(ped->m_pRwClump);
+        if (!animHier) return;
+        auto matrices = RpHAnimHierarchyGetMatrixArray(animHier);
+        if (!matrices) return;
+
+        if (MenuState::ThinBodyMode) {
+            const RwV3d scale = {0.7f, 0.7f, 0.7f};
+            for (int i = 1; i <= 54; ++i) {
+                ScaleAnimNodeIfValid(animHier, matrices, i, scale);
+            }
+        }
+
         if (MenuState::BigHeadMode) {
-            auto animHier = GetAnimHierarchyFromSkinClump(ped->m_pRwClump);
-            if (animHier) {
-                auto matrices = RpHAnimHierarchyGetMatrixArray(animHier);
-                if (matrices) {
-                    RwV3d scale = {3.0f, 3.0f, 3.0f};
-                    for (int i = 5; i <= 8; i++) {
-                        int index = RpHAnimIDGetIndex(animHier, i);
-                        if (index >= 0) {
-                            RwMatrixScale(&matrices[index], &scale, rwCOMBINEPRECONCAT);
-                        }
-                    }
-                }
+            const RwV3d scale = {3.0f, 3.0f, 3.0f};
+            for (int i = 5; i <= 8; ++i) {
+                ScaleAnimNodeIfValid(animHier, matrices, i, scale);
             }
         }
     };
 }
 
 void Process() {
+    ProcessDeferredAnimUnload();
 }
 
 ProofState GetPlayerProofState(CPlayerPed* player) {
@@ -182,8 +320,11 @@ void SetPlayerProofState(CPlayerPed* player, const ProofState& state) {
 }
 
 void ApplyGodMode(CPlayerPed* player, bool enable) {
-    if (!enable || !player) return;
+    // 全局无敌位必须对称：关闭时也要清掉，不能因 player 空指针提前 return
     plugin::patch::Set<bool>(0x96916D, enable, false);
+    if (!player || !IsPedPointerInPool(player)) {
+        return;
+    }
     player->bBulletProof = enable;
     player->bCollisionProof = enable;
     player->bExplosionProof = enable;
@@ -721,6 +862,81 @@ bool SetPlayerStat(int statId, float value) {
     return true;
 }
 
+void MaxWeaponSkills() {
+    CCheat::WeaponSkillsCheat();
+}
+
+void MaxVehicleSkills() {
+    CCheat::VehicleSkillsCheat();
+}
+
+void ApplyAimSkinChanger() {
+    CPlayerPed* player = FindPlayerPed();
+    if (!player || !player->m_pPlayerTargettedPed) {
+        return;
+    }
+    const int model = player->m_pPlayerTargettedPed->m_nModelIndex;
+    if (model > 0) {
+        SetPlayerSkin(static_cast<unsigned int>(model));
+    }
+}
+
+void ProcessPlayerCheats(CPlayerPed* player) {
+    static bool lastNeverWanted = false;
+    if (MenuState::NeverWanted) {
+        plugin::patch::Set<bool>(0x969171, true, false);
+        if (!lastNeverWanted) {
+            CCheat::NotWantedCheat();
+        }
+        if (player) {
+            SetWantedLevel(player, 0);
+        }
+    } else if (lastNeverWanted) {
+        plugin::patch::Set<bool>(0x969171, false, false);
+    }
+    lastNeverWanted = MenuState::NeverWanted;
+
+    if (player) {
+        // plugin-sdk SA: ped flags are anonymous bitfields on CPed, not m_nPedFlags
+        player->bDontRender = MenuState::InvisiblePlayer ? 1 : 0;
+    }
+
+    plugin::patch::Set<bool>(0x96916C, MenuState::MegaJump, false);
+    plugin::patch::Set<bool>(0x969173, MenuState::MegaPunch, false);
+    plugin::patch::Set<bool>(0x969161, MenuState::CycleJump, false);
+    plugin::patch::Set<bool>(0x96916E, MenuState::InfiniteOxygen, false);
+    plugin::patch::Set<bool>(0x969174, MenuState::NeverHungry, false);
+
+    static float s_originalSprintSpeed = 0.0f;
+    static bool s_hasOriginalSprintSpeed = false;
+    if (!s_hasOriginalSprintSpeed) {
+        s_originalSprintSpeed = plugin::patch::GetFloat(0x8D2458);
+        s_hasOriginalSprintSpeed = true;
+    }
+    plugin::patch::SetFloat(0x8D2458, MenuState::FastSprint ? 0.1f : s_originalSprintSpeed);
+
+    static CodePatch s_sprintEverywherePatch = MakePatch(0x688610, 2);
+    static bool lastSprintEverywhere = false;
+    if (lastSprintEverywhere != MenuState::SprintEverywhere) {
+        lastSprintEverywhere = MenuState::SprintEverywhere;
+        if (MenuState::SprintEverywhere) {
+            static const unsigned char kNopSprint[2] = {0x90, 0x90};
+            s_sprintEverywherePatch.ApplyBytes(kNopSprint);
+        } else {
+            s_sprintEverywherePatch.Restore();
+        }
+    }
+
+    static bool lastDrunk = false;
+    if (MenuState::DrunkEffect) {
+        plugin::Command<plugin::Commands::SET_PLAYER_DRUNKENNESS>(0, 100);
+        lastDrunk = true;
+    } else if (lastDrunk) {
+        plugin::Command<plugin::Commands::SET_PLAYER_DRUNKENNESS>(0, 0);
+        lastDrunk = false;
+    }
+}
+
 CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options) {
     CPlayerPed* player = FindPlayerPed();
     if (!player) return nullptr;
@@ -929,17 +1145,23 @@ void ApplyVehicleAppearance(CVehicle* vehicle, const VehicleAppearanceOptions& o
 
 void OpenVehicleDoor(CVehicle* vehicle, int doorIndex) {
     if (!vehicle) return;
+    if (doorIndex < 0) doorIndex = 0;
+    if (doorIndex > 5) doorIndex = 5;
     plugin::Command<plugin::Commands::OPEN_CAR_DOOR>(CPools::GetVehicleRef(vehicle), doorIndex);
 }
 
 void PopVehicleDoor(CVehicle* vehicle, int doorIndex) {
     if (!vehicle) return;
+    if (doorIndex < 0) doorIndex = 0;
+    if (doorIndex > 5) doorIndex = 5;
     plugin::Command<plugin::Commands::POP_CAR_DOOR>(CPools::GetVehicleRef(vehicle), doorIndex);
 }
 
 void WarpPlayerToVehicleSeat(CVehicle* vehicle, int seatIndex) {
     CPlayerPed* player = FindPlayerPed();
     if (!player || !vehicle) return;
+    if (seatIndex < 0) seatIndex = 0;
+    if (seatIndex > 8) seatIndex = 8;
     const int hplayer = CPools::GetPedRef(player);
     const int hveh = CPools::GetVehicleRef(vehicle);
     if (seatIndex <= 0) {
@@ -950,10 +1172,12 @@ void WarpPlayerToVehicleSeat(CVehicle* vehicle, int seatIndex) {
 }
 
 void ProcessAutoDrive(CVehicle* vehicle, bool enable, float speed) {
+    // SA 实际自动驾驶在 Controllers::Vehicle 中节流下发；此处保留最小降级入口
     CPlayerPed* player = FindPlayerPed();
-    if (!enable || !player || !vehicle) return;
-    const CVector pos = player->GetPosition();
-    plugin::Command<plugin::Commands::TASK_CAR_DRIVE_TO_COORD>(CPools::GetPedRef(player), CPools::GetVehicleRef(vehicle), pos.x + 80.0f, pos.y, pos.z, speed, 0, vehicle->m_nModelIndex, 2, 10.0f);
+    if (!enable || !player || !vehicle) {
+        return;
+    }
+    (void)speed;
 }
 
 void SetTrafficDensity(float density) {
@@ -962,12 +1186,95 @@ void SetTrafficDensity(float density) {
 }
 
 void SetFlyingCars(bool enable) {
-    static bool initialized = false;
-    static bool lastEnable = false;
-    if (!initialized || lastEnable != enable) {
-        initialized = true;
-        lastEnable = enable;
-        Log::Warn(std::string("SA 飞车开关暂未接入安全接口，已跳过：") + (enable ? "开启" : "关闭"));
+    plugin::patch::Set<bool>(0x969160, enable, false);
+}
+
+void SetVehicleNoDerail(bool enable) {
+    // 三处站点分别备份；关闭时整段还原，禁止只写死 7 字节
+    static CodePatch s_noDerailA = MakePatch(0x6F8C2A, 4);
+    static CodePatch s_noDerailB = MakePatch(0x6F8C2E, 1);
+    static CodePatch s_noDerailC = MakePatch(0x6F8C41, 2);
+    if (enable) {
+        s_noDerailA.EnsureBackup();
+        s_noDerailB.EnsureBackup();
+        s_noDerailC.EnsureBackup();
+        plugin::patch::Set<uint32_t>(0x6F8C2A, 0x00441F0F, true);
+        plugin::patch::Set<uint8_t>(0x6F8C2E, 0x00, true);
+        plugin::patch::Set<uint16_t>(0x6F8C41, 0xE990, true);
+    } else {
+        s_noDerailA.Restore();
+        s_noDerailB.Restore();
+        s_noDerailC.Restore();
+    }
+}
+
+void SetVehicleFlipNoBurn(bool enable) {
+    static CodePatch s_flipA = MakePatch(0x6A776B, 6);
+    static CodePatch s_flipB = MakePatch(0x570E7F, 6);
+    static const unsigned char kDisableBurn[6] = {0xD8, 0xDD, 0x00, 0x00, 0x00, 0x00};
+    if (enable) {
+        s_flipA.ApplyBytes(kDisableBurn);
+        s_flipB.ApplyBytes(kDisableBurn);
+    } else {
+        s_flipA.Restore();
+        s_flipB.Restore();
+    }
+}
+
+void ProcessVehicleCheats(CVehicle* vehicle) {
+    plugin::patch::Set<bool>(0x969160, MenuState::VehicleFlyingCars, false);
+    plugin::patch::Set<bool>(0x969153, MenuState::VehicleBoatFly, false);
+    plugin::patch::Set<bool>(0x969152, MenuState::VehicleDriveWater, false);
+    plugin::patch::Set<bool>(0x96914C, MenuState::VehiclePerfectHandling, false);
+    plugin::patch::Set<bool>(0x969164, MenuState::VehicleTankMode, false);
+    plugin::patch::Set<bool>(0x96914E, MenuState::VehicleGreenLights, false);
+    plugin::patch::Set<bool>(0x969179, MenuState::VehicleAimDrive, false);
+    // InfNitro 必须对称写 false，不能只开不关
+    plugin::patch::Set<bool>(0x969165, MenuState::VehicleInfNitro, false);
+
+    CPlayerPed* player = FindPlayerPed();
+    static unsigned char s_savedKnockOff = 0;
+    static bool s_hasSavedKnockOff = false;
+    static CPlayerPed* s_knockOffPlayer = nullptr;
+    if (player && IsPedPointerInPool(player)) {
+        if (MenuState::VehicleStayOnBike) {
+            if (!s_hasSavedKnockOff || s_knockOffPlayer != player) {
+                s_savedKnockOff = player->CantBeKnockedOffBike;
+                s_knockOffPlayer = player;
+                s_hasSavedKnockOff = true;
+            }
+            player->CantBeKnockedOffBike = 1; // never knocked off
+        } else if (s_hasSavedKnockOff && s_knockOffPlayer == player) {
+            player->CantBeKnockedOffBike = s_savedKnockOff;
+            s_hasSavedKnockOff = false;
+            s_knockOffPlayer = nullptr;
+        }
+    } else {
+        s_hasSavedKnockOff = false;
+        s_knockOffPlayer = nullptr;
+    }
+
+    if (MenuState::VehicleBikeFly && vehicle && player && vehicle->IsDriver(player)) {
+        if (vehicle->m_nVehicleSubClass == VEHICLE_BIKE || vehicle->m_nVehicleSubClass == VEHICLE_BMX) {
+            const float speed = sqrt(
+                vehicle->m_vecMoveSpeed.x * vehicle->m_vecMoveSpeed.x +
+                vehicle->m_vecMoveSpeed.y * vehicle->m_vecMoveSpeed.y +
+                vehicle->m_vecMoveSpeed.z * vehicle->m_vecMoveSpeed.z);
+            if (speed > 0.0f && CTimer::ms_fTimeStep > 0.0f) {
+                vehicle->FlyingControl(3, -9999.9902f, -9999.9902f, -9999.9902f, -9999.9902f);
+            }
+        }
+    }
+
+    static bool lastNoDerail = false;
+    if (lastNoDerail != MenuState::VehicleNoDerail) {
+        lastNoDerail = MenuState::VehicleNoDerail;
+        SetVehicleNoDerail(MenuState::VehicleNoDerail);
+    }
+    static bool lastFlipNoBurn = false;
+    if (lastFlipNoBurn != MenuState::VehicleFlipNoBurn) {
+        lastFlipNoBurn = MenuState::VehicleFlipNoBurn;
+        SetVehicleFlipNoBurn(MenuState::VehicleFlipNoBurn);
     }
 }
 
@@ -987,7 +1294,8 @@ CPed* SpawnPedNearPlayer(const PedSpawnOptions& options) {
 }
 
 CPed* SpawnPedAtMarker(const PedSpawnOptions& options) {
-    const auto index = static_cast<unsigned short>(FrontEndMenuManager.m_nTargetBlipIndex);
+    const unsigned int index = static_cast<unsigned int>(LOWORD(FrontEndMenuManager.m_nTargetBlipIndex));
+    if (index >= MAX_RADAR_TRACES) return nullptr;
     const tRadarTrace& targetBlip = CRadar::ms_RadarTrace[index];
     if (targetBlip.m_nRadarSprite != RADAR_SPRITE_WAYPOINT || !IsValidPedModel(options.modelId)) return nullptr;
     const int model = static_cast<int>(options.modelId);
@@ -1029,16 +1337,91 @@ void SetPedsRiot(bool enable) { plugin::patch::Set<bool>(0x969175, enable, false
 void SetSlutMagnet(bool enable) { plugin::patch::Set<bool>(0x96915D, enable, false); }
 void SetGangsControl(bool enable) { plugin::patch::Set<bool>(0x96915B, enable, false); }
 void SetGangsEverywhere(bool enable) { plugin::patch::Set<bool>(0x96915A, enable, false); }
+void SetPedNoProstitutes(bool) {}
+void SetPedNastyLimbs(bool) {}
+void SetGangWarsActive(bool enable) {
+    CGangWars::bGangWarsActive = enable;
+    MenuState::GangWarsActive = enable;
+}
+void StartGangWar(bool offensive) {
+    if (offensive) {
+        CGangWars::StartOffensiveGangWar();
+    } else {
+        CGangWars::StartDefensiveGangWar();
+    }
+    CGangWars::bGangWarsActive = true;
+    MenuState::GangWarsActive = true;
+}
+void EndGangWar() {
+    CGangWars::EndGangWar(true);
+}
+int GetGangZoneDensity(int gangId) {
+    CPlayerPed* player = FindPlayerPed();
+    if (!player || gangId < 0 || gangId > 9) return 0;
+    CVector pos = player->GetPosition();
+    CZoneInfo* info = CTheZones::GetZoneInfo(&pos, nullptr);
+    return info ? info->m_nGangDensity[gangId] : 0;
+}
+void SetGangZoneDensity(int gangId, int density) {
+    CPlayerPed* player = FindPlayerPed();
+    if (!player || gangId < 0 || gangId > 9) return;
+    CVector pos = player->GetPosition();
+    CZoneInfo* info = CTheZones::GetZoneInfo(&pos, nullptr);
+    if (!info) return;
+    if (density < 0) density = 0;
+    if (density > 127) density = 127;
+    info->m_nGangDensity[gangId] = static_cast<int8_t>(density);
+    plugin::Command<plugin::Commands::CLEAR_SPECIFIC_ZONES_TO_TRIGGER_GANG_WAR>();
+    CGangWars::bGangWarsActive = true;
+    MenuState::GangWarsActive = true;
+}
+unsigned int GetGangMemberModel(unsigned int gangId, unsigned int memberId) {
+    if (gangId > 9 || memberId > 2) return 0;
+    return static_cast<unsigned int>(CPopulation::m_PedGroups[42 + static_cast<int>(gangId)][memberId]);
+}
+void SetGangMemberModel(unsigned int gangId, unsigned int memberId, unsigned int model) {
+    if (gangId > 9 || memberId > 2) return;
+    CPopulation::m_PedGroups[42 + static_cast<int>(gangId)][memberId] = static_cast<short>(model);
+}
+void ResetGangModels() {
+    CPopulation::LoadPedGroups();
+}
+void SetGangWeapons(unsigned int gangId, int weapon1, int weapon2, int weapon3) {
+    if (gangId > 9) return;
+    CGangs::SetGangWeapons(gangId, weapon1, weapon2, weapon3);
+}
 
 bool PlayPlayerAnimation(const char* group, const char* name, bool loop) {
+    return PlayAnimationEx(group, name, loop, false, false);
+}
+
+bool PlayAnimationEx(const char* group, const char* name, bool loop, bool secondary, bool onTargetPed) {
     CPlayerPed* player = FindPlayerPed();
     if (!player || !group || !name || group[0] == '\0' || name[0] == '\0') return false;
-    const int hplayer = CPools::GetPedRef(player);
-    plugin::Command<plugin::Commands::REQUEST_ANIMATION>(group);
-    if (!plugin::Command<plugin::Commands::HAS_ANIMATION_LOADED>(group)) {
-        CStreaming::LoadAllRequestedModels(false);
+
+    CPed* target = player;
+    if (onTargetPed && player->m_pPlayerTargettedPed) {
+        target = player->m_pPlayerTargettedPed;
+        if (!IsPedPointerInPool(target)) {
+            return false;
+        }
     }
-    plugin::Command<plugin::Commands::TASK_PLAY_ANIM>(hplayer, name, group, 4.0f, loop, false, false, false, -1);
+    if (!target || !IsPedPointerInPool(target)) return false;
+
+    const int hped = CPools::GetPedRef(target);
+    if (std::strcmp(group, "PED") != 0) {
+        RequestAnimGroupKeepAlive(group);
+    }
+    plugin::Command<plugin::Commands::CLEAR_CHAR_TASKS>(hped);
+    if (secondary) {
+        plugin::Command<plugin::Commands::TASK_PLAY_ANIM_SECONDARY>(hped, name, group, 4.0f, loop, false, false, false, -1);
+    } else {
+        plugin::Command<plugin::Commands::TASK_PLAY_ANIM>(hped, name, group, 4.0f, loop, false, false, false, -1);
+    }
+    if (std::strcmp(group, "PED") != 0) {
+        // 禁止同帧 REMOVE；延迟卸载，避免动画任务读到已卸载 IFP
+        ScheduleAnimGroupUnload(group, loop ? 60000 : 8000);
+    }
     return true;
 }
 
@@ -1127,6 +1510,38 @@ void FailMission() {
     }
 }
 
+void SetFightingStyle(int styleIndex) {
+    CPlayerPed* player = FindPlayerPed();
+    if (!player) return;
+    if (styleIndex < 0) styleIndex = 0;
+    if (styleIndex > 4) styleIndex = 4;
+    plugin::Command<plugin::Commands::GIVE_MELEE_ATTACK_TO_CHAR>(CPools::GetPedRef(player), styleIndex + 4, 6);
+}
+
+void SetWalkingStyle(int styleIndex) {
+    static const char* walkStyles[] = {
+        "default", "man", "shuffle", "oldman", "gang1", "gang2", "oldfatman",
+        "fatman", "jogger", "drunkman", "blindman", "swat", "woman", "shopping", "busywoman",
+        "sexywoman", "pro", "oldwoman", "fatwoman", "jogwoman", "oldfatwoman", "skate"
+    };
+    const int count = static_cast<int>(sizeof(walkStyles) / sizeof(walkStyles[0]));
+    if (styleIndex < 0 || styleIndex >= count) return;
+
+    CPlayerPed* player = FindPlayerPed();
+    if (!player) return;
+    const char* style = walkStyles[styleIndex];
+    if (std::strcmp(style, "default") == 0) {
+        plugin::patch::Set<DWORD>(0x609A4E, 0x4D48689);
+        plugin::patch::Set<WORD>(0x609A52, 0);
+    } else {
+        plugin::patch::Nop(0x609A4E, 6);
+        plugin::Command<plugin::Commands::REQUEST_ANIMATION>(style);
+        plugin::Command<plugin::Commands::LOAD_ALL_MODELS_NOW>();
+        plugin::Command<plugin::Commands::SET_ANIM_GROUP_FOR_CHAR>(CPools::GetPedRef(player), style);
+        plugin::Command<plugin::Commands::REMOVE_ANIMATION>(style);
+    }
+}
+
 void DisplayHud(bool enable) {
     plugin::Command<plugin::Commands::DISPLAY_HUD>(enable);
     CHud::m_Wants_To_Draw_Hud = enable;
@@ -1150,6 +1565,78 @@ void SetVisualFilter(bool enable, int filterId, float) {
 
     CWeather::OldWeatherType = static_cast<short>(filterId);
     CWeather::NewWeatherType = static_cast<short>(filterId);
+}
+
+void ProcessVisualExtras() {
+    static bool lastFullscreen = false;
+    static bool lastNoRadarRot = false;
+    static bool lastUnfog = false;
+
+    static CodePatch s_fullscreenPatches[] = {
+        MakePatch(0x575BF6, 5), MakePatch(0x575C40, 5), MakePatch(0x575C84, 5), MakePatch(0x575CCE, 5),
+        MakePatch(0x575D1F, 5), MakePatch(0x575D6F, 5), MakePatch(0x575DC2, 5), MakePatch(0x575E12, 5),
+        MakePatch(0x5754EC, 6), MakePatch(0x575537, 6), MakePatch(0x575311, 6), MakePatch(0x575361, 6),
+    };
+    static CodePatch s_radarRotPatches[] = {
+        MakePatch(0x5837FB, 6), MakePatch(0x583805, 6), MakePatch(0x58380D, 6),
+        MakePatch(0x5837D6, 6), MakePatch(0x5837D0, 6), MakePatch(0x5837C6, 8),
+    };
+    static CodePatch s_squareRadarPatch = MakePatch(0x58585C, 4);
+
+    if (lastFullscreen != MenuState::VisualFullscreenMap) {
+        lastFullscreen = MenuState::VisualFullscreenMap;
+        if (MenuState::VisualFullscreenMap) {
+            for (auto& site : s_fullscreenPatches) {
+                site.ApplyNop();
+            }
+        } else {
+            for (auto& site : s_fullscreenPatches) {
+                site.Restore();
+            }
+        }
+    }
+
+    if (lastNoRadarRot != MenuState::VisualNoRadarRot) {
+        lastNoRadarRot = MenuState::VisualNoRadarRot;
+        if (MenuState::VisualNoRadarRot) {
+            plugin::patch::SetFloat(0xBA8310, 0.0f);
+            plugin::patch::SetFloat(0xBA830C, 0.0f);
+            plugin::patch::SetFloat(0xBA8308, 1.0f);
+            for (auto& site : s_radarRotPatches) {
+                site.ApplyNop();
+            }
+        } else {
+            for (auto& site : s_radarRotPatches) {
+                site.Restore();
+            }
+        }
+    }
+
+    if (lastUnfog != MenuState::VisualUnfogMap) {
+        lastUnfog = MenuState::VisualUnfogMap;
+        plugin::patch::SetUChar(0xBA372C, MenuState::VisualUnfogMap ? 0x50 : 0x00);
+    }
+
+    plugin::patch::Set<bool>(0xC402B8, MenuState::VisualNightVision, false);
+    plugin::patch::Set<bool>(0xC402B9, MenuState::VisualInfrared, false);
+
+    CHud::bScriptDontDisplayAreaName = MenuState::VisualHideAreaNames;
+    CHud::bScriptDontDisplayVehicleName = MenuState::VisualHideVehicleNames;
+    plugin::Command<plugin::Commands::DISPLAY_ZONE_NAMES>(!MenuState::VisualHideAreaNames);
+    plugin::Command<plugin::Commands::DISPLAY_CAR_NAMES>(!MenuState::VisualHideVehicleNames);
+
+    // Square radar: 简化软实现（缩放雷达盘），非完整 LimitRadarPoint 替换
+    static bool lastSquare = false;
+    if (lastSquare != MenuState::VisualSquareRadar) {
+        lastSquare = MenuState::VisualSquareRadar;
+        if (MenuState::VisualSquareRadar) {
+            static float var = 0.000001f;
+            s_squareRadarPatch.EnsureBackup();
+            plugin::patch::Set(0x58585C, &var);
+        } else {
+            s_squareRadarPatch.Restore();
+        }
+    }
 }
 
 void TeleportForward(float distance) {
@@ -1255,16 +1742,16 @@ void ClearWeapons(CPlayerPed* player) {
 }
 
 int RemoveTrackedPickups() {
+    // 只删菜单创建/追踪的 pickup，禁止遍历全图 aPickUps 清任务道具
     int removed = 0;
-    for (unsigned int i = 0; i < MAX_NUM_PICKUPS; ++i) {
-        CPickup& pickup = CPickups::aPickUps[i];
-        if (pickup.m_nPickupType == PICKUP_NONE || pickup.m_nFlags.bDisabled) {
+    for (int handle : g_trackedPickupHandles) {
+        if (handle < 0) {
             continue;
         }
-
-        pickup.Remove();
+        CPickups::RemovePickUp(handle);
         ++removed;
     }
+    g_trackedPickupHandles.clear();
     return removed;
 }
 
@@ -1281,11 +1768,52 @@ void SetFastReload(CPlayerPed* player, bool enable) {
 }
 
 void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange, bool rapidFire, bool dualWield, bool moveAim, bool moveFire, bool noSpread) {
-    if (!player || (!hugeDamage && !longRange && !rapidFire && !dualWield && !moveAim && !moveFire && !noSpread)) return;
+    const bool any = hugeDamage || longRange || rapidFire || dualWield || moveAim || moveFire || noSpread;
+    static bool s_wasAny = false;
+    static int s_lastType = -1;
+    static unsigned char s_lastSkill = 255;
+    static unsigned char s_lastMask = 0;
+
+    const unsigned char mask =
+        static_cast<unsigned char>((hugeDamage ? 1 : 0) |
+                                   (longRange ? 2 : 0) |
+                                   (rapidFire ? 4 : 0) |
+                                   (dualWield ? 8 : 0) |
+                                   (moveAim ? 16 : 0) |
+                                   (moveFire ? 32 : 0) |
+                                   (noSpread ? 64 : 0));
+
+    if (!any) {
+        if (s_wasAny) {
+            CWeaponInfo::LoadWeaponData();
+            s_wasAny = false;
+            s_lastType = -1;
+            s_lastSkill = 255;
+            s_lastMask = 0;
+        }
+        return;
+    }
+    if (!player) {
+        return;
+    }
 
     CWeapon& weapon = player->m_aWeapons[player->m_nSelectedWepSlot];
-    CWeaponInfo* info = CWeaponInfo::GetWeaponInfo(weapon.m_eWeaponType, player->GetWeaponSkill(weapon.m_eWeaponType));
-    if (!info) return;
+    const unsigned char skill = player->GetWeaponSkill(weapon.m_eWeaponType);
+    const int type = static_cast<int>(weapon.m_eWeaponType);
+
+    // 仅在槽位/类型/开关组合变化或外部重置后写入，避免每帧污染全局表
+    if (s_wasAny && !g_weaponTweaksNeedReapply && s_lastType == type && s_lastSkill == skill && s_lastMask == mask) {
+        return;
+    }
+
+    if (s_wasAny || g_weaponTweaksNeedReapply) {
+        CWeaponInfo::LoadWeaponData();
+    }
+
+    CWeaponInfo* info = CWeaponInfo::GetWeaponInfo(weapon.m_eWeaponType, skill);
+    if (!info) {
+        return;
+    }
 
     if (hugeDamage) {
         info->m_nDamage = 1000;
@@ -1311,10 +1839,46 @@ void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange, bo
     if (noSpread) {
         info->m_fAccuracy = 100.0f;
     }
+
+    s_wasAny = true;
+    s_lastType = type;
+    s_lastSkill = skill;
+    s_lastMask = mask;
+    g_weaponTweaksNeedReapply = false;
 }
 
 void ResetWeaponStats() {
     CWeaponInfo::LoadWeaponData();
+    g_weaponTweaksNeedReapply = true;
+}
+
+void ProcessWeaponAutoAim(bool enable) {
+    static bool s_savedMouse3rd = true;
+    static bool s_hasSaved = false;
+    static bool s_wasEnabled = false;
+
+    if (!enable) {
+        if (s_wasEnabled && s_hasSaved) {
+            CCamera::m_bUseMouse3rdPerson = s_savedMouse3rd;
+        }
+        s_wasEnabled = false;
+        s_hasSaved = false;
+        return;
+    }
+
+    if (!s_wasEnabled) {
+        s_savedMouse3rd = CCamera::m_bUseMouse3rdPerson;
+        s_hasSaved = true;
+        s_wasEnabled = true;
+    }
+
+    if (CPad::NewMouseControllerState.x == 0 && CPad::NewMouseControllerState.y == 0) {
+        if (GetAsyncKeyState(VK_RBUTTON) & 0x8000) {
+            CCamera::m_bUseMouse3rdPerson = false;
+        }
+    } else {
+        CCamera::m_bUseMouse3rdPerson = true;
+    }
 }
 
 void SetTime(int hour, int minute) {
@@ -1389,11 +1953,18 @@ void SetFasterClock(bool enable) {
 
 void ProcessSolidWater(CPlayerPed* player, bool enable) {
     static int solidWaterObj = 0;
-    if (!enable || !player) {
-        if (solidWaterObj) {
-            plugin::Command<plugin::Commands::DELETE_OBJECT>(solidWaterObj);
-            solidWaterObj = 0;
+    auto destroySolidWater = []() {
+        if (!solidWaterObj) {
+            return;
         }
+        if (plugin::Command<plugin::Commands::DOES_OBJECT_EXIST>(solidWaterObj)) {
+            plugin::Command<plugin::Commands::DELETE_OBJECT>(solidWaterObj);
+        }
+        solidWaterObj = 0;
+    };
+
+    if (!enable || !player) {
+        destroySolidWater();
         return;
     }
 
@@ -1404,19 +1975,24 @@ void ProcessSolidWater(CPlayerPed* player, bool enable) {
     int hplayer = CPools::GetPedRef(player);
     if (!plugin::Command<plugin::Commands::IS_CHAR_IN_ANY_BOAT>(hplayer) && waterHeight != -1000.0f && pos.z > waterHeight) {
         if (solidWaterObj == 0) {
+            CStreaming::RequestModel(3095, PRIORITY_REQUEST);
+            CStreaming::LoadAllRequestedModels(false);
             plugin::Command<plugin::Commands::CREATE_OBJECT>(3095, pos.x, pos.y, waterHeight, &solidWaterObj);
+            if (!solidWaterObj || !plugin::Command<plugin::Commands::DOES_OBJECT_EXIST>(solidWaterObj)) {
+                solidWaterObj = 0;
+                return;
+            }
             plugin::Command<plugin::Commands::SET_OBJECT_VISIBLE>(solidWaterObj, false);
             if (pos.z < waterHeight + 1.0f) {
                 player->SetPosn(pos.x, pos.y, waterHeight + 1.0f);
             }
+        } else if (!plugin::Command<plugin::Commands::DOES_OBJECT_EXIST>(solidWaterObj)) {
+            solidWaterObj = 0;
         } else {
             plugin::Command<plugin::Commands::SET_OBJECT_COORDINATES>(solidWaterObj, pos.x, pos.y, waterHeight);
         }
     } else {
-        if (solidWaterObj) {
-            plugin::Command<plugin::Commands::DELETE_OBJECT>(solidWaterObj);
-            solidWaterObj = 0;
-        }
+        destroySolidWater();
     }
 }
 
@@ -1425,7 +2001,8 @@ void SetNoWaterPhysics(bool enable) {
 }
 
 void SetFreezeTime(bool enable) {
-    Log::Info(std::string("SA 冻结时间使用控制器锁定：") + (enable ? "开启" : "关闭"));
+    // 实际时钟冻结由 Controllers::World 用 WorldLockTime||FreezeTime 重断言；此处不写误导日志
+    (void)enable;
 }
 
 int GetDaysPassed() {
@@ -1473,6 +2050,9 @@ namespace {
             nullptr
         );
         plugin::Command<plugin::Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(model);
+        if (handle >= 0) {
+            g_trackedPickupHandles.push_back(handle);
+        }
         return handle;
     }
 }
@@ -1502,6 +2082,13 @@ bool UpdateLastPickup(const PickupOptions& options) {
     }
 
     CPickups::RemovePickUp(lastXMenuPickupHandle);
+    for (auto it = g_trackedPickupHandles.begin(); it != g_trackedPickupHandles.end(); ++it) {
+        if (*it == lastXMenuPickupHandle) {
+            g_trackedPickupHandles.erase(it);
+            break;
+        }
+    }
+
     const int handle = CreateXMenuPickup(options, lastXMenuPickupPosition);
     if (handle < 0) {
         lastXMenuPickupHandle = -1;
@@ -1518,6 +2105,12 @@ bool RemoveLastPickup() {
     }
 
     CPickups::RemovePickUp(lastXMenuPickupHandle);
+    for (auto it = g_trackedPickupHandles.begin(); it != g_trackedPickupHandles.end(); ++it) {
+        if (*it == lastXMenuPickupHandle) {
+            g_trackedPickupHandles.erase(it);
+            break;
+        }
+    }
     lastXMenuPickupHandle = -1;
     return true;
 }

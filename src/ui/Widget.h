@@ -1,14 +1,21 @@
 #pragma once
 #include "imgui/imgui.h"
+#include <string>
 
 namespace UI {
-    // 列表导航状态
+    // 列表导航状态（供 Menu 页脚等读取）
     extern int listSelectedIndex;
     extern int listTotalItems;
-    
+
     void ResetListIndex();
     void SetListTotalItems();
     void UpdateListNavigation();
+
+    // 列表外壳（GTA5 风格）
+    void BeginListShell(const char* title, const char* subtitle, bool showBackHint);
+    void EndListShell();
+    // 当前选中项是否支持左右调值（页脚提示用）
+    bool ListSelectionCanAdjust();
 
     ImVec2 CalcSize(short count = 1, bool spacing = true);
     void SameLineEvery(int index, int columns);

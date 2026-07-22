@@ -11,6 +11,8 @@
   "world.disableCheats": "禁用作弊码",
   "world.fasterClock": "加快时钟",
   "world.freezeTime": "冻结时间",
+  "world.solidWater": "固体水面",
+  "world.noWaterPhysics": "关闭水物理",
   "world.disableForbiddenAreaWanted": "禁止通缉区域",
   "world.freePayNSpray": "免费喷漆店",
   "world.daysPassed": "经过天数",

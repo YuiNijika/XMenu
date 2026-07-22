@@ -9,6 +9,8 @@
   "action.player.heal": "プレイヤー回復",
   "action.player.armour": "アーマー補充",
   "action.player.clearWanted": "手配度を消す",
+  "action.player.aimSkinChanger": "照準スキン変更",
+  "action.player.neverWanted.toggle": "手配なし切替",
   "action.vehicle.repair": "車両修理",
   "action.vehicle.unflip": "車両を起こす",
   "action.vehicle.stop": "車両停止",

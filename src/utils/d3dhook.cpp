@@ -9,8 +9,10 @@
 #include "imgui/imgui_impl_dx9.h"
 #include "kiero/kiero.h"
 #include "utils/Log.h"
+#include "ui/GuiTheme.h"
+#include "ui/MenuState.h"
 #include <array>
-#include <string>
+#include <cstring>
 
 #ifdef GTASA
 #include <vector>
@@ -29,14 +31,6 @@ static Present_t oPresent = NULL;
 extern const bool XMENU_DEBUG_MODE;
 
 namespace {
-#ifdef GTASA
-    bool virtualMouseActive = false;
-    bool virtualMouseReady = false;
-    bool virtualMouseDown[5] = {};
-    float virtualMouseX = 0.0f;
-    float virtualMouseY = 0.0f;
-#endif
-
     void DebugD3D(const std::string& message) {
         if (XMENU_DEBUG_MODE) {
             Log::Info(std::string("D3D Hook 调试：") + message);
@@ -67,7 +61,6 @@ namespace {
             const char* displayName;
         };
 
-        // 从常见中文字体一路兜底，尽量保证精简系统或定制系统也能正常显示中文。
         const std::array<FontCandidate, 16> fontCandidates = {{
             {"msyh.ttc", "微软雅黑"},
             {"msyh.ttf", "微软雅黑"},
@@ -93,17 +86,16 @@ namespace {
                 continue;
             }
 
-            // 合并多个语言的字符范围：中文、日文、韩文、西里尔文（俄语）、默认拉丁文
             ImWchar ranges[] = {
-                0x0020, 0x00FF, // Basic Latin + Latin Supplement (English, etc.)
-                0x0400, 0x044F, // Cyrillic (Russian)
-                0x0490, 0x052F, // Cyrillic Supplement
-                0x3000, 0x30FF, // Japanese Hiragana, Katakana
-                0x31F0, 0x31FF, // Katakana Phonetic Extensions
-                0x4E00, 0x9FFF, // CJK Unified Ideographs (Chinese, Japanese Kanji)
-                0x3400, 0x4DBF, // CJK Unified Ideographs Extension A
-                0xF900, 0xFAFF, // CJK Compatibility Ideographs
-                0xFF00, 0xFFEF, // Full-width Characters
+                0x0020, 0x00FF,
+                0x0400, 0x044F,
+                0x0490, 0x052F,
+                0x3000, 0x30FF,
+                0x31F0, 0x31FF,
+                0x4E00, 0x9FFF,
+                0x3400, 0x4DBF,
+                0xF900, 0xFAFF,
+                0xFF00, 0xFFEF,
                 0,
             };
 
@@ -129,103 +121,46 @@ namespace {
         return hwnd && IsWindow(hwnd);
     }
 
-#ifdef GTASA
-    float ClampFloat(float value, float minValue, float maxValue) {
-        if (value < minValue) return minValue;
-        if (value > maxValue) return maxValue;
-        return value;
-    }
-
-    void ApplyVirtualMouseToImGui() {
-        if (!ImGui::GetCurrentContext() || !virtualMouseActive) {
+    // 系统光标（窗口客户区）→ ImGui DisplaySize
+    // SA 宽屏/非 1:1 时客户区像素与渲染尺寸不一致会导致点击偏移；III/VC 通常 1:1
+    void SyncSystemCursorToImGui(HWND hwnd) {
+        if (!hwnd || !ImGui::GetCurrentContext()) {
             return;
         }
 
         ImGuiIO& io = ImGui::GetIO();
-        io.MousePos = ImVec2(virtualMouseX, virtualMouseY);
-        for (int i = 0; i < 5; ++i) {
-            io.MouseDown[i] = virtualMouseDown[i];
-        }
-        io.MouseDrawCursor = true;
-    }
-
-    void InitVirtualMousePosition(HWND hwnd) {
-        if (!ImGui::GetCurrentContext()) {
-            return;
-        }
-
-        ImGuiIO& io = ImGui::GetIO();
-        if (virtualMouseReady) {
+        if (io.DisplaySize.x <= 1.0f || io.DisplaySize.y <= 1.0f) {
             return;
         }
 
         POINT cursor{};
-        if (GetCursorPos(&cursor) && ScreenToClient(hwnd, &cursor)) {
-            virtualMouseX = static_cast<float>(cursor.x);
-            virtualMouseY = static_cast<float>(cursor.y);
-        } else {
-            virtualMouseX = io.DisplaySize.x * 0.5f;
-            virtualMouseY = io.DisplaySize.y * 0.5f;
+        if (!GetCursorPos(&cursor) || !ScreenToClient(hwnd, &cursor)) {
+            return;
         }
-        virtualMouseReady = true;
-        ApplyVirtualMouseToImGui();
+
+        RECT client{};
+        if (!GetClientRect(hwnd, &client)) {
+            return;
+        }
+
+        const float clientW = static_cast<float>(client.right - client.left);
+        const float clientH = static_cast<float>(client.bottom - client.top);
+        if (clientW <= 1.0f || clientH <= 1.0f) {
+            return;
+        }
+
+        const float scaleX = io.DisplaySize.x / clientW;
+        const float scaleY = io.DisplaySize.y / clientH;
+        float x = static_cast<float>(cursor.x) * scaleX;
+        float y = static_cast<float>(cursor.y) * scaleY;
+
+        if (x < 0.0f) x = 0.0f;
+        if (y < 0.0f) y = 0.0f;
+        if (x > io.DisplaySize.x - 1.0f) x = io.DisplaySize.x - 1.0f;
+        if (y > io.DisplaySize.y - 1.0f) y = io.DisplaySize.y - 1.0f;
+
+        io.AddMousePosEvent(x, y);
     }
-
-    void MoveVirtualMouseFromRawInput(LPARAM lParam) {
-        if (!ImGui::GetCurrentContext() || !virtualMouseActive) {
-            return;
-        }
-
-        UINT size = 0;
-        if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, nullptr, &size, sizeof(RAWINPUTHEADER)) != 0 || size == 0) {
-            return;
-        }
-
-        std::vector<unsigned char> buffer(size);
-        if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, buffer.data(), &size, sizeof(RAWINPUTHEADER)) != size) {
-            return;
-        }
-
-        const RAWINPUT* raw = reinterpret_cast<const RAWINPUT*>(buffer.data());
-        if (raw->header.dwType != RIM_TYPEMOUSE) {
-            return;
-        }
-
-        ImGuiIO& io = ImGui::GetIO();
-        const float speed = 1.0f;
-        virtualMouseX = ClampFloat(virtualMouseX + static_cast<float>(raw->data.mouse.lLastX) * speed, 0.0f, io.DisplaySize.x - 1.0f);
-        virtualMouseY = ClampFloat(virtualMouseY + static_cast<float>(raw->data.mouse.lLastY) * speed, 0.0f, io.DisplaySize.y - 1.0f);
-
-        const USHORT flags = raw->data.mouse.usButtonFlags;
-        if (flags & RI_MOUSE_LEFT_BUTTON_DOWN) virtualMouseDown[0] = true;
-        if (flags & RI_MOUSE_LEFT_BUTTON_UP) virtualMouseDown[0] = false;
-        if (flags & RI_MOUSE_RIGHT_BUTTON_DOWN) virtualMouseDown[1] = true;
-        if (flags & RI_MOUSE_RIGHT_BUTTON_UP) virtualMouseDown[1] = false;
-        if (flags & RI_MOUSE_MIDDLE_BUTTON_DOWN) virtualMouseDown[2] = true;
-        if (flags & RI_MOUSE_MIDDLE_BUTTON_UP) virtualMouseDown[2] = false;
-        if (flags & RI_MOUSE_BUTTON_4_DOWN) virtualMouseDown[3] = true;
-        if (flags & RI_MOUSE_BUTTON_4_UP) virtualMouseDown[3] = false;
-        if (flags & RI_MOUSE_BUTTON_5_DOWN) virtualMouseDown[4] = true;
-        if (flags & RI_MOUSE_BUTTON_5_UP) virtualMouseDown[4] = false;
-        if (flags & RI_MOUSE_WHEEL) {
-            const SHORT wheelDelta = static_cast<SHORT>(raw->data.mouse.usButtonData);
-            io.MouseWheel += static_cast<float>(wheelDelta) / static_cast<float>(WHEEL_DELTA);
-        }
-
-        ApplyVirtualMouseToImGui();
-    }
-
-    void RegisterMenuRawMouse(HWND hwnd) {
-        RAWINPUTDEVICE device{};
-        device.usUsagePage = 0x01;
-        device.usUsage = 0x02;
-        device.dwFlags = RIDEV_INPUTSINK;
-        device.hwndTarget = hwnd;
-        if (!RegisterRawInputDevices(&device, 1, sizeof(device))) {
-            Log::Warn("注册菜单 RawInput 鼠标失败");
-        }
-    }
-#endif
 
     void ApplyMousePatch(bool menuActive) {
         if (menuActive) {
@@ -318,12 +253,12 @@ void D3DHook::SetBackgroundRenderActive(bool active) {
 bool D3DHook::IsBackgroundRenderActive() {
     return backgroundRenderActive;
 }
+
 float D3DHook::ConsumeRawWheelDelta() {
     const float value = g_rawWheelDelta;
     g_rawWheelDelta = 0.0f;
     return value;
 }
-
 
 void D3DHook::SetMenuVisible(bool visible) {
     if (!hookInstalled) {
@@ -356,28 +291,22 @@ void D3DHook::ProcessMouse() {
         return;
     }
 
-    ImGui::GetIO().MouseDrawCursor = menuVisible || backgroundInputActive;
+    bool showCursor = false;
+    if (backgroundInputActive) {
+        showCursor = true;
+    } else if (menuVisible) {
+        showCursor = GuiTheme::WantsMouseCursor();
+    }
+    ImGui::GetIO().MouseDrawCursor = showCursor;
 
     if (menuVisible || backgroundInputActive) {
-#ifdef GTASA
-        virtualMouseActive = true;
-        InitVirtualMousePosition(window);
-#endif
         ApplyMousePatch(true);
     } else {
-#ifdef GTASA
-        virtualMouseActive = false;
-        virtualMouseReady = false;
-        std::memset(virtualMouseDown, 0, sizeof(virtualMouseDown));
-#endif
         ApplyMousePatch(false);
         CPad::UpdatePads();
         CPad::NewMouseControllerState.x = 0;
         CPad::NewMouseControllerState.y = 0;
-#ifdef GTA3
-        // CPad::GetPad(0)->ClearMouseHistory(); // Disabled to prevent camera reset
-#else
-        // CPad::ClearMouseHistory(); // Disabled to prevent camera reset
+#ifndef GTA3
         CPad* pad = CPad::GetPad(0);
         if (pad) {
             pad->NewState.DPadUp = 0;
@@ -392,35 +321,27 @@ void D3DHook::ProcessMouse() {
 
 void D3DHook::MaintainInputState() {
     if (hookInstalled && isInitialized && (menuVisible || backgroundInputActive)) {
-#ifdef GTASA
-        virtualMouseActive = true;
-        InitVirtualMousePosition(window);
-#endif
+        const bool showCursor = backgroundInputActive || (menuVisible && GuiTheme::WantsMouseCursor());
         ApplyMousePatch(true);
         if (ImGui::GetCurrentContext()) {
-#ifdef GTASA
-            ApplyVirtualMouseToImGui();
-#endif
-            ImGui::GetIO().MouseDrawCursor = true;
+            ImGui::GetIO().MouseDrawCursor = showCursor;
+            GuiTheme::Sync();
         }
     }
 }
 
 LRESULT __stdcall D3DHook::hkWndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     if (menuVisible || backgroundInputActive) {
-#ifdef GTASA
-        if (uMsg == WM_INPUT && virtualMouseActive) {
-            MoveVirtualMouseFromRawInput(lParam);
-            return true;
-        }
-#endif
-
+        // 与 III/VC 相同：Win32 绝对客户区坐标交给 ImGui
         ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
-        if (uMsg == WM_MOUSEMOVE || uMsg == WM_LBUTTONDOWN || uMsg == WM_LBUTTONUP || uMsg == WM_RBUTTONDOWN || uMsg == WM_RBUTTONUP || uMsg == WM_MOUSEWHEEL) {
+
+        if (uMsg == WM_MOUSEMOVE || uMsg == WM_LBUTTONDOWN || uMsg == WM_LBUTTONUP
+            || uMsg == WM_RBUTTONDOWN || uMsg == WM_RBUTTONUP || uMsg == WM_MBUTTONDOWN
+            || uMsg == WM_MBUTTONUP || uMsg == WM_MOUSEWHEEL || uMsg == WM_MOUSEHWHEEL
+            || uMsg == WM_INPUT) {
             return true;
         }
     } else {
-        // Capture wheel events when menu is closed (weapon cycler)
         if (uMsg == WM_MOUSEWHEEL) {
             g_rawWheelDelta += static_cast<float>(static_cast<short>(HIWORD(wParam))) / static_cast<float>(WHEEL_DELTA);
         }
@@ -443,17 +364,19 @@ void D3DHook::InitImGui(LPDIRECT3DDEVICE9 pDevice) {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
-    
+
     if (!LoadChineseFont(io)) {
         Log::Warn("没有找到可用中文字体，将使用 ImGui 默认字体");
     }
-    
+
     ImGui_ImplWin32_Init(window);
-#ifdef GTASA
-    RegisterMenuRawMouse(window);
-#endif
     ImGui_ImplDX9_Init(pDevice);
-    
+
+    GuiTheme::SetThemeByIndex(MenuState::GuiThemeIndex);
+    GuiTheme::SetInteractionByIndex(MenuState::GuiInteractionMode);
+    GuiTheme::ApplyToStyle();
+    GuiTheme::ApplyInteraction();
+
     isInitialized = true;
     ProcessMouse();
     Log::Info("ImGui 初始化完成");
@@ -476,22 +399,26 @@ HRESULT __stdcall D3DHook::hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
         oWndProc = (WNDPROC)SetWindowLongPtr(window, GWL_WNDPROC, (LONG_PTR)hkWndProc);
         InitImGui(pDevice);
     }
-    
+
     if (isInitialized && (menuVisible || backgroundRenderActive || backgroundInputActive)) {
         if (menuVisible || backgroundInputActive) {
             ApplyMousePatch(true);
         }
         ImGui_ImplDX9_NewFrame();
         ImGui_ImplWin32_NewFrame();
+
+        // 用系统光标按客户区→DisplaySize 重映射，消除 SA 点击偏移
+        if (menuVisible || backgroundInputActive) {
+            SyncSystemCursorToImGui(window);
+        }
+
         ImGui::NewFrame();
-#ifdef GTASA
-        ApplyVirtualMouseToImGui();
-#endif
-        
+        GuiTheme::Sync();
+
         if (renderCallback) {
             renderCallback();
         }
-        
+
         ImGui::EndFrame();
         ImGui::Render();
         ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());

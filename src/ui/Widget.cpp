@@ -1,9 +1,21 @@
 #include "Widget.h"
 #include "MenuState.h"
 #include "Menu.h"
+#include "GuiTheme.h"
+#include <cstdio>
+#include <cstring>
+#include <string>
 #include <windows.h>
 
 namespace {
+    // GTA V Interactive Menu 尺寸
+    constexpr float kListWidth = 432.0f;
+    constexpr float kHeaderH = 52.0f;
+    constexpr float kFooterH = 30.0f;
+    constexpr float kRowH = 38.0f;
+    constexpr float kPadX = 14.0f;
+    constexpr float kAccentBarW = 4.0f;
+
     float ContentWidth() {
         return ImGui::GetContentRegionAvail().x;
     }
@@ -11,192 +23,409 @@ namespace {
     float RowWidth() {
         return ImGui::GetContentRegionAvail().x + ImGui::GetCursorPosX() - ImGui::GetCursorStartPos().x;
     }
+
+    ImU32 ColU32(const ImVec4& c) {
+        return ImGui::ColorConvertFloat4ToU32(c);
+    }
+
+    ImU32 AccentColor() {
+        return ColU32(GuiTheme::GetCurrentTheme().CheckMark);
+    }
+
+    bool MouseAllowed() {
+        return MenuState::ListMenuMouseInput;
+    }
+
+    bool KeyDownRepeat(ImGuiKey key) {
+        return ImGui::IsKeyPressed(key, true);
+    }
+
+    bool KeyDownOnce(ImGuiKey key) {
+        return ImGui::IsKeyPressed(key, false);
+    }
 }
 
 namespace UI {
-    int listCurrentIndex = 0;
     int listSelectedIndex = 0;
     int listTotalItems = 0;
-    static int lastScrolledIndex = -1;
-    static bool actionExecutedThisFrame = false;
-    static int flashIndex = -1;
-    static ULONGLONG flashTick = 0;
+
+    namespace {
+        int listCurrentIndex = 0;
+        int lastScrolledIndex = -1;
+        bool actionConsumed = false;
+        bool backConsumed = false;
+        bool selectionCanAdjust = false;
+        int flashIndex = -1;
+        ULONGLONG flashUntil = 0;
+        bool shellOpen = false;
+
+        void ClampSelection() {
+            if (listTotalItems <= 0) {
+                listSelectedIndex = 0;
+                return;
+            }
+            if (listSelectedIndex < 0) {
+                listSelectedIndex = listTotalItems - 1;
+            }
+            if (listSelectedIndex >= listTotalItems) {
+                listSelectedIndex = 0;
+            }
+        }
+
+        void MoveSelection(int delta) {
+            if (listTotalItems <= 0) {
+                return;
+            }
+            listSelectedIndex += delta;
+            while (listSelectedIndex < 0) {
+                listSelectedIndex += listTotalItems;
+            }
+            while (listSelectedIndex >= listTotalItems) {
+                listSelectedIndex -= listTotalItems;
+            }
+            lastScrolledIndex = -1;
+        }
+
+        struct RowResult {
+            bool activated = false;
+            bool stepLeft = false;
+            bool stepRight = false;
+        };
+
+        RowResult DrawGtaRow(const char* label, const char* rightText, bool canAdjust) {
+            RowResult result{};
+            const int index = listCurrentIndex++;
+            bool selected = (index == listSelectedIndex);
+            const bool flashing = (index == flashIndex && GetTickCount64() < flashUntil);
+
+            if (selected && canAdjust) {
+                selectionCanAdjust = true;
+            }
+
+            ImDrawList* dl = ImGui::GetWindowDrawList();
+            const ImVec2 rowMin = ImGui::GetCursorScreenPos();
+            const float width = ImGui::GetContentRegionAvail().x;
+            const ImVec2 rowMax(rowMin.x + width, rowMin.y + kRowH);
+
+            ImGui::PushID(index);
+            ImGui::InvisibleButton("##row", ImVec2(width, kRowH));
+            const bool hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+            const bool mouseOk = MouseAllowed();
+            const bool leftClick = mouseOk && hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+
+            // 悬停跟随（仅鼠标移动时，避免键盘滚动被静止光标抢走）
+            if (mouseOk && hovered) {
+                if (ImGui::GetIO().MouseDelta.x != 0.0f || ImGui::GetIO().MouseDelta.y != 0.0f) {
+                    listSelectedIndex = index;
+                    selected = true;
+                }
+            }
+
+            // 右侧状态区域
+            ImVec2 rightPos(0, 0);
+            ImVec2 rightSize(0, 0);
+            if (rightText && rightText[0]) {
+                rightSize = ImGui::CalcTextSize(rightText);
+                rightPos = ImVec2(rowMax.x - kPadX - rightSize.x, rowMin.y + (kRowH - rightSize.y) * 0.5f);
+            }
+
+            if (leftClick) {
+                listSelectedIndex = index;
+                selected = true;
+
+                if (canAdjust && rightText && rightText[0]) {
+                    const ImVec2 mp = ImGui::GetIO().MousePos;
+                    const float zoneLeft = rightPos.x - 10.0f;
+                    if (mp.x >= zoneLeft) {
+                        const float mid = rightPos.x + rightSize.x * 0.5f;
+                        if (mp.x < mid) {
+                            result.stepLeft = true;
+                        } else {
+                            result.stepRight = true;
+                        }
+                    } else {
+                        result.activated = true;
+                    }
+                } else {
+                    result.activated = true;
+                }
+            }
+
+            // 背景：选中白条 / 悬停淡白
+            if (selected || flashing) {
+                dl->AddRectFilled(rowMin, rowMax, IM_COL32(255, 255, 255, flashing ? 220 : 255));
+                dl->AddRectFilled(rowMin, ImVec2(rowMin.x + kAccentBarW, rowMax.y), AccentColor());
+            } else if (mouseOk && hovered) {
+                dl->AddRectFilled(rowMin, rowMax, IM_COL32(255, 255, 255, 28));
+            }
+
+            const ImU32 textCol = (selected || flashing)
+                ? IM_COL32(0, 0, 0, 255)
+                : IM_COL32(255, 255, 255, 230);
+            ImU32 rightCol = (selected || flashing)
+                ? IM_COL32(0, 0, 0, 255)
+                : IM_COL32(255, 255, 255, 160);
+
+            if (!selected && !flashing && rightText) {
+                if (std::strcmp(rightText, "ON") == 0) {
+                    rightCol = IM_COL32(114, 204, 114, 255);
+                } else if (std::strcmp(rightText, "OFF") == 0) {
+                    rightCol = IM_COL32(255, 255, 255, 110);
+                }
+            }
+
+            const ImVec2 labelPos(
+                rowMin.x + kPadX + ((selected || flashing) ? 2.0f : 0.0f),
+                rowMin.y + (kRowH - ImGui::GetTextLineHeight()) * 0.5f
+            );
+            dl->AddText(labelPos, textCol, label);
+
+            if (rightText && rightText[0]) {
+                dl->AddText(rightPos, rightCol, rightText);
+            }
+
+            // 键盘：仅当前选中项
+            if (selected && !actionConsumed) {
+                if (canAdjust) {
+                    if (KeyDownRepeat(ImGuiKey_LeftArrow) || KeyDownRepeat(ImGuiKey_GamepadDpadLeft) || KeyDownRepeat(ImGuiKey_Keypad4)) {
+                        result.stepLeft = true;
+                        actionConsumed = true;
+                    }
+                    if (KeyDownRepeat(ImGuiKey_RightArrow) || KeyDownRepeat(ImGuiKey_GamepadDpadRight) || KeyDownRepeat(ImGuiKey_Keypad6)) {
+                        result.stepRight = true;
+                        actionConsumed = true;
+                    }
+                } else if (KeyDownOnce(ImGuiKey_LeftArrow) || KeyDownOnce(ImGuiKey_GamepadDpadLeft) || KeyDownOnce(ImGuiKey_Keypad4)) {
+                    if (!backConsumed) {
+                        Menu::PopPage();
+                        backConsumed = true;
+                        actionConsumed = true;
+                    }
+                }
+
+                if (KeyDownOnce(ImGuiKey_Enter)
+                    || KeyDownOnce(ImGuiKey_KeypadEnter)
+                    || KeyDownOnce(ImGuiKey_GamepadFaceDown)
+                    || KeyDownOnce(ImGuiKey_Keypad5)
+                    || KeyDownOnce(ImGuiKey_Space)) {
+                    result.activated = true;
+                    actionConsumed = true;
+                }
+            }
+
+            if (result.activated || result.stepLeft || result.stepRight) {
+                flashIndex = index;
+                flashUntil = GetTickCount64() + 120;
+            }
+
+            if (selected && lastScrolledIndex != listSelectedIndex) {
+                ImGui::SetScrollHereY(0.35f);
+                lastScrolledIndex = listSelectedIndex;
+            }
+
+            ImGui::PopID();
+            return result;
+        }
+    }
 
     void ResetListIndex() {
         listSelectedIndex = 0;
         lastScrolledIndex = -1;
+        flashIndex = -1;
     }
 
     void SetListTotalItems() {
         listTotalItems = listCurrentIndex;
+        ClampSelection();
+    }
+
+    bool ListSelectionCanAdjust() {
+        return selectionCanAdjust;
     }
 
     void UpdateListNavigation() {
-        if (!MenuState::UseNativeMenu) return;
-        
-        // Reset per-frame rendering counter
+        if (!MenuState::UseNativeMenu) {
+            return;
+        }
+
         listCurrentIndex = 0;
-        actionExecutedThisFrame = false;
+        actionConsumed = false;
+        backConsumed = false;
+        selectionCanAdjust = false;
 
         if (listTotalItems > 0) {
-            float wheel = ImGui::GetIO().MouseWheel;
-            if (wheel > 0.0f) {
-                listSelectedIndex--;
-                if (listSelectedIndex < 0) listSelectedIndex = listTotalItems - 1;
-            } else if (wheel < 0.0f) {
-                listSelectedIndex++;
-                if (listSelectedIndex >= listTotalItems) listSelectedIndex = 0;
+            if (KeyDownRepeat(ImGuiKey_UpArrow) || KeyDownRepeat(ImGuiKey_GamepadDpadUp) || KeyDownRepeat(ImGuiKey_Keypad8)) {
+                MoveSelection(-1);
+            }
+            if (KeyDownRepeat(ImGuiKey_DownArrow) || KeyDownRepeat(ImGuiKey_GamepadDpadDown) || KeyDownRepeat(ImGuiKey_Keypad2)) {
+                MoveSelection(1);
             }
 
-            if (ImGui::IsKeyPressed(ImGuiKey_UpArrow, true) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadUp, true) || ImGui::IsKeyPressed(ImGuiKey_Keypad8, true)) {
-                listSelectedIndex--;
-                if (listSelectedIndex < 0) listSelectedIndex = listTotalItems - 1;
-            }
-            if (ImGui::IsKeyPressed(ImGuiKey_DownArrow, true) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadDown, true) || ImGui::IsKeyPressed(ImGuiKey_Keypad2, true)) {
-                listSelectedIndex++;
-                if (listSelectedIndex >= listTotalItems) listSelectedIndex = 0;
+            if (MouseAllowed()) {
+                const float wheel = ImGui::GetIO().MouseWheel;
+                if (wheel > 0.0f) {
+                    MoveSelection(-1);
+                } else if (wheel < 0.0f) {
+                    MoveSelection(1);
+                }
             }
         }
 
-        if (ImGui::IsKeyPressed(ImGuiKey_Backspace, false) || ImGui::IsKeyPressed(ImGuiKey_GamepadFaceRight, false) || ImGui::IsKeyPressed(ImGuiKey_Keypad0, false) || ImGui::IsMouseClicked(1)) {
+        const bool wantBack =
+            KeyDownOnce(ImGuiKey_Backspace)
+            || KeyDownOnce(ImGuiKey_Escape)
+            || KeyDownOnce(ImGuiKey_GamepadFaceRight)
+            || KeyDownOnce(ImGuiKey_Keypad0)
+            || (MouseAllowed() && ImGui::IsMouseClicked(ImGuiMouseButton_Right));
+
+        if (wantBack && !backConsumed) {
             Menu::PopPage();
-        } else if (listTotalItems > 0 && 
-            (ImGui::IsKeyPressed(ImGuiKey_LeftArrow, false) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadLeft, false) || ImGui::IsKeyPressed(ImGuiKey_Keypad4, false))) {
-            
-            // Check if the current selected item is NOT a Slider or something that uses left/right arrows
-            // We can determine this in DrawListItemBase, but for a global PopPage we can just track if outChangedLeftRight was true.
-            // Since UpdateListNavigation runs before the items are drawn, we can't easily know if the CURRENT item accepts left/right.
-            // So we delay PopPage to after items are drawn? No, PopPage changes activePage, doing it after drawing might cause issues.
-            // Instead, we let DrawListItemBase trigger a PopPage if left arrow is pressed and it's not a value slider.
+            backConsumed = true;
         }
     }
 
-    bool DrawListItemBase(const char* label, const std::string& rightText, bool& outChangedLeftRight, bool canChangeValue = false) {
-        bool isSelected = (listCurrentIndex == listSelectedIndex);
-        outChangedLeftRight = false;
-        
-        if (isSelected) {
-            ImVec4 headerColor = ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive);
-            float luminance = (headerColor.x * 0.299f + headerColor.y * 0.587f + headerColor.z * 0.114f);
-            if (luminance > 0.5f) {
-                ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 0, 0, 255));
-            } else {
-                ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
-            }
-            
-            // Allow left/right navigation for values.
-            // If canChangeValue is false, the left arrow in UpdateListNavigation will trigger PopPage.
-            if (canChangeValue) {
-                if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow, true) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadLeft, true) || ImGui::IsKeyPressed(ImGuiKey_Keypad4, true)) {
-                    outChangedLeftRight = true;
-                }
-                if (ImGui::IsKeyPressed(ImGuiKey_RightArrow, true) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadRight, true) || ImGui::IsKeyPressed(ImGuiKey_Keypad6, true)) {
-                    outChangedLeftRight = true;
-                }
-            } else {
-                if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow, false) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadLeft, false) || ImGui::IsKeyPressed(ImGuiKey_Keypad4, false)) {
-                    // Schedule a pop page for next frame to avoid drawing state issues, or we can just pop it directly.
-                    Menu::PopPage();
-                }
-            }
-        }
-        
-        // Use ImGuiSelectableFlags_SpanAllColumns for full width, and add some left padding to text
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 8.0f);
-        
-        bool isFlashing = (flashIndex == listCurrentIndex && GetTickCount64() < flashTick);
-        
-        bool isHovered = false;
-        if (!isSelected && !isFlashing) {
-            // For non-selected items, make them light up slightly when hovered
-            ImVec2 pos = ImGui::GetCursorScreenPos();
-            ImVec2 size = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetTextLineHeightWithSpacing());
-            
-            // Allow hover effect ONLY if the mouse is actively moving or has moved this frame
-            // AND it's actually hovering over the item bounds
-            if ((ImGui::GetIO().MouseDelta.x != 0.0f || ImGui::GetIO().MouseDelta.y != 0.0f) && 
-                ImGui::IsMouseHoveringRect(pos, ImVec2(pos.x + size.x, pos.y + size.y))) {
-                isHovered = true;
-            }
-            
-            ImVec4 normalText = ImGui::GetStyleColorVec4(ImGuiCol_Text);
-            if (isHovered) {
-                ImGui::PushStyleColor(ImGuiCol_Text, normalText);
-            } else {
-                normalText.w *= 0.6f; // Dim by reducing alpha
-                ImGui::PushStyleColor(ImGuiCol_Text, normalText);
-            }
-        }
-        
-        bool clicked = ImGui::Selectable(label, isSelected, ImGuiSelectableFlags_SpanAllColumns);
-
-        if (!isSelected && !isFlashing) {
-            ImGui::PopStyleColor();
+    void BeginListShell(const char* title, const char* subtitle, bool showBackHint) {
+        (void)showBackHint;
+        shellOpen = false;
+        if (!MenuState::UseNativeMenu) {
+            return;
         }
 
-        // 如果有右侧文本（例如状态、数值），画在右边
-        if (!rightText.empty()) {
-            ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::CalcTextSize(rightText.c_str()).x - ImGui::GetStyle().WindowPadding.x);
-            
-            // Render right text with slightly dimmed color if not selected, otherwise full color
-            if (!isSelected) {
-                ImVec4 normalText = ImGui::GetStyleColorVec4(ImGuiCol_Text);
-                if (!isHovered) {
-                    normalText.w *= 0.6f;
-                }
-                ImGui::PushStyleColor(ImGuiCol_Text, normalText);
-                ImGui::Text("%s", rightText.c_str());
-                ImGui::PopStyleColor();
-            } else {
-                ImGui::Text("%s", rightText.c_str());
+        ImGui::SetNextWindowPos(ImVec2(40.0f, 80.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(kListWidth, 560.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSizeConstraints(ImVec2(kListWidth, 320.0f), ImVec2(kListWidth, 900.0f));
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.82f));
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+
+        const ImGuiWindowFlags flags =
+            ImGuiWindowFlags_NoTitleBar
+            | ImGuiWindowFlags_NoCollapse
+            | ImGuiWindowFlags_NoScrollbar
+            | ImGuiWindowFlags_NoScrollWithMouse;
+
+        bool open = true;
+        if (!ImGui::Begin("XMenu_ListGTA", &open, flags)) {
+            ImGui::End();
+            ImGui::PopStyleColor(3);
+            ImGui::PopStyleVar(5);
+            return;
+        }
+        shellOpen = true;
+
+        // 顶栏拖拽移动（无原生标题栏）
+        {
+            const ImVec2 wp = ImGui::GetWindowPos();
+            const float ww = ImGui::GetWindowWidth();
+            if (MouseAllowed()
+                && ImGui::IsMouseHoveringRect(wp, ImVec2(wp.x + ww, wp.y + kHeaderH))
+                && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+                const ImVec2 delta = ImGui::GetIO().MouseDelta;
+                ImGui::SetWindowPos(ImVec2(wp.x + delta.x, wp.y + delta.y));
             }
         }
 
-        if (isSelected) {
-            ImGui::PopStyleColor(1);
+        ImDrawList* dl = ImGui::GetWindowDrawList();
+        const ImVec2 wp = ImGui::GetWindowPos();
+        const float ww = ImGui::GetWindowWidth();
+        const float wh = ImGui::GetWindowHeight();
+
+        dl->AddRectFilled(wp, ImVec2(wp.x + ww, wp.y + kHeaderH), IM_COL32(0, 0, 0, 245));
+        dl->AddRectFilled(ImVec2(wp.x, wp.y + kHeaderH - 3.0f), ImVec2(wp.x + ww, wp.y + kHeaderH), AccentColor());
+
+        const float titleY = wp.y + 10.0f;
+        dl->AddText(ImVec2(wp.x + kPadX, titleY), IM_COL32(255, 255, 255, 255), title ? title : "XMenu");
+        if (subtitle && subtitle[0]) {
+            dl->AddText(
+                ImVec2(wp.x + kPadX, titleY + ImGui::GetTextLineHeight() + 2.0f),
+                IM_COL32(255, 255, 255, 150),
+                subtitle
+            );
         }
 
-        if (ImGui::IsItemHovered() && (ImGui::GetIO().MouseDelta.x != 0.0f || ImGui::GetIO().MouseDelta.y != 0.0f)) {
-            // Only update selection if the mouse is actively moving.
-            // This prevents the selection from snapping to the mouse pointer's location 
-            // when scrolling with keys/wheel and the list moves under the stationary mouse.
-            listSelectedIndex = listCurrentIndex;
-        } else if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(0)) {
-            // Also select on click just in case
-            listSelectedIndex = listCurrentIndex;
-        }
-        
-        if (isSelected && (ImGui::IsKeyPressed(ImGuiKey_Enter, false) || ImGui::IsKeyPressed(ImGuiKey_GamepadFaceDown, false) || ImGui::IsKeyPressed(ImGuiKey_Keypad5, false))) {
-            if (!actionExecutedThisFrame) {
-                clicked = true;
-                actionExecutedThisFrame = true; // Prevent multiple clicks in the same frame
-            }
+        ImGui::SetCursorPos(ImVec2(0.0f, kHeaderH));
+        const float contentH = wh - kHeaderH - kFooterH;
+        ImGui::BeginChild(
+            "##ListBody",
+            ImVec2(ww, contentH),
+            false,
+            ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_AlwaysVerticalScrollbar
+        );
+
+        {
+            const ImVec2 c0 = ImGui::GetWindowPos();
+            const ImVec2 c1(c0.x + ImGui::GetWindowWidth(), c0.y + ImGui::GetWindowHeight());
+            ImGui::GetWindowDrawList()->AddRectFilled(c0, c1, IM_COL32(10, 10, 12, 180));
         }
 
-        if (clicked) {
-            flashIndex = listCurrentIndex;
-            flashTick = GetTickCount64() + 150; // flash for 150ms
-        }
-
-        // Scroll to keep selected item in view only when selection changes
-        if (isSelected && lastScrolledIndex != listSelectedIndex) {
-            ImGui::SetScrollHereY(0.5f); // 0.5f centers the item
-            lastScrolledIndex = listSelectedIndex;
-        }
-
-        listCurrentIndex++;
-        return clicked;
+        UpdateListNavigation();
     }
+
+    void EndListShell() {
+        if (!MenuState::UseNativeMenu || !shellOpen) {
+            return;
+        }
+
+        SetListTotalItems();
+        ImGui::EndChild();
+
+        ImDrawList* dl = ImGui::GetWindowDrawList();
+        const ImVec2 wp = ImGui::GetWindowPos();
+        const float ww = ImGui::GetWindowWidth();
+        const float wh = ImGui::GetWindowHeight();
+        const float footerTop = wp.y + wh - kFooterH;
+
+        char pageBuf[32];
+        std::snprintf(
+            pageBuf,
+            sizeof(pageBuf),
+            "%d / %d",
+            listTotalItems > 0 ? listSelectedIndex + 1 : 0,
+            listTotalItems > 0 ? listTotalItems : 0
+        );
+        const ImVec2 psz = ImGui::CalcTextSize(pageBuf);
+        dl->AddRectFilled(
+            ImVec2(wp.x + ww - kPadX - psz.x - 6.0f, wp.y + 10.0f),
+            ImVec2(wp.x + ww - 4.0f, wp.y + 10.0f + psz.y + 6.0f),
+            IM_COL32(0, 0, 0, 245)
+        );
+        dl->AddText(ImVec2(wp.x + ww - kPadX - psz.x, wp.y + 14.0f), IM_COL32(255, 255, 255, 180), pageBuf);
+
+        dl->AddRectFilled(ImVec2(wp.x, footerTop), ImVec2(wp.x + ww, wp.y + wh), IM_COL32(0, 0, 0, 240));
+        dl->AddRectFilled(ImVec2(wp.x, footerTop), ImVec2(wp.x + ww, footerTop + 2.0f), AccentColor());
+
+        const char* hint = MouseAllowed()
+            ? (selectionCanAdjust
+                ? "LMB confirm/adjust   Wheel move   RMB back"
+                : "LMB select/confirm   Wheel move   RMB back")
+            : (selectionCanAdjust
+                ? "Enter confirm  Left/Right adjust  Back return"
+                : "Enter confirm  Up/Down select  Back return");
+        dl->AddText(
+            ImVec2(wp.x + kPadX, footerTop + (kFooterH - ImGui::GetTextLineHeight()) * 0.5f),
+            IM_COL32(255, 255, 255, 140),
+            hint
+        );
+
+        ImGui::End();
+        ImGui::PopStyleColor(3);
+        ImGui::PopStyleVar(5);
+        shellOpen = false;
+    }
+
     ImVec2 CalcSize(short count, bool spacing) {
         if (count <= 1) {
             return ImVec2(ContentWidth(), ImGui::GetFrameHeight() * 1.3f);
         }
-
         const float rowWidth = RowWidth();
         const float spacingWidth = spacing ? ImGui::GetStyle().ItemSpacing.x * (count - 1) : 0.0f;
-        const float width = (rowWidth - spacingWidth) / count;
-
-        return ImVec2(width, ImGui::GetFrameHeight() * 1.3f);
+        return ImVec2((rowWidth - spacingWidth) / count, ImGui::GetFrameHeight() * 1.3f);
     }
 
     void SameLineEvery(int index, int columns) {
@@ -222,31 +451,35 @@ namespace UI {
     }
 
     void BeginPage(const char* id, const char* title, const char* subtitle) {
-        if (MenuState::UseNativeMenu) return; // 移除旧逻辑
+        (void)id;
+        (void)title;
+        (void)subtitle;
     }
 
-    void EndPage() {
-        if (MenuState::UseNativeMenu) return; // 移除旧逻辑
-    }
+    void EndPage() {}
 
     bool BeginTab(const char* id, const char* label) {
         if (MenuState::UseNativeMenu) {
-            // Draw a separator/header to indicate a new section
-            ImGui::Spacing();
-            ImGui::TextColored(ImVec4(0.5f, 0.5f, 1.0f, 1.0f), "[ %s ]", label);
-            ImGui::Separator();
-            
+            ImDrawList* dl = ImGui::GetWindowDrawList();
+            const ImVec2 p0 = ImGui::GetCursorScreenPos();
+            const float w = ImGui::GetContentRegionAvail().x;
+            const float h = 26.0f;
+            dl->AddRectFilled(p0, ImVec2(p0.x + w, p0.y + h), IM_COL32(0, 0, 0, 90));
+            dl->AddText(
+                ImVec2(p0.x + kPadX, p0.y + (h - ImGui::GetTextLineHeight()) * 0.5f),
+                AccentColor(),
+                label
+            );
+            ImGui::Dummy(ImVec2(w, h));
             ImGui::PushID(id);
             return true;
-        } else {
-            return ImGui::BeginTabItem(label);
         }
+        return ImGui::BeginTabItem(label);
     }
 
     void EndTab() {
         if (MenuState::UseNativeMenu) {
             ImGui::PopID();
-            ImGui::Spacing();
         } else {
             ImGui::EndTabItem();
         }
@@ -270,26 +503,24 @@ namespace UI {
 
     bool CollapsingHeader(const char* label, bool& isOpen) {
         if (MenuState::UseNativeMenu) {
-            bool dummyLR;
-            if (DrawListItemBase(label, isOpen ? "[-]" : "[+]", dummyLR, false)) {
-                isOpen = !isOpen;
-            }
-            return isOpen;
-        } else {
-            // ImGui::CollapsingHeader internally manages state, but we want to bind it to isOpen
-            ImGui::SetNextItemOpen(isOpen, ImGuiCond_Always);
-            bool clicked = ImGui::CollapsingHeader(label);
-            if (ImGui::IsItemClicked()) {
+            const RowResult r = DrawGtaRow(label, isOpen ? "v" : ">", false);
+            if (r.activated) {
                 isOpen = !isOpen;
             }
             return isOpen;
         }
+        ImGui::SetNextItemOpen(isOpen, ImGuiCond_Always);
+        ImGui::CollapsingHeader(label);
+        if (ImGui::IsItemClicked()) {
+            isOpen = !isOpen;
+        }
+        return isOpen;
     }
 
     bool Checkbox(const char* label, bool* v) {
         if (MenuState::UseNativeMenu) {
-            bool dummyLR;
-            if (DrawListItemBase(label, *v ? "[ ON ]" : "[ OFF ]", dummyLR, false)) {
+            const RowResult r = DrawGtaRow(label, *v ? "ON" : "OFF", false);
+            if (r.activated) {
                 *v = !*v;
                 return true;
             }
@@ -300,58 +531,62 @@ namespace UI {
 
     bool Button(const char* label, short columns) {
         if (MenuState::UseNativeMenu) {
-            bool dummyLR;
-            return DrawListItemBase(label, "", dummyLR, false);
+            (void)columns;
+            return DrawGtaRow(label, "", false).activated;
         }
         return ImGui::Button(label, CalcSize(columns));
     }
 
     bool SliderFloat(const char* label, float* v, float v_min, float v_max, const char* format) {
         if (MenuState::UseNativeMenu) {
-            char numText[32];
-            snprintf(numText, sizeof(numText), format, *v);
-            char valText[64];
-            snprintf(valText, sizeof(valText), "< %s >", numText);
+            char num[32];
+            std::snprintf(num, sizeof(num), format, *v);
+            char right[48];
+            std::snprintf(right, sizeof(right), "< %s >", num);
 
-            bool changedLR;
-            bool activated = DrawListItemBase(label, valText, changedLR, true);
-
-            if (changedLR) {
-                float step = 0.1f;
-                if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow, true) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadLeft, true) || ImGui::IsKeyPressed(ImGuiKey_Keypad4, true)) *v -= step;
-                if (ImGui::IsKeyPressed(ImGuiKey_RightArrow, true) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadRight, true) || ImGui::IsKeyPressed(ImGuiKey_Keypad6, true)) *v += step;
-                if (*v < v_min) *v = v_min;
-                if (*v > v_max) *v = v_max;
-                return true;
+            const RowResult r = DrawGtaRow(label, right, true);
+            bool changed = false;
+            const float step = (v_max - v_min) > 100.0f ? 1.0f : 0.1f;
+            if (r.stepLeft) {
+                *v -= step;
+                changed = true;
             }
-            return activated;
+            if (r.stepRight) {
+                *v += step;
+                changed = true;
+            }
+            if (*v < v_min) *v = v_min;
+            if (*v > v_max) *v = v_max;
+            return changed || r.activated;
         }
         return ImGui::SliderFloat(label, v, v_min, v_max, format);
     }
 
     bool SliderInt(const char* label, int* v, int v_min, int v_max) {
         if (MenuState::UseNativeMenu) {
-            char valText[32];
-            snprintf(valText, sizeof(valText), "< %d >", *v);
-
-            bool changedLR;
-            bool activated = DrawListItemBase(label, valText, changedLR, true);
-
-            if (changedLR) {
-                int step = 1;
-                if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow, true) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadLeft, true) || ImGui::IsKeyPressed(ImGuiKey_Keypad4, true)) *v -= step;
-                if (ImGui::IsKeyPressed(ImGuiKey_RightArrow, true) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadRight, true) || ImGui::IsKeyPressed(ImGuiKey_Keypad6, true)) *v += step;
-                if (*v < v_min) *v = v_min;
-                if (*v > v_max) *v = v_max;
-                return true;
+            char right[32];
+            std::snprintf(right, sizeof(right), "< %d >", *v);
+            const RowResult r = DrawGtaRow(label, right, true);
+            bool changed = false;
+            if (r.stepLeft) {
+                *v -= 1;
+                changed = true;
             }
-            return activated;
+            if (r.stepRight) {
+                *v += 1;
+                changed = true;
+            }
+            if (*v < v_min) *v = v_min;
+            if (*v > v_max) *v = v_max;
+            return changed || r.activated;
         }
         return ImGui::SliderInt(label, v, v_min, v_max);
     }
 
     bool InputFloat(const char* label, float* v, float step, float step_fast, const char* format) {
         if (MenuState::UseNativeMenu) {
+            (void)step;
+            (void)step_fast;
             return SliderFloat(label, v, -10000.0f, 10000.0f, format);
         }
         return ImGui::InputFloat(label, v, step, step_fast, format);
@@ -359,33 +594,30 @@ namespace UI {
 
     bool InputInt(const char* label, int* v, int step, int step_fast) {
         if (MenuState::UseNativeMenu) {
-            char valText[32];
-            snprintf(valText, sizeof(valText), "< %d >", *v);
-
-            bool changedLR;
-            bool activated = DrawListItemBase(label, valText, changedLR, true);
-
-            if (changedLR) {
-                if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow, true) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadLeft, true) || ImGui::IsKeyPressed(ImGuiKey_Keypad4, true)) *v -= step;
-                if (ImGui::IsKeyPressed(ImGuiKey_RightArrow, true) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadRight, true) || ImGui::IsKeyPressed(ImGuiKey_Keypad6, true)) *v += step;
-                return true;
+            char right[32];
+            std::snprintf(right, sizeof(right), "< %d >", *v);
+            const RowResult r = DrawGtaRow(label, right, true);
+            bool changed = false;
+            if (r.stepLeft) {
+                *v -= step;
+                changed = true;
             }
-            
-            // Allow direct input via popup when activated
-            if (activated) {
-                ImGui::OpenPopup("InputIntPopup");
+            if (r.stepRight) {
+                *v += step;
+                changed = true;
             }
-            
-            if (ImGui::BeginPopup("InputIntPopup")) {
+            if (r.activated) {
+                ImGui::OpenPopup("##ListInputInt");
+            }
+            if (ImGui::BeginPopup("##ListInputInt")) {
                 ImGui::SetKeyboardFocusHere();
-                ImGui::InputInt("##val", v, step, step_fast);
-                if (ImGui::IsKeyPressed(ImGuiKey_Enter, false) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter, false)) {
+                ImGui::InputInt("##v", v, step, step_fast);
+                if (KeyDownOnce(ImGuiKey_Enter) || KeyDownOnce(ImGuiKey_KeypadEnter)) {
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::EndPopup();
             }
-
-            return activated;
+            return changed || r.activated;
         }
         return ImGui::InputInt(label, v, step, step_fast);
     }

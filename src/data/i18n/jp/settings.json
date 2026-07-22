@@ -83,5 +83,10 @@
   "settings.interactionMode": "インタラクションモード",
   "settings.interaction.mouse": "マウス",
   "settings.interaction.keyboardMouse": "キーボード + マウス",
-  "settings.useListMenu": "リストメニュースタイルを使用する"
+  "settings.useListMenu": "リストメニュースタイルを使用する",
+  "settings.enableListMouse": "リストモードでマウスを許可",
+  "settings.theme": "テーマ",
+  "settings.listMouseHint": "オフ時はキーボード/パッドのみ（カーソル非表示）",
+  "settings.listNavHint": "リスト操作: ↑↓選択 · Enter決定 · ←/Backspace/Esc戻る · 左右で数値",
+  "settings.interactionHint": "マウスのみはキーボードフォーカス無効。キーボード+マウスは矢印でフォーカス移動"
 }

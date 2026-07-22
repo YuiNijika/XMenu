@@ -36,4 +36,7 @@ namespace Controllers::Player {
     bool SetCustomSkin(const char* name);
     bool ApplyClothes(int textureId, int modelId, int bodyPart);
     bool SetStat(int statId, float value);
+    void MaxWeaponSkills();
+    void MaxVehicleSkills();
+    void ApplyAimSkinChanger();
 }

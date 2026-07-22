@@ -11,6 +11,8 @@
   "world.disableCheats": "チートコード無効",
   "world.fasterClock": "時計を加速",
   "world.freezeTime": "時間を停止",
+  "world.solidWater": "固体水面",
+  "world.noWaterPhysics": "水物理を無効",
   "world.disableForbiddenAreaWanted": "禁止区域の手配を無効化",
   "world.freePayNSpray": "Pay 'n' Spray 無料",
   "world.daysPassed": "経過日数",

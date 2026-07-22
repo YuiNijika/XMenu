@@ -12,7 +12,12 @@ namespace Controllers::Scene {
     }
 
     bool PlayPlayerAnimation() {
-        const bool ok = GameLogic::PlayPlayerAnimation(MenuState::SceneAnimGroup, MenuState::SceneAnimName, MenuState::SceneAnimLoop);
+        const bool ok = GameLogic::PlayAnimationEx(
+            MenuState::SceneAnimGroup,
+            MenuState::SceneAnimName,
+            MenuState::SceneAnimLoop,
+            MenuState::SceneAnimSecondary,
+            MenuState::SceneAnimOnPed);
         MenuState::ShowNotice(ok ? "Animation started" : "Animation unavailable", 1.8);
         return ok;
     }
@@ -71,6 +76,14 @@ namespace Controllers::Scene {
 
     void FailMission() {
         GameLogic::FailMission();
+    }
+
+    void SetFightingStyle(int styleIndex) {
+        GameLogic::SetFightingStyle(styleIndex);
+    }
+
+    void SetWalkingStyle(int styleIndex) {
+        GameLogic::SetWalkingStyle(styleIndex);
     }
 
     void RemoveAllParticles() {

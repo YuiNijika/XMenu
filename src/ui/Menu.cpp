@@ -373,21 +373,31 @@ namespace Menu {
         ImGui::TextUnformatted(T("settings.guiStyle"));
         ImGui::Spacing();
 
-        ImGui::Checkbox(T("settings.useListMenu"), &MenuState::UseNativeMenu);
+        bool listChanged = UI::Checkbox(T("settings.useListMenu"), &MenuState::UseNativeMenu);
         if (MenuState::UseNativeMenu) {
-            UI::Checkbox(T("settings.enableListMouse"), &MenuState::ListMenuMouseInput);
+            listChanged |= UI::Checkbox(T("settings.enableListMouse"), &MenuState::ListMenuMouseInput);
+            ImGui::TextDisabled("%s", T("settings.listMouseHint"));
         }
+        if (listChanged) {
+            AppConfig::Save();
+            GuiTheme::Sync();
+            if (MenuState::UseNativeMenu) {
+                UI::ResetListIndex();
+            }
+        }
+
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
 
+        ImGui::TextUnformatted(T("settings.theme"));
         int currentTheme = GuiTheme::GetThemeIndex();
         if (ImGui::BeginCombo("##GuiTheme", T(GuiTheme::GetThemeNameKey(currentTheme)))) {
             for (int i = 0; i < GuiTheme::ThemeCount; ++i) {
                 const bool selected = i == currentTheme;
                 if (ImGui::Selectable(T(GuiTheme::GetThemeNameKey(i)), selected)) {
                     AppConfig::SetGuiThemeIndex(i);
-                    GuiTheme::ApplyInteraction();
+                    GuiTheme::Sync();
                 }
                 if (selected) {
                     ImGui::SetItemDefaultFocus();
@@ -405,7 +415,7 @@ namespace Menu {
                     const bool selected = i == currentInteraction;
                     if (ImGui::Selectable(T(GuiTheme::GetInteractionNameKey(i)), selected)) {
                         AppConfig::SetInteractionMode(i);
-                        GuiTheme::ApplyInteraction();
+                        GuiTheme::Sync();
                     }
                     if (selected) {
                         ImGui::SetItemDefaultFocus();
@@ -413,6 +423,10 @@ namespace Menu {
                 }
                 ImGui::EndCombo();
             }
+            ImGui::TextDisabled("%s", T("settings.interactionHint"));
+        } else {
+            ImGui::Spacing();
+            ImGui::TextDisabled("%s", T("settings.listNavHint"));
         }
     }
 
@@ -1087,108 +1101,41 @@ void Menu::Draw() {
     // if (!menuVisible) return;
 
     if (menuVisible) {
+        GuiTheme::Sync();
+
         if (MenuState::UseNativeMenu) {
-            // Apply global GUI theme to ensure colors match Panel mode
-            GuiTheme::ApplyTheme();
-
-            // We use our own customized style logic for the List Menu layout
-            ImGui::SetNextWindowPos(ImVec2(50.0f, 50.0f), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(420.0f, 550.0f), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSizeConstraints(ImVec2(280.0f, 300.0f), ImVec2(800.0f, 1000.0f));
-
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-
-            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-
-            bool windowOpen = true;
-            // List mode always supports mouse+keyboard
-            ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
-            
-            if (ImGui::Begin("XMenu_List", &windowOpen, flags)) {
-                HandleMainWindowDrag();
-                
-                ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]); // Ensure standard font
-                
-                ImVec2 windowPos = ImGui::GetWindowPos();
-                ImDrawList* drawList = ImGui::GetWindowDrawList();
-                ImVec4 titleBgColor = ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive);
-                drawList->AddRectFilled(windowPos, ImVec2(windowPos.x + ImGui::GetWindowWidth(), windowPos.y + 45.0f), ImGui::GetColorU32(titleBgColor));
-                
-                ImGui::SetCursorPos(ImVec2(ImGui::GetStyle().WindowPadding.x, (45.0f - ImGui::GetTextLineHeight()) / 2.0f));
-                
-                // Dynamic text color for title based on title background luminance
-                float luminance = (titleBgColor.x * 0.299f + titleBgColor.y * 0.587f + titleBgColor.z * 0.114f);
-                if (luminance > 0.5f) {
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-                } else {
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+            const char* subtitle = "MAIN MENU";
+            if (!pageStack.empty()) {
+                switch (activePage) {
+                    case Page::Player: subtitle = T("tab.player"); break;
+                    case Page::Vehicle: subtitle = T("tab.vehicle"); break;
+                    case Page::Ped: subtitle = T("tab.ped"); break;
+                    case Page::Weapon: subtitle = T("tab.weapon"); break;
+                    case Page::World: subtitle = T("tab.world"); break;
+                    case Page::Scene: subtitle = T("tab.scene"); break;
+                    case Page::Visual: subtitle = T("tab.visual"); break;
+                    case Page::Teleport: subtitle = T("tab.teleport"); break;
+                    case Page::Settings: subtitle = T("tab.settings"); break;
+                    case Page::About: subtitle = T("tab.about"); break;
+                    default: subtitle = "OPTIONS"; break;
                 }
-                
-                ImGui::Text("%s", visibleTitle);
-                
-                // Align right for page numbers if in a subpage
-                if (!pageStack.empty()) {
-                    char pageText[32];
-                    snprintf(pageText, sizeof(pageText), "%d / %d", UI::listSelectedIndex + 1, UI::listTotalItems > 0 ? UI::listTotalItems : 1);
-                    
-                    float backBtnWidth = ImGui::CalcTextSize(T("tab.back")).x + ImGui::GetStyle().FramePadding.x * 2.0f;
-                    float textWidth = ImGui::CalcTextSize(pageText).x;
-                    
-                    ImGui::SameLine(ImGui::GetWindowWidth() - textWidth - backBtnWidth - ImGui::GetStyle().WindowPadding.x - 8.0f);
-                    
-                    // Transparent back button in navbar
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0,0,0,0));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1,1,1,0.2f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1,1,1,0.3f));
-                    if (ImGui::Button(T("tab.back"))) {
-                        Menu::PopPage();
-                    }
-                    ImGui::PopStyleColor(3);
-                    
-                    ImGui::SameLine();
-                    ImGui::Text("%s", pageText);
-                }
-                
-                ImGui::PopStyleColor(); // Pop title text color
-                
-                ImGui::SetCursorPosY(45.0f);
-                ImGui::PopFont();
-                ImGui::Separator();
-                
-                // Begin scrollable child window for the content to prevent overlapping the navbar
-                if (ImGui::BeginChild("ListMenuContent", ImVec2(0, 0), false, ImGuiWindowFlags_NoScrollWithMouse)) {
-                    ImGui::Spacing();
-                    UI::UpdateListNavigation();
-
-                    if (pageStack.empty()) {
-                        // 主菜单 (Main Menu)
-                        for (const NavItem& item : navItems) {
-                            if (!IsPageAvailable(item.page)) continue;
-                            if (UI::Button(T(item.textKey))) {
-                                PushPage(item.page);
-                            }
-                        }
-                    } else {
-                        // Draw active page contents directly inline
-                        DrawActivePage();
-                    }
-
-                    UI::SetListTotalItems();
-                }
-                ImGui::EndChild();
             }
-            ImGui::End();
 
-            ImGui::PopStyleColor(1); // Pop Border
-            ImGui::PopStyleVar(1);   // Pop the WindowBorderSize
-            GuiTheme::RestoreTheme();
+            UI::BeginListShell(visibleTitle, subtitle, !pageStack.empty());
 
-            if (!windowOpen) {
-                D3DHook::SetMenuVisible(false);
+            if (pageStack.empty()) {
+                for (const NavItem& item : navItems) {
+                    if (!IsPageAvailable(item.page)) continue;
+                    if (UI::Button(T(item.textKey))) {
+                        PushPage(item.page);
+                    }
+                }
+            } else {
+                DrawActivePage();
             }
+
+            UI::EndListShell();
         } else {
-            GuiTheme::ApplyTheme();
-
             ImGui::SetNextWindowSize(ImVec2(780.0f, 520.0f), ImGuiCond_FirstUseEver);
 
             bool windowOpen = true;
@@ -1209,8 +1156,6 @@ void Menu::Draw() {
                 DrawConfigExportPopup();
             }
             ImGui::End();
-
-            GuiTheme::RestoreTheme();
 
             if (!windowOpen) {
                 D3DHook::SetMenuVisible(false);

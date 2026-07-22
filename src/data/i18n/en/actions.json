@@ -9,6 +9,8 @@
   "action.player.heal": "Heal player",
   "action.player.armour": "Refill armor",
   "action.player.clearWanted": "Clear wanted level",
+  "action.player.aimSkinChanger": "Aim skin changer",
+  "action.player.neverWanted.toggle": "Toggle never wanted",
   "action.vehicle.repair": "Repair vehicle",
   "action.vehicle.unflip": "Unflip vehicle",
   "action.vehicle.stop": "Stop vehicle",

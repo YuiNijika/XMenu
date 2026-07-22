@@ -30,6 +30,7 @@
   "ped.category.driver": "Driver",
   "ped.category.worker": "Worker",
   "ped.bigHeadMode": "Big Head Mode",
+  "ped.thinBodyMode": "Thin Body",
   "ped.elvisEverywhere": "Elvis Everywhere",
   "ped.everyoneArmed": "Everyone Armed",
   "ped.pedsMayhem": "Peds Mayhem",
@@ -37,5 +38,18 @@
   "ped.pedsRiot": "Riot Mode",
   "ped.slutMagnet": "Slut Magnet",
   "ped.gangsControl": "Gangs Control Streets",
-  "ped.gangsEverywhere": "Gangs Everywhere"
+  "ped.gangsEverywhere": "Gangs Everywhere",
+  "ped.noProstitutes": "No prostitutes",
+  "ped.nastyLimbs": "Nasty limbs",
+  "ped.gangs": "Gang wars",
+  "ped.gangWarsActive": "Gang wars active",
+  "ped.startGangWar": "Start war",
+  "ped.endGangWar": "End war",
+  "ped.resetGangModels": "Reset gang models",
+  "ped.gangSelected": "Gang ID",
+  "ped.gangDensity": "Zone density",
+  "ped.gangMemberIndex": "Member slot",
+  "ped.gangMemberModel": "Member model",
+  "ped.gangWeaponType": "Gang weapon type",
+  "ped.applyGangWeapons": "Apply gang weapons"
 }

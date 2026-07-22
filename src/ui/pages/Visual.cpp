@@ -107,12 +107,37 @@ namespace Pages::Visual {
             Controllers::Visual::ApplyRadarState();
         }
 
+#ifdef GTASA
+        UI::SpacingSeparator();
+        ImGui::Columns(2, nullptr, false);
+        ImGui::Checkbox(T("visual.squareRadar"), &MenuState::VisualSquareRadar);
+        ImGui::TextDisabled("%s", T("visual.squareRadarHint"));
+        ImGui::NextColumn();
+        ImGui::Checkbox(T("visual.noRadarRot"), &MenuState::VisualNoRadarRot);
+        ImGui::NextColumn();
+        ImGui::Checkbox(T("visual.fullscreenMap"), &MenuState::VisualFullscreenMap);
+        ImGui::NextColumn();
+        ImGui::Checkbox(T("visual.unfogMap"), &MenuState::VisualUnfogMap);
+        ImGui::NextColumn();
+        ImGui::Checkbox(T("visual.hideAreaNames"), &MenuState::VisualHideAreaNames);
+        ImGui::NextColumn();
+        ImGui::Checkbox(T("visual.hideVehicleNames"), &MenuState::VisualHideVehicleNames);
+        ImGui::NextColumn();
+        ImGui::Checkbox(T("visual.nightVision"), &MenuState::VisualNightVision);
+        ImGui::NextColumn();
+        ImGui::Checkbox(T("visual.infrared"), &MenuState::VisualInfrared);
+        ImGui::Columns(1);
+#endif
+
         UI::SpacingSeparator();
         ImGui::Checkbox(T("visual.filter"), &MenuState::VisualFilter);
         ImGui::PushItemWidth(160.0f);
         ImGui::InputInt(T("visual.filterId"), &MenuState::VisualFilterId);
+        ImGui::BeginDisabled(true);
         ImGui::SliderFloat(T("visual.timecycStrength"), &MenuState::VisualTimecycStrength, 0.0f, 2.0f, "%.2f");
+        ImGui::EndDisabled();
         ImGui::PopItemWidth();
+        ImGui::TextDisabled("%s", T("visual.timecycStrengthHint"));
         if (UI::Button(T("visual.applyFilter"))) {
             Controllers::Visual::ApplyFilterState();
         }

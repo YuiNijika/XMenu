@@ -30,6 +30,7 @@
   "ped.category.driver": "司机",
   "ped.category.worker": "工作人员",
   "ped.bigHeadMode": "大头模式",
+  "ped.thinBodyMode": "瘦身模式",
   "ped.elvisEverywhere": "满街猫王",
   "ped.everyoneArmed": "全员武装",
   "ped.pedsMayhem": "行人大乱斗",
@@ -37,5 +38,18 @@
   "ped.pedsRiot": "暴乱模式",
   "ped.slutMagnet": "异性相吸",
   "ped.gangsControl": "帮派控制街道",
-  "ped.gangsEverywhere": "满街都是帮派"
+  "ped.gangsEverywhere": "满街都是帮派",
+  "ped.noProstitutes": "禁止妓女生成",
+  "ped.nastyLimbs": "血腥断肢",
+  "ped.gangs": "帮派战争",
+  "ped.gangWarsActive": "启用帮派战争",
+  "ped.startGangWar": "开战",
+  "ped.endGangWar": "停战",
+  "ped.resetGangModels": "重置帮派模型",
+  "ped.gangSelected": "帮派 ID",
+  "ped.gangDensity": "当前区密度",
+  "ped.gangMemberIndex": "成员槽位",
+  "ped.gangMemberModel": "成员模型",
+  "ped.gangWeaponType": "帮派武器类型",
+  "ped.applyGangWeapons": "应用帮派武器"
 }

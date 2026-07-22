@@ -30,6 +30,7 @@
   "ped.category.driver": "運転手",
   "ped.category.worker": "労働者",
   "ped.bigHeadMode": "ビッグヘッドモード",
+  "ped.thinBodyMode": "細い体型",
   "ped.elvisEverywhere": "街中にエルヴィス",
   "ped.everyoneArmed": "全員武装",
   "ped.pedsMayhem": "市民の暴動",
@@ -37,5 +38,18 @@
   "ped.pedsRiot": "暴動モード",
   "ped.slutMagnet": "異性を引き寄せる",
   "ped.gangsControl": "ギャングが街を支配",
-  "ped.gangsEverywhere": "街中にギャング"
+  "ped.gangsEverywhere": "街中にギャング",
+  "ped.noProstitutes": "売春婦を出さない",
+  "ped.nastyLimbs": "残虐な切断",
+  "ped.gangs": "ギャング戦争",
+  "ped.gangWarsActive": "ギャング戦争有効",
+  "ped.startGangWar": "開戦",
+  "ped.endGangWar": "停戦",
+  "ped.resetGangModels": "ギャングモデルをリセット",
+  "ped.gangSelected": "ギャング ID",
+  "ped.gangDensity": "区域密度",
+  "ped.gangMemberIndex": "メンバー枠",
+  "ped.gangMemberModel": "メンバーモデル",
+  "ped.gangWeaponType": "ギャング武器",
+  "ped.applyGangWeapons": "ギャング武器を適用"
 }

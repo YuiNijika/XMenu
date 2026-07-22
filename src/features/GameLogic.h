@@ -92,6 +92,10 @@ namespace GameLogic {
     void ProcessFreezeWantedLevel(CPlayerPed* player, bool enable, int level);
     void SetManualPlayerProof(CPlayerPed* player, const ProofState& state);
     bool RequestSaveGame();
+    void ProcessPlayerCheats(CPlayerPed* player);
+    void MaxWeaponSkills();
+    void MaxVehicleSkills();
+    void ApplyAimSkinChanger();
 
     // 载具
     ProofState GetVehicleProofState(CVehicle* vehicle);
@@ -139,7 +143,10 @@ namespace GameLogic {
     void ProcessAutoDrive(CVehicle* vehicle, bool enable, float speed);
     void SetTrafficDensity(float density);
     void SetFlyingCars(bool enable);
-    
+    void ProcessVehicleCheats(CVehicle* vehicle);
+    void SetVehicleNoDerail(bool enable);
+    void SetVehicleFlipNoBurn(bool enable);
+
     // Ped
     CPed* SpawnPedNearPlayer(const PedSpawnOptions& options);
     CPed* SpawnPedAtMarker(const PedSpawnOptions& options);
@@ -153,9 +160,21 @@ namespace GameLogic {
     void SetSlutMagnet(bool enable);
     void SetGangsControl(bool enable);
     void SetGangsEverywhere(bool enable);
-    
+    void SetPedNoProstitutes(bool enable);
+    void SetPedNastyLimbs(bool enable);
+    void SetGangWarsActive(bool enable);
+    void StartGangWar(bool offensive);
+    void EndGangWar();
+    int GetGangZoneDensity(int gangId);
+    void SetGangZoneDensity(int gangId, int density);
+    unsigned int GetGangMemberModel(unsigned int gangId, unsigned int memberId);
+    void SetGangMemberModel(unsigned int gangId, unsigned int memberId, unsigned int model);
+    void ResetGangModels();
+    void SetGangWeapons(unsigned int gangId, int weapon1, int weapon2, int weapon3);
+
     // 场景
     bool PlayPlayerAnimation(const char* group, const char* name, bool loop);
+    bool PlayAnimationEx(const char* group, const char* name, bool loop, bool secondary, bool onTargetPed);
     void StopPlayerAnimation();
     bool SpawnParticleAtPlayer(const char* name);
     void ProcessSmokingEffect(CPlayerPed* player, bool enable);
@@ -166,11 +185,14 @@ namespace GameLogic {
     const char* GetMissionStatus();
     void StartMission(int missionId);
     void FailMission();
-    
+    void SetFightingStyle(int styleIndex);
+    void SetWalkingStyle(int styleIndex);
+
     // 视觉
     void DisplayHud(bool enable);
     void DisplayRadar(bool enable);
     void SetVisualFilter(bool enable, int filterId, float strength);
+    void ProcessVisualExtras();
     void TeleportPlayer(CVector pos, int interiorID = 0);
     void TeleportMapPosition(CVector pos, bool spawnUnderwater);
     bool TeleportMarker(bool spawnUnderwater);
@@ -187,6 +209,7 @@ namespace GameLogic {
     void ProcessInfiniteAmmo(CPlayerPed* player, bool enable);
     void SetFastReload(CPlayerPed* player, bool enable);
     void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange, bool rapidFire, bool dualWield, bool moveAim, bool moveFire, bool noSpread);
+    void ProcessWeaponAutoAim(bool enable);
     void ResetWeaponStats();
     
     // 世界

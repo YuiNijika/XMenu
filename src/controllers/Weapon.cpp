@@ -47,6 +47,7 @@ namespace Controllers::Weapon {
 
         GameLogic::ProcessInfiniteAmmo(player, MenuState::InfiniteAmmo);
         GameLogic::SetFastReload(player, MenuState::FastReload);
+        GameLogic::ProcessWeaponAutoAim(MenuState::WeaponAutoAim);
         GameLogic::ProcessWeaponTweaks(
             player,
             MenuState::HugeWeaponDamage,

@@ -9,6 +9,8 @@
   "action.player.heal": "玩家回血",
   "action.player.armour": "补满护甲",
   "action.player.clearWanted": "清除通缉",
+  "action.player.aimSkinChanger": "瞄准换肤",
+  "action.player.neverWanted.toggle": "切换永不通缉",
   "action.vehicle.repair": "修复载具",
   "action.vehicle.unflip": "扶正载具",
   "action.vehicle.stop": "停止载具",

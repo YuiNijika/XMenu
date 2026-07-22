@@ -17,7 +17,11 @@
 #include "CHud.h"
 #include "CWeather.h"
 #include "CTheScripts.h"
+#include "ui/MenuState.h"
+#include "utils/StdExtras.h"
 #include "rw/skeleton.h"
+#include "CMatrix.h"
+#include "Events.h"
 #include <cmath>
 #include <cstdint>
 #include <windows.h>
@@ -26,6 +30,8 @@
 #include <string>
 
 namespace {
+std::vector<int> g_trackedPickupHandles;
+
 bool PatchByteIfExpected(const char* label, std::uintptr_t address, unsigned char original, unsigned char patched, bool enable) {
     auto* target = reinterpret_cast<unsigned char*>(address);
 
@@ -165,6 +171,29 @@ bool PatchBytesIfExpected(const char* label, std::uintptr_t address, const unsig
 namespace GameLogic {
 
 void Init() {
+    // III BigHead：对齐 Cheat-Menu 的 pre-render 钩子
+    static plugin::CdeclEvent<plugin::AddressList<0x4CFE12, plugin::H_CALL>, plugin::PRIORITY_AFTER, plugin::ArgPickN<CPed*, 0>, void(CPed*)> onPreRender;
+    onPreRender += [](CPed* ped) {
+        if (!MenuState::BigHeadMode || !ped || !ped->m_apFrames[2]) {
+            return;
+        }
+        RwFrame* frame = ped->m_apFrames[2]->m_pFrame;
+        if (!frame) {
+            return;
+        }
+        RwMatrix* headMatrix = RwFrameGetMatrix(frame);
+        if (!headMatrix) {
+            return;
+        }
+        CMatrix mat;
+        mat.m_pAttachMatrix = nullptr;
+        mat.Attach(headMatrix, false);
+        mat.SetScale(3.0f);
+        mat.pos.x = 0.4f;
+        mat.pos.y = 0.0f;
+        mat.pos.z = 0.0f;
+        mat.UpdateRW();
+    };
 }
 
 void Process() {
@@ -755,7 +784,14 @@ void SetTrafficDensity(float density) {
 }
 
 void SetFlyingCars(bool enable) {
-    Log::Warn(std::string("III 暂未接入飞车开关，已跳过：") + (enable ? "开启" : "关闭"));
+    plugin::patch::Set<bool>(0x95CD75, enable, false);
+}
+
+void SetVehicleNoDerail(bool) {}
+void SetVehicleFlipNoBurn(bool) {}
+void ProcessVehicleCheats(CVehicle*) {
+    plugin::patch::Set<bool>(0x95CD75, MenuState::VehicleFlyingCars, false);
+    plugin::patch::Set<bool>(0x95CD66, MenuState::VehiclePerfectHandling, false);
 }
 
 CPed* SpawnPedNearPlayer(const PedSpawnOptions& options) {
@@ -803,10 +839,25 @@ void SetPedsRiot(bool enable) { if(enable) plugin::Call<0x491270>(); }
 void SetSlutMagnet(bool enable) { }
 void SetGangsControl(bool enable) { }
 void SetGangsEverywhere(bool enable) { }
+void SetPedNoProstitutes(bool) {}
+void SetPedNastyLimbs(bool enable) { plugin::patch::Set<bool>(0x95CD44, enable, false); }
+void SetGangWarsActive(bool) {}
+void StartGangWar(bool) {}
+void EndGangWar() {}
+int GetGangZoneDensity(int) { return 0; }
+void SetGangZoneDensity(int, int) {}
+unsigned int GetGangMemberModel(unsigned int, unsigned int) { return 0; }
+void SetGangMemberModel(unsigned int, unsigned int, unsigned int) {}
+void ResetGangModels() {}
+void SetGangWeapons(unsigned int, int, int, int) {}
 
 bool PlayPlayerAnimation(const char*, const char*, bool) {
     Log::Warn("III 暂不支持动画页播放，已安全降级");
     return false;
+}
+
+bool PlayAnimationEx(const char* group, const char* name, bool loop, bool, bool) {
+    return PlayPlayerAnimation(group, name, loop);
 }
 
 void StopPlayerAnimation() {
@@ -846,6 +897,15 @@ void StartMission(int missionId) {
 void FailMission() {
     Log::Warn("III 暂不支持强制失败任务");
 }
+
+void SetFightingStyle(int) {}
+void SetWalkingStyle(int) {}
+void ProcessVisualExtras() {}
+void ProcessPlayerCheats(CPlayerPed*) {}
+void MaxWeaponSkills() {}
+void MaxVehicleSkills() {}
+void ApplyAimSkinChanger() {}
+void ProcessWeaponAutoAim(bool) {}
 
 void DisplayHud(bool enable) {
     CHud::m_Wants_To_Draw_Hud = enable;
@@ -972,15 +1032,14 @@ void ClearWeapons(CPlayerPed* player) {
 
 int RemoveTrackedPickups() {
     int removed = 0;
-    for (int i = 0; i < 336; ++i) {
-        CPickup& pickup = CPickups::aPickUps[i];
-        if (pickup.m_bRemoved || pickup.m_nPickupType == PICKUP_NONE) {
+    for (int handle : g_trackedPickupHandles) {
+        if (handle < 0) {
             continue;
         }
-
-        CPickups::RemovePickUp(i);
+        CPickups::RemovePickUp(handle);
         ++removed;
     }
+    g_trackedPickupHandles.clear();
     return removed;
 }
 
@@ -1132,6 +1191,9 @@ namespace {
             options.quantity
         );
         plugin::Command<plugin::Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(model);
+        if (handle >= 0) {
+            g_trackedPickupHandles.push_back(handle);
+        }
         return handle;
     }
 }
@@ -1161,6 +1223,12 @@ bool UpdateLastPickup(const PickupOptions& options) {
     }
 
     CPickups::RemovePickUp(lastXMenuPickupHandle);
+    for (auto it = g_trackedPickupHandles.begin(); it != g_trackedPickupHandles.end(); ++it) {
+        if (*it == lastXMenuPickupHandle) {
+            g_trackedPickupHandles.erase(it);
+            break;
+        }
+    }
     const int handle = CreateXMenuPickup(options, lastXMenuPickupPosition);
     if (handle < 0) {
         lastXMenuPickupHandle = -1;
@@ -1177,6 +1245,12 @@ bool RemoveLastPickup() {
     }
 
     CPickups::RemovePickUp(lastXMenuPickupHandle);
+    for (auto it = g_trackedPickupHandles.begin(); it != g_trackedPickupHandles.end(); ++it) {
+        if (*it == lastXMenuPickupHandle) {
+            g_trackedPickupHandles.erase(it);
+            break;
+        }
+    }
     lastXMenuPickupHandle = -1;
     return true;
 }

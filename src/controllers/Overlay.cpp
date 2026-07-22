@@ -179,11 +179,17 @@ namespace Controllers::Overlay {
                 DrawEnabledFeature(features, "overlay.vehicleNoDamage", MenuState::VehicleNoDamage);
                 DrawEnabledFeature(features, "overlay.vehicleSpeedLock", MenuState::VehicleSpeedLock);
                 DrawEnabledFeature(features, "overlay.vehicleFlyingCars", MenuState::VehicleFlyingCars);
+                DrawEnabledFeature(features, "overlay.neverWanted", MenuState::NeverWanted);
+                DrawEnabledFeature(features, "overlay.driveWater", MenuState::VehicleDriveWater);
+                DrawEnabledFeature(features, "overlay.weaponAutoAim", MenuState::WeaponAutoAim);
                 DrawEnabledFeature(features, "overlay.infiniteAmmo", MenuState::InfiniteAmmo);
                 DrawEnabledFeature(features, "overlay.rapidFire", MenuState::RapidFire);
-                DrawEnabledFeature(features, "overlay.worldTimeLock", MenuState::WorldLockTime);
+                DrawEnabledFeature(features, "overlay.gangWars", MenuState::GangWarsActive);
+                DrawEnabledFeature(features, "overlay.worldTimeLock", MenuState::WorldLockTime || MenuState::FreezeTime);
                 DrawEnabledFeature(features, "overlay.worldWeatherLock", MenuState::LockWeather);
                 DrawEnabledFeature(features, "overlay.worldFastClock", MenuState::FasterClock);
+                DrawEnabledFeature(features, "overlay.solidWater", MenuState::SolidWater);
+                DrawEnabledFeature(features, "overlay.noWaterPhysics", MenuState::NoWaterPhysics);
                 DrawEnabledFeature(features, "overlay.disableReplay", MenuState::DisableReplay);
                 DrawEnabledFeature(features, "overlay.disableCheats", MenuState::DisableCheats);
 
