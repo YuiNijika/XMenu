@@ -33,10 +33,10 @@ XMenu 是一个面向 GTA III、GTA Vice City、GTA San Andreas 的 ASI 菜单�
 
 | 模块 | 功能 |
 | --- | --- |
-| 玩家 | 血量、护甲、金钱、通缉等级、无敌、无限奔跑、自由飞行（W/S/A/D、空格升、C 降）、状态开关 |
-| 载具 | 生成载具（分类 / 手风琴长列表）、修复、车速、车门、损伤、霓虹（SA）、载具状态 |
-| 武器 | 获取武器、弹药、安全模式限制无效 ID、滚轮刷武器、自定义射速；行人/车辆线框与骨骼绘制；子弹追踪 / 穿墙（SA/VC，III 占位） |
-| 世界 | 时间、天气、游戏速度、环境控制；自由相机 / 俯视相机 / 随机作弊等（多为 SA） |
+| 玩家 | 血量、护甲、金钱、通缉等级、无敌、无限奔跑、自由飞行、状态开关 |
+| 载具 | 生成载具（分类 / 手风琴长列表）、修复、车速、车门、损伤、霓虹、载具状态 |
+| 武器 | 获取武器、弹药、安全模式限制无效 ID、滚轮刷武器、自定义射速；行人/车辆线框与骨骼绘制；子弹追踪 / 穿墙 |
+| 世界 | 时间、天气、游戏速度、环境控制；自由相机 / 俯视相机 / 随机作弊等 |
 | 传送 | 按城市 / 区域选点、快速地图 / 标记、向前传送与持续向前传送 |
 | 行人 | 行人生成、相关功能与数据列表 |
 | 场景 | 动画、粒子、过场相关功能；当前主要面向 San Andreas |
@@ -300,10 +300,10 @@ Author: **鼠子(YuiNijika)**
 
 ### Features
 
-- Player: health, armor, money, wanted level, god mode, free fly (WASD + Space/C), and state toggles
-- Vehicle: spawn (categorized / accordion lists), repair, speed, doors, damage, neon (SA), vehicle state
-- Weapon: grants, ammo, safe-mode ID checks, scroll-wheel cycling, custom fire rate; ped/vehicle wireframe & skeleton ESP; bullet tracking / wallhack (SA/VC; III stub)
-- World: time, weather, game speed, environment; freecam / top-down cam / random cheats (mostly SA)
+- Player: health, armor, money, wanted level, god mode, free fly, and state toggles
+- Vehicle: spawn (categorized / accordion lists), repair, speed, doors, damage, neon, vehicle state
+- Weapon: grants, ammo, safe-mode ID checks, scroll-wheel cycling, custom fire rate; ped/vehicle wireframe & skeleton ESP; bullet tracking / wallhack
+- World: time, weather, game speed, environment; freecam / top-down cam / random cheats
 - Teleport: city / area locations, quick map / marker, forward teleport and hold-to-repeat forward
 - Ped: spawn tools and data lists
 - Scene: animation, particle, and cutscene tools (mainly San Andreas)
