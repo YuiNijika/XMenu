@@ -5,5 +5,7 @@
   "update.openGTAMODX": "GTAMODX",
   "update.details": "Update check",
   "update.refresh": "Refresh",
+  "update.source": "Source: %s",
+  "update.sourceHint": "Prefer GTAMODX, fallback to GitHub",
   "update.debugShowDialog": "Test update dialog"
 }

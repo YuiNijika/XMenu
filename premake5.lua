@@ -188,6 +188,11 @@ function createInstallerProject()
             "installer/**.rc"
         }
 
+        -- 仅由 main.cpp #include，禁止作为独立 TU 编译
+        removefiles {
+            "installer/_ui_rewrite_tail.cpp"
+        }
+
         links {
             "urlmon",
             "shell32",

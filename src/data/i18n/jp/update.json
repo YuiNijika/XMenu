@@ -5,5 +5,7 @@
   "update.openGTAMODX": "GTAMODX",
   "update.details": "バージョン確認",
   "update.refresh": "再確認",
+  "update.source": "検出元：%s",
+  "update.sourceHint": "GTAMODX 優先、失敗時は GitHub",
   "update.debugShowDialog": "更新ダイアログをテスト"
 }

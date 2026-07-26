@@ -160,7 +160,62 @@ namespace Pages::Weapon {
                 ImGui::NextColumn();
                 weaponStatsChanged |= ImGui::Checkbox(T("weapon.noSpread"), &MenuState::NoSpread);
 #endif
+                ImGui::NextColumn();
+                weaponStatsChanged |= ImGui::Checkbox(T("weapon.fireRate"), &MenuState::WeaponFireRateEnabled);
+#if defined(GTAVC) || defined(GTASA)
+                ImGui::NextColumn();
+                ImGui::Checkbox(T("weapon.pedEsp"), &MenuState::WeaponPedEsp);
+                ImGui::NextColumn();
+                ImGui::Checkbox(T("weapon.pedColEsp"), &MenuState::WeaponPedColEsp);
+                ImGui::NextColumn();
+                ImGui::Checkbox(T("weapon.pedSkeleton"), &MenuState::WeaponPedSkeleton);
+                ImGui::NextColumn();
+                ImGui::Checkbox(T("weapon.vehicleEsp"), &MenuState::WeaponVehicleEsp);
+                ImGui::NextColumn();
+                ImGui::Checkbox(T("weapon.vehicleColEsp"), &MenuState::WeaponVehicleColEsp);
+                ImGui::NextColumn();
+                ImGui::Checkbox(T("weapon.bulletTrack"), &MenuState::WeaponBulletTrack);
+                ImGui::NextColumn();
+                ImGui::Checkbox(T("weapon.bulletThroughWalls"), &MenuState::WeaponBulletThroughWalls);
+#endif
                 ImGui::Columns(1);
+
+                if (MenuState::WeaponFireRateEnabled) {
+                    ImGui::Spacing();
+                    ImGui::PushItemWidth(220.0f);
+                    if (ImGui::SliderFloat(T("weapon.fireRateValue"), &MenuState::WeaponFireRate, 0.25f, 10.0f, "x%.2f")) {
+                        weaponStatsChanged = true;
+                    }
+                    ImGui::PopItemWidth();
+                    if (MenuState::WeaponFireRate < 0.25f) {
+                        MenuState::WeaponFireRate = 0.25f;
+                    }
+                    if (MenuState::WeaponFireRate > 10.0f) {
+                        MenuState::WeaponFireRate = 10.0f;
+                    }
+                }
+
+#if defined(GTAVC) || defined(GTASA)
+                if (MenuState::WeaponBulletTrack) {
+                    ImGui::Spacing();
+                    ImGui::PushItemWidth(220.0f);
+                    ImGui::SliderFloat(T("weapon.bulletLockRange"), &MenuState::WeaponBulletLockRange, 10.0f, 300.0f, "%.0f");
+                    ImGui::SliderInt(T("weapon.bulletMaxTargets"), &MenuState::WeaponBulletMaxTargets, 1, 16);
+                    ImGui::PopItemWidth();
+                    if (MenuState::WeaponBulletLockRange < 10.0f) {
+                        MenuState::WeaponBulletLockRange = 10.0f;
+                    }
+                    if (MenuState::WeaponBulletLockRange > 300.0f) {
+                        MenuState::WeaponBulletLockRange = 300.0f;
+                    }
+                    if (MenuState::WeaponBulletMaxTargets < 1) {
+                        MenuState::WeaponBulletMaxTargets = 1;
+                    }
+                    if (MenuState::WeaponBulletMaxTargets > 16) {
+                        MenuState::WeaponBulletMaxTargets = 16;
+                    }
+                }
+#endif
 
                 if (weaponStatsChanged) {
                     Controllers::Weapon::ResetStats();

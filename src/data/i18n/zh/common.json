@@ -85,6 +85,7 @@
   "overlay.gangWars": "帮派战争",
   "overlay.infiniteAmmo": "无限弹药",
   "overlay.rapidFire": "快速射击",
+  "overlay.fireRate": "自定义射速",
   "overlay.disableReplay": "禁用回放",
   "overlay.disableCheats": "禁用作弊",
   "overlay.solidWater": "固体水面",
