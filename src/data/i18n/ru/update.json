@@ -5,7 +5,5 @@
   "update.openGTAMODX": "GTAMODX",
   "update.details": "Проверка версии",
   "update.refresh": "Обновить",
-  "update.source": "Источник: %s",
-  "update.sourceHint": "Сначала GTAMODX, затем GitHub",
   "update.debugShowDialog": "Тест окна обновления"
 }

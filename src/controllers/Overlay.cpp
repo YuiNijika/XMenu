@@ -184,7 +184,6 @@ namespace Controllers::Overlay {
                 DrawEnabledFeature(features, "overlay.weaponAutoAim", MenuState::WeaponAutoAim);
                 DrawEnabledFeature(features, "overlay.infiniteAmmo", MenuState::InfiniteAmmo);
                 DrawEnabledFeature(features, "overlay.rapidFire", MenuState::RapidFire);
-                DrawEnabledFeature(features, "overlay.fireRate", MenuState::WeaponFireRateEnabled);
                 DrawEnabledFeature(features, "overlay.gangWars", MenuState::GangWarsActive);
                 DrawEnabledFeature(features, "overlay.worldTimeLock", MenuState::WorldLockTime || MenuState::FreezeTime);
                 DrawEnabledFeature(features, "overlay.worldWeatherLock", MenuState::LockWeather);

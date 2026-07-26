@@ -1,6 +1,5 @@
 #include <windows.h>
 #include <shlobj.h>
-#include <shellapi.h>
 #include <urlmon.h>
 #include <commctrl.h>
 #include <cctype>
@@ -27,7 +26,6 @@ const char* XMENU_AUTHOR = "鼠子(YuiNijika)";
 const char* XMENU_URL = "https://gtamodx.com/mods/xmenu";
 const char* XMENU_GITHUB = "https://github.com/YuiNijika/XMenu";
 const char* XMENU_GITHUB_API = "https://api.github.com/repos/YuiNijika/XMenu/releases/latest";
-const char* XMENU_GTAMODX_API = "https://api.miomoe.cn/modx/mod/xmenu";
 const char* XMENU_QQ_GROUP = "https://gtamodx.com/qqun";
 
 namespace {
@@ -92,12 +90,10 @@ namespace {
     constexpr int DefaultDownloadSourceIndex = 0;
 
     struct ReleaseInfo {
-        std::string tagName;          // 用于安装比对/写 manifest 的版本
-        std::string packageVersion;   // GitHub release tag（安装包版本）
+        std::string tagName;
         std::string assetUrl;
         std::string assetName;
         std::string body;
-        std::string versionSource;    // GTAMODX | GitHub
     };
 
     struct InstalledFile {
@@ -317,23 +313,9 @@ namespace {
         return false;
     }
 
-    std::string ExtractGtamodxVersion(const std::string& json) {
-        const std::size_t dataPos = json.find("\"data\"");
-        if (dataPos == std::string::npos) {
-            return "";
-        }
-        const std::size_t objectStart = json.find('{', dataPos);
-        if (objectStart == std::string::npos) {
-            return "";
-        }
-        return JsonStringValue(json, "version", objectStart);
-    }
-
     ReleaseInfo ParseReleaseInfo(const std::string& json) {
         ReleaseInfo info;
         info.tagName = JsonStringValue(json, "tag_name");
-        info.packageVersion = info.tagName;
-        info.versionSource = "GitHub";
         info.body = JsonStringValue(json, "body");
 
         struct CandidateAsset {
@@ -1051,6 +1033,589 @@ namespace {
         return true;
     }
 
-// UI 实现：仅由 main.cpp #include，勿作为独立编译单元加入 vcxproj
-#define XMENU_INSTALLER_MAIN_CPP
-#include "_ui_rewrite_tail.cpp"
+    struct InstallerUiState {
+        HINSTANCE instance = nullptr;
+        HWND window = nullptr;
+        HWND pathEdit = nullptr;
+        HWND browseButton = nullptr;
+        HWND gameTypeText = nullptr;
+        HWND localVersionText = nullptr;
+        HWND releaseVersionText = nullptr;
+        HWND releaseNotesEdit = nullptr;
+        HWND moduleIII = nullptr;
+        HWND moduleVC = nullptr;
+        HWND moduleSA = nullptr;
+        HWND rootDependencies = nullptr;
+        HWND downloadSource = nullptr;
+        HWND installButton = nullptr;
+        HWND statusText = nullptr;
+        HWND progressBar = nullptr;
+        HWND logBox = nullptr;
+        HFONT titleFont = nullptr;
+        HFONT normalFont = nullptr;
+        HFONT smallFont = nullptr;
+        HBRUSH windowBrush = nullptr;
+        std::string gameRoot;
+        GameType gameType = GameType::Unknown;
+        ReleaseInfo currentRelease;
+        bool isReleaseFetched = false;
+    };
+
+    constexpr int ControlBrowse = 1001;
+    constexpr int ControlInstall = 1002;
+    constexpr int ControlModuleIII = 1003;
+    constexpr int ControlModuleVC = 1004;
+    constexpr int ControlModuleSA = 1005;
+    constexpr int ControlRootDependencies = 1006;
+    constexpr int ControlDownloadSource = 1007;
+    constexpr int ControlFetchRelease = 1008;
+
+    InstallerUiState gUi;
+
+    void SetStatus(const std::wstring& status) {
+        if (gUi.statusText) {
+            SetWindowTextW(gUi.statusText, status.c_str());
+        }
+        MSG msg{};
+        while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
+            TranslateMessage(&msg);
+            DispatchMessageW(&msg);
+        }
+    }
+
+    void AppendUiLog(const std::wstring& message) {
+        if (!gUi.logBox) {
+            return;
+        }
+        const int length = GetWindowTextLengthW(gUi.logBox);
+        SendMessageW(gUi.logBox, EM_SETSEL, length, length);
+        SendMessageW(gUi.logBox, EM_REPLACESEL, FALSE, reinterpret_cast<LPARAM>(message.c_str()));
+        SendMessageW(gUi.logBox, EM_REPLACESEL, FALSE, reinterpret_cast<LPARAM>(L"\r\n"));
+    }
+
+    void SetControlText(HWND hwnd, const std::wstring& text) {
+        SetWindowTextW(hwnd, text.c_str());
+    }
+
+    void SetModuleControlsEnabled(bool enabled) {
+        EnableWindow(gUi.moduleIII, enabled);
+        EnableWindow(gUi.moduleVC, enabled);
+        EnableWindow(gUi.moduleSA, enabled);
+        EnableWindow(gUi.rootDependencies, enabled);
+        EnableWindow(gUi.downloadSource, enabled);
+        EnableWindow(gUi.installButton, enabled);
+    }
+
+    void FetchReleaseInfo() {
+        EnableWindow(gUi.browseButton, FALSE);
+        EnableWindow(GetDlgItem(gUi.window, ControlFetchRelease), FALSE);
+        SetStatus(L"状态：请求 GitHub latest release...");
+        AppendUiLog(L"开始请求 GitHub latest release...");
+
+        const std::string apiJsonPath = TempPathFor("release.json");
+        if (!DownloadFile(XMENU_GITHUB_API, apiJsonPath)) {
+            SetStatus(L"状态：请求 GitHub API 失败");
+            AppendUiLog(L"请求 GitHub API 失败。");
+            MessageBoxW(gUi.window, L"请求 GitHub API 失败。", InstallerTitle, MB_ICONERROR);
+            EnableWindow(gUi.browseButton, TRUE);
+            EnableWindow(GetDlgItem(gUi.window, ControlFetchRelease), TRUE);
+            return;
+        }
+
+        gUi.currentRelease = ParseReleaseInfo(ReadTextFile(apiJsonPath));
+        if (gUi.currentRelease.tagName.empty() || gUi.currentRelease.assetUrl.empty()) {
+            SetStatus(L"状态：未找到可安装的 release 包");
+            AppendUiLog(L"GitHub release 中未找到可安装的 zip 包。");
+            MessageBoxW(gUi.window, L"GitHub release 中未找到可安装的 zip 包。请上传 XMenuIII.VC.SA.zip 到 release。", InstallerTitle, MB_ICONERROR);
+            EnableWindow(gUi.browseButton, TRUE);
+            EnableWindow(GetDlgItem(gUi.window, ControlFetchRelease), TRUE);
+            return;
+        }
+
+        gUi.isReleaseFetched = true;
+        SetStatus(L"状态：已获取最新版本信息");
+        AppendUiLog(L"获取到 GitHub 最新版本：" + WideFromUtf8(gUi.currentRelease.tagName));
+        
+        SetControlText(gUi.releaseVersionText, L"最新版本：" + WideFromUtf8(gUi.currentRelease.tagName));
+        
+        std::wstring releaseNotes = WideFromUtf8(gUi.currentRelease.body);
+        if (releaseNotes.empty()) {
+            releaseNotes = L"该版本没有提供更新日志。";
+        }
+        
+        std::wstring formattedNotes;
+        for (wchar_t c : releaseNotes) {
+            if (c == L'\n') {
+                formattedNotes += L"\r\n";
+            } else if (c != L'\r') {
+                formattedNotes += c;
+            }
+        }
+        SetControlText(gUi.releaseNotesEdit, formattedNotes);
+
+        if (!gUi.gameRoot.empty()) {
+            SetModuleControlsEnabled(true);
+        }
+        
+        EnableWindow(gUi.browseButton, TRUE);
+        EnableWindow(GetDlgItem(gUi.window, ControlFetchRelease), TRUE);
+    }
+
+    int SelectedDownloadSourceIndex() {
+        if (!gUi.downloadSource) {
+            return DefaultDownloadSourceIndex;
+        }
+        const LRESULT selected = SendMessageW(gUi.downloadSource, CB_GETCURSEL, 0, 0);
+        if (selected < 0 || selected >= static_cast<LRESULT>(sizeof(DownloadSources) / sizeof(DownloadSources[0]))) {
+            return DefaultDownloadSourceIndex;
+        }
+        return static_cast<int>(selected);
+    }
+
+    const DownloadSource& SelectedDownloadSource() {
+        return DownloadSources[SelectedDownloadSourceIndex()];
+    }
+
+    void ApplyFont(HWND hwnd, HFONT font) {
+        if (hwnd && font) {
+            SendMessageW(hwnd, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
+        }
+    }
+
+    void ApplyNormalFont(HWND hwnd) {
+        ApplyFont(hwnd, gUi.normalFont);
+    }
+
+    void ApplySmallFont(HWND hwnd) {
+        ApplyFont(hwnd, gUi.smallFont);
+    }
+
+    void ApplyTitleFont(HWND hwnd) {
+        ApplyFont(hwnd, gUi.titleFont);
+    }
+
+    HFONT CreateUiFont(int pointSize, int weight) {
+        HDC dc = GetDC(nullptr);
+        const int height = -MulDiv(pointSize, GetDeviceCaps(dc, LOGPIXELSY), 72);
+        ReleaseDC(nullptr, dc);
+        return CreateFontW(height, 0, 0, 0, weight, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Microsoft YaHei UI");
+    }
+
+    void InitUiFonts() {
+        gUi.titleFont = CreateUiFont(18, FW_SEMIBOLD);
+        gUi.normalFont = CreateUiFont(9, FW_NORMAL);
+        gUi.smallFont = CreateUiFont(8, FW_NORMAL);
+        gUi.windowBrush = CreateSolidBrush(RGB(250, 250, 250));
+    }
+
+    void DestroyUiFonts() {
+        if (gUi.titleFont) {
+            DeleteObject(gUi.titleFont);
+            gUi.titleFont = nullptr;
+        }
+        if (gUi.normalFont) {
+            DeleteObject(gUi.normalFont);
+            gUi.normalFont = nullptr;
+        }
+        if (gUi.smallFont) {
+            DeleteObject(gUi.smallFont);
+            gUi.smallFont = nullptr;
+        }
+        if (gUi.windowBrush) {
+            DeleteObject(gUi.windowBrush);
+            gUi.windowBrush = nullptr;
+        }
+    }
+
+    void SetProgress(int value) {
+        if (gUi.progressBar) {
+            SendMessageW(gUi.progressBar, PBM_SETPOS, value, 0);
+        }
+    }
+
+    void OnDownloadProgress(ULONG current, ULONG total) {
+        if (total > 0) {
+            const int percent = static_cast<int>((static_cast<unsigned long long>(current) * 100ull) / total);
+            SetProgress(percent);
+            std::wostringstream status;
+            status << L"下载安装包：" << percent << L"%";
+            SetStatus(status.str());
+        } else {
+            SetStatus(L"下载安装包：正在接收数据...");
+        }
+    }
+
+    void SetCheckbox(HWND hwnd, bool checked) {
+        SendMessageW(hwnd, BM_SETCHECK, checked ? BST_CHECKED : BST_UNCHECKED, 0);
+    }
+
+    bool IsCheckboxChecked(HWND hwnd) {
+        return SendMessageW(hwnd, BM_GETCHECK, 0, 0) == BST_CHECKED;
+    }
+
+    InstallOptions ReadOptionsFromUi() {
+        InstallOptions options;
+        options.installXMenuIII = IsCheckboxChecked(gUi.moduleIII);
+        options.installXMenuVC = IsCheckboxChecked(gUi.moduleVC);
+        options.installXMenuSA = IsCheckboxChecked(gUi.moduleSA);
+        options.installRootDependencies = IsCheckboxChecked(gUi.rootDependencies);
+        return options;
+    }
+
+    bool HasSelectedGameModule(const InstallOptions& options) {
+        return options.installXMenuIII || options.installXMenuVC || options.installXMenuSA;
+    }
+
+    void ApplySelectedGameRoot(const std::string& gameRoot) {
+        gUi.gameRoot = gameRoot;
+        gUi.gameType = DetectGameType(gameRoot);
+
+        SetControlText(gUi.pathEdit, WideFromAnsi(gameRoot));
+        SetControlText(gUi.gameTypeText, std::wstring(L"检测到游戏：") + GameTypeName(gUi.gameType));
+
+        const std::string installedVersion = ReadInstalledVersion(gameRoot);
+        SetControlText(gUi.localVersionText, L"本地版本：" + WideFromUtf8(installedVersion.empty() ? "未安装" : installedVersion));
+
+        const InstallOptions defaults = DefaultInstallOptionsForGame(gUi.gameType);
+        SetCheckbox(gUi.moduleIII, defaults.installXMenuIII);
+        SetCheckbox(gUi.moduleVC, defaults.installXMenuVC);
+        SetCheckbox(gUi.moduleSA, defaults.installXMenuSA);
+        SetCheckbox(gUi.rootDependencies, true);
+        SetProgress(0);
+        SetStatus(L"状态：等待安装/更新");
+        if (gUi.isReleaseFetched) {
+            SetModuleControlsEnabled(true);
+        } else {
+            AppendUiLog(L"请先获取最新版本信息。");
+        }
+
+        AppendUiLog(L"已选择游戏目录。确认安装模块后，点击“安装/更新”。");
+    }
+
+    bool ExecuteInstallFromUi() {
+        if (gUi.gameRoot.empty()) {
+            MessageBoxW(gUi.window, L"请先选择游戏目录。", InstallerTitle, MB_ICONWARNING);
+            return false;
+        }
+
+        if (!gUi.isReleaseFetched) {
+            MessageBoxW(gUi.window, L"请先获取版本信息。", InstallerTitle, MB_ICONWARNING);
+            return false;
+        }
+
+        InstallOptions options = ReadOptionsFromUi();
+        if (!HasSelectedGameModule(options)) {
+            MessageBoxW(gUi.window, L"请至少选择一个 XMenu 游戏模块。", InstallerTitle, MB_ICONWARNING);
+            return false;
+        }
+
+        EnableWindow(gUi.installButton, FALSE);
+        EnableWindow(gUi.browseButton, FALSE);
+        EnableWindow(GetDlgItem(gUi.window, ControlFetchRelease), FALSE);
+        SetProgress(0);
+
+        const DWORD startedTick = GetTickCount();
+        const std::string startedAt = CurrentTimestamp();
+        AppendInstallLog(gUi.gameRoot, "===== XMenu installer started at " + startedAt + " =====");
+        AppendInstallLog(gUi.gameRoot, "Game root: " + gUi.gameRoot);
+        AppendInstallLog(gUi.gameRoot, "Selected components:\r\n" + BuildSelectedComponentSummary(options));
+
+        const std::string installedVersion = ReadInstalledVersion(gUi.gameRoot);
+        std::string integrityReport;
+        VerifyInstalledFiles(gUi.gameRoot, integrityReport);
+        AppendInstallLog(gUi.gameRoot, "Installed version: " + (installedVersion.empty() ? std::string("none") : installedVersion));
+        AppendInstallLog(gUi.gameRoot, "Integrity before install: " + integrityReport);
+
+        const ReleaseInfo release = gUi.currentRelease;
+
+        AppendUiLog(L"GitHub 版本：" + WideFromUtf8(release.tagName));
+        AppendInstallLog(gUi.gameRoot, "Release version: " + release.tagName);
+        AppendInstallLog(gUi.gameRoot, "Selected asset: " + release.assetName);
+        AppendInstallLog(gUi.gameRoot, "Asset official URL: " + release.assetUrl);
+
+        const int downloadSourceIndex = SelectedDownloadSourceIndex();
+        const DownloadSource& downloadSource = SelectedDownloadSource();
+        const std::string downloadUrl = BuildDownloadUrl(release.assetUrl, downloadSourceIndex);
+        const std::string downloadSourceName = AnsiFromWide(downloadSource.label);
+
+        std::wstring confirm;
+        confirm += installedVersion.empty() ? L"将执行安装：\n\n" : L"将执行更新：\n\n";
+        confirm += L"本地版本：" + WideFromUtf8(installedVersion.empty() ? "未安装" : installedVersion) + L"\n";
+        confirm += L"GitHub 版本：" + WideFromUtf8(release.tagName) + L"\n";
+        confirm += L"Release 包：" + WideFromUtf8(release.assetName) + L"\n";
+        confirm += L"下载源：" + WideFromUtf8(downloadSourceName) + L"\n";
+        confirm += L"完整性状态：" + WideFromUtf8(integrityReport) + L"\n\n";
+        confirm += L"选择的组件：\n" + WideFromUtf8(BuildSelectedComponentSummary(options)) + L"\n继续安装？";
+        if (MessageBoxW(gUi.window, confirm.c_str(), InstallerTitle, MB_ICONQUESTION | MB_YESNO | MB_DEFBUTTON1) != IDYES) {
+            AppendUiLog(L"用户取消安装。");
+            AppendInstallLog(gUi.gameRoot, "User cancelled install after release check");
+            EnableWindow(gUi.installButton, TRUE);
+            EnableWindow(gUi.browseButton, TRUE);
+            EnableWindow(GetDlgItem(gUi.window, ControlFetchRelease), TRUE);
+            return false;
+        }
+
+        const std::string zipPath = TempPathFor(release.assetName.empty() ? "release.zip" : release.assetName);
+        SetProgress(0);
+        SetStatus(L"状态：准备下载安装包...");
+        AppendUiLog(L"开始下载安装包，下载源：" + WideFromUtf8(downloadSourceName));
+        AppendInstallLog(gUi.gameRoot, "Download source: " + downloadSourceName);
+        AppendInstallLog(gUi.gameRoot, "Download URL: " + downloadUrl);
+        AppendInstallLog(gUi.gameRoot, "Downloading asset to: " + zipPath);
+        try {
+            DownloadFileOrThrow(downloadUrl, zipPath, downloadSourceName, OnDownloadProgress);
+        } catch (const std::exception& error) {
+            const std::string errorText = error.what();
+            SetStatus(L"状态：下载安装包失败");
+            AppendUiLog(L"下载安装包失败：" + WideFromUtf8(errorText));
+            AppendInstallLog(gUi.gameRoot, "ERROR asset download failed: " + errorText);
+            const std::wstring message = L"下载安装包失败。\n\n下载源：" + WideFromUtf8(downloadSourceName)
+                + L"\n错误：" + WideFromUtf8(errorText)
+                + L"\n\n可以切换到 gh-proxy / v4 / v6 / Fastly 后重试。";
+            MessageBoxW(gUi.window, message.c_str(), InstallerTitle, MB_ICONERROR);
+            EnableWindow(gUi.installButton, TRUE);
+            EnableWindow(gUi.browseButton, TRUE);
+            EnableWindow(GetDlgItem(gUi.window, ControlFetchRelease), TRUE);
+            return false;
+        }
+
+        const std::string extractDir = TempPathFor("extract");
+        RunHiddenAndWait("cmd.exe /c rmdir /s /q \"" + extractDir + "\"");
+        SetProgress(100);
+        SetStatus(L"状态：解压安装包...");
+        AppendUiLog(L"开始解压安装包...");
+        AppendInstallLog(gUi.gameRoot, "Extracting asset to: " + extractDir);
+        if (!ExtractZip(zipPath, extractDir)) {
+            AppendUiLog(L"解压安装包失败。");
+            AppendInstallLog(gUi.gameRoot, "ERROR asset extraction failed");
+            MessageBoxW(gUi.window, L"解压安装包失败。", InstallerTitle, MB_ICONERROR);
+            EnableWindow(gUi.installButton, TRUE);
+            EnableWindow(gUi.browseButton, TRUE);
+            EnableWindow(GetDlgItem(gUi.window, ControlFetchRelease), TRUE);
+            return false;
+        }
+
+        AppendUiLog(L"开始写入游戏目录...");
+        SetStatus(L"状态：写入游戏目录...");
+        const bool ok = InstallRelease(extractDir, gUi.gameRoot, release.tagName, options);
+        const DWORD finishedTick = GetTickCount();
+        const std::string finishedAt = CurrentTimestamp();
+        const std::string duration = FormatDuration(startedTick, finishedTick);
+
+        if (ok) {
+            std::string finalReport;
+            VerifyInstalledFiles(gUi.gameRoot, finalReport);
+            AppendInstallLog(gUi.gameRoot, "Integrity after install: " + finalReport);
+            AppendInstallLog(gUi.gameRoot, "Installer finished at " + finishedAt + ", duration " + duration);
+            AppendUiLog(L"安装/更新完成。");
+            SetControlText(gUi.localVersionText, L"本地版本：" + WideFromUtf8(release.tagName));
+
+            const std::wstring message = L"XMenu 安装/更新完成。\n\n版本：" + WideFromUtf8(release.tagName)
+                + L"\n包：" + WideFromUtf8(release.assetName)
+                + L"\n开始时间：" + WideFromUtf8(startedAt)
+                + L"\n结束时间：" + WideFromUtf8(finishedAt)
+                + L"\n耗时：" + WideFromUtf8(duration)
+                + L"\n" + WideFromUtf8(finalReport);
+            MessageBoxW(gUi.window, message.c_str(), InstallerTitle, MB_ICONINFORMATION);
+        } else {
+            AppendInstallLog(gUi.gameRoot, "ERROR install failed at " + finishedAt + ", duration " + duration);
+            AppendUiLog(L"安装失败。请查看 install.log。");
+        }
+
+        EnableWindow(gUi.installButton, TRUE);
+        EnableWindow(gUi.browseButton, TRUE);
+        EnableWindow(GetDlgItem(gUi.window, ControlFetchRelease), TRUE);
+        return ok;
+    }
+
+    HWND CreateLabel(HWND parent, const wchar_t* text, int x, int y, int w, int h) {
+        HWND hwnd = CreateWindowExW(0, L"STATIC", text, WS_CHILD | WS_VISIBLE, x, y, w, h, parent, nullptr, gUi.instance, nullptr);
+        ApplyNormalFont(hwnd);
+        return hwnd;
+    }
+
+    HWND CreateTitleLabel(HWND parent, const wchar_t* text, int x, int y, int w, int h) {
+        HWND hwnd = CreateWindowExW(0, L"STATIC", text, WS_CHILD | WS_VISIBLE, x, y, w, h, parent, nullptr, gUi.instance, nullptr);
+        ApplyTitleFont(hwnd);
+        return hwnd;
+    }
+
+    HWND CreateSmallLabel(HWND parent, const wchar_t* text, int x, int y, int w, int h) {
+        HWND hwnd = CreateWindowExW(0, L"STATIC", text, WS_CHILD | WS_VISIBLE, x, y, w, h, parent, nullptr, gUi.instance, nullptr);
+        ApplySmallFont(hwnd);
+        return hwnd;
+    }
+
+    HWND CreateSectionTitle(HWND parent, const wchar_t* text, int x, int y, int w, int h) {
+        HWND hwnd = CreateWindowExW(0, L"STATIC", text, WS_CHILD | WS_VISIBLE, x, y, w, h, parent, nullptr, gUi.instance, nullptr);
+        ApplyNormalFont(hwnd);
+        return hwnd;
+    }
+
+    HWND CreateButton(HWND parent, const wchar_t* text, int id, int x, int y, int w, int h) {
+        HWND hwnd = CreateWindowExW(0, L"BUTTON", text, WS_CHILD | WS_VISIBLE | WS_TABSTOP, x, y, w, h, parent, reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)), gUi.instance, nullptr);
+        ApplyNormalFont(hwnd);
+        return hwnd;
+    }
+
+    HWND CreateCheckbox(HWND parent, const wchar_t* text, int id, int x, int y, int w, int h) {
+        HWND hwnd = CreateWindowExW(0, L"BUTTON", text, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX, x, y, w, h, parent, reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)), gUi.instance, nullptr);
+        ApplyNormalFont(hwnd);
+        return hwnd;
+    }
+
+    HWND CreateReadonlyEdit(HWND parent, const wchar_t* text, int x, int y, int w, int h) {
+        HWND hwnd = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", text, WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | ES_READONLY, x, y, w, h, parent, nullptr, gUi.instance, nullptr);
+        ApplyNormalFont(hwnd);
+        return hwnd;
+    }
+
+    HWND CreateMultilineReadonlyEdit(HWND parent, const wchar_t* text, int x, int y, int w, int h) {
+        HWND hwnd = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", text, WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_READONLY | WS_VSCROLL | ES_AUTOVSCROLL, x, y, w, h, parent, nullptr, gUi.instance, nullptr);
+        ApplyNormalFont(hwnd);
+        return hwnd;
+    }
+
+    HWND CreateDownloadSourceCombo(HWND parent, int x, int y, int w, int h) {
+        HWND hwnd = CreateWindowExW(0, L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP | CBS_DROPDOWNLIST | WS_VSCROLL, x, y, w, h, parent, reinterpret_cast<HMENU>(static_cast<INT_PTR>(ControlDownloadSource)), gUi.instance, nullptr);
+        ApplyNormalFont(hwnd);
+        for (const DownloadSource& source : DownloadSources) {
+            SendMessageW(hwnd, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(source.label));
+        }
+        SendMessageW(hwnd, CB_SETCURSEL, DefaultDownloadSourceIndex, 0);
+        return hwnd;
+    }
+
+    void CreateInstallerControls(HWND window) {
+        CreateTitleLabel(window, L"XMenu Installer", 24, 18, 260, 34);
+        CreateSmallLabel(window, L"选择 GTA 游戏目录，确认模块，然后一键安装或更新 XMenu。", 26, 50, 560, 20);
+
+        CreateSectionTitle(window, L"1. 游戏目录", 24, 86, 180, 24);
+        CreateLabel(window, L"目录", 42, 118, 56, 24);
+        gUi.pathEdit = CreateReadonlyEdit(window, L"尚未选择游戏目录", 98, 114, 440, 28);
+        gUi.browseButton = CreateButton(window, L"选择目录", ControlBrowse, 550, 113, 88, 30);
+        gUi.gameTypeText = CreateSmallLabel(window, L"检测到游戏：未选择", 98, 150, 250, 22);
+        gUi.localVersionText = CreateSmallLabel(window, L"本地版本：未检测", 350, 150, 250, 22);
+
+        CreateSectionTitle(window, L"2. 最新版本信息", 24, 186, 180, 24);
+        gUi.releaseVersionText = CreateSmallLabel(window, L"最新版本：尚未获取", 42, 220, 250, 22);
+        CreateButton(window, L"获取版本信息", ControlFetchRelease, 550, 214, 88, 30);
+        CreateLabel(window, L"更新日志", 42, 250, 80, 24);
+        gUi.releaseNotesEdit = CreateMultilineReadonlyEdit(window, L"请点击“获取版本信息”按钮以加载最新的发布日志和安装包信息。", 42, 274, 596, 120);
+
+        CreateSectionTitle(window, L"3. 安装模块", 24, 410, 180, 24);
+        gUi.moduleIII = CreateCheckbox(window, L"GTA III 模块", ControlModuleIII, 42, 440, 180, 24);
+        gUi.moduleVC = CreateCheckbox(window, L"GTA Vice City 模块", ControlModuleVC, 42, 468, 180, 24);
+        gUi.moduleSA = CreateCheckbox(window, L"GTA San Andreas 模块", ControlModuleSA, 42, 496, 210, 24);
+        CreateSmallLabel(window, L"SilentPatch：固定随 XMenu 安装到 plugins", 330, 440, 280, 22);
+        gUi.rootDependencies = CreateCheckbox(window, L"安装 Ultimate ASI Loader / D3D8to9 到游戏根目录", ControlRootDependencies, 330, 468, 300, 24);
+        CreateSmallLabel(window, L"同名根目录依赖会在安装时再次询问覆盖或跳过。", 330, 498, 300, 22);
+        CreateLabel(window, L"下载源", 42, 530, 56, 24);
+        gUi.downloadSource = CreateDownloadSourceCombo(window, 98, 526, 280, 150);
+        CreateSmallLabel(window, L"默认官方源；下载慢或失败时可切换代理。", 390, 530, 250, 22);
+
+        CreateSectionTitle(window, L"4. 安装进度", 24, 576, 180, 24);
+        gUi.statusText = CreateLabel(window, L"状态：等待选择游戏目录", 42, 608, 420, 24);
+        gUi.progressBar = CreateWindowExW(0, PROGRESS_CLASSW, L"", WS_CHILD | WS_VISIBLE, 42, 638, 470, 18, window, nullptr, gUi.instance, nullptr);
+        SendMessageW(gUi.progressBar, PBM_SETRANGE, 0, MAKELPARAM(0, 100));
+        SendMessageW(gUi.progressBar, PBM_SETPOS, 0, 0);
+        gUi.installButton = CreateButton(window, L"安装 / 更新", ControlInstall, 528, 608, 108, 48);
+
+        CreateSectionTitle(window, L"日志", 24, 680, 180, 24);
+        gUi.logBox = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"安装器已启动。请先选择游戏目录并获取版本信息。\r\n", WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_READONLY | WS_VSCROLL, 42, 710, 594, 70, window, nullptr, gUi.instance, nullptr);
+        ApplySmallFont(gUi.logBox);
+        SetModuleControlsEnabled(false);
+    }
+
+    LRESULT CALLBACK InstallerWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam) {
+        switch (message) {
+        case WM_CREATE:
+            gUi.window = window;
+            InitUiFonts();
+            CreateInstallerControls(window);
+            return 0;
+        case WM_COMMAND:
+            switch (LOWORD(wParam)) {
+            case ControlBrowse: {
+                const std::string gameRoot = PickGameRoot();
+                if (!gameRoot.empty()) {
+                    ApplySelectedGameRoot(gameRoot);
+                }
+                return 0;
+            }
+            case ControlFetchRelease:
+                FetchReleaseInfo();
+                return 0;
+            case ControlInstall:
+                ExecuteInstallFromUi();
+                return 0;
+            default:
+                return 0;
+            }
+        case WM_CTLCOLORSTATIC: {
+            const HWND control = reinterpret_cast<HWND>(lParam);
+            if (control == gUi.pathEdit || control == gUi.logBox || control == gUi.releaseNotesEdit) {
+                SetBkMode(reinterpret_cast<HDC>(wParam), OPAQUE);
+                return reinterpret_cast<LRESULT>(GetSysColorBrush(COLOR_WINDOW));
+            }
+            SetBkMode(reinterpret_cast<HDC>(wParam), TRANSPARENT);
+            return reinterpret_cast<LRESULT>(gUi.windowBrush ? gUi.windowBrush : GetStockObject(WHITE_BRUSH));
+        }
+        case WM_CTLCOLORBTN: {
+            const HWND control = reinterpret_cast<HWND>(lParam);
+            if (control == gUi.moduleIII || control == gUi.moduleVC || control == gUi.moduleSA || control == gUi.rootDependencies) {
+                SetBkMode(reinterpret_cast<HDC>(wParam), TRANSPARENT);
+                return reinterpret_cast<LRESULT>(gUi.windowBrush ? gUi.windowBrush : GetStockObject(WHITE_BRUSH));
+            }
+            return DefWindowProcW(window, message, wParam, lParam);
+        }
+        case WM_ERASEBKGND: {
+            RECT rect{};
+            GetClientRect(window, &rect);
+            FillRect(reinterpret_cast<HDC>(wParam), &rect, gUi.windowBrush ? gUi.windowBrush : reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1));
+            return 1;
+        }
+        case WM_DESTROY:
+            DestroyUiFonts();
+            PostQuitMessage(0);
+            return 0;
+        default:
+            return DefWindowProcW(window, message, wParam, lParam);
+        }
+    }
+
+    int RunInstallerUi(HINSTANCE instance, int showCommand) {
+        CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+        gUi.instance = instance;
+
+        WNDCLASSW windowClass{};
+        windowClass.lpfnWndProc = InstallerWindowProc;
+        windowClass.hInstance = instance;
+        windowClass.lpszClassName = L"XMenuInstallerWindow";
+        windowClass.hCursor = LoadCursorW(nullptr, MAKEINTRESOURCEW(32512));
+        windowClass.hbrBackground = gUi.windowBrush ? gUi.windowBrush : reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
+        RegisterClassW(&windowClass);
+
+        HWND window = CreateWindowExW(0, windowClass.lpszClassName, InstallerTitle, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 740, 840, nullptr, nullptr, instance, nullptr);
+        if (!window) {
+            CoUninitialize();
+            return 1;
+        }
+
+        ShowWindow(window, showCommand);
+        UpdateWindow(window);
+
+        MSG msg{};
+        while (GetMessageW(&msg, nullptr, 0, 0) > 0) {
+            TranslateMessage(&msg);
+            DispatchMessageW(&msg);
+        }
+
+        CoUninitialize();
+        return static_cast<int>(msg.wParam);
+    }
+}
+
+int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int showCommand) {
+    return RunInstallerUi(instance, showCommand);
+}

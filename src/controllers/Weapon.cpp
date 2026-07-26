@@ -1,5 +1,4 @@
 #include "Weapon.h"
-#include "BulletAssist.h"
 #include "features/GameLogic.h"
 #include "resources/ResourceData.h"
 #include "ui/MenuState.h"
@@ -41,9 +40,6 @@ namespace Controllers::Weapon {
     }
 
     void Process() {
-        Controllers::BulletAssist::Init();
-        Controllers::BulletAssist::Process();
-
         CPlayerPed* player = FindPlayerPed();
         if (!player) {
             return;
@@ -60,9 +56,7 @@ namespace Controllers::Weapon {
             MenuState::DualWield,
             MenuState::MoveAim,
             MenuState::MoveFire,
-            MenuState::NoSpread,
-            MenuState::WeaponFireRateEnabled,
-            MenuState::WeaponFireRate
+            MenuState::NoSpread
         );
     }
 

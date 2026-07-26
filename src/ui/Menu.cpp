@@ -31,7 +31,6 @@
 #include "controllers/Command.h"
 #include "controllers/Teleport.h"
 #include "controllers/World.h"
-#include "controllers/BulletAssist.h"
 
 extern const bool XMENU_DEBUG_MODE;
 extern const char* XMENU_VERSION;
@@ -193,9 +192,6 @@ namespace Menu {
         const UpdateChecker::UpdateInfo info = UpdateChecker::GetUpdateInfo();
         const char* remoteVersion = info.latestVersion.empty() ? T("status.remoteUnknown") : info.latestVersion.c_str();
         const char* statusText = T("status.remoteUnknown");
-        const char* sourceText = info.sourceName.empty()
-            ? UpdateChecker::SourceDisplayName(info.source)
-            : info.sourceName.c_str();
 
         ImVec4 versionColor = ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
         if (UpdateChecker::IsChecking()) {
@@ -225,7 +221,6 @@ namespace Menu {
             ImGui::Text("%s: %s", T("status.language"), I18n::GetLanguageName(I18n::GetLanguage()));
             ImGui::Text(T("status.localVersion"), XMENU_VERSION);
             ImGui::Text(T("status.remoteVersion"), remoteVersion);
-            ImGui::Text(T("update.source"), sourceText);
             ImGui::EndTooltip();
         }
     }
@@ -946,9 +941,6 @@ namespace Menu {
         const bool checking = UpdateChecker::IsChecking();
         const char* remoteVersion = info.latestVersion.empty() ? T("status.remoteUnknown") : info.latestVersion.c_str();
         const char* releaseUrl = info.releaseUrl.empty() ? XMENU_GITHUB : info.releaseUrl.c_str();
-        const char* sourceText = info.sourceName.empty()
-            ? UpdateChecker::SourceDisplayName(info.source)
-            : info.sourceName.c_str();
 
         ImGui::TextUnformatted(T("update.details"));
         ImGui::PushStyleColor(ImGuiCol_Text, VersionStatusColor(info.status));
@@ -956,8 +948,6 @@ namespace Menu {
         ImGui::PopStyleColor();
         ImGui::Text(T("status.localVersion"), XMENU_VERSION);
         ImGui::Text(T("status.remoteVersion"), remoteVersion);
-        ImGui::Text(T("update.source"), checking ? T("status.checking") : sourceText);
-        ImGui::TextDisabled("%s", T("update.sourceHint"));
 
         if (ImGui::Button(T("update.refresh"), ImVec2(130.0f, 0.0f))) {
             UpdateChecker::Refresh();
@@ -1052,15 +1042,10 @@ namespace Menu {
 
         if (ImGui::BeginPopupModal("XMenuUpdateDialog", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
             const UpdateChecker::UpdateInfo info = UpdateChecker::GetUpdateInfo();
-            const char* sourceText = info.sourceName.empty()
-                ? UpdateChecker::SourceDisplayName(info.source)
-                : info.sourceName.c_str();
-
             ImGui::TextUnformatted(T("update.availableTitle"));
             ImGui::Separator();
             ImGui::Spacing();
             ImGui::TextWrapped(T("update.availableMessage"), info.currentVersion.c_str(), info.latestVersion.c_str());
-            ImGui::Text(T("update.source"), sourceText);
             ImGui::Spacing();
 
             if (ImGui::Button(T("update.openGitHub"), ImVec2(130.0f, 0.0f))) {
@@ -1093,16 +1078,7 @@ void Menu::Process() {
     Controllers::Overlay::Process();
     Controllers::Command::Process();
     Controllers::Hotkeys::Process();
-    D3DHook::SetBackgroundRenderActive(
-        MenuState::OverlayEnabled
-        || MenuState::CommandWindowEnabled
-        || MenuState::QuickTeleportMapActive
-        || MenuState::WeaponPedEsp
-        || MenuState::WeaponPedColEsp
-        || MenuState::WeaponPedSkeleton
-        || MenuState::WeaponVehicleEsp
-        || MenuState::WeaponVehicleColEsp
-        || MenuState::WeaponBulletTrack);
+    D3DHook::SetBackgroundRenderActive(MenuState::OverlayEnabled || MenuState::CommandWindowEnabled || MenuState::QuickTeleportMapActive);
 }
 
 void Menu::Draw() {
@@ -1190,5 +1166,4 @@ void Menu::Draw() {
     Controllers::Overlay::Draw();
     Controllers::Command::Draw();
     Controllers::Teleport::DrawQuickMap();
-    Controllers::BulletAssist::Draw();
 }

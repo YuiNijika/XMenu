@@ -1767,43 +1767,12 @@ void SetFastReload(CPlayerPed* player, bool enable) {
     plugin::Command<plugin::Commands::SET_PLAYER_FAST_RELOAD>(CPools::GetPedRef(player), enable);
 }
 
-void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange, bool rapidFire, bool dualWield, bool moveAim, bool moveFire, bool noSpread, bool customFireRate, float fireRate) {
-    auto scaleAnimLoop = [](float& start, float& end, float& fire, float rate) {
-        if (rate < 0.1f) {
-            rate = 0.1f;
-        }
-        if (rate > 20.0f) {
-            rate = 20.0f;
-        }
-        if (std::fabs(rate - 1.0f) < 0.001f || end <= start) {
-            return;
-        }
-        const float oldStart = start;
-        const float oldEnd = end;
-        const float oldFire = fire;
-        const float newLen = (oldEnd - oldStart) / rate;
-        end = oldStart + newLen;
-        fire = oldStart + (oldFire - oldStart) / rate;
-        if (fire < start) {
-            fire = start;
-        }
-        if (fire > end) {
-            fire = end;
-        }
-    };
-
-    auto asFloat = [](unsigned int& value) -> float& {
-        return *reinterpret_cast<float*>(&value);
-    };
-
-    const float effectiveRate = (customFireRate && fireRate > 0.1f) ? fireRate : 1.0f;
-    const bool fireRateActive = customFireRate && std::fabs(effectiveRate - 1.0f) >= 0.001f;
-    const bool any = hugeDamage || longRange || rapidFire || dualWield || moveAim || moveFire || noSpread || fireRateActive;
+void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange, bool rapidFire, bool dualWield, bool moveAim, bool moveFire, bool noSpread) {
+    const bool any = hugeDamage || longRange || rapidFire || dualWield || moveAim || moveFire || noSpread;
     static bool s_wasAny = false;
     static int s_lastType = -1;
     static unsigned char s_lastSkill = 255;
     static unsigned char s_lastMask = 0;
-    static int s_lastRateQ = 100; // fireRate * 100
 
     const unsigned char mask =
         static_cast<unsigned char>((hugeDamage ? 1 : 0) |
@@ -1812,9 +1781,7 @@ void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange, bo
                                    (dualWield ? 8 : 0) |
                                    (moveAim ? 16 : 0) |
                                    (moveFire ? 32 : 0) |
-                                   (noSpread ? 64 : 0) |
-                                   (fireRateActive ? 128 : 0));
-    const int rateQ = fireRateActive ? static_cast<int>(effectiveRate * 100.0f + 0.5f) : 100;
+                                   (noSpread ? 64 : 0));
 
     if (!any) {
         if (s_wasAny) {
@@ -1823,7 +1790,6 @@ void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange, bo
             s_lastType = -1;
             s_lastSkill = 255;
             s_lastMask = 0;
-            s_lastRateQ = 100;
         }
         return;
     }
@@ -1836,7 +1802,7 @@ void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange, bo
     const int type = static_cast<int>(weapon.m_eWeaponType);
 
     // 仅在槽位/类型/开关组合变化或外部重置后写入，避免每帧污染全局表
-    if (s_wasAny && !g_weaponTweaksNeedReapply && s_lastType == type && s_lastSkill == skill && s_lastMask == mask && s_lastRateQ == rateQ) {
+    if (s_wasAny && !g_weaponTweaksNeedReapply && s_lastType == type && s_lastSkill == skill && s_lastMask == mask) {
         return;
     }
 
@@ -1873,17 +1839,11 @@ void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange, bo
     if (noSpread) {
         info->m_fAccuracy = 100.0f;
     }
-    if (fireRateActive) {
-        // SDK 把部分 anim 时间标成 uint，实际内存是 float
-        scaleAnimLoop(info->m_fAnimLoopStart, info->m_fAnimLoopEnd, asFloat(info->m_nAnimLoopFire), effectiveRate);
-        scaleAnimLoop(asFloat(info->m_nAnimLoop2Start), asFloat(info->m_nAnimLoop2End), asFloat(info->m_nAnimLoop2Fire), effectiveRate);
-    }
 
     s_wasAny = true;
     s_lastType = type;
     s_lastSkill = skill;
     s_lastMask = mask;
-    s_lastRateQ = rateQ;
     g_weaponTweaksNeedReapply = false;
 }
 

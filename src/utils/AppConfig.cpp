@@ -71,19 +71,11 @@ namespace {
             {"weapon.hugeDamage", "weapon.hugeDamage", &MenuState::HugeWeaponDamage, false},
             {"weapon.longRange", "weapon.longRange", &MenuState::LongWeaponRange, false},
             {"weapon.rapidFire", "weapon.rapidFire", &MenuState::RapidFire, false},
-            {"weapon.fireRate", "weapon.fireRate", &MenuState::WeaponFireRateEnabled, false},
             {"weapon.dualWield", "weapon.dualWield", &MenuState::DualWield, false},
             {"weapon.moveAim", "weapon.moveAim", &MenuState::MoveAim, false},
             {"weapon.moveFire", "weapon.moveFire", &MenuState::MoveFire, false},
             {"weapon.noSpread", "weapon.noSpread", &MenuState::NoSpread, false},
             {"weapon.autoAim", "weapon.autoAim", &MenuState::WeaponAutoAim, false},
-            {"weapon.pedEsp", "weapon.pedEsp", &MenuState::WeaponPedEsp, false},
-            {"weapon.pedColEsp", "weapon.pedColEsp", &MenuState::WeaponPedColEsp, false},
-            {"weapon.pedSkeleton", "weapon.pedSkeleton", &MenuState::WeaponPedSkeleton, false},
-            {"weapon.vehicleEsp", "weapon.vehicleEsp", &MenuState::WeaponVehicleEsp, false},
-            {"weapon.vehicleColEsp", "weapon.vehicleColEsp", &MenuState::WeaponVehicleColEsp, false},
-            {"weapon.bulletTrack", "weapon.bulletTrack", &MenuState::WeaponBulletTrack, false},
-            {"weapon.bulletThroughWalls", "weapon.bulletThroughWalls", &MenuState::WeaponBulletThroughWalls, false},
             {"vehicle.noDamage", "vehicle.noDamage", &MenuState::VehicleNoDamage, false},
             {"vehicle.autoUnflip", "vehicle.autoUnflip", &MenuState::VehicleAutoUnflip, false},
             {"vehicle.heavy", "vehicle.heavy", &MenuState::VehicleHeavy, false},
@@ -173,12 +165,6 @@ namespace {
             || feature == "visual.nightVision" || feature == "visual.infrared"
             || feature == "world.solidWater" || feature == "world.noWaterPhysics") {
             return IsSaRuntime();
-        }
-
-        if (feature == "weapon.pedEsp" || feature == "weapon.pedColEsp" || feature == "weapon.pedSkeleton"
-            || feature == "weapon.vehicleEsp" || feature == "weapon.vehicleColEsp"
-            || feature == "weapon.bulletTrack" || feature == "weapon.bulletThroughWalls") {
-            return IsSaRuntime() || GameRuntime::Current().target == GameRuntime::Target::VC;
         }
 
         if (feature == "ped.bigHeadMode") {
@@ -878,28 +864,6 @@ namespace {
         file << indent << "}" << (trailingComma ? "," : "") << "\n";
     }
 
-    void LoadWeaponConfig(const JsonLoader::JsonValue& root) {
-        const JsonLoader::JsonValue& weapon = ObjectOrNull(root, "weapon");
-        if (weapon.type != JsonLoader::JsonValue::OBJECT) {
-            return;
-        }
-
-        MenuState::WeaponBulletLockRange = static_cast<float>(JsonLoader::GetNumber(
-            weapon, "bulletLockRange", MenuState::WeaponBulletLockRange));
-        if (MenuState::WeaponBulletLockRange < 10.0f) {
-            MenuState::WeaponBulletLockRange = 10.0f;
-        }
-        if (MenuState::WeaponBulletLockRange > 300.0f) {
-            MenuState::WeaponBulletLockRange = 300.0f;
-        }
-    }
-
-    void WriteWeaponConfig(std::ostream& file, const std::string& indent, bool trailingComma) {
-        file << indent << "\"weapon\": {\n";
-        file << indent << "  \"bulletLockRange\": " << MenuState::WeaponBulletLockRange << "\n";
-        file << indent << "}" << (trailingComma ? "," : "") << "\n";
-    }
-
     void LoadWorldConfig(const JsonLoader::JsonValue& root) {
         // 时间锁定由 features binding 持久化，禁止强制 false
         (void)root;
@@ -1041,15 +1005,13 @@ namespace {
         updateCache.timestamp = static_cast<long long>(JsonLoader::GetNumber(cache, "timestamp", 0.0));
         updateCache.tagName = JsonLoader::GetString(cache, "tagName", "");
         updateCache.htmlUrl = JsonLoader::GetString(cache, "htmlUrl", "");
-        updateCache.source = JsonLoader::GetString(cache, "source", "");
     }
 
     void WriteUpdateCache(std::ostream& file, bool trailingComma) {
         file << "  \"updateCache\": {\n";
         file << "    \"timestamp\": " << updateCache.timestamp << ",\n";
         file << "    \"tagName\": \"" << EscapeJson(updateCache.tagName) << "\",\n";
-        file << "    \"htmlUrl\": \"" << EscapeJson(updateCache.htmlUrl) << "\",\n";
-        file << "    \"source\": \"" << EscapeJson(updateCache.source) << "\"\n";
+        file << "    \"htmlUrl\": \"" << EscapeJson(updateCache.htmlUrl) << "\"\n";
         file << "  }" << (trailingComma ? "," : "") << "\n";
     }
 
@@ -1061,7 +1023,6 @@ namespace {
         LoadPersistentState(gameConfig);
         LoadOverlayConfig(gameConfig);
         LoadTeleportConfig(gameConfig);
-        LoadWeaponConfig(gameConfig);
         LoadWorldConfig(gameConfig);
         LoadGuiConfig(gameConfig);
 
@@ -1121,7 +1082,6 @@ namespace {
                 WriteMenuConfig(file, "      ", true);
                 WriteOverlayConfig(file, "      ", true);
                 WriteTeleportConfig(file, "      ", true);
-                WriteWeaponConfig(file, "      ", true);
                 WriteWorldConfig(file, "      ", true);
                 WriteActionHotkeys(file, "      ", true);
                 WritePersistentState(file, "      ", true);

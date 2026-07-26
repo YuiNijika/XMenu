@@ -208,7 +208,7 @@ namespace GameLogic {
     int RemoveTrackedPickups();
     void ProcessInfiniteAmmo(CPlayerPed* player, bool enable);
     void SetFastReload(CPlayerPed* player, bool enable);
-    void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange, bool rapidFire, bool dualWield, bool moveAim, bool moveFire, bool noSpread, bool customFireRate, float fireRate);
+    void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange, bool rapidFire, bool dualWield, bool moveAim, bool moveFire, bool noSpread);
     void ProcessWeaponAutoAim(bool enable);
     void ResetWeaponStats();
     

@@ -17,6 +17,7 @@
 #include "utils/D3DHook.h"
 #include "ui/Menu.h"
 #include "features/GameLogic.h"
+#include "resources/ResourceData.h"
 #include "CPad.h"
 #include "utils/Log.h"
 #include "utils/I18n.h"
@@ -42,12 +43,8 @@ const char* XMENU_OPEN_SOURCE_LIBS = "Dear ImGui, kiero, MinHook, plugin-sdk";
 namespace {
     bool xMenuActive = false;
 
-    // -1=等 initGame  0=i18n+config 1=逻辑/更新 2=D3D 3=收尾 4=就绪
-    // 分帧做重活，避免 initGame 一帧内同步扫盘/装 hook 造成明显卡顿
-    int bootstrapStage = -1;
-
     void ShowD3DHookFailedMessage() {
-#ifdef GTASA
+#ifdef GTASA 
         CHud::SetHelpMessage("XMenu: D3D Hook 初始化失败, 菜单渲染不可用", true, false, false);
 #elif GTAVC
         static const wchar_t message[] = L"XMenu: D3D9 Hook 初始化失败, 请安装 D3D8to9 wrapper";
@@ -58,34 +55,25 @@ namespace {
 #endif
     }
 
-    void AdvanceBootstrap() {
-        if (bootstrapStage < 0 || bootstrapStage >= 4) {
-            return;
-        }
-
-        if (bootstrapStage == 0) {
-            Log::Info("分帧初始化[0]: I18n + AppConfig");
+    void InitXMenu() {
+        Log::Info("注册游戏初始化与脚本循环事件");
+        plugin::Events::initGameEvent.after += []() {
+            Log::Info("游戏初始化事件触发，开始初始化功能模块");
             I18n::Init();
             AppConfig::Init();
-            bootstrapStage = 1;
-            return;
-        }
 
-        if (bootstrapStage == 1) {
-            Log::Info("分帧初始化[1]: GameLogic + UpdateChecker");
-            // 资源 JSON 按需懒加载，不在启动路径全量扫盘
-            UpdateChecker::Start(XMENU_VERSION);
+#ifdef GTASA
+            CFastman92limitAdjuster::Init();
+            Log::Info("FLA 初始化完成");
+#endif
+
+            Resources::InitData();  // 初始化游戏数据
+            UpdateChecker::Start(XMENU_GITHUB_API, XMENU_VERSION);
             GameLogic::Init();
-            bootstrapStage = 2;
-            return;
-        }
-
-        if (bootstrapStage == 2) {
-            Log::Info("分帧初始化[2]: D3D Hook");
             const bool hookReady = D3DHook::Init([]() {
                 Menu::Draw();
             });
-
+ 
             if (hookReady) {
                 xMenuActive = true;
                 Log::Info("D3D Hook 初始化成功");
@@ -95,39 +83,9 @@ namespace {
                 ShowD3DHookFailedMessage();
                 Log::Error("D3D9 Hook 初始化失败，GTA III/VC 请确认已安装 D3D8to9 wrapper；菜单渲染不可用，脚本逻辑继续执行");
             }
-            bootstrapStage = 3;
-            return;
-        }
-
-        bootstrapStage = 4;
-        Log::Info("分帧初始化完成");
-    }
-
-    void InitXMenu() {
-        Log::Info("注册游戏初始化与脚本循环事件");
-        plugin::Events::initGameEvent.after += []() {
-            // 仅放必须尽早、且相对轻量的工作；重 IO / D3D 放到脚本帧分摊
-            Log::Info("游戏初始化事件触发（轻量阶段）");
-#ifdef GTASA
-            CFastman92limitAdjuster::Init();
-            Log::Info("FLA 初始化完成");
-#endif
-            bootstrapStage = 0;
         };
 
         plugin::Events::processScriptsEvent += []() {
-            if (bootstrapStage < 0) {
-                return;
-            }
-
-            if (bootstrapStage < 4) {
-                AdvanceBootstrap();
-                // 启动帧只推进一个阶段，尽快把控制权交回游戏
-                if (bootstrapStage < 4) {
-                    return;
-                }
-            }
-
             GameLogic::Process();
             Menu::Process();
             D3DHook::MaintainInputState();

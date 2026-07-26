@@ -31,7 +31,6 @@
 
 namespace {
 std::vector<int> g_trackedPickupHandles;
-bool g_weaponTweaksNeedReapply = true;
 
 bool PatchByteIfExpected(const char* label, std::uintptr_t address, unsigned char original, unsigned char patched, bool enable) {
     auto* target = reinterpret_cast<unsigned char*>(address);
@@ -1056,78 +1055,12 @@ void SetFastReload(CPlayerPed* player, bool enable) {
     plugin::Command<plugin::Commands::SET_PLAYER_FAST_RELOAD>(CPools::GetPedRef(player), enable);
 }
 
-void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange, bool rapidFire, bool dualWield, bool moveAim, bool moveFire, bool noSpread, bool customFireRate, float fireRate) {
-    (void)rapidFire;
-    (void)dualWield;
-    (void)moveAim;
-    (void)moveFire;
-
-    auto scaleAnimLoop = [](float& start, float& end, float& fire, float rate) {
-        if (rate < 0.1f) {
-            rate = 0.1f;
-        }
-        if (rate > 20.0f) {
-            rate = 20.0f;
-        }
-        if (std::fabs(rate - 1.0f) < 0.001f || end <= start) {
-            return;
-        }
-        const float oldStart = start;
-        const float oldEnd = end;
-        const float oldFire = fire;
-        end = oldStart + (oldEnd - oldStart) / rate;
-        fire = oldStart + (oldFire - oldStart) / rate;
-        if (fire < start) {
-            fire = start;
-        }
-        if (fire > end) {
-            fire = end;
-        }
-    };
-
-    const float effectiveRate = (customFireRate && fireRate > 0.1f) ? fireRate : 1.0f;
-    const bool fireRateActive = customFireRate && std::fabs(effectiveRate - 1.0f) >= 0.001f;
-    const bool any = hugeDamage || longRange || noSpread || fireRateActive;
-    static bool s_wasAny = false;
-    static int s_lastType = -1;
-    static unsigned char s_lastMask = 0;
-    static int s_lastRateQ = 100;
-
-    const unsigned char mask =
-        static_cast<unsigned char>((hugeDamage ? 1 : 0) |
-                                   (longRange ? 2 : 0) |
-                                   (noSpread ? 4 : 0) |
-                                   (fireRateActive ? 8 : 0));
-    const int rateQ = fireRateActive ? static_cast<int>(effectiveRate * 100.0f + 0.5f) : 100;
-
-    if (!any) {
-        if (s_wasAny) {
-            CWeaponInfo::LoadWeaponData();
-            s_wasAny = false;
-            s_lastType = -1;
-            s_lastMask = 0;
-            s_lastRateQ = 100;
-        }
-        return;
-    }
-    if (!player) {
-        return;
-    }
+void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange, bool rapidFire, bool dualWield, bool moveAim, bool moveFire, bool noSpread) {
+    if (!player || (!hugeDamage && !longRange && !noSpread)) return;
 
     CWeapon& weapon = player->m_aWeapons[player->m_nCurrentWeapon];
-    const int type = static_cast<int>(weapon.m_eWeaponType);
-    if (s_wasAny && !g_weaponTweaksNeedReapply && s_lastType == type && s_lastMask == mask && s_lastRateQ == rateQ) {
-        return;
-    }
-
-    if (s_wasAny || g_weaponTweaksNeedReapply) {
-        CWeaponInfo::LoadWeaponData();
-    }
-
     CWeaponInfo* info = CWeaponInfo::GetWeaponInfo(weapon.m_eWeaponType);
-    if (!info) {
-        return;
-    }
+    if (!info) return;
 
     if (hugeDamage) {
         info->m_nDamage = 1000;
@@ -1138,28 +1071,10 @@ void ProcessWeaponTweaks(CPlayerPed* player, bool hugeDamage, bool longRange, bo
     if (noSpread) {
         info->m_fSpread = 0.0f;
     }
-    if (fireRateActive) {
-        if (info->m_nFiringRate > 0) {
-            const float scaled = static_cast<float>(info->m_nFiringRate) / effectiveRate;
-            info->m_nFiringRate = scaled < 1.0f ? 1u : static_cast<unsigned int>(scaled);
-        }
-        // III 只有一组主循环 + 第二开火帧
-        scaleAnimLoop(info->m_fAnimLoopStart, info->m_fAnimLoopEnd, info->m_fAnimFrameFire, effectiveRate);
-        if (info->m_fAnim2FrameFire > 0.0f) {
-            info->m_fAnim2FrameFire = info->m_fAnim2FrameFire / effectiveRate;
-        }
-    }
-
-    s_wasAny = true;
-    s_lastType = type;
-    s_lastMask = mask;
-    s_lastRateQ = rateQ;
-    g_weaponTweaksNeedReapply = false;
 }
 
 void ResetWeaponStats() {
     CWeaponInfo::LoadWeaponData();
-    g_weaponTweaksNeedReapply = true;
 }
 
 void SetTime(int hour, int minute) {

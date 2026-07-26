@@ -24,7 +24,6 @@ namespace AppConfig {
         long long timestamp = 0;
         std::string tagName;
         std::string htmlUrl;
-        std::string source; // GTAMODX | GitHub
     };
 
     struct PersistentFeatureState {

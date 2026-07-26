@@ -40,17 +40,6 @@ namespace MenuState {
     inline bool MoveAim = false;
     inline bool MoveFire = false;
     inline bool NoSpread = false;
-    inline bool WeaponFireRateEnabled = false;     // 自定义射速倍率
-    inline float WeaponFireRate = 2.0f;            // 1.0=原速，越大越快
-    inline bool WeaponPedEsp = false;              // 绘制行人包围盒线框
-    inline bool WeaponPedColEsp = false;           // 绘制行人碰撞体局部线框
-    inline bool WeaponPedSkeleton = false;         // 绘制行人骨骼
-    inline bool WeaponVehicleEsp = false;          // 绘制车辆包围盒线框
-    inline bool WeaponVehicleColEsp = false;       // 绘制车辆碰撞体局部线框
-    inline bool WeaponBulletTrack = false;         // 子弹追踪
-    inline bool WeaponBulletThroughWalls = false;  // 子弹穿墙
-    inline float WeaponBulletLockRange = 100.0f;   // 追踪锁定最大距离 米
-    inline int WeaponBulletMaxTargets = 4;         // 同时锁定目标数（1=单目标，>1 可分配到多个目标）
     inline int WeaponAmmo = 9999;
     inline int WeaponSpawnId = 0;
     inline int WeaponCyclerId = 1;
