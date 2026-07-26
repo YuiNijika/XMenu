@@ -85,6 +85,7 @@
   "overlay.gangWars": "Gang wars",
   "overlay.infiniteAmmo": "Infinite ammo",
   "overlay.rapidFire": "Rapid fire",
+  "overlay.fireRate": "Custom fire rate",
   "overlay.disableReplay": "Disable replay",
   "overlay.disableCheats": "Disable cheats",
   "overlay.solidWater": "Solid water",

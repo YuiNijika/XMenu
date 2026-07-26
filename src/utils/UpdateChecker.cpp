@@ -16,9 +16,15 @@
 #include <vector>
 
 extern const bool XMENU_DEBUG_MODE;
+extern const char* XMENU_URL;
+extern const char* XMENU_GITHUB;
 
 namespace {
     constexpr std::time_t CacheTtlSeconds = 24 * 60 * 60;
+    constexpr const char* GtamodxApiUrl = "https://api.miomoe.cn/modx/mod/xmenu";
+    constexpr const char* GithubApiUrl = "https://api.github.com/repos/YuiNijika/XMenu/releases/latest";
+    constexpr const char* GithubReleasesUrl = "https://github.com/YuiNijika/XMenu/releases";
+    constexpr const char* GtamodxPageUrl = "https://gtamodx.com/mods/xmenu";
 
     void DebugUpdate(const std::string& message) {
         if (XMENU_DEBUG_MODE) {
@@ -31,7 +37,6 @@ namespace {
     std::atomic<bool> started{ false };
     std::atomic<bool> dismissed{ false };
     std::atomic<bool> debugUpdateDialog{ false };
-    std::string configuredApiUrl;
     std::string configuredCurrentVersion;
     UpdateChecker::UpdateInfo updateInfo;
 
@@ -137,11 +142,40 @@ namespace {
         return UpdateChecker::VersionStatus::Equal;
     }
 
-    void ApplyVersionInfo(const std::string& currentVersion, const std::string& latestVersion, const std::string& releaseUrl) {
+    const char* SourceNameOf(UpdateChecker::UpdateSource source) {
+        switch (source) {
+        case UpdateChecker::UpdateSource::GTAMODX:
+            return "GTAMODX";
+        case UpdateChecker::UpdateSource::GitHub:
+            return "GitHub";
+        case UpdateChecker::UpdateSource::Unknown:
+        default:
+            return "Unknown";
+        }
+    }
+
+    UpdateChecker::UpdateSource SourceFromName(const std::string& name) {
+        if (name == "GTAMODX") {
+            return UpdateChecker::UpdateSource::GTAMODX;
+        }
+        if (name == "GitHub") {
+            return UpdateChecker::UpdateSource::GitHub;
+        }
+        return UpdateChecker::UpdateSource::Unknown;
+    }
+
+    void ApplyVersionInfo(
+        const std::string& currentVersion,
+        const std::string& latestVersion,
+        const std::string& releaseUrl,
+        UpdateChecker::UpdateSource source
+    ) {
         std::lock_guard<std::mutex> lock(updateMutex);
         updateInfo.currentVersion = currentVersion;
         updateInfo.latestVersion = latestVersion;
         updateInfo.releaseUrl = releaseUrl;
+        updateInfo.source = source;
+        updateInfo.sourceName = SourceNameOf(source);
         updateInfo.status = BuildStatus(currentVersion, latestVersion);
         updateInfo.available = updateInfo.status == UpdateChecker::VersionStatus::RemoteNewer;
         if (updateInfo.available) {
@@ -174,9 +208,9 @@ namespace {
         return decoded;
     }
 
-    std::string ExtractJsonString(const std::string& json, const char* key) {
+    std::string ExtractJsonString(const std::string& json, const char* key, std::size_t start = 0) {
         const std::string pattern = std::string("\"") + key + "\"";
-        const std::size_t keyPosition = json.find(pattern);
+        const std::size_t keyPosition = json.find(pattern, start);
         if (keyPosition == std::string::npos) {
             return {};
         }
@@ -212,7 +246,20 @@ namespace {
         return DecodeJsonString(json.substr(valueStart + 1, valueEnd - valueStart - 1));
     }
 
-    bool LoadCache(std::string& latestVersion, std::string& releaseUrl) {
+    // GTAMODX: data.version
+    std::string ExtractGtamodxVersion(const std::string& json) {
+        const std::size_t dataPos = json.find("\"data\"");
+        if (dataPos == std::string::npos) {
+            return {};
+        }
+        const std::size_t objectStart = json.find('{', dataPos);
+        if (objectStart == std::string::npos) {
+            return {};
+        }
+        return ExtractJsonString(json, "version", objectStart);
+    }
+
+    bool LoadCache(std::string& latestVersion, std::string& releaseUrl, UpdateChecker::UpdateSource& source) {
         AppConfig::UpdateCache cache;
         if (!AppConfig::LoadUpdateCache(cache)) {
             DebugUpdate(std::string("缓存不存在：") + AppConfig::GetConfigPath());
@@ -228,29 +275,34 @@ namespace {
 
         latestVersion = cache.tagName;
         releaseUrl = cache.htmlUrl;
-        DebugUpdate(std::string("缓存命中：") + latestVersion);
+        source = SourceFromName(cache.source);
+        if (source == UpdateChecker::UpdateSource::Unknown) {
+            source = UpdateChecker::UpdateSource::GitHub;
+        }
+        DebugUpdate(std::string("缓存命中：") + latestVersion + " @ " + SourceNameOf(source));
         return true;
     }
 
-    void SaveCache(const std::string& latestVersion, const std::string& releaseUrl) {
+    void SaveCache(const std::string& latestVersion, const std::string& releaseUrl, UpdateChecker::UpdateSource source) {
         AppConfig::UpdateCache cache;
         cache.timestamp = static_cast<long long>(std::time(nullptr));
         cache.tagName = latestVersion;
         cache.htmlUrl = releaseUrl;
+        cache.source = SourceNameOf(source);
         AppConfig::SaveUpdateCache(cache);
     }
 
-    bool DownloadText(const char* url, std::string& output) {
+    bool DownloadText(const char* url, std::string& output, const char* label) {
         char cachePath[MAX_PATH] = {};
         const HRESULT result = URLDownloadToCacheFileA(nullptr, url, cachePath, MAX_PATH, 0, nullptr);
         if (FAILED(result) || cachePath[0] == '\0') {
-            Log::Warn("更新检查失败：无法请求 GitHub Releases API");
+            Log::Warn(std::string("更新检查失败：无法请求 ") + label);
             return false;
         }
 
         std::ifstream file(cachePath, std::ios::binary);
         if (!file.is_open()) {
-            Log::Warn("更新检查失败：无法读取 API 响应缓存");
+            Log::Warn(std::string("更新检查失败：无法读取 ") + label + " 响应缓存");
             return false;
         }
 
@@ -258,51 +310,97 @@ namespace {
         return !output.empty();
     }
 
-    void CheckLatestRelease(std::string apiUrl, std::string currentVersion, bool useCache) {
+    bool TryGtamodx(std::string& latestVersion, std::string& releaseUrl) {
+        std::string response;
+        if (!DownloadText(GtamodxApiUrl, response, "GTAMODX API")) {
+            return false;
+        }
+
+        latestVersion = ExtractGtamodxVersion(response);
+        if (latestVersion.empty()) {
+            Log::Warn("更新检查失败：GTAMODX 响应缺少 data.version");
+            return false;
+        }
+
+        releaseUrl = GtamodxPageUrl;
+        if (XMENU_URL && XMENU_URL[0] != '\0') {
+            releaseUrl = XMENU_URL;
+        }
+        return true;
+    }
+
+    bool TryGithub(std::string& latestVersion, std::string& releaseUrl) {
+        std::string response;
+        if (!DownloadText(GithubApiUrl, response, "GitHub Releases API")) {
+            return false;
+        }
+
+        latestVersion = ExtractJsonString(response, "tag_name");
+        releaseUrl = ExtractJsonString(response, "html_url");
+        if (latestVersion.empty()) {
+            Log::Warn("更新检查失败：GitHub Releases API 响应缺少 tag_name");
+            return false;
+        }
+
+        if (releaseUrl.empty()) {
+            releaseUrl = GithubReleasesUrl;
+        }
+        return true;
+    }
+
+    void CheckLatestRelease(std::string currentVersion, bool useCache) {
         checking = true;
-        DebugUpdate(std::string("开始检查，API=") + apiUrl + "，本地=" + currentVersion + (useCache ? "，允许缓存" : "，强制刷新"));
+        DebugUpdate(std::string("开始双源检查，本地=") + currentVersion + (useCache ? "，允许缓存" : "，强制刷新"));
 
         std::string latestVersion;
         std::string releaseUrl;
-        if (useCache && LoadCache(latestVersion, releaseUrl)) {
-            ApplyVersionInfo(currentVersion, latestVersion, releaseUrl);
-            Log::Info(std::string("使用缓存的云端版本：") + latestVersion);
+        UpdateChecker::UpdateSource source = UpdateChecker::UpdateSource::Unknown;
+
+        if (useCache && LoadCache(latestVersion, releaseUrl, source)) {
+            ApplyVersionInfo(currentVersion, latestVersion, releaseUrl, source);
+            Log::Info(std::string("使用缓存的云端版本：") + latestVersion + "（源：" + SourceNameOf(source) + "）");
             checking = false;
             return;
         }
 
-        std::string response;
-        if (DownloadText(apiUrl.c_str(), response)) {
-            latestVersion = ExtractJsonString(response, "tag_name");
-            releaseUrl = ExtractJsonString(response, "html_url");
-
-            if (latestVersion.empty()) {
-                Log::Warn("更新检查失败：GitHub Releases API 响应缺少 tag_name");
-            } else {
-                if (releaseUrl.empty()) {
-                    releaseUrl = "https://github.com/YuiNijika/XMenu/releases";
-                }
-
-                SaveCache(latestVersion, releaseUrl);
-                ApplyVersionInfo(currentVersion, latestVersion, releaseUrl);
-                Log::Info(std::string("更新检查完成：本地 ") + currentVersion + "，云端 " + latestVersion);
-            }
+        // 1) 优先 GTAMODX data.version
+        if (TryGtamodx(latestVersion, releaseUrl)) {
+            source = UpdateChecker::UpdateSource::GTAMODX;
+            SaveCache(latestVersion, releaseUrl, source);
+            ApplyVersionInfo(currentVersion, latestVersion, releaseUrl, source);
+            Log::Info(std::string("更新检查完成 [GTAMODX]：本地 ") + currentVersion + "，云端 " + latestVersion);
+            checking = false;
+            return;
         }
 
+        // 2) 回退 GitHub tag_name
+        if (TryGithub(latestVersion, releaseUrl)) {
+            source = UpdateChecker::UpdateSource::GitHub;
+            SaveCache(latestVersion, releaseUrl, source);
+            ApplyVersionInfo(currentVersion, latestVersion, releaseUrl, source);
+            Log::Info(std::string("更新检查完成 [GitHub]：本地 ") + currentVersion + "，云端 " + latestVersion);
+            checking = false;
+            return;
+        }
+
+        Log::Warn("更新检查失败：GTAMODX 与 GitHub 均不可用");
         checking = false;
     }
 }
 
 namespace UpdateChecker {
-    void Start(const char* apiUrl, const char* currentVersion) {
-        if (!apiUrl || !currentVersion || started.exchange(true)) {
+    const char* SourceDisplayName(UpdateSource source) {
+        return SourceNameOf(source);
+    }
+
+    void Start(const char* currentVersion) {
+        if (!currentVersion || started.exchange(true)) {
             return;
         }
 
-        ApplyVersionInfo(currentVersion, "", "");
-        configuredApiUrl = apiUrl;
+        ApplyVersionInfo(currentVersion, "", "", UpdateSource::Unknown);
         configuredCurrentVersion = currentVersion;
-        std::thread(CheckLatestRelease, std::string(apiUrl), std::string(currentVersion), true).detach();
+        std::thread(CheckLatestRelease, std::string(currentVersion), true).detach();
     }
 
     void Refresh() {
@@ -311,12 +409,12 @@ namespace UpdateChecker {
             return;
         }
 
-        if (configuredApiUrl.empty() || configuredCurrentVersion.empty()) {
+        if (configuredCurrentVersion.empty()) {
             DebugUpdate("刷新被跳过：更新检查尚未初始化");
             return;
         }
 
-        std::thread(CheckLatestRelease, configuredApiUrl, configuredCurrentVersion, false).detach();
+        std::thread(CheckLatestRelease, configuredCurrentVersion, false).detach();
     }
 
     bool IsChecking() {
@@ -347,7 +445,12 @@ namespace UpdateChecker {
     }
 
     void ForceDebugUpdate() {
-        ApplyVersionInfo(configuredCurrentVersion.empty() ? "v0.0.0" : configuredCurrentVersion, "v999.999.999-debug", "https://github.com/YuiNijika/XMenu/releases");
+        ApplyVersionInfo(
+            configuredCurrentVersion.empty() ? "v0.0.0" : configuredCurrentVersion,
+            "v999.999.999-debug",
+            GithubReleasesUrl,
+            UpdateSource::GitHub
+        );
         debugUpdateDialog = true;
         dismissed = false;
         DebugUpdate("已注入调试更新状态，用于测试更新弹窗");

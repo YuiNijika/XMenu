@@ -5,5 +5,7 @@
   "update.openGTAMODX": "GTAMODX",
   "update.details": "版本检测",
   "update.refresh": "刷新检测",
+  "update.source": "检测源：%s",
+  "update.sourceHint": "优先 GTAMODX，失败时回退 GitHub",
   "update.debugShowDialog": "测试更新弹窗"
 }
