@@ -223,15 +223,16 @@ namespace Controllers::Player {
 
     void Process() {
         CPlayerPed* player = GetPlayer();
-        ProcessGodMode(player);
-
-        GameLogic::SetInfiniteSprint(MenuState::InfiniteSprint);
-        GameLogic::SetKeepStuff(MenuState::KeepStuff);
-
         if (!player) {
-            ProcessFreeFly(player);
+            // 玩家未创建时不写 Players[] / 不打补丁，III 启动与读档窗口尤其敏感
+            ProcessGodMode(nullptr);
+            ProcessFreeFly(nullptr);
             return;
         }
+
+        ProcessGodMode(player);
+        GameLogic::SetInfiniteSprint(MenuState::InfiniteSprint);
+        GameLogic::SetKeepStuff(MenuState::KeepStuff);
 
         GameLogic::ProcessAutoHeal(player, MenuState::AutoHeal);
         GameLogic::ProcessHardMode(player, MenuState::HardMode);

@@ -171,6 +171,10 @@ bool PatchBytesIfExpected(const char* label, std::uintptr_t address, const unsig
 
 namespace GameLogic {
 
+bool IsWorldReady() {
+    return true;
+}
+
 void Init() {
 }
 

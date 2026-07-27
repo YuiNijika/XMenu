@@ -910,6 +910,14 @@ namespace {
             JsonLoader::GetBool(weapon, "espDrawNeutral", MenuState::WeaponTrackNeutral));
         MenuState::WeaponTrackCivilian = JsonLoader::GetBool(weapon, "trackCivilian", MenuState::WeaponTrackCivilian);
         MenuState::WeaponBulletHardLock = JsonLoader::GetBool(weapon, "bulletHardLock", MenuState::WeaponBulletHardLock);
+        MenuState::WeaponBulletAimPart = static_cast<int>(JsonLoader::GetNumber(
+            weapon, "bulletAimPart", MenuState::WeaponBulletAimPart));
+        if (MenuState::WeaponBulletAimPart < 0) {
+            MenuState::WeaponBulletAimPart = 0;
+        }
+        if (MenuState::WeaponBulletAimPart > 3) {
+            MenuState::WeaponBulletAimPart = 3;
+        }
     }
 
     void WriteWeaponConfig(std::ostream& file, const std::string& indent, bool trailingComma) {
@@ -919,7 +927,8 @@ namespace {
         file << indent << "  \"trackFriend\": " << (MenuState::WeaponTrackFriend ? "true" : "false") << ",\n";
         file << indent << "  \"trackHostile\": " << (MenuState::WeaponTrackHostile ? "true" : "false") << ",\n";
         file << indent << "  \"trackNeutral\": " << (MenuState::WeaponTrackNeutral ? "true" : "false") << ",\n";
-        file << indent << "  \"bulletHardLock\": " << (MenuState::WeaponBulletHardLock ? "true" : "false") << "\n";
+        file << indent << "  \"bulletHardLock\": " << (MenuState::WeaponBulletHardLock ? "true" : "false") << ",\n";
+        file << indent << "  \"bulletAimPart\": " << MenuState::WeaponBulletAimPart << "\n";
         file << indent << "}" << (trailingComma ? "," : "") << "\n";
     }
 

@@ -271,6 +271,10 @@ bool g_weaponTweaksNeedReapply = true;
 
 namespace GameLogic {
 
+bool IsWorldReady() {
+    return true;
+}
+
 void Init() {
     plugin::Events::pedRenderEvent += [](CPed* ped) {
         if (!ped || !ped->m_pRwClump) return;

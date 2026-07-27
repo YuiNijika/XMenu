@@ -54,6 +54,8 @@ namespace MenuState {
     inline bool WeaponTrackHostile = true;         // 任务-敌对
     inline bool WeaponTrackNeutral = true;         // 任务-中立
     inline bool WeaponBulletHardLock = false;      // 独立：是否跟随准星（强锁相机，不绑死追踪筛选）
+    // 优先锁定部位 0头 1胸 2腹 3腿
+    inline int WeaponBulletAimPart = 1;
     inline bool WeaponBulletThroughWalls = false;  // 子弹穿墙
     inline float WeaponBulletLockRange = 100.0f;   // 追踪锁定最大距离 米
     inline int WeaponBulletMaxTargets = 4;         // 同时锁定目标数（1=单目标，>1 可分配到多个目标）

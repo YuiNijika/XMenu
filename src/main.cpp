@@ -29,7 +29,7 @@
 #endif
 
 extern const bool XMENU_DEBUG_MODE = false;
-const char* XMENU_VERSION = "v0.0.3-rc";
+const char* XMENU_VERSION = "v0.0.4-rc";
 const char* XMENU_AUTHOR = "鼠子(YuiNijika)";
 const char* XMENU_AUTHOR_TEST = "枫林、狂风晨、IIScar、Happy";
 const char* XMENU_URL = "https://gtamodx.com/mods/xmenu";
@@ -42,7 +42,7 @@ const char* XMENU_OPEN_SOURCE_LIBS = "Dear ImGui, kiero, MinHook, plugin-sdk";
 namespace {
     bool xMenuActive = false;
 
-    // -1=等 initGame  0=i18n+config 1=逻辑/更新 2=D3D 3=收尾 4=就绪
+    // -1=等 initGame 0=i18n+config 1=逻辑/更新 2=D3D 3=收尾 4=就绪
     // 分帧做重活，避免 initGame 一帧内同步扫盘/装 hook 造成明显卡顿
     int bootstrapStage = -1;
 
@@ -112,6 +112,7 @@ namespace {
             CFastman92limitAdjuster::Init();
             Log::Info("FLA 初始化完成");
 #endif
+            // 新游戏/读档会再次 init：允许重新分帧；III 的 world-ready 计数在 IsWorldReady 内自行清零
             bootstrapStage = 0;
         };
 
@@ -120,12 +121,21 @@ namespace {
                 return;
             }
 
+            // I18n/配置不碰游戏堆；可在池未就绪时推进
+            // GameLogic::Init / Process / Menu 必须等 III 池与玩家稳定
             if (bootstrapStage < 4) {
+                if (bootstrapStage >= 1 && !GameLogic::IsWorldReady()) {
+                    return;
+                }
                 AdvanceBootstrap();
                 // 启动帧只推进一个阶段，尽快把控制权交回游戏
                 if (bootstrapStage < 4) {
                     return;
                 }
+            }
+
+            if (!GameLogic::IsWorldReady()) {
+                return;
             }
 
             GameLogic::Process();

@@ -212,6 +212,24 @@ namespace Pages::Weapon {
                     ImGui::Columns(1);
 
                     ImGui::Spacing();
+                    ImGui::TextUnformatted(T("weapon.aimPart"));
+                    ImGui::Columns(4, nullptr, false);
+                    ImGui::RadioButton(T("weapon.aimHead"), &MenuState::WeaponBulletAimPart, 0);
+                    ImGui::NextColumn();
+                    ImGui::RadioButton(T("weapon.aimChest"), &MenuState::WeaponBulletAimPart, 1);
+                    ImGui::NextColumn();
+                    ImGui::RadioButton(T("weapon.aimBelly"), &MenuState::WeaponBulletAimPart, 2);
+                    ImGui::NextColumn();
+                    ImGui::RadioButton(T("weapon.aimLegs"), &MenuState::WeaponBulletAimPart, 3);
+                    ImGui::Columns(1);
+                    if (MenuState::WeaponBulletAimPart < 0) {
+                        MenuState::WeaponBulletAimPart = 0;
+                    }
+                    if (MenuState::WeaponBulletAimPart > 3) {
+                        MenuState::WeaponBulletAimPart = 3;
+                    }
+
+                    ImGui::Spacing();
                     ImGui::PushItemWidth(220.0f);
                     ImGui::SliderFloat(T("weapon.bulletLockRange"), &MenuState::WeaponBulletLockRange, 10.0f, 300.0f, "%.0f");
                     ImGui::SliderInt(T("weapon.bulletMaxTargets"), &MenuState::WeaponBulletMaxTargets, 1, 16);

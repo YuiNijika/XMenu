@@ -18,6 +18,7 @@
 #include "CWeapon.h"
 #include "CCamera.h"
 #include "CPad.h"
+#include "CTimer.h"
 #include "AnimBlendFrameData.h"
 #include "eObjective.h"
 #include "ePedType.h"
@@ -61,10 +62,8 @@ namespace {
     int s_playerBulletDepth = 0;
 
     constexpr float kPi = 3.14159265f;
-    // 脚底→约胸口/下颌；仅作节点失败时的兜底（0.85 会打到头顶外）
-    constexpr float kPedAimZFallback = 0.70f;
-    // 头节点常在颅顶，略下压到面中/下颌，避免“瞄头偏高”打空
-    constexpr float kHeadAimDrop = 0.12f;
+    // 部位点失败时的脚底兜底高度
+    constexpr float kPedAimZFallback = 0.55f;
     // 终点略过瞄准点，让线段真正穿过 ColSphere 而不是停在表面外
     constexpr float kTrackRayPast = 0.45f;
 
@@ -85,6 +84,7 @@ namespace {
     };
 
     struct TrackCandidate {
+        CPed* ped = nullptr;
         CVector pos{};
         float playerDistSq = 0.0f;
         float score = 0.0f; // 越高越优先
@@ -102,6 +102,12 @@ namespace {
         CVector target{};
     };
     ShotTrackState s_shotTrack;
+
+    // 粘主目标，不跟子弹 round-robin
+    struct HardLockState {
+        CPed* ped = nullptr;
+    };
+    HardLockState s_hardLock;
 
     struct PlayerShotScope {
         bool active = false;
@@ -333,31 +339,72 @@ namespace {
         }
     }
 
-    // 优先头/躯干世界坐标（SEH）；失败再用脚底 + 固定高度
+    // 按优先锁定部位取点；节点失败再回退
     CVector PedAimPoint(CPed* ped) {
+        const int part = MenuState::WeaponBulletAimPart;
         float x = 0.0f;
         float y = 0.0f;
         float z = 0.0f;
-        if (SafePedNodeWorldPos(ped, PED_NODE_HEAD, &x, &y, &z)) {
+
+        auto fromNode = [&](int node, float zBias, CVector& out) -> bool {
+            if (!SafePedNodeWorldPos(ped, node, &x, &y, &z)) {
+                return false;
+            }
             const CVector base = ped->GetPosition();
             const float dx = x - base.x;
             const float dy = y - base.y;
             const float dz = z - base.z;
-            if (dx * dx + dy * dy + dz * dz <= 36.0f
-                && std::isfinite(x) && std::isfinite(y) && std::isfinite(z)) {
-                return CVector(x, y, z - kHeadAimDrop);
+            if (dx * dx + dy * dy + dz * dz > 36.0f
+                || !std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z)) {
+                return false;
             }
+            out = CVector(x, y, z + zBias);
+            return true;
+        };
+
+        CVector out{};
+        switch (part) {
+        case 0:
+            if (fromNode(PED_NODE_HEAD, -0.18f, out)) {
+                return out;
+            }
+            break;
+        case 2: {
+            // 腹 躯干略下压；无骨盆节点时用脚底抬高
+            if (fromNode(PED_NODE_TORSO, -0.22f, out)) {
+                return out;
+            }
+            CVector pos = ped->GetPosition();
+            pos.z += 0.42f;
+            return pos;
         }
-        if (SafePedNodeWorldPos(ped, PED_NODE_TORSO, &x, &y, &z)) {
-            const CVector base = ped->GetPosition();
-            const float dx = x - base.x;
-            const float dy = y - base.y;
-            const float dz = z - base.z;
-            if (dx * dx + dy * dy + dz * dz <= 36.0f
-                && std::isfinite(x) && std::isfinite(y) && std::isfinite(z)) {
-                // 躯干中心略抬到上胸，命中体积更大
-                return CVector(x, y, z + 0.10f);
+        case 3: {
+            float lx = 0.0f, ly = 0.0f, lz = 0.0f;
+            float rx = 0.0f, ry = 0.0f, rz = 0.0f;
+            const bool lOk = SafePedNodeWorldPos(ped, PED_NODE_LEG_L, &lx, &ly, &lz)
+                || SafePedNodeWorldPos(ped, PED_NODE_FOOT_L, &lx, &ly, &lz);
+            const bool rOk = SafePedNodeWorldPos(ped, PED_NODE_LEG_R, &rx, &ry, &rz)
+                || SafePedNodeWorldPos(ped, PED_NODE_FOOT_R, &rx, &ry, &rz);
+            if (lOk && rOk && std::isfinite(lx) && std::isfinite(rx)) {
+                return CVector((lx + rx) * 0.5f, (ly + ry) * 0.5f, (lz + rz) * 0.5f + 0.12f);
             }
+            CVector pos = ped->GetPosition();
+            pos.z += 0.35f;
+            return pos;
+        }
+        case 1:
+        default:
+            if (fromNode(PED_NODE_TORSO, -0.05f, out)) {
+                return out;
+            }
+            break;
+        }
+
+        if (fromNode(PED_NODE_TORSO, -0.05f, out)) {
+            return out;
+        }
+        if (fromNode(PED_NODE_HEAD, -0.22f, out)) {
+            return out;
         }
         CVector pos = ped->GetPosition();
         pos.z += kPedAimZFallback;
@@ -381,6 +428,52 @@ namespace {
         return true;
     }
 
+    float NormalizeAngle(float a) {
+        while (a > kPi) {
+            a -= 2.0f * kPi;
+        }
+        while (a < -kPi) {
+            a += 2.0f * kPi;
+        }
+        return a;
+    }
+
+    float LerpAngle(float from, float to, float t) {
+        return from + NormalizeAngle(to - from) * t;
+    }
+
+    void SetCamFrontFromAngles(CCam& cam) {
+        const float cv = std::cos(cam.m_fVerticalAngle);
+        const float sv = std::sin(cam.m_fVerticalAngle);
+        const float ch = std::cos(cam.m_fHorizontalAngle);
+        const float sh = std::sin(cam.m_fHorizontalAngle);
+        cam.m_vecFront = CVector(-ch * cv, -sh * cv, sv);
+        cam.m_fAlphaSpeed = 0.0f;
+        cam.m_fBetaSpeed = 0.0f;
+    }
+
+    bool WorldToScreen(const CVector& world, ImVec2& out) {
+        RwV3d in{};
+        in.x = world.x;
+        in.y = world.y;
+        in.z = world.z;
+        RwV3d scr{};
+        float w = 0.0f;
+        float h = 0.0f;
+        if (!CSprite::CalcScreenCoors(in, &scr, &w, &h, true) || w < 1.0f || h < 1.0f) {
+            return false;
+        }
+        out = ImVec2(scr.x, scr.y);
+        return true;
+    }
+
+    void ScreenAimPoint(float& outX, float& outY) {
+        // 屏幕正中心跟随追踪目标（第三人称）
+        outX = static_cast<float>(RsGlobal.maximumWidth) * 0.5f;
+        outY = static_cast<float>(RsGlobal.maximumHeight) * 0.5f;
+    }
+
+    // 屏幕准星伺服：把追踪目标压到 CHair / 屏幕中心
     void ApplyHardLockAim(const CVector& worldTarget) {
         if (!MenuState::WeaponBulletHardLock) {
             return;
@@ -390,6 +483,55 @@ namespace {
             return;
         }
         CCam& cam = TheCamera.m_asCams[idx];
+
+        float blend = 0.55f;
+        if (CTimer::ms_fTimeStep > 0.0f) {
+            blend = std::min(1.0f, 0.35f * CTimer::ms_fTimeStep);
+        }
+        if (blend < 0.22f) {
+            blend = 0.22f;
+        }
+
+        ImVec2 scr{};
+        if (WorldToScreen(worldTarget, scr)) {
+            float aimX = 0.0f;
+            float aimY = 0.0f;
+            ScreenAimPoint(aimX, aimY);
+
+            const float halfW = std::max(1.0f, static_cast<float>(RsGlobal.maximumWidth) * 0.5f);
+            const float halfH = std::max(1.0f, static_cast<float>(RsGlobal.maximumHeight) * 0.5f);
+            const float errX = scr.x - aimX;
+            const float errY = scr.y - aimY;
+
+            float fovDeg = cam.m_fFOV;
+            if (fovDeg < 5.0f || fovDeg > 170.0f || !std::isfinite(fovDeg)) {
+                fovDeg = 70.0f;
+            }
+            const float halfFovY = fovDeg * 0.5f * (kPi / 180.0f);
+            const float aspect = halfW / halfH;
+            const float halfFovX = std::atan(std::tan(halfFovY) * aspect);
+
+            const float dH = -(errX / halfW) * halfFovX;
+            const float dV = -(errY / halfH) * halfFovY;
+
+            float horiz = cam.m_fHorizontalAngle + dH;
+            float vert = cam.m_fVerticalAngle + dV;
+
+            constexpr float kMaxPitchUp = 1.05f;
+            constexpr float kMaxPitchDown = 1.49f;
+            if (vert > kMaxPitchUp) {
+                vert = kMaxPitchUp;
+            }
+            if (vert < -kMaxPitchDown) {
+                vert = -kMaxPitchDown;
+            }
+
+            cam.m_fHorizontalAngle = LerpAngle(cam.m_fHorizontalAngle, horiz, blend);
+            cam.m_fVerticalAngle = LerpAngle(cam.m_fVerticalAngle, vert, blend);
+            SetCamFrontFromAngles(cam);
+            return;
+        }
+
         const float dx = worldTarget.x - cam.m_vecSource.x;
         const float dy = worldTarget.y - cam.m_vecSource.y;
         const float dz = worldTarget.z - cam.m_vecSource.z;
@@ -402,21 +544,61 @@ namespace {
         const float ny = dy * inv;
         const float nz = dz * inv;
         float vert = std::asin(std::max(-1.0f, std::min(1.0f, nz)));
-        float horiz = std::atan2(nx, ny);
-        constexpr float kMaxPitch = 1.35f;
-        if (vert > kMaxPitch) {
-            vert = kMaxPitch;
+        float horiz = std::atan2(-ny, -nx);
+        constexpr float kMaxPitchUp = 1.05f;
+        constexpr float kMaxPitchDown = 1.49f;
+        if (vert > kMaxPitchUp) {
+            vert = kMaxPitchUp;
         }
-        if (vert < -kMaxPitch) {
-            vert = -kMaxPitch;
+        if (vert < -kMaxPitchDown) {
+            vert = -kMaxPitchDown;
         }
-        cam.m_fHorizontalAngle = horiz;
-        cam.m_fVerticalAngle = vert;
-        const float cv = std::cos(vert);
-        const float sv = std::sin(vert);
-        const float sh = std::sin(horiz);
-        const float ch = std::cos(horiz);
-        cam.m_vecFront = CVector(sh * cv, ch * cv, sv);
+        cam.m_fHorizontalAngle = LerpAngle(cam.m_fHorizontalAngle, horiz, blend);
+        cam.m_fVerticalAngle = LerpAngle(cam.m_fVerticalAngle, vert, blend);
+        SetCamFrontFromAngles(cam);
+    }
+
+    void ClearHardLock() {
+        s_hardLock.ped = nullptr;
+    }
+
+    bool PlayerWantsHardLockInput();
+
+    CPed* ResolveHardLockPed(const std::vector<TrackCandidate>& candidates) {
+        if (candidates.empty()) {
+            ClearHardLock();
+            return nullptr;
+        }
+        if (s_hardLock.ped) {
+            for (const TrackCandidate& c : candidates) {
+                if (c.ped == s_hardLock.ped) {
+                    return s_hardLock.ped;
+                }
+            }
+        }
+        s_hardLock.ped = candidates[0].ped;
+        return s_hardLock.ped;
+    }
+
+    void ApplyHardLockToSticky(const std::vector<TrackCandidate>& candidates) {
+        if (!MenuState::WeaponBulletHardLock || !PlayerWantsHardLockInput()) {
+            if (!MenuState::WeaponBulletHardLock) {
+                ClearHardLock();
+            }
+            return;
+        }
+        CPed* ped = ResolveHardLockPed(candidates);
+        if (!ped) {
+            return;
+        }
+        CVector aim = PedAimPoint(ped);
+        for (const TrackCandidate& c : candidates) {
+            if (c.ped == ped) {
+                aim = c.pos;
+                break;
+            }
+        }
+        ApplyHardLockAim(aim);
     }
 
     bool PlayerWantsHardLockInput() {
@@ -508,7 +690,7 @@ namespace {
                 score = 1.0f / (1.0f + d2);
             }
 
-            TrackCandidate item{ pos, d2, score };
+            TrackCandidate item{ ped, pos, d2, score };
             if (static_cast<int>(candidates.size()) < maxTargets) {
                 candidates.push_back(item);
                 std::push_heap(candidates.begin(), candidates.end(), worseScore);
@@ -549,6 +731,7 @@ namespace {
         const std::vector<TrackCandidate> candidates = CollectTrackCandidates();
         RefreshLockVisuals(candidates);
         if (candidates.empty()) {
+            ClearHardLock();
             return;
         }
 
@@ -559,7 +742,7 @@ namespace {
             ++s_trackRoundRobin;
         }
         s_shotTrack.hasTarget = true;
-        ApplyHardLockAim(s_shotTrack.target);
+        ApplyHardLockToSticky(candidates);
     }
 
     void EndShotTrack() {
@@ -768,21 +951,6 @@ namespace {
         }
 
         Log::Info("BulletAssist VC: Fire/InstantHit/LOS 追踪 hook 已就绪");
-    }
-
-    bool WorldToScreen(const CVector& world, ImVec2& out) {
-        RwV3d in{};
-        in.x = world.x;
-        in.y = world.y;
-        in.z = world.z;
-        RwV3d scr{};
-        float w = 0.0f;
-        float h = 0.0f;
-        if (!CSprite::CalcScreenCoors(in, &scr, &w, &h, true) || w < 1.0f || h < 1.0f) {
-            return false;
-        }
-        out = ImVec2(scr.x, scr.y);
-        return true;
     }
 
     void DrawWorldLine(ImDrawList* dl, const CVector& a, const CVector& b, ImU32 color, float thickness = 1.25f) {
@@ -1046,18 +1214,13 @@ namespace Controllers::BulletAssist {
     void Process() {
         s_lock.targets.clear();
         if (!MenuState::WeaponBulletTrack) {
+            ClearHardLock();
             return;
         }
         EnsureHook();
         const std::vector<TrackCandidate> candidates = CollectTrackCandidates();
         RefreshLockVisuals(candidates);
-        if (MenuState::WeaponBulletHardLock && PlayerWantsHardLockInput() && !candidates.empty()) {
-            if (s_shotTrack.hasTarget) {
-                ApplyHardLockAim(s_shotTrack.target);
-            } else {
-                ApplyHardLockAim(candidates[0].pos);
-            }
-        }
+        ApplyHardLockToSticky(candidates);
     }
 
     void Draw() {

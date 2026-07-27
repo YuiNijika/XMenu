@@ -239,4 +239,8 @@ namespace GameLogic {
     // 通用
     void Init();
     void Process();
+
+    // III 池/玩家惰性分配：未就绪时禁止碰游戏内存
+    // VC/SA 通常恒 true；III 需 ped pool + 玩家 ped 稳定若干帧
+    bool IsWorldReady();
 }

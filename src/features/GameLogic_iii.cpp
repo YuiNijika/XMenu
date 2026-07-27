@@ -3,6 +3,7 @@
 #include "resources/ResourceData.h"
 #include "CPlayerPed.h"
 #include "CWorld.h"
+#include "CPools.h"
 #include "CStreaming.h"
 #include "CVehicle.h"
 #include "CAutomobile.h"
@@ -171,11 +172,69 @@ bool PatchBytesIfExpected(const char* label, std::uintptr_t address, const unsig
 
 namespace GameLogic {
 
+namespace {
+    int g_worldReadyStreak = 0;
+    bool g_logicHooksInstalled = false;
+
+    bool ArePoolsAlive() {
+        if (!CPools::ms_pPedPool || !CPools::ms_pPedPool->m_pObjects || CPools::ms_pPedPool->m_nSize <= 0) {
+            return false;
+        }
+        if (!CPools::ms_pVehiclePool || !CPools::ms_pVehiclePool->m_pObjects || CPools::ms_pVehiclePool->m_nSize <= 0) {
+            return false;
+        }
+        return true;
+    }
+
+    CPlayerPed* TryGetLocalPlayerPed() {
+        if (!ArePoolsAlive()) {
+            return nullptr;
+        }
+        // 不走 FindPlayerPed 游戏函数，直接读静态 Players，避免脚本半初始化时二次进脚本系统
+        const unsigned char focus = CWorld::PlayerInFocus;
+        if (focus > 1) {
+            return nullptr;
+        }
+        CPlayerPed* ped = CWorld::Players[focus].m_pPed;
+        if (!ped) {
+            return nullptr;
+        }
+        // 粗校验：指针落在 ped pool 对象块内
+        const auto* pool = CPools::ms_pPedPool;
+        const auto* begin = reinterpret_cast<const char*>(pool->m_pObjects);
+        const auto* end = begin + static_cast<std::size_t>(pool->m_nSize) * sizeof(CPlayerPed);
+        const auto* ptr = reinterpret_cast<const char*>(ped);
+        if (ptr < begin || ptr >= end) {
+            return nullptr;
+        }
+        return ped;
+    }
+}
+
+bool IsWorldReady() {
+    if (!ArePoolsAlive() || !TryGetLocalPlayerPed()) {
+        g_worldReadyStreak = 0;
+        return false;
+    }
+    // 新游戏/读档后等几帧，避开 CTheScripts::Init 与池重建窗口（Grinch 同类问题）
+    if (g_worldReadyStreak < 5) {
+        ++g_worldReadyStreak;
+        return false;
+    }
+    return true;
+}
+
 void Init() {
+    // 新游戏/读档会再次走 bootstrap，钩子只装一次
+    if (g_logicHooksInstalled) {
+        return;
+    }
+    g_logicHooksInstalled = true;
+
     // III BigHead：对齐 Cheat-Menu 的 pre-render 钩子
     static plugin::CdeclEvent<plugin::AddressList<0x4CFE12, plugin::H_CALL>, plugin::PRIORITY_AFTER, plugin::ArgPickN<CPed*, 0>, void(CPed*)> onPreRender;
     onPreRender += [](CPed* ped) {
-        if (!MenuState::BigHeadMode || !ped || !ped->m_apFrames[2]) {
+        if (!MenuState::BigHeadMode || !ped || !IsWorldReady() || !ped->m_apFrames[2]) {
             return;
         }
         RwFrame* frame = ped->m_apFrames[2]->m_pFrame;
@@ -781,7 +840,8 @@ void ProcessAutoDrive(CVehicle*, bool enable, float) {
 }
 
 void SetTrafficDensity(float density) {
-    Log::Warn("III 暂未接入交通密度调整，已跳过 " + std::to_string(density));
+    (void)density;
+    // III 未接交通密度；勿每帧打日志
 }
 
 void SetFlyingCars(bool enable) {

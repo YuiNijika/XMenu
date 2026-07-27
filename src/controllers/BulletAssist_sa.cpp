@@ -18,6 +18,7 @@
 #include "CWeapon.h"
 #include "CCamera.h"
 #include "CPad.h"
+#include "CTimer.h"
 #include "ePedBones.h"
 #include "ePedState.h"
 #include "ePedType.h"
@@ -69,6 +70,7 @@ namespace {
     constexpr float kPi = 3.14159265f;
 
     struct TrackCandidate {
+        CPed* ped = nullptr;
         CVector pos{};
         float playerDistSq = 0.0f;
         float score = 0.0f; // 越高越优先（准星亲和 + 距离）
@@ -87,6 +89,16 @@ namespace {
     };
     ShotTrackState s_shotTrack;
 
+    // 强锁相机：粘住主目标（准星亲和最高），不跟子弹 round-robin 跳
+    struct HardLockState {
+        CPed* ped = nullptr;
+    };
+    HardLockState s_hardLock;
+
+    // 第三人称命中点回退高度（部位点失败时）
+    constexpr float kAimZFallback = 0.55f;
+    constexpr float kTrackRayPast = 0.45f;
+
     bool InBulletFire() {
         return s_bulletFireDepth > 0;
     }
@@ -95,6 +107,18 @@ namespace {
         const float dx = a.x - b.x;
         const float dy = a.y - b.y;
         return dx * dx + dy * dy;
+    }
+
+    CVector ExtendPast(const CVector& origin, const CVector& aim, float past) {
+        const float dx = aim.x - origin.x;
+        const float dy = aim.y - origin.y;
+        const float dz = aim.z - origin.z;
+        const float len = std::sqrt(dx * dx + dy * dy + dz * dz);
+        if (len < 0.05f) {
+            return aim;
+        }
+        const float s = (len + past) / len;
+        return CVector(origin.x + dx * s, origin.y + dy * s, origin.z + dz * s);
     }
 
     float LockRange() {
@@ -299,17 +323,83 @@ namespace {
     }
 
     CVector PedAimPoint(CPed* ped) {
-        // 头骨偶发无效会“看起来没追踪上”；优先头，失败用躯干，再失败用实体点
-        const CVector head = BonePos(ped, BONE_HEAD);
-        if (BoneValid(head)) {
-            return head;
+        // 0头 1胸 2腹 3腿；失败按胸→腹→头→脚底回退
+        const int part = MenuState::WeaponBulletAimPart;
+
+        auto fromBone = [&](ePedBones bone, float zBias, CVector& out) -> bool {
+            const CVector p = BonePos(ped, bone);
+            if (!BoneValid(p)) {
+                return false;
+            }
+            out = CVector(p.x, p.y, p.z + zBias);
+            return true;
+        };
+
+        CVector out{};
+        switch (part) {
+        case 0: // 头：颅顶略下压到面中
+            if (fromBone(BONE_HEAD, -0.18f, out)) {
+                return out;
+            }
+            if (fromBone(BONE_NECK, 0.05f, out)) {
+                return out;
+            }
+            break;
+        case 2: // 腹
+            if (fromBone(BONE_PELVIS, 0.12f, out)) {
+                return out;
+            }
+            if (fromBone(BONE_SPINE1, -0.15f, out)) {
+                return out;
+            }
+            break;
+        case 3: { // 腿：两膝/两髋中点
+            const CVector lk = BonePos(ped, BONE_LEFTKNEE);
+            const CVector rk = BonePos(ped, BONE_RIGHTKNEE);
+            if (BoneValid(lk) && BoneValid(rk)) {
+                return CVector(
+                    (lk.x + rk.x) * 0.5f,
+                    (lk.y + rk.y) * 0.5f,
+                    (lk.z + rk.z) * 0.5f + 0.08f);
+            }
+            const CVector lh = BonePos(ped, BONE_LEFTHIP);
+            const CVector rh = BonePos(ped, BONE_RIGHTHIP);
+            if (BoneValid(lh) && BoneValid(rh)) {
+                return CVector(
+                    (lh.x + rh.x) * 0.5f,
+                    (lh.y + rh.y) * 0.5f,
+                    (lh.z + rh.z) * 0.5f);
+            }
+            if (fromBone(BONE_PELVIS, -0.25f, out)) {
+                return out;
+            }
+            break;
         }
-        const CVector spine = BonePos(ped, BONE_SPINE1);
-        if (BoneValid(spine)) {
-            return spine;
+        case 1: // 胸（默认）
+        default:
+            if (fromBone(BONE_SPINE1, -0.05f, out)) {
+                return out;
+            }
+            if (fromBone(BONE_UPPERTORSO, -0.08f, out)) {
+                return out;
+            }
+            if (fromBone(BONE_PELVIS, 0.25f, out)) {
+                return out;
+            }
+            break;
+        }
+
+        if (fromBone(BONE_SPINE1, -0.05f, out)) {
+            return out;
+        }
+        if (fromBone(BONE_PELVIS, 0.12f, out)) {
+            return out;
+        }
+        if (fromBone(BONE_HEAD, -0.22f, out)) {
+            return out;
         }
         CVector pos = ped->GetPosition();
-        pos.z += 0.7f;
+        pos.z += kAimZFallback;
         return pos;
     }
 
@@ -330,7 +420,51 @@ namespace {
         return true;
     }
 
-    // 强锁：把活动相机角与 Front 指到目标（只在开火/瞄准时调用，不常驻改视角）
+    float NormalizeAngle(float a) {
+        while (a > kPi) {
+            a -= 2.0f * kPi;
+        }
+        while (a < -kPi) {
+            a += 2.0f * kPi;
+        }
+        return a;
+    }
+
+    float LerpAngle(float from, float to, float t) {
+        return from + NormalizeAngle(to - from) * t;
+    }
+
+    void SetCamFrontFromAngles(CCam& cam) {
+        const float cv = std::cos(cam.m_fVerticalAngle);
+        const float sv = std::sin(cam.m_fVerticalAngle);
+        const float ch = std::cos(cam.m_fHorizontalAngle);
+        const float sh = std::sin(cam.m_fHorizontalAngle);
+        // SA：Front = (-cos(h)*cos(v), -sin(h)*cos(v), sin(v))
+        cam.m_vecFront = CVector(-ch * cv, -sh * cv, sv);
+        cam.m_fAlphaSpeed = 0.0f;
+        cam.m_fBetaSpeed = 0.0f;
+    }
+
+    // 屏幕投影（强锁伺服也要用，须在 ApplyHardLock 前可用）
+    bool WorldToScreen(const CVector& world, ImVec2& out) {
+        RwV3d in{world.x, world.y, world.z};
+        RwV3d scr{};
+        float w = 0.0f;
+        float h = 0.0f;
+        if (!CSprite::CalcScreenCoors(in, &scr, &w, &h, true, true) || w < 1.0f || h < 1.0f) {
+            return false;
+        }
+        out = ImVec2(scr.x, scr.y);
+        return true;
+    }
+
+    // 屏幕正中心（用户指定第三人称跟目标基准；CHair 偏移会导致「看起来偏高」）
+    void ScreenAimPoint(float& outX, float& outY) {
+        outX = static_cast<float>(RsGlobal.maximumWidth) * 0.5f;
+        outY = static_cast<float>(RsGlobal.maximumHeight) * 0.5f;
+    }
+
+    // 强锁：把「子弹追踪目标」压到屏幕准星点（第三人称用 CHair，非纯相机 look-at）
     void ApplyHardLockAim(const CVector& worldTarget) {
         if (!MenuState::WeaponBulletHardLock) {
             return;
@@ -340,6 +474,58 @@ namespace {
             return;
         }
         CCam& cam = TheCamera.m_aCams[idx];
+
+        float blend = 0.55f;
+        if (CTimer::ms_fTimeStep > 0.0f) {
+            blend = std::min(1.0f, 0.35f * CTimer::ms_fTimeStep);
+        }
+        if (blend < 0.22f) {
+            blend = 0.22f;
+        }
+
+        ImVec2 scr{};
+        if (WorldToScreen(worldTarget, scr)) {
+            float aimX = 0.0f;
+            float aimY = 0.0f;
+            ScreenAimPoint(aimX, aimY);
+
+            const float halfW = std::max(1.0f, static_cast<float>(RsGlobal.maximumWidth) * 0.5f);
+            const float halfH = std::max(1.0f, static_cast<float>(RsGlobal.maximumHeight) * 0.5f);
+            const float errX = scr.x - aimX;
+            const float errY = scr.y - aimY;
+
+            float fovDeg = cam.m_fFOV;
+            if (fovDeg < 5.0f || fovDeg > 170.0f || !std::isfinite(fovDeg)) {
+                fovDeg = 70.0f;
+            }
+            const float halfFovY = fovDeg * 0.5f * (kPi / 180.0f);
+            const float aspect = halfW / halfH;
+            const float halfFovX = std::atan(std::tan(halfFovY) * aspect);
+
+            // 目标在准星右侧 → 向右转；目标在准星下方 → 低头
+            // 与 SA 鼠标约定一致：水平角减小 ≈ 右转；垂直角减小 ≈ 低头
+            const float dH = -(errX / halfW) * halfFovX;
+            const float dV = -(errY / halfH) * halfFovY;
+
+            float horiz = cam.m_fHorizontalAngle + dH;
+            float vert = cam.m_fVerticalAngle + dV;
+
+            constexpr float kMaxPitchUp = 1.05f;
+            constexpr float kMaxPitchDown = 1.49f;
+            if (vert > kMaxPitchUp) {
+                vert = kMaxPitchUp;
+            }
+            if (vert < -kMaxPitchDown) {
+                vert = -kMaxPitchDown;
+            }
+
+            cam.m_fHorizontalAngle = LerpAngle(cam.m_fHorizontalAngle, horiz, blend);
+            cam.m_fVerticalAngle = LerpAngle(cam.m_fVerticalAngle, vert, blend);
+            SetCamFrontFromAngles(cam);
+            return;
+        }
+
+        // 屏外回退：几何 look-at（同引擎角约定）
         const float dx = worldTarget.x - cam.m_vecSource.x;
         const float dy = worldTarget.y - cam.m_vecSource.y;
         const float dz = worldTarget.z - cam.m_vecSource.z;
@@ -351,24 +537,64 @@ namespace {
         const float nx = dx * inv;
         const float ny = dy * inv;
         const float nz = dz * inv;
-        // GTA：Front ≈ (sin(h)*cos(v), cos(h)*cos(v), sin(v))
         float vert = std::asin(std::max(-1.0f, std::min(1.0f, nz)));
-        float horiz = std::atan2(nx, ny);
-        // 略夹俯仰，避免极端仰角翻车
-        constexpr float kMaxPitch = 1.35f;
-        if (vert > kMaxPitch) {
-            vert = kMaxPitch;
+        float horiz = std::atan2(-ny, -nx);
+        constexpr float kMaxPitchUp = 1.05f;
+        constexpr float kMaxPitchDown = 1.49f;
+        if (vert > kMaxPitchUp) {
+            vert = kMaxPitchUp;
         }
-        if (vert < -kMaxPitch) {
-            vert = -kMaxPitch;
+        if (vert < -kMaxPitchDown) {
+            vert = -kMaxPitchDown;
         }
-        cam.m_fHorizontalAngle = horiz;
-        cam.m_fVerticalAngle = vert;
-        const float cv = std::cos(vert);
-        const float sv = std::sin(vert);
-        const float sh = std::sin(horiz);
-        const float ch = std::cos(horiz);
-        cam.m_vecFront = CVector(sh * cv, ch * cv, sv);
+        cam.m_fHorizontalAngle = LerpAngle(cam.m_fHorizontalAngle, horiz, blend);
+        cam.m_fVerticalAngle = LerpAngle(cam.m_fVerticalAngle, vert, blend);
+        SetCamFrontFromAngles(cam);
+    }
+
+    void ClearHardLock() {
+        s_hardLock.ped = nullptr;
+    }
+
+    bool PlayerWantsHardLockInput(); // 定义在后
+
+    // 粘性主目标：优先保持当前 ped，丢失后才换准星最优
+    CPed* ResolveHardLockPed(const std::vector<TrackCandidate>& candidates) {
+        if (candidates.empty()) {
+            ClearHardLock();
+            return nullptr;
+        }
+        if (s_hardLock.ped) {
+            for (const TrackCandidate& c : candidates) {
+                if (c.ped == s_hardLock.ped) {
+                    return s_hardLock.ped;
+                }
+            }
+        }
+        s_hardLock.ped = candidates[0].ped;
+        return s_hardLock.ped;
+    }
+
+    void ApplyHardLockToSticky(const std::vector<TrackCandidate>& candidates) {
+        if (!MenuState::WeaponBulletHardLock || !PlayerWantsHardLockInput()) {
+            if (!MenuState::WeaponBulletHardLock) {
+                ClearHardLock();
+            }
+            return;
+        }
+        CPed* ped = ResolveHardLockPed(candidates);
+        if (!ped) {
+            return;
+        }
+        // 与子弹追踪同一瞄准点，屏幕准星伺服过去
+        CVector aim = PedAimPoint(ped);
+        for (const TrackCandidate& c : candidates) {
+            if (c.ped == ped) {
+                aim = c.pos;
+                break;
+            }
+        }
+        ApplyHardLockAim(aim);
     }
 
     bool PlayerWantsHardLockInput() {
@@ -448,7 +674,7 @@ namespace {
                 score = 1.0f / (1.0f + d2);
             }
 
-            TrackCandidate item{ pos, d2, score };
+            TrackCandidate item{ ped, pos, d2, score };
             if (static_cast<int>(candidates.size()) < maxTargets) {
                 candidates.push_back(item);
                 std::push_heap(candidates.begin(), candidates.end(), worseScore);
@@ -480,7 +706,8 @@ namespace {
         }
     }
 
-    // 本发射击绑定：单目标=准星最优；多目标在 top-N 内轮询；可选强锁准星
+    // 本发射击绑定：单目标=准星最优；多目标在 top-N 内轮询
+    // 强锁相机独立：粘主目标，不跟本发 round-robin
     void BeginShotTrack() {
         s_shotTrack.hasTarget = false;
         s_shotTrack.target = CVector{};
@@ -491,6 +718,7 @@ namespace {
         const std::vector<TrackCandidate> candidates = CollectTrackCandidates();
         RefreshLockVisuals(candidates);
         if (candidates.empty()) {
+            ClearHardLock();
             return;
         }
 
@@ -501,7 +729,7 @@ namespace {
             ++s_trackRoundRobin;
         }
         s_shotTrack.hasTarget = true;
-        ApplyHardLockAim(s_shotTrack.target);
+        ApplyHardLockToSticky(candidates);
     }
 
     void EndShotTrack() {
@@ -582,12 +810,19 @@ namespace {
         bool useBuildings = buildings;
         bool useObjects = objects;
         bool useDummies = dummies;
+        bool usePeds = peds;
+        bool tracked = false;
 
         if (MenuState::WeaponBulletTrack) {
             CVector trackPos{};
             if (ResolveShotTrackTarget(trackPos)) {
-                redirected = trackPos;
+                redirected = ExtendPast(origin, trackPos, kTrackRayPast);
+                tracked = true;
             }
+        }
+
+        if (tracked) {
+            usePeds = true;
         }
 
         if (MenuState::WeaponBulletThroughWalls) {
@@ -598,7 +833,7 @@ namespace {
 
         return oProcessLineOfSight(
             origin, redirected, outColPoint, outEntity,
-            useBuildings, vehicles, peds, useObjects, useDummies,
+            useBuildings, vehicles, usePeds, useObjects, useDummies,
             doSeeThroughCheck, doCameraIgnoreCheck, doShootThroughCheck);
     }
 
@@ -707,18 +942,6 @@ namespace {
         }
 
         Log::Info("BulletAssist SA: 开火上下文 + LOS hook 已就绪");
-    }
-
-    bool WorldToScreen(const CVector& world, ImVec2& out) {
-        RwV3d in{world.x, world.y, world.z};
-        RwV3d scr{};
-        float w = 0.0f;
-        float h = 0.0f;
-        if (!CSprite::CalcScreenCoors(in, &scr, &w, &h, true, true) || w < 1.0f || h < 1.0f) {
-            return false;
-        }
-        out = ImVec2(scr.x, scr.y);
-        return true;
     }
 
     void DrawWorldLine(ImDrawList* dl, const CVector& a, const CVector& b, ImU32 color, float thickness = 1.25f) {
@@ -875,19 +1098,14 @@ namespace Controllers::BulletAssist {
     void Process() {
         s_lock.targets.clear();
         if (!MenuState::WeaponBulletTrack) {
+            ClearHardLock();
             return;
         }
         EnsureHook();
         const std::vector<TrackCandidate> candidates = CollectTrackCandidates();
         RefreshLockVisuals(candidates);
-        // 按住开火/瞄准时持续把准星拉向当前最优目标（强锁）
-        if (MenuState::WeaponBulletHardLock && PlayerWantsHardLockInput() && !candidates.empty()) {
-            if (s_shotTrack.hasTarget) {
-                ApplyHardLockAim(s_shotTrack.target);
-            } else {
-                ApplyHardLockAim(candidates[0].pos);
-            }
-        }
+        // 按住开火/瞄准：强锁粘住主目标，不跟多目标轮询跳视角
+        ApplyHardLockToSticky(candidates);
     }
 
     void Draw() {
