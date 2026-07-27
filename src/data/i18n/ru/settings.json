@@ -88,5 +88,13 @@
   "settings.theme": "Тема",
   "settings.listMouseHint": "Выкл.: только клавиатура/геймпад, без курсора",
   "settings.listNavHint": "Список: ↑↓ выбор · Enter · ←/Backspace/Esc назад · влево/вправо значение",
-  "settings.interactionHint": "Только мышь — без клавиатурной навигации; Клавиатура+мышь — фокус стрелками"
+  "settings.interactionHint": "Только мышь — без клавиатурной навигации; Клавиатура+мышь — фокус стрелками",
+  "settings.listMenuTheme": "Тема списочного меню",
+  "theme.list.classic": "Ч/б классика (Classic)",
+  "theme.list.red": "Rockstar Red",
+  "theme.list.vice": "Vice Pink",
+  "theme.list.midnight": "Midnight Blue",
+  "theme.list.emerald": "Emerald Green",
+  "theme.list.sa": "SA Orange",
+  "theme.list.light": "Pure Light"
 }

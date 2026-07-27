@@ -88,5 +88,13 @@
   "settings.theme": "テーマ",
   "settings.listMouseHint": "オフ時はキーボード/パッドのみ（カーソル非表示）",
   "settings.listNavHint": "リスト操作: ↑↓選択 · Enter決定 · ←/Backspace/Esc戻る · 左右で数値",
-  "settings.interactionHint": "マウスのみはキーボードフォーカス無効。キーボード+マウスは矢印でフォーカス移動"
+  "settings.interactionHint": "マウスのみはキーボードフォーカス無効。キーボード+マウスは矢印でフォーカス移動",
+  "settings.listMenuTheme": "リストモードテーマ色",
+  "theme.list.classic": "白黒クラシック (Classic)",
+  "theme.list.red": "R*レッド (Rockstar Red)",
+  "theme.list.vice": "ヴァイスピンク (Vice Pink)",
+  "theme.list.midnight": "ミッドナイトブルー (Midnight Blue)",
+  "theme.list.emerald": "エメラルドグリーン (Emerald Green)",
+  "theme.list.sa": "SA オレンジ (SA Orange)",
+  "theme.list.light": "ピュアホワイト (Pure Light)"
 }
