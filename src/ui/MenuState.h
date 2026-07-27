@@ -48,6 +48,12 @@ namespace MenuState {
     inline bool WeaponVehicleEsp = false;          // 绘制车辆包围盒线框
     inline bool WeaponVehicleColEsp = false;       // 绘制车辆碰撞体局部线框
     inline bool WeaponBulletTrack = false;         // 子弹追踪
+    // 追踪筛选（开追踪后 UI 多选）：非任务 / 任务友敌中立
+    inline bool WeaponTrackCivilian = true;        // 其他（非任务行人）
+    inline bool WeaponTrackFriend = false;         // 任务-友方（默认不锁）
+    inline bool WeaponTrackHostile = true;         // 任务-敌对
+    inline bool WeaponTrackNeutral = true;         // 任务-中立
+    inline bool WeaponBulletHardLock = false;      // 独立：是否跟随准星（强锁相机，不绑死追踪筛选）
     inline bool WeaponBulletThroughWalls = false;  // 子弹穿墙
     inline float WeaponBulletLockRange = 100.0f;   // 追踪锁定最大距离 米
     inline int WeaponBulletMaxTargets = 4;         // 同时锁定目标数（1=单目标，>1 可分配到多个目标）

@@ -198,6 +198,20 @@ namespace Pages::Weapon {
 #if defined(GTAVC) || defined(GTASA)
                 if (MenuState::WeaponBulletTrack) {
                     ImGui::Spacing();
+                    ImGui::TextUnformatted(T("weapon.trackFilter"));
+                    ImGui::Columns(5, nullptr, false);
+                    ImGui::Checkbox(T("weapon.trackCivilian"), &MenuState::WeaponTrackCivilian);
+                    ImGui::NextColumn();
+                    ImGui::Checkbox(T("weapon.trackFriend"), &MenuState::WeaponTrackFriend);
+                    ImGui::NextColumn();
+                    ImGui::Checkbox(T("weapon.trackHostile"), &MenuState::WeaponTrackHostile);
+                    ImGui::NextColumn();
+                    ImGui::Checkbox(T("weapon.trackNeutral"), &MenuState::WeaponTrackNeutral);
+                    ImGui::NextColumn();
+                    ImGui::Checkbox(T("weapon.bulletHardLock"), &MenuState::WeaponBulletHardLock);
+                    ImGui::Columns(1);
+
+                    ImGui::Spacing();
                     ImGui::PushItemWidth(220.0f);
                     ImGui::SliderFloat(T("weapon.bulletLockRange"), &MenuState::WeaponBulletLockRange, 10.0f, 300.0f, "%.0f");
                     ImGui::SliderInt(T("weapon.bulletMaxTargets"), &MenuState::WeaponBulletMaxTargets, 1, 16);

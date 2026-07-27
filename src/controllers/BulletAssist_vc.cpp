@@ -16,7 +16,11 @@
 #include "CColSphere.h"
 #include "CMatrix.h"
 #include "CWeapon.h"
+#include "CCamera.h"
+#include "CPad.h"
 #include "AnimBlendFrameData.h"
+#include "eObjective.h"
+#include "ePedType.h"
 #include "kiero/minhook/MinHook.h"
 #include "imgui/imgui.h"
 #include <algorithm>
@@ -26,7 +30,7 @@
 
 // - 目标点优先 SEH 安全读头/躯干节点，失败再用 GetPosition+固定 z 不调 UpdateRpHAnim
 // - Fire + FireInstantHit* + ProcessLineOfSight
-// - 追踪：范围内最多 N 个目标；每发 round-robin 绑定
+// - 追踪：范围内 top-N 准星亲和优先；任务中立/敌对可锁，友方不锁
 // - 仅本地玩家开火栈内改 Dest / 软穿墙；相机 LOS 一律不碰
 
 namespace {
@@ -83,6 +87,7 @@ namespace {
     struct TrackCandidate {
         CVector pos{};
         float playerDistSq = 0.0f;
+        float score = 0.0f; // 越高越优先
     };
 
     struct LockCache {
@@ -153,6 +158,17 @@ namespace {
         return n;
     }
 
+    // VC：m_nPedStatus 1=普通可回收，2=脚本/任务行人
+    constexpr unsigned char kScriptPedStatus = 2;
+
+    bool IsMissionPed(CPed* ped) {
+        return ped && ped->m_nPedStatus == kScriptPedStatus;
+    }
+
+    bool IsMissionVehicle(CVehicle* veh) {
+        return veh && veh->m_nCreatedBy == MISSION_VEHICLE;
+    }
+
     bool IsUsablePed(CPed* ped, CPed* player) {
         if (!ped || ped == player) {
             return false;
@@ -166,8 +182,155 @@ namespace {
         return true;
     }
 
+    // 子弹追踪：可用行人 + 阵营过滤（见 PassTrackRelation）
+    // 旧逻辑整表排除任务行人 → 黄色中立任务目标永远锁不上
+    bool IsTrackablePed(CPed* ped, CPed* player);
+
     bool IsUsableVehicle(CVehicle* veh) {
         return veh && veh->m_fHealth > 0.0f;
+    }
+
+    // ESP 阵营：平民原色；任务实体按 ally / objective / threat / pedType
+    enum class EspRelation : unsigned char {
+        Civilian = 0,
+        Friend,
+        Hostile,
+        Neutral,
+    };
+
+    EspRelation ClassifyPedSide(CPed* ped, CPed* player) {
+        if (!ped || !player) {
+            return EspRelation::Neutral;
+        }
+        if (ped->bScriptPedIsPlayerAlly) {
+            return EspRelation::Friend;
+        }
+        if (ped->m_pThreatEntity == static_cast<CEntity*>(player)) {
+            return EspRelation::Hostile;
+        }
+        const eObjective obj = ped->m_nObjective;
+        if (obj == OBJECTIVE_KILL_CHAR_ON_FOOT
+            || obj == OBJECTIVE_KILL_CHAR_ANY_MEANS
+            || obj == OBJECTIVE_KILL_CHAR_ON_BOAT
+            || obj == OBJECTIVE_GUARD_ATTACK
+            || obj == OBJECTIVE_AIM_GUN_AT) {
+            if (ped->m_pObjectiveEntity == static_cast<CEntity*>(player)) {
+                return EspRelation::Hostile;
+            }
+            // 任务脚本常不写 objective entity，仍标为敌对更直观
+            return EspRelation::Hostile;
+        }
+        if (ped->m_nPedType == PED_TYPE_COP) {
+            return EspRelation::Hostile;
+        }
+        if (ped->m_nPedType == PED_TYPE_GANG_VERCETTI) {
+            return EspRelation::Friend;
+        }
+        return EspRelation::Neutral;
+    }
+
+    EspRelation ClassifyPedEsp(CPed* ped, CPed* player) {
+        if (!IsMissionPed(ped)) {
+            return EspRelation::Civilian;
+        }
+        return ClassifyPedSide(ped, player);
+    }
+
+    EspRelation ClassifyVehicleEsp(CVehicle* veh, CPed* player) {
+        if (!IsMissionVehicle(veh)) {
+            return EspRelation::Civilian;
+        }
+        if (veh->m_pDriver && veh->m_pDriver != player) {
+            return ClassifyPedSide(veh->m_pDriver, player);
+        }
+        for (int i = 0; i < 8; ++i) {
+            CPed* pass = veh->m_passengers[i];
+            if (pass && pass != player) {
+                return ClassifyPedSide(pass, player);
+            }
+        }
+        return EspRelation::Neutral;
+    }
+
+    bool PassEspFilter(EspRelation rel) {
+        // ESP 始终按阵营上色绘制；筛选只作用于子弹追踪
+        (void)rel;
+        return true;
+    }
+
+    // 追踪筛选：多选 其他/友方/敌对/中立（挂在「子弹追踪」下）
+    bool PassTrackRelation(EspRelation rel) {
+        switch (rel) {
+        case EspRelation::Civilian:
+            return MenuState::WeaponTrackCivilian;
+        case EspRelation::Friend:
+            return MenuState::WeaponTrackFriend;
+        case EspRelation::Hostile:
+            return MenuState::WeaponTrackHostile;
+        case EspRelation::Neutral:
+            return MenuState::WeaponTrackNeutral;
+        default:
+            return false;
+        }
+    }
+
+    bool IsTrackablePed(CPed* ped, CPed* player) {
+        if (!IsUsablePed(ped, player)) {
+            return false;
+        }
+        return PassTrackRelation(ClassifyPedEsp(ped, player));
+    }
+
+    ImU32 EspBoundColor(EspRelation rel, ImU32 civilian) {
+        switch (rel) {
+        case EspRelation::Friend:
+            return IM_COL32(70, 170, 255, 230);
+        case EspRelation::Hostile:
+            return IM_COL32(255, 70, 70, 230);
+        case EspRelation::Neutral:
+            return IM_COL32(255, 210, 60, 230);
+        default:
+            return civilian;
+        }
+    }
+
+    ImU32 EspBoxColor(EspRelation rel, ImU32 civilian) {
+        switch (rel) {
+        case EspRelation::Friend:
+            return IM_COL32(80, 190, 255, 220);
+        case EspRelation::Hostile:
+            return IM_COL32(255, 100, 100, 220);
+        case EspRelation::Neutral:
+            return IM_COL32(255, 200, 80, 220);
+        default:
+            return civilian;
+        }
+    }
+
+    ImU32 EspSphColor(EspRelation rel, ImU32 civilian) {
+        switch (rel) {
+        case EspRelation::Friend:
+            return IM_COL32(120, 200, 255, 200);
+        case EspRelation::Hostile:
+            return IM_COL32(255, 140, 140, 200);
+        case EspRelation::Neutral:
+            return IM_COL32(255, 220, 120, 200);
+        default:
+            return civilian;
+        }
+    }
+
+    ImU32 EspSkelColor(EspRelation rel, ImU32 civilian) {
+        switch (rel) {
+        case EspRelation::Friend:
+            return IM_COL32(100, 200, 255, 230);
+        case EspRelation::Hostile:
+            return IM_COL32(255, 120, 80, 230);
+        case EspRelation::Neutral:
+            return IM_COL32(255, 220, 90, 230);
+        default:
+            return civilian;
+        }
     }
 
     // 优先头/躯干世界坐标（SEH）；失败再用脚底 + 固定高度
@@ -201,6 +364,98 @@ namespace {
         return pos;
     }
 
+    // 只读相机前向，不改相机
+    bool ReadCamAim(CVector& origin, CVector& frontUnit) {
+        const int idx = TheCamera.m_nActiveCam;
+        if (idx < 0 || idx > 2) {
+            return false;
+        }
+        const CCam& cam = TheCamera.m_aCams[idx];
+        origin = cam.m_vecSource;
+        const CVector f = cam.m_vecFront;
+        const float len = std::sqrt(f.x * f.x + f.y * f.y + f.z * f.z);
+        if (len < 1e-4f || !std::isfinite(len)) {
+            return false;
+        }
+        frontUnit = CVector(f.x / len, f.y / len, f.z / len);
+        return true;
+    }
+
+    void ApplyHardLockAim(const CVector& worldTarget) {
+        if (!MenuState::WeaponBulletHardLock) {
+            return;
+        }
+        const int idx = TheCamera.m_nActiveCam;
+        if (idx < 0 || idx > 2) {
+            return;
+        }
+        CCam& cam = TheCamera.m_aCams[idx];
+        const float dx = worldTarget.x - cam.m_vecSource.x;
+        const float dy = worldTarget.y - cam.m_vecSource.y;
+        const float dz = worldTarget.z - cam.m_vecSource.z;
+        const float len = std::sqrt(dx * dx + dy * dy + dz * dz);
+        if (len < 0.05f || !std::isfinite(len)) {
+            return;
+        }
+        const float inv = 1.0f / len;
+        const float nx = dx * inv;
+        const float ny = dy * inv;
+        const float nz = dz * inv;
+        float vert = std::asin(std::max(-1.0f, std::min(1.0f, nz)));
+        float horiz = std::atan2(nx, ny);
+        constexpr float kMaxPitch = 1.35f;
+        if (vert > kMaxPitch) {
+            vert = kMaxPitch;
+        }
+        if (vert < -kMaxPitch) {
+            vert = -kMaxPitch;
+        }
+        cam.m_fHorizontalAngle = horiz;
+        cam.m_fVerticalAngle = vert;
+        const float cv = std::cos(vert);
+        const float sv = std::sin(vert);
+        const float sh = std::sin(horiz);
+        const float ch = std::cos(horiz);
+        cam.m_vecFront = CVector(sh * cv, ch * cv, sv);
+    }
+
+    bool PlayerWantsHardLockInput() {
+        CPad* pad = CPad::GetPad(0);
+        if (!pad) {
+            return false;
+        }
+        if (pad->GetTarget()) {
+            return true;
+        }
+        if (pad->GetWeapon() != 0) {
+            return true;
+        }
+        if (pad->WeaponJustDown()) {
+            return true;
+        }
+        if (CPad::NewMouseControllerState.lmb) {
+            return true;
+        }
+        return false;
+    }
+
+    float ScoreTrackAim(const CVector& camOrigin, const CVector& camFront, const CVector& aim, float distSq) {
+        const float dx = aim.x - camOrigin.x;
+        const float dy = aim.y - camOrigin.y;
+        const float dz = aim.z - camOrigin.z;
+        const float len = std::sqrt(dx * dx + dy * dy + dz * dz);
+        if (len < 0.05f || !std::isfinite(len)) {
+            return -1.0f;
+        }
+        const float dot = (dx * camFront.x + dy * camFront.y + dz * camFront.z) / len;
+        if (dot < 0.25f) {
+            return -1.0f;
+        }
+        const float range = LockRange();
+        const float distNorm = (range > 1.0f) ? (std::sqrt(distSq) / range) : 1.0f;
+        return dot * 3.0f - distNorm * 0.35f;
+    }
+
     CVector ExtendPast(const CVector& origin, const CVector& aim, float past) {
         const float dx = aim.x - origin.x;
         const float dy = aim.y - origin.y;
@@ -225,38 +480,52 @@ namespace {
         const int maxTargets = MaxTrackTargets();
         candidates.reserve(static_cast<std::size_t>(maxTargets));
 
+        CVector camOrigin{};
+        CVector camFront{};
+        const bool hasCam = ReadCamAim(camOrigin, camFront);
+
+        auto worseScore = [](const TrackCandidate& a, const TrackCandidate& b) {
+            return a.score > b.score;
+        };
+
         for (CPed* ped : CPools::ms_pPedPool) {
-            if (!IsUsablePed(ped, player)) {
+            if (!IsTrackablePed(ped, player)) {
                 continue;
             }
             const CVector pos = PedAimPoint(ped);
-            // 用 3D 距离，坡地/高差时 XY-only 会漏锁或误排
             const float d2 = Dist2(playerPos, pos);
             if (d2 > maxRangeSq) {
                 continue;
             }
 
-            TrackCandidate item{ pos, d2 };
+            float score = 0.0f;
+            if (hasCam) {
+                score = ScoreTrackAim(camOrigin, camFront, pos, d2);
+                if (score < 0.0f) {
+                    continue;
+                }
+            } else {
+                score = 1.0f / (1.0f + d2);
+            }
+
+            TrackCandidate item{ pos, d2, score };
             if (static_cast<int>(candidates.size()) < maxTargets) {
                 candidates.push_back(item);
-                std::push_heap(candidates.begin(), candidates.end(), [](const TrackCandidate& a, const TrackCandidate& b) {
-                    return a.playerDistSq < b.playerDistSq;
-                });
+                std::push_heap(candidates.begin(), candidates.end(), worseScore);
                 continue;
             }
-            if (d2 >= candidates.front().playerDistSq) {
+            if (score <= candidates.front().score) {
                 continue;
             }
-            std::pop_heap(candidates.begin(), candidates.end(), [](const TrackCandidate& a, const TrackCandidate& b) {
-                return a.playerDistSq < b.playerDistSq;
-            });
+            std::pop_heap(candidates.begin(), candidates.end(), worseScore);
             candidates.back() = item;
-            std::push_heap(candidates.begin(), candidates.end(), [](const TrackCandidate& a, const TrackCandidate& b) {
-                return a.playerDistSq < b.playerDistSq;
-            });
+            std::push_heap(candidates.begin(), candidates.end(), worseScore);
         }
 
         std::sort(candidates.begin(), candidates.end(), [](const TrackCandidate& a, const TrackCandidate& b) {
+            if (a.score != b.score) {
+                return a.score > b.score;
+            }
             return a.playerDistSq < b.playerDistSq;
         });
         return candidates;
@@ -290,6 +559,7 @@ namespace {
             ++s_trackRoundRobin;
         }
         s_shotTrack.hasTarget = true;
+        ApplyHardLockAim(s_shotTrack.target);
     }
 
     void EndShotTrack() {
@@ -779,7 +1049,15 @@ namespace Controllers::BulletAssist {
             return;
         }
         EnsureHook();
-        RefreshLockVisuals(CollectTrackCandidates());
+        const std::vector<TrackCandidate> candidates = CollectTrackCandidates();
+        RefreshLockVisuals(candidates);
+        if (MenuState::WeaponBulletHardLock && PlayerWantsHardLockInput() && !candidates.empty()) {
+            if (s_shotTrack.hasTarget) {
+                ApplyHardLockAim(s_shotTrack.target);
+            } else {
+                ApplyHardLockAim(candidates[0].pos);
+            }
+        }
     }
 
     void Draw() {
@@ -807,27 +1085,32 @@ namespace Controllers::BulletAssist {
             DrawTrackRange(dl, player);
         }
 
-        const ImU32 pedBoundColor = IM_COL32(80, 220, 120, 230);
-        const ImU32 pedBoxColor = IM_COL32(60, 180, 255, 220);
-        const ImU32 pedSphColor = IM_COL32(120, 200, 255, 200);
-        const ImU32 skelColor = IM_COL32(255, 200, 60, 230);
-        const ImU32 vehBoundColor = IM_COL32(255, 140, 60, 230);
-        const ImU32 vehBoxColor = IM_COL32(255, 90, 90, 220);
-        const ImU32 vehSphColor = IM_COL32(255, 160, 120, 200);
+        // 平民默认色；任务实体由 Esp*Color 按阵营改写
+        const ImU32 pedBoundCiv = IM_COL32(80, 220, 120, 230);
+        const ImU32 pedBoxCiv = IM_COL32(60, 180, 255, 220);
+        const ImU32 pedSphCiv = IM_COL32(120, 200, 255, 200);
+        const ImU32 skelCiv = IM_COL32(255, 200, 60, 230);
+        const ImU32 vehBoundCiv = IM_COL32(255, 140, 60, 230);
+        const ImU32 vehBoxCiv = IM_COL32(255, 90, 90, 220);
+        const ImU32 vehSphCiv = IM_COL32(255, 160, 120, 200);
 
         if ((pedBound || pedCol || pedSkel) && CPools::ms_pPedPool) {
             for (CPed* ped : CPools::ms_pPedPool) {
                 if (!IsUsablePed(ped, player)) {
                     continue;
                 }
+                const EspRelation rel = ClassifyPedEsp(ped, player);
+                if (!PassEspFilter(rel)) {
+                    continue;
+                }
                 if (pedBound) {
-                    DrawEntityBound(dl, ped, pedBoundColor);
+                    DrawEntityBound(dl, ped, EspBoundColor(rel, pedBoundCiv));
                 }
                 if (pedCol) {
-                    DrawEntityColPartial(dl, ped, pedBoxColor, pedSphColor);
+                    DrawEntityColPartial(dl, ped, EspBoxColor(rel, pedBoxCiv), EspSphColor(rel, pedSphCiv));
                 }
                 if (pedSkel) {
-                    DrawPedSkeleton(dl, ped, skelColor);
+                    DrawPedSkeleton(dl, ped, EspSkelColor(rel, skelCiv));
                 }
             }
         }
@@ -837,11 +1120,15 @@ namespace Controllers::BulletAssist {
                 if (!IsUsableVehicle(veh)) {
                     continue;
                 }
+                const EspRelation rel = ClassifyVehicleEsp(veh, player);
+                if (!PassEspFilter(rel)) {
+                    continue;
+                }
                 if (vehBound) {
-                    DrawEntityBound(dl, veh, vehBoundColor);
+                    DrawEntityBound(dl, veh, EspBoundColor(rel, vehBoundCiv));
                 }
                 if (vehCol) {
-                    DrawEntityColPartial(dl, veh, vehBoxColor, vehSphColor);
+                    DrawEntityColPartial(dl, veh, EspBoxColor(rel, vehBoxCiv), EspSphColor(rel, vehSphCiv));
                 }
             }
         }

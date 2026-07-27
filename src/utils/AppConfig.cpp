@@ -83,6 +83,11 @@ namespace {
             {"weapon.vehicleEsp", "weapon.vehicleEsp", &MenuState::WeaponVehicleEsp, false},
             {"weapon.vehicleColEsp", "weapon.vehicleColEsp", &MenuState::WeaponVehicleColEsp, false},
             {"weapon.bulletTrack", "weapon.bulletTrack", &MenuState::WeaponBulletTrack, false},
+            {"weapon.trackCivilian", "weapon.trackCivilian", &MenuState::WeaponTrackCivilian, true},
+            {"weapon.trackFriend", "weapon.trackFriend", &MenuState::WeaponTrackFriend, false},
+            {"weapon.trackHostile", "weapon.trackHostile", &MenuState::WeaponTrackHostile, true},
+            {"weapon.trackNeutral", "weapon.trackNeutral", &MenuState::WeaponTrackNeutral, true},
+            {"weapon.bulletHardLock", "weapon.bulletHardLock", &MenuState::WeaponBulletHardLock, false},
             {"weapon.bulletThroughWalls", "weapon.bulletThroughWalls", &MenuState::WeaponBulletThroughWalls, false},
             {"vehicle.noDamage", "vehicle.noDamage", &MenuState::VehicleNoDamage, false},
             {"vehicle.autoUnflip", "vehicle.autoUnflip", &MenuState::VehicleAutoUnflip, false},
@@ -177,7 +182,10 @@ namespace {
 
         if (feature == "weapon.pedEsp" || feature == "weapon.pedColEsp" || feature == "weapon.pedSkeleton"
             || feature == "weapon.vehicleEsp" || feature == "weapon.vehicleColEsp"
-            || feature == "weapon.bulletTrack" || feature == "weapon.bulletThroughWalls") {
+            || feature == "weapon.bulletTrack" || feature == "weapon.trackCivilian"
+            || feature == "weapon.trackFriend" || feature == "weapon.trackHostile"
+            || feature == "weapon.trackNeutral" || feature == "weapon.bulletHardLock"
+            || feature == "weapon.bulletThroughWalls") {
             return IsSaRuntime() || GameRuntime::Current().target == GameRuntime::Target::VC;
         }
 
@@ -892,11 +900,26 @@ namespace {
         if (MenuState::WeaponBulletLockRange > 300.0f) {
             MenuState::WeaponBulletLockRange = 300.0f;
         }
+
+        // 兼容旧 espDraw*；优先 track*
+        MenuState::WeaponTrackFriend = JsonLoader::GetBool(weapon, "trackFriend",
+            JsonLoader::GetBool(weapon, "espDrawFriend", MenuState::WeaponTrackFriend));
+        MenuState::WeaponTrackHostile = JsonLoader::GetBool(weapon, "trackHostile",
+            JsonLoader::GetBool(weapon, "espDrawHostile", MenuState::WeaponTrackHostile));
+        MenuState::WeaponTrackNeutral = JsonLoader::GetBool(weapon, "trackNeutral",
+            JsonLoader::GetBool(weapon, "espDrawNeutral", MenuState::WeaponTrackNeutral));
+        MenuState::WeaponTrackCivilian = JsonLoader::GetBool(weapon, "trackCivilian", MenuState::WeaponTrackCivilian);
+        MenuState::WeaponBulletHardLock = JsonLoader::GetBool(weapon, "bulletHardLock", MenuState::WeaponBulletHardLock);
     }
 
     void WriteWeaponConfig(std::ostream& file, const std::string& indent, bool trailingComma) {
         file << indent << "\"weapon\": {\n";
-        file << indent << "  \"bulletLockRange\": " << MenuState::WeaponBulletLockRange << "\n";
+        file << indent << "  \"bulletLockRange\": " << MenuState::WeaponBulletLockRange << ",\n";
+        file << indent << "  \"trackCivilian\": " << (MenuState::WeaponTrackCivilian ? "true" : "false") << ",\n";
+        file << indent << "  \"trackFriend\": " << (MenuState::WeaponTrackFriend ? "true" : "false") << ",\n";
+        file << indent << "  \"trackHostile\": " << (MenuState::WeaponTrackHostile ? "true" : "false") << ",\n";
+        file << indent << "  \"trackNeutral\": " << (MenuState::WeaponTrackNeutral ? "true" : "false") << ",\n";
+        file << indent << "  \"bulletHardLock\": " << (MenuState::WeaponBulletHardLock ? "true" : "false") << "\n";
         file << indent << "}" << (trailingComma ? "," : "") << "\n";
     }
 
