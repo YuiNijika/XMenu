@@ -370,7 +370,7 @@ namespace {
         if (idx < 0 || idx > 2) {
             return false;
         }
-        const CCam& cam = TheCamera.m_aCams[idx];
+        const CCam& cam = TheCamera.m_asCams[idx];
         origin = cam.m_vecSource;
         const CVector f = cam.m_vecFront;
         const float len = std::sqrt(f.x * f.x + f.y * f.y + f.z * f.z);
@@ -389,7 +389,7 @@ namespace {
         if (idx < 0 || idx > 2) {
             return;
         }
-        CCam& cam = TheCamera.m_aCams[idx];
+        CCam& cam = TheCamera.m_asCams[idx];
         const float dx = worldTarget.x - cam.m_vecSource.x;
         const float dy = worldTarget.y - cam.m_vecSource.y;
         const float dz = worldTarget.z - cam.m_vecSource.z;
