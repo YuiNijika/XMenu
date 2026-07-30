@@ -3,6 +3,7 @@
   "update.availableMessage": "Текущая версия: %s\nПоследняя версия: %s\nВыберите источник обновления.",
   "update.openGitHub": "GitHub",
   "update.openGTAMODX": "GTAMODX",
+  "update.close": "Закрыть",
   "update.details": "Проверка версии",
   "update.refresh": "Обновить",
   "update.source": "Источник: %s",

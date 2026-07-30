@@ -1,5 +1,6 @@
 #include "BulletAssist.h"
 #include "ui/MenuState.h"
+#include "features/GameLogic.h"
 #include "utils/Log.h"
 #include "plugin.h"
 #include "CWorld.h"
@@ -19,9 +20,11 @@
 #include "CCamera.h"
 #include "CPad.h"
 #include "CTimer.h"
+#include "CModelInfo.h"
 #include "AnimBlendFrameData.h"
 #include "eObjective.h"
 #include "ePedType.h"
+#include "eVehicleType.h"
 #include "kiero/minhook/MinHook.h"
 #include "imgui/imgui.h"
 #include <algorithm>
@@ -85,6 +88,7 @@ namespace {
 
     struct TrackCandidate {
         CPed* ped = nullptr;
+        CVehicle* vehicle = nullptr;
         CVector pos{};
         float playerDistSq = 0.0f;
         float score = 0.0f; // 越高越优先
@@ -106,6 +110,7 @@ namespace {
     // 粘主目标，不跟子弹 round-robin
     struct HardLockState {
         CPed* ped = nullptr;
+        CVehicle* vehicle = nullptr;
     };
     HardLockState s_hardLock;
 
@@ -196,6 +201,36 @@ namespace {
         return veh && veh->m_fHealth > 0.0f;
     }
 
+    bool IsHeliVehicle(CVehicle* veh) {
+        if (!veh) {
+            return false;
+        }
+        if (CModelInfo::IsHeliModel(veh->m_nModelIndex)) {
+            return true;
+        }
+        return veh->m_nVehicleClass == VEHICLE_HELI;
+    }
+
+    bool PedInHeli(CPed* ped) {
+        return ped && ped->m_bInVehicle && ped->m_pVehicle && IsHeliVehicle(ped->m_pVehicle);
+    }
+
+    CVector HeliAimPoint(CVehicle* veh) {
+        if (!veh) {
+            return CVector{};
+        }
+        if (CColModel* col = veh->GetColModel()) {
+            const CVector mid(
+                (col->m_boundBox.m_vecMin.x + col->m_boundBox.m_vecMax.x) * 0.5f,
+                (col->m_boundBox.m_vecMin.y + col->m_boundBox.m_vecMax.y) * 0.5f,
+                (col->m_boundBox.m_vecMin.z + col->m_boundBox.m_vecMax.z) * 0.5f);
+            return veh->TransformFromObjectSpace(mid);
+        }
+        CVector pos = veh->GetPosition();
+        pos.z += 0.6f;
+        return pos;
+    }
+
     // ESP 阵营：平民原色；任务实体按 ally / objective / threat / pedType
     enum class EspRelation : unsigned char {
         Civilian = 0,
@@ -284,7 +319,20 @@ namespace {
         if (!IsUsablePed(ped, player)) {
             return false;
         }
+        if (PedInHeli(ped)) {
+            return false;
+        }
         return PassTrackRelation(ClassifyPedEsp(ped, player));
+    }
+
+    bool IsTrackableHeli(CVehicle* veh, CPed* player) {
+        if (!IsUsableVehicle(veh) || !IsHeliVehicle(veh)) {
+            return false;
+        }
+        if (player && (player->m_pVehicle == veh || veh->m_pDriver == player)) {
+            return false;
+        }
+        return PassTrackRelation(ClassifyVehicleEsp(veh, player));
     }
 
     ImU32 EspBoundColor(EspRelation rel, ImU32 civilian) {
@@ -560,24 +608,29 @@ namespace {
 
     void ClearHardLock() {
         s_hardLock.ped = nullptr;
+        s_hardLock.vehicle = nullptr;
     }
 
     bool PlayerWantsHardLockInput();
 
-    CPed* ResolveHardLockPed(const std::vector<TrackCandidate>& candidates) {
+    const TrackCandidate* ResolveHardLockCandidate(const std::vector<TrackCandidate>& candidates) {
         if (candidates.empty()) {
             ClearHardLock();
             return nullptr;
         }
-        if (s_hardLock.ped) {
+        if (s_hardLock.ped || s_hardLock.vehicle) {
             for (const TrackCandidate& c : candidates) {
-                if (c.ped == s_hardLock.ped) {
-                    return s_hardLock.ped;
+                if (s_hardLock.ped && c.ped == s_hardLock.ped) {
+                    return &c;
+                }
+                if (s_hardLock.vehicle && c.vehicle == s_hardLock.vehicle) {
+                    return &c;
                 }
             }
         }
         s_hardLock.ped = candidates[0].ped;
-        return s_hardLock.ped;
+        s_hardLock.vehicle = candidates[0].vehicle;
+        return &candidates[0];
     }
 
     void ApplyHardLockToSticky(const std::vector<TrackCandidate>& candidates) {
@@ -587,18 +640,11 @@ namespace {
             }
             return;
         }
-        CPed* ped = ResolveHardLockPed(candidates);
-        if (!ped) {
+        const TrackCandidate* target = ResolveHardLockCandidate(candidates);
+        if (!target) {
             return;
         }
-        CVector aim = PedAimPoint(ped);
-        for (const TrackCandidate& c : candidates) {
-            if (c.ped == ped) {
-                aim = c.pos;
-                break;
-            }
-        }
-        ApplyHardLockAim(aim);
+        ApplyHardLockAim(target->pos);
     }
 
     bool PlayerWantsHardLockInput() {
@@ -653,7 +699,7 @@ namespace {
     std::vector<TrackCandidate> CollectTrackCandidates() {
         std::vector<TrackCandidate> candidates;
         CPed* player = FindPlayerPed();
-        if (!player || !CPools::ms_pPedPool) {
+        if (!player) {
             return candidates;
         }
 
@@ -670,38 +716,54 @@ namespace {
             return a.score > b.score;
         };
 
-        for (CPed* ped : CPools::ms_pPedPool) {
-            if (!IsTrackablePed(ped, player)) {
-                continue;
+        auto consider = [&](TrackCandidate item) {
+            if (item.playerDistSq > maxRangeSq) {
+                return;
             }
-            const CVector pos = PedAimPoint(ped);
-            const float d2 = Dist2(playerPos, pos);
-            if (d2 > maxRangeSq) {
-                continue;
-            }
-
             float score = 0.0f;
             if (hasCam) {
-                score = ScoreTrackAim(camOrigin, camFront, pos, d2);
+                score = ScoreTrackAim(camOrigin, camFront, item.pos, item.playerDistSq);
                 if (score < 0.0f) {
-                    continue;
+                    return;
                 }
             } else {
-                score = 1.0f / (1.0f + d2);
+                score = 1.0f / (1.0f + item.playerDistSq);
             }
+            item.score = score;
 
-            TrackCandidate item{ ped, pos, d2, score };
             if (static_cast<int>(candidates.size()) < maxTargets) {
                 candidates.push_back(item);
                 std::push_heap(candidates.begin(), candidates.end(), worseScore);
-                continue;
+                return;
             }
             if (score <= candidates.front().score) {
-                continue;
+                return;
             }
             std::pop_heap(candidates.begin(), candidates.end(), worseScore);
             candidates.back() = item;
             std::push_heap(candidates.begin(), candidates.end(), worseScore);
+        };
+
+        if (CPools::ms_pPedPool) {
+            for (CPed* ped : CPools::ms_pPedPool) {
+                if (!IsTrackablePed(ped, player)) {
+                    continue;
+                }
+                const CVector pos = PedAimPoint(ped);
+                const float d2 = Dist2(playerPos, pos);
+                consider(TrackCandidate{ ped, nullptr, pos, d2, 0.0f });
+            }
+        }
+
+        if (CPools::ms_pVehiclePool) {
+            for (CVehicle* veh : CPools::ms_pVehiclePool) {
+                if (!IsTrackableHeli(veh, player)) {
+                    continue;
+                }
+                const CVector pos = HeliAimPoint(veh);
+                const float d2 = Dist2(playerPos, pos);
+                consider(TrackCandidate{ nullptr, veh, pos, d2, 0.0f });
+            }
         }
 
         std::sort(candidates.begin(), candidates.end(), [](const TrackCandidate& a, const TrackCandidate& b) {
@@ -831,12 +893,14 @@ namespace {
         }
 
         bool useBuildings = buildings;
+        bool useVehicles = vehicles;
         bool useObjects = objects;
         bool useDummies = dummies;
         bool usePeds = peds;
-        // 追踪成功：保证测行人，并软忽略建筑/物体，避免改 Dest 后仍被墙/道具挡住像“没追踪”
+        // 追踪成功 保证测行人/载具；软忽略建筑/物体，避免改 Dest 后仍被墙挡住
         if (tracked) {
             usePeds = true;
+            useVehicles = true;
             useBuildings = false;
             useObjects = false;
             useDummies = false;
@@ -849,9 +913,10 @@ namespace {
 
         const bool hit = oProcessLineOfSight(
             origin, redirected, outColPoint, outEntity,
-            useBuildings, vehicles, usePeds, useObjects, useDummies,
+            useBuildings, useVehicles, usePeds, useObjects, useDummies,
             doSeeThroughCheck, doCameraIgnoreCheck, doShootThroughCheck);
 
+        // 穿墙/追踪时：死载具不当成挡弹；活直升机要保留命中
         if (hit && (tracked || MenuState::WeaponBulletThroughWalls) && outEntity
             && outEntity->m_nType == ENTITY_TYPE_VEHICLE) {
             auto* veh = static_cast<CVehicle*>(outEntity);
@@ -877,6 +942,12 @@ namespace {
         if (!oFireInstantHit) {
             return false;
         }
+        if (firingEntity && !IsLocalPlayerEntity(firingEntity)) {
+            CPed* firer = static_cast<CPed*>(firingEntity);
+            if (GameLogic::ShouldSuppressPedFire(firer)) {
+                return false;
+            }
+        }
         return oFireInstantHit(self, firingEntity, sourcePos);
     }
 
@@ -886,6 +957,11 @@ namespace {
         PlayerShotScope scope(playerShot);
         if (!oFireInstantHitFromCar) {
             return false;
+        }
+        if (vehicle && vehicle->m_pDriver && vehicle->m_pDriver != player) {
+            if (GameLogic::ShouldSuppressPedFire(vehicle->m_pDriver)) {
+                return false;
+            }
         }
         return oFireInstantHitFromCar(self, vehicle, left, right);
     }
@@ -1070,64 +1146,52 @@ namespace {
         if (!SafePedNodeWorldPos(ped, node, &x, &y, &z)) {
             return false;
         }
-        // 过滤远离实体的坏点
+        if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z)) {
+            return false;
+        }
+        // 相对根位置：过近≈坏 LTM，过远≈悬空帧
         const CVector base = ped->GetPosition();
         const float dx = x - base.x;
         const float dy = y - base.y;
         const float dz = z - base.z;
-        if (dx * dx + dy * dy + dz * dz > 36.0f) {
-            return false;
-        }
-        // 过滤 NaN / 极端值
-        if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z)) {
+        const float d2 = dx * dx + dy * dy + dz * dz;
+        if (d2 < 0.0004f || d2 > 12.25f) {
             return false;
         }
         out = CVector(x, y, z);
         return true;
     }
 
-    // 帧骨骼不可用时：用 ColModel 球体中心连成“身体骨架”（同样走 SDK 碰撞数据）
-    void DrawPedColSphereSkeleton(ImDrawList* dl, CPed* ped, ImU32 color) {
-        CColModel* col = ped->GetColModel();
-        if (!col || !col->m_pSpheres || col->m_nNumSpheres < 2) {
+    // 帧骨骼失败：实体局部火柴人（随朝向，避免 ColSphere 乱连）
+    void DrawPedStickFallback(ImDrawList* dl, CPed* ped, ImU32 color) {
+        if (!ped) {
             return;
         }
-        const int n = col->m_nNumSpheres > 16 ? 16 : static_cast<int>(col->m_nNumSpheres);
-        CVector pts[16];
-        for (int i = 0; i < n; ++i) {
-            pts[i] = ped->TransformFromObjectSpace(col->m_pSpheres[i].m_vecCenter);
-        }
-        // 按 z 排序后相邻连线，近似躯干链
-        for (int i = 0; i < n; ++i) {
-            for (int j = i + 1; j < n; ++j) {
-                if (pts[j].z < pts[i].z) {
-                    const CVector tmp = pts[i];
-                    pts[i] = pts[j];
-                    pts[j] = tmp;
-                }
-            }
-        }
-        for (int i = 0; i + 1 < n; ++i) {
-            DrawWorldLine(dl, pts[i], pts[i + 1], color, 1.4f);
-        }
-        for (int i = 0; i < n; ++i) {
-            ImVec2 s{};
-            if (WorldToScreen(pts[i], s)) {
-                dl->AddCircleFilled(s, 2.5f, color, 6);
-            }
-        }
+        const CVector head = ped->TransformFromObjectSpace(CVector(0.0f, 0.0f, 0.90f));
+        const CVector neck = ped->TransformFromObjectSpace(CVector(0.0f, 0.0f, 0.72f));
+        const CVector pelvis = ped->TransformFromObjectSpace(CVector(0.0f, 0.0f, 0.38f));
+        const CVector lHand = ped->TransformFromObjectSpace(CVector(-0.42f, 0.0f, 0.62f));
+        const CVector rHand = ped->TransformFromObjectSpace(CVector(0.42f, 0.0f, 0.62f));
+        const CVector lFoot = ped->TransformFromObjectSpace(CVector(-0.12f, 0.0f, 0.05f));
+        const CVector rFoot = ped->TransformFromObjectSpace(CVector(0.12f, 0.0f, 0.05f));
+        DrawWorldLine(dl, head, neck, color, 1.5f);
+        DrawWorldLine(dl, neck, pelvis, color, 1.5f);
+        DrawWorldLine(dl, neck, lHand, color, 1.4f);
+        DrawWorldLine(dl, neck, rHand, color, 1.4f);
+        DrawWorldLine(dl, pelvis, lFoot, color, 1.4f);
+        DrawWorldLine(dl, pelvis, rFoot, color, 1.4f);
     }
 
     void DrawPedSkeleton(ImDrawList* dl, CPed* ped, ImU32 color) {
-        if (!ped || !ped->m_pRwClump || !ped->bIsVisible) {
+        if (!ped || !ped->m_pRwClump) {
             return;
         }
-        // 未进渲染的行人帧层级常无效，禁止碰 RwFrame
-        if (!ped->GetIsOnScreen() && !ped->bImBeingRendered) {
+        // 完全不可见时 LTM 常是垃圾；屏内或正在渲染才读帧
+        if (!ped->bIsVisible && !ped->GetIsOnScreen() && !ped->bImBeingRendered) {
             return;
         }
 
-        // 不调用 UpdateRpHAnim：对未就绪 clump 会直接崩进 RW
+        // 不调用 UpdateRpHAnim：VC 对未就绪 clump 易崩进 RW
         static const int kBones[][2] = {
             {PED_NODE_HEAD, PED_NODE_TORSO},
             {PED_NODE_TORSO, PED_NODE_UPPER_ARM_L},
@@ -1144,14 +1208,23 @@ namespace {
         for (const auto& e : kBones) {
             CVector pa{};
             CVector pb{};
-            if (FrameWorldPos(ped, e[0], pa) && FrameWorldPos(ped, e[1], pb)) {
-                DrawWorldLine(dl, pa, pb, color, 1.6f);
-                ++okLines;
+            if (!FrameWorldPos(ped, e[0], pa) || !FrameWorldPos(ped, e[1], pb)) {
+                continue;
             }
+            const float dx = pa.x - pb.x;
+            const float dy = pa.y - pb.y;
+            const float dz = pa.z - pb.z;
+            const float d2 = dx * dx + dy * dy + dz * dz;
+            // 单段过长 = 飞线
+            if (d2 < 0.0004f || d2 > 2.56f) {
+                continue;
+            }
+            DrawWorldLine(dl, pa, pb, color, 1.6f);
+            ++okLines;
         }
 
-        if (okLines == 0) {
-            DrawPedColSphereSkeleton(dl, ped, color);
+        if (okLines < 3) {
+            DrawPedStickFallback(dl, ped, color);
             return;
         }
 

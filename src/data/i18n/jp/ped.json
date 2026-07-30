@@ -51,5 +51,14 @@
   "ped.gangMemberIndex": "メンバー枠",
   "ped.gangMemberModel": "メンバーモデル",
   "ped.gangWeaponType": "ギャング武器",
-  "ped.applyGangWeapons": "ギャング武器を適用"
+  "ped.applyGangWeapons": "ギャング武器を適用",
+  "ped.pedsNoFire": "行人非射撃",
+  "ped.pedsNoFireCivilians": "市民",
+  "ped.pedsNoFireGangs": "ギャング",
+  "ped.pedsNoFirePolice": "警察",
+  "ped.pedsNoFireMission": "ミッション",
+  "ped.pedsLimitPolice": "警察の出現を制限",
+  "ped.pedsLimitGangs": "ギャングの出現を制限",
+  "ped.pedsMaxNearbyPolice": "近くの警察上限",
+  "ped.pedsMaxNearbyGangs": "近くのギャング上限"
 }

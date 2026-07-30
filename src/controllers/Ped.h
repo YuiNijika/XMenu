@@ -13,6 +13,7 @@ namespace Controllers::Ped {
     void SetPedsMayhem(bool enable);
     void SetPedsAtkRocket(bool enable);
     void SetPedsRiot(bool enable);
+    void SetPedsNoFire(bool enable);
     void SetSlutMagnet(bool enable);
     void SetGangsControl(bool enable);
     void SetGangsEverywhere(bool enable);

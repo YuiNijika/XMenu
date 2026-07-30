@@ -3,6 +3,7 @@
   "update.availableMessage": "Current version: %s\nLatest version: %s\nChoose an update source.",
   "update.openGitHub": "GitHub",
   "update.openGTAMODX": "GTAMODX",
+  "update.close": "Close",
   "update.details": "Update check",
   "update.refresh": "Refresh",
   "update.source": "Source: %s",

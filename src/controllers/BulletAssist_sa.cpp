@@ -1,5 +1,6 @@
 #include "BulletAssist.h"
 #include "ui/MenuState.h"
+#include "features/GameLogic.h"
 #include "utils/Log.h"
 #include "plugin.h"
 #include "CWorld.h"
@@ -19,9 +20,11 @@
 #include "CCamera.h"
 #include "CPad.h"
 #include "CTimer.h"
+#include "CModelInfo.h"
 #include "ePedBones.h"
 #include "ePedState.h"
 #include "ePedType.h"
+#include "eVehicleType.h"
 #include "kiero/minhook/MinHook.h"
 #include "imgui/imgui.h"
 #include <algorithm>
@@ -70,7 +73,8 @@ namespace {
     constexpr float kPi = 3.14159265f;
 
     struct TrackCandidate {
-        CPed* ped = nullptr;
+        CPed* ped = nullptr;          // 行人目标；直升机可为空
+        CVehicle* vehicle = nullptr;  // 直升机目标；行人可为空
         CVector pos{};
         float playerDistSq = 0.0f;
         float score = 0.0f; // 越高越优先（准星亲和 + 距离）
@@ -92,6 +96,7 @@ namespace {
     // 强锁相机：粘住主目标（准星亲和最高），不跟子弹 round-robin 跳
     struct HardLockState {
         CPed* ped = nullptr;
+        CVehicle* vehicle = nullptr;
     };
     HardLockState s_hardLock;
 
@@ -168,6 +173,38 @@ namespace {
 
     bool IsUsableVehicle(CVehicle* veh) {
         return veh && veh->m_fHealth > 0.0f;
+    }
+
+    bool IsHeliVehicle(CVehicle* veh) {
+        if (!veh) {
+            return false;
+        }
+        if (CModelInfo::IsHeliModel(veh->m_nModelIndex)) {
+            return true;
+        }
+        // SA 还有假直升机类
+        return veh->m_nVehicleClass == VEHICLE_HELI || veh->m_nVehicleClass == VEHICLE_FHELI;
+    }
+
+    bool PedInHeli(CPed* ped) {
+        return ped && ped->bInVehicle && ped->m_pVehicle && IsHeliVehicle(ped->m_pVehicle);
+    }
+
+    // 直升机瞄准点：碰撞盒中心，失败再抬高机体
+    CVector HeliAimPoint(CVehicle* veh) {
+        if (!veh) {
+            return CVector{};
+        }
+        if (CColModel* col = veh->GetColModel()) {
+            const CVector mid(
+                (col->m_boundBox.m_vecMin.x + col->m_boundBox.m_vecMax.x) * 0.5f,
+                (col->m_boundBox.m_vecMin.y + col->m_boundBox.m_vecMax.y) * 0.5f,
+                (col->m_boundBox.m_vecMin.z + col->m_boundBox.m_vecMax.z) * 0.5f);
+            return veh->TransformFromObjectSpace(mid);
+        }
+        CVector pos = veh->GetPosition();
+        pos.z += 0.6f;
+        return pos;
     }
 
     // 平民保持原色 任务实体按 acquaintance 分友/敌/中立
@@ -257,7 +294,21 @@ namespace {
         if (!IsUsablePed(ped, player)) {
             return false;
         }
+        // 机上乘员改锁机体，避免同一直升机占两个名额
+        if (PedInHeli(ped)) {
+            return false;
+        }
         return PassTrackRelation(ClassifyPedEsp(ped, player));
+    }
+
+    bool IsTrackableHeli(CVehicle* veh, CPed* player) {
+        if (!IsUsableVehicle(veh) || !IsHeliVehicle(veh)) {
+            return false;
+        }
+        if (player && (player->m_pVehicle == veh || veh->m_pDriver == player)) {
+            return false;
+        }
+        return PassTrackRelation(ClassifyVehicleEsp(veh, player));
     }
 
     ImU32 EspBoundColor(EspRelation rel, ImU32 civilian) {
@@ -312,14 +363,23 @@ namespace {
         }
     }
 
-    CVector BonePos(CPed* ped, ePedBones bone) {
+    CVector BonePos(CPed* ped, ePedBones bone, bool updateSkin = false) {
         RwV3d out{};
-        ped->GetBonePosition(out, static_cast<unsigned int>(bone), false);
+        ped->GetBonePosition(out, static_cast<unsigned int>(bone), updateSkin);
         return CVector(out.x, out.y, out.z);
     }
 
-    bool BoneValid(const CVector& p) {
-        return std::fabs(p.x) > 0.001f || std::fabs(p.y) > 0.001f || std::fabs(p.z) > 0.001f;
+    // 相对行人根位置的合理性：过滤 (0,0,0) 与飞出身体的坏点
+    bool BoneNearPed(CPed* ped, const CVector& p) {
+        if (!ped || !std::isfinite(p.x) || !std::isfinite(p.y) || !std::isfinite(p.z)) {
+            return false;
+        }
+        const CVector base = ped->GetPosition();
+        const float dx = p.x - base.x;
+        const float dy = p.y - base.y;
+        const float dz = p.z - base.z;
+        const float d2 = dx * dx + dy * dy + dz * dz;
+        return d2 > 0.0004f && d2 < 12.25f; // ~0.02–3.5m
     }
 
     CVector PedAimPoint(CPed* ped) {
@@ -327,8 +387,11 @@ namespace {
         const int part = MenuState::WeaponBulletAimPart;
 
         auto fromBone = [&](ePedBones bone, float zBias, CVector& out) -> bool {
-            const CVector p = BonePos(ped, bone);
-            if (!BoneValid(p)) {
+            CVector p = BonePos(ped, bone, false);
+            if (!BoneNearPed(ped, p)) {
+                p = BonePos(ped, bone, true);
+            }
+            if (!BoneNearPed(ped, p)) {
                 return false;
             }
             out = CVector(p.x, p.y, p.z + zBias);
@@ -354,17 +417,29 @@ namespace {
             }
             break;
         case 3: { // 腿：两膝/两髋中点
-            const CVector lk = BonePos(ped, BONE_LEFTKNEE);
-            const CVector rk = BonePos(ped, BONE_RIGHTKNEE);
-            if (BoneValid(lk) && BoneValid(rk)) {
+            CVector lk = BonePos(ped, BONE_LEFTKNEE, false);
+            CVector rk = BonePos(ped, BONE_RIGHTKNEE, false);
+            if (!BoneNearPed(ped, lk)) {
+                lk = BonePos(ped, BONE_LEFTKNEE, true);
+            }
+            if (!BoneNearPed(ped, rk)) {
+                rk = BonePos(ped, BONE_RIGHTKNEE, true);
+            }
+            if (BoneNearPed(ped, lk) && BoneNearPed(ped, rk)) {
                 return CVector(
                     (lk.x + rk.x) * 0.5f,
                     (lk.y + rk.y) * 0.5f,
                     (lk.z + rk.z) * 0.5f + 0.08f);
             }
-            const CVector lh = BonePos(ped, BONE_LEFTHIP);
-            const CVector rh = BonePos(ped, BONE_RIGHTHIP);
-            if (BoneValid(lh) && BoneValid(rh)) {
+            CVector lh = BonePos(ped, BONE_LEFTHIP, false);
+            CVector rh = BonePos(ped, BONE_RIGHTHIP, false);
+            if (!BoneNearPed(ped, lh)) {
+                lh = BonePos(ped, BONE_LEFTHIP, true);
+            }
+            if (!BoneNearPed(ped, rh)) {
+                rh = BonePos(ped, BONE_RIGHTHIP, true);
+            }
+            if (BoneNearPed(ped, lh) && BoneNearPed(ped, rh)) {
                 return CVector(
                     (lh.x + rh.x) * 0.5f,
                     (lh.y + rh.y) * 0.5f,
@@ -554,25 +629,30 @@ namespace {
 
     void ClearHardLock() {
         s_hardLock.ped = nullptr;
+        s_hardLock.vehicle = nullptr;
     }
 
     bool PlayerWantsHardLockInput(); // 定义在后
 
-    // 粘性主目标：优先保持当前 ped，丢失后才换准星最优
-    CPed* ResolveHardLockPed(const std::vector<TrackCandidate>& candidates) {
+    // 粘性主目标 优先保持当前 ped/直升机，丢失后才换准星最优
+    const TrackCandidate* ResolveHardLockCandidate(const std::vector<TrackCandidate>& candidates) {
         if (candidates.empty()) {
             ClearHardLock();
             return nullptr;
         }
-        if (s_hardLock.ped) {
+        if (s_hardLock.ped || s_hardLock.vehicle) {
             for (const TrackCandidate& c : candidates) {
-                if (c.ped == s_hardLock.ped) {
-                    return s_hardLock.ped;
+                if (s_hardLock.ped && c.ped == s_hardLock.ped) {
+                    return &c;
+                }
+                if (s_hardLock.vehicle && c.vehicle == s_hardLock.vehicle) {
+                    return &c;
                 }
             }
         }
         s_hardLock.ped = candidates[0].ped;
-        return s_hardLock.ped;
+        s_hardLock.vehicle = candidates[0].vehicle;
+        return &candidates[0];
     }
 
     void ApplyHardLockToSticky(const std::vector<TrackCandidate>& candidates) {
@@ -582,19 +662,11 @@ namespace {
             }
             return;
         }
-        CPed* ped = ResolveHardLockPed(candidates);
-        if (!ped) {
+        const TrackCandidate* target = ResolveHardLockCandidate(candidates);
+        if (!target) {
             return;
         }
-        // 与子弹追踪同一瞄准点，屏幕准星伺服过去
-        CVector aim = PedAimPoint(ped);
-        for (const TrackCandidate& c : candidates) {
-            if (c.ped == ped) {
-                aim = c.pos;
-                break;
-            }
-        }
-        ApplyHardLockAim(aim);
+        ApplyHardLockAim(target->pos);
     }
 
     bool PlayerWantsHardLockInput() {
@@ -636,7 +708,7 @@ namespace {
     std::vector<TrackCandidate> CollectTrackCandidates() {
         std::vector<TrackCandidate> candidates;
         CPed* player = FindPlayerPed();
-        if (!player || !CPools::ms_pPedPool) {
+        if (!player) {
             return candidates;
         }
 
@@ -653,39 +725,55 @@ namespace {
             return a.score > b.score; // 最小堆：堆顶是 top-N 里分最低的
         };
 
-        for (CPed* ped : CPools::ms_pPedPool) {
-            if (!IsTrackablePed(ped, player)) {
-                continue;
+        auto consider = [&](TrackCandidate item) {
+            if (item.playerDistSq > maxRangeSq) {
+                return;
             }
-            const CVector pos = PedAimPoint(ped);
-            const float d2 = Dist2XY(playerPos, pos) + (pos.z - playerPos.z) * (pos.z - playerPos.z);
-            if (d2 > maxRangeSq) {
-                continue;
-            }
-
             float score = 0.0f;
             if (hasCam) {
-                score = ScoreTrackAim(camOrigin, camFront, pos, d2);
+                score = ScoreTrackAim(camOrigin, camFront, item.pos, item.playerDistSq);
                 if (score < 0.0f) {
-                    continue;
+                    return;
                 }
             } else {
-                // 无相机时退回距离分
-                score = 1.0f / (1.0f + d2);
+                score = 1.0f / (1.0f + item.playerDistSq);
             }
+            item.score = score;
 
-            TrackCandidate item{ ped, pos, d2, score };
             if (static_cast<int>(candidates.size()) < maxTargets) {
                 candidates.push_back(item);
                 std::push_heap(candidates.begin(), candidates.end(), worseScore);
-                continue;
+                return;
             }
             if (score <= candidates.front().score) {
-                continue;
+                return;
             }
             std::pop_heap(candidates.begin(), candidates.end(), worseScore);
             candidates.back() = item;
             std::push_heap(candidates.begin(), candidates.end(), worseScore);
+        };
+
+        if (CPools::ms_pPedPool) {
+            for (CPed* ped : CPools::ms_pPedPool) {
+                if (!IsTrackablePed(ped, player)) {
+                    continue;
+                }
+                const CVector pos = PedAimPoint(ped);
+                const float d2 = Dist2XY(playerPos, pos) + (pos.z - playerPos.z) * (pos.z - playerPos.z);
+                consider(TrackCandidate{ ped, nullptr, pos, d2, 0.0f });
+            }
+        }
+
+        // 直升机：整机作为目标（乘员已在行人循环跳过）
+        if (CPools::ms_pVehiclePool) {
+            for (CVehicle* veh : CPools::ms_pVehiclePool) {
+                if (!IsTrackableHeli(veh, player)) {
+                    continue;
+                }
+                const CVector pos = HeliAimPoint(veh);
+                const float d2 = Dist2XY(playerPos, pos) + (pos.z - playerPos.z) * (pos.z - playerPos.z);
+                consider(TrackCandidate{ nullptr, veh, pos, d2, 0.0f });
+            }
         }
 
         // 分高在前；同分近者优先
@@ -808,6 +896,7 @@ namespace {
 
         CVector redirected = target;
         bool useBuildings = buildings;
+        bool useVehicles = vehicles;
         bool useObjects = objects;
         bool useDummies = dummies;
         bool usePeds = peds;
@@ -823,6 +912,8 @@ namespace {
 
         if (tracked) {
             usePeds = true;
+            // 直升机目标 确保测载具碰撞
+            useVehicles = true;
         }
 
         if (MenuState::WeaponBulletThroughWalls) {
@@ -833,7 +924,7 @@ namespace {
 
         return oProcessLineOfSight(
             origin, redirected, outColPoint, outEntity,
-            useBuildings, vehicles, usePeds, useObjects, useDummies,
+            useBuildings, useVehicles, usePeds, useObjects, useDummies,
             doSeeThroughCheck, doCameraIgnoreCheck, doShootThroughCheck);
     }
 
@@ -856,6 +947,14 @@ namespace {
         PlayerShotScope shotScope(IsLocalPlayerEntity(firingEntity));
         if (!oFireInstantHit) {
             return false;
+        }
+
+        // PedsNoFire: 阻止非玩家 ped 按筛选开火（不改库存、不记录 trace）
+        if (firingEntity && !IsLocalPlayerEntity(firingEntity)) {
+            CPed* firer = static_cast<CPed*>(firingEntity);
+            if (GameLogic::ShouldSuppressPedFire(firer)) {
+                return false;
+            }
         }
 
         // 开枪前改 Dest；与 LOS 共用本发绑定目标，保证每一发都追踪
@@ -885,6 +984,11 @@ namespace {
         PlayerShotScope shotScope(playerShot);
         if (!oFireInstantHitFromCar) {
             return false;
+        }
+        if (vehicle && vehicle->m_pDriver && vehicle->m_pDriver != player) {
+            if (GameLogic::ShouldSuppressPedFire(vehicle->m_pDriver)) {
+                return false;
+            }
         }
         return oFireInstantHitFromCar(self, vehicle, leftSide, rightSide);
     }
@@ -1028,31 +1132,83 @@ namespace {
         }
     }
 
-    void DrawBoneLine(ImDrawList* dl, CPed* ped, ePedBones a, ePedBones b, ImU32 color) {
-        const CVector pa = BonePos(ped, a);
-        const CVector pb = BonePos(ped, b);
-        if (!BoneValid(pa) || !BoneValid(pb)) {
+    // 骨骼失败时 用实体局部坐标画简化火柴人
+    void DrawPedStickFallback(ImDrawList* dl, CPed* ped, ImU32 color) {
+        if (!ped) {
             return;
         }
-        DrawWorldLine(dl, pa, pb, color);
+        const CVector head = ped->TransformFromObjectSpace(CVector(0.0f, 0.0f, 0.90f));
+        const CVector neck = ped->TransformFromObjectSpace(CVector(0.0f, 0.0f, 0.72f));
+        const CVector pelvis = ped->TransformFromObjectSpace(CVector(0.0f, 0.0f, 0.38f));
+        const CVector lHand = ped->TransformFromObjectSpace(CVector(-0.42f, 0.0f, 0.62f));
+        const CVector rHand = ped->TransformFromObjectSpace(CVector(0.42f, 0.0f, 0.62f));
+        const CVector lFoot = ped->TransformFromObjectSpace(CVector(-0.12f, 0.0f, 0.05f));
+        const CVector rFoot = ped->TransformFromObjectSpace(CVector(0.12f, 0.0f, 0.05f));
+        DrawWorldLine(dl, head, neck, color, 1.5f);
+        DrawWorldLine(dl, neck, pelvis, color, 1.5f);
+        DrawWorldLine(dl, neck, lHand, color, 1.4f);
+        DrawWorldLine(dl, neck, rHand, color, 1.4f);
+        DrawWorldLine(dl, pelvis, lFoot, color, 1.4f);
+        DrawWorldLine(dl, pelvis, rFoot, color, 1.4f);
     }
 
     void DrawPedSkeleton(ImDrawList* dl, CPed* ped, ImU32 color) {
-        DrawBoneLine(dl, ped, BONE_PELVIS, BONE_SPINE1, color);
-        DrawBoneLine(dl, ped, BONE_SPINE1, BONE_NECK, color);
-        DrawBoneLine(dl, ped, BONE_NECK, BONE_HEAD, color);
-        DrawBoneLine(dl, ped, BONE_NECK, BONE_LEFTSHOULDER, color);
-        DrawBoneLine(dl, ped, BONE_LEFTSHOULDER, BONE_LEFTELBOW, color);
-        DrawBoneLine(dl, ped, BONE_LEFTELBOW, BONE_LEFTHAND, color);
-        DrawBoneLine(dl, ped, BONE_NECK, BONE_RIGHTSHOULDER, color);
-        DrawBoneLine(dl, ped, BONE_RIGHTSHOULDER, BONE_RIGHTELBOW, color);
-        DrawBoneLine(dl, ped, BONE_RIGHTELBOW, BONE_RIGHTHAND, color);
-        DrawBoneLine(dl, ped, BONE_PELVIS, BONE_LEFTHIP, color);
-        DrawBoneLine(dl, ped, BONE_LEFTHIP, BONE_LEFTKNEE, color);
-        DrawBoneLine(dl, ped, BONE_LEFTKNEE, BONE_LEFTFOOT, color);
-        DrawBoneLine(dl, ped, BONE_PELVIS, BONE_RIGHTHIP, color);
-        DrawBoneLine(dl, ped, BONE_RIGHTHIP, BONE_RIGHTKNEE, color);
-        DrawBoneLine(dl, ped, BONE_RIGHTKNEE, BONE_RIGHTFOOT, color);
+        if (!ped || !ped->m_pRwClump) {
+            return;
+        }
+        // 不可见且不在屏内：HAnim 常未更新，画出来是乱线
+        if (!ped->GetIsOnScreen() && !ped->bIsVisible) {
+            return;
+        }
+
+        // 一次刷新皮肤矩阵，避免 GetBonePosition(false) 全落根点
+        ped->UpdateRpHAnim();
+
+        const ePedBones links[][2] = {
+            {BONE_PELVIS, BONE_SPINE1},
+            {BONE_SPINE1, BONE_NECK},
+            {BONE_NECK, BONE_HEAD},
+            {BONE_NECK, BONE_LEFTSHOULDER},
+            {BONE_LEFTSHOULDER, BONE_LEFTELBOW},
+            {BONE_LEFTELBOW, BONE_LEFTHAND},
+            {BONE_NECK, BONE_RIGHTSHOULDER},
+            {BONE_RIGHTSHOULDER, BONE_RIGHTELBOW},
+            {BONE_RIGHTELBOW, BONE_RIGHTHAND},
+            {BONE_PELVIS, BONE_LEFTHIP},
+            {BONE_LEFTHIP, BONE_LEFTKNEE},
+            {BONE_LEFTKNEE, BONE_LEFTFOOT},
+            {BONE_PELVIS, BONE_RIGHTHIP},
+            {BONE_RIGHTHIP, BONE_RIGHTKNEE},
+            {BONE_RIGHTKNEE, BONE_RIGHTFOOT},
+        };
+
+        int ok = 0;
+        for (const auto& e : links) {
+            CVector pa = BonePos(ped, e[0], false);
+            if (!BoneNearPed(ped, pa)) {
+                pa = BonePos(ped, e[0], true);
+            }
+            CVector pb = BonePos(ped, e[1], false);
+            if (!BoneNearPed(ped, pb)) {
+                pb = BonePos(ped, e[1], true);
+            }
+            if (!BoneNearPed(ped, pa) || !BoneNearPed(ped, pb)) {
+                continue;
+            }
+            const float dx = pa.x - pb.x;
+            const float dy = pa.y - pb.y;
+            const float dz = pa.z - pb.z;
+            const float d2 = dx * dx + dy * dy + dz * dz;
+            if (d2 < 0.0004f || d2 > 2.56f) {
+                continue;
+            }
+            DrawWorldLine(dl, pa, pb, color, 1.6f);
+            ++ok;
+        }
+
+        if (ok < 4) {
+            DrawPedStickFallback(dl, ped, color);
+        }
     }
 
     void DrawTrackRange(ImDrawList* dl, CPed* player) {

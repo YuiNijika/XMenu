@@ -113,6 +113,13 @@ namespace {
             {"ped.pedsMayhem", "ped.pedsMayhem", &MenuState::PedsMayhem, false},
             {"ped.pedsAtkRocket", "ped.pedsAtkRocket", &MenuState::PedsAtkRocket, false},
             {"ped.pedsRiot", "ped.pedsRiot", &MenuState::PedsRiot, false},
+            {"ped.pedsNoFire", "ped.pedsNoFire", &MenuState::PedsNoFire, false},
+            {"ped.pedsNoFireCivilians", "ped.pedsNoFireCivilians", &MenuState::PedsNoFireCivilians, true},
+            {"ped.pedsNoFireGangs", "ped.pedsNoFireGangs", &MenuState::PedsNoFireGangs, true},
+            {"ped.pedsNoFirePolice", "ped.pedsNoFirePolice", &MenuState::PedsNoFirePolice, true},
+            {"ped.pedsNoFireMission", "ped.pedsNoFireMission", &MenuState::PedsNoFireMission, false},
+            {"ped.pedsLimitPolice", "ped.pedsLimitPolice", &MenuState::PedsLimitPolice, false},
+            {"ped.pedsLimitGangs", "ped.pedsLimitGangs", &MenuState::PedsLimitGangs, false},
             {"ped.slutMagnet", "ped.slutMagnet", &MenuState::SlutMagnet, false},
             {"ped.gangsControl", "ped.gangsControl", &MenuState::GangsControl, false},
             {"ped.gangsEverywhere", "ped.gangsEverywhere", &MenuState::GangsEverywhere, false},
@@ -933,12 +940,16 @@ namespace {
     }
 
     void LoadWorldConfig(const JsonLoader::JsonValue& root) {
-        // 时间锁定由 features binding 持久化，禁止强制 false
-        (void)root;
+        const JsonLoader::JsonValue& gameConfig = CurrentGameConfigOrLegacyRoot(root);
+        const JsonLoader::JsonValue& world = ObjectOrNull(gameConfig, "world");
+        if (world.type == JsonLoader::JsonValue::OBJECT) {
+            MenuState::LockedWeatherType = static_cast<int>(JsonLoader::GetNumber(world, "lockedWeather", MenuState::LockedWeatherType));
+        }
     }
 
     void WriteWorldConfig(std::ostream& file, const std::string& indent, bool trailingComma) {
         file << indent << "\"world\": {\n";
+        file << indent << "  \"lockedWeather\": " << MenuState::LockedWeatherType << ",\n";
         file << indent << "  \"note\": \"lockTime/freezeTime live under features bindings\"\n";
         file << indent << "}" << (trailingComma ? "," : "") << "\n";
     }

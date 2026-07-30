@@ -13,12 +13,25 @@
 #include "ui/MenuState.h"
 #include <array>
 #include <cstring>
+#include <string>
+#include <cstdint>
 
-#ifdef GTASA
-#include <vector>
+#ifndef WM_INPUT
+#define WM_INPUT 0x00FF
 #endif
 
-extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#ifndef WM_MOUSEHWHEEL
+#define WM_MOUSEHWHEEL 0x020E
+#endif
+
+#ifndef GWLP_WNDPROC
+#define GWLP_WNDPROC        (-4)
+#endif
+
+// Forward declaration for ImGui WndProc handler.
+// Note: The declaration is intentionally #if 0'd in imgui_impl_win32.h (to avoid pulling <windows.h> into the header).
+// We must provide our own forward declaration (as recommended by the header comments).
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 typedef HRESULT(__stdcall* EndScene_t)(LPDIRECT3DDEVICE9);
 typedef HRESULT(__stdcall* Reset_t)(LPDIRECT3DDEVICE9, D3DPRESENT_PARAMETERS*);
@@ -164,8 +177,8 @@ namespace {
 
     void ApplyMousePatch(bool menuActive) {
         if (menuActive) {
-            plugin::patch::SetUChar((uintptr_t)BY_GAME(0x6194A0, 0x6020A0, 0x580D20), 0xC3);
-            plugin::patch::Nop((uintptr_t)BY_GAME(0x541DD7, 0x4AB6CA, 0x49272F), 5);
+            plugin::patch::SetUChar((std::uintptr_t)BY_GAME(0x6194A0, 0x6020A0, 0x580D20), 0xC3);
+            plugin::patch::Nop((std::uintptr_t)BY_GAME(0x541DD7, 0x4AB6CA, 0x49272F), 5);
 #ifdef GTASA
             plugin::patch::SetUChar(0x4EB731, 0xEB);
             plugin::patch::SetUChar(0x4EB75A, 0xEB);
@@ -173,7 +186,7 @@ namespace {
             return;
         }
 
-        plugin::patch::SetUChar((uintptr_t)BY_GAME(0x6194A0, 0x6020A0, 0x580D20), BY_GAME(0xE9, 0x53, 0x53));
+        plugin::patch::SetUChar((std::uintptr_t)BY_GAME(0x6194A0, 0x6020A0, 0x580D20), BY_GAME(0xE9, 0x53, 0x53));
 #ifdef GTASA
         plugin::patch::SetRaw(0x541DD7, (void*)"\xE8\xE4\xD5\xFF\xFF", 5);
         plugin::patch::SetUChar(0x4EB731, 0x74);
@@ -331,7 +344,7 @@ void D3DHook::MaintainInputState() {
 }
 
 LRESULT __stdcall D3DHook::hkWndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    if (menuVisible || backgroundInputActive) {
+    if ((menuVisible || backgroundInputActive) && ImGui::GetCurrentContext()) {
         // 与 III/VC 相同：Win32 绝对客户区坐标交给 ImGui
         ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
 
@@ -339,9 +352,9 @@ LRESULT __stdcall D3DHook::hkWndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, 
             || uMsg == WM_RBUTTONDOWN || uMsg == WM_RBUTTONUP || uMsg == WM_MBUTTONDOWN
             || uMsg == WM_MBUTTONUP || uMsg == WM_MOUSEWHEEL || uMsg == WM_MOUSEHWHEEL
             || uMsg == WM_INPUT) {
-            return true;
+            return 1;
         }
-    } else {
+    } else if (!(menuVisible || backgroundInputActive)) {
         if (uMsg == WM_MOUSEWHEEL) {
             g_rawWheelDelta += static_cast<float>(static_cast<short>(HIWORD(wParam))) / static_cast<float>(WHEEL_DELTA);
         }
@@ -396,7 +409,7 @@ HRESULT __stdcall D3DHook::hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
             ReleaseWindowInput();
             return oEndScene(pDevice);
         }
-        oWndProc = (WNDPROC)SetWindowLongPtr(window, GWL_WNDPROC, (LONG_PTR)hkWndProc);
+        oWndProc = (WNDPROC)SetWindowLongPtr(window, GWLP_WNDPROC, (LONG_PTR)hkWndProc);
         InitImGui(pDevice);
     }
 
@@ -490,7 +503,7 @@ void D3DHook::Shutdown() {
 
     if (isInitialized) {
         Log::Info("关闭 D3D Hook 与 ImGui");
-        SetWindowLongPtr(window, GWL_WNDPROC, (LONG_PTR)oWndProc);
+        SetWindowLongPtr(window, GWLP_WNDPROC, (LONG_PTR)oWndProc);
         ImGui_ImplDX9_Shutdown();
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();

@@ -157,6 +157,7 @@ namespace GameLogic {
     void SetPedsMayhem(bool enable);
     void SetPedsAtkRocket(bool enable);
     void SetPedsRiot(bool enable);
+    void SetPedsNoFire(bool enable);
     void SetSlutMagnet(bool enable);
     void SetGangsControl(bool enable);
     void SetGangsEverywhere(bool enable);
@@ -171,6 +172,19 @@ namespace GameLogic {
     void SetGangMemberModel(unsigned int gangId, unsigned int memberId, unsigned int model);
     void ResetGangModels();
     void SetGangWeapons(unsigned int gangId, int weapon1, int weapon2, int weapon3);
+
+    // PedsNoFire 支持 根据 MenuState 过滤决定是否压制该 ped 开火
+    bool ShouldSuppressPedFire(CPed* ped);
+
+    // 跨版本判断任务/脚本 ped
+    bool IsMissionPed(CPed* ped);
+
+    // 跨版本 清除 ped 的 look/瞄准状态，用于 no-fire 回退压制
+    void ClearPedAiming(CPed* ped);
+
+    // 跨版本 ped 类型判断（供 no-fire 选择性过滤、spawn 限量使用）
+    bool IsCopPed(const CPed* ped);
+    bool IsGangPed(const CPed* ped);
 
     // 场景
     bool PlayPlayerAnimation(const char* group, const char* name, bool loop);
@@ -240,7 +254,12 @@ namespace GameLogic {
     void Init();
     void Process();
 
-    // III 池/玩家惰性分配：未就绪时禁止碰游戏内存
-    // VC/SA 通常恒 true；III 需 ped pool + 玩家 ped 稳定若干帧
+    // 未就绪时禁止碰游戏内存 / 打补丁 / 跑菜单逻辑
+    // III：池 + 玩家 ped + 脚本已真正 Process（避开 CLEO Init/AddScriptToList）+ 冷却帧
+    // VC/SA：本地玩家 ped 存在即可
     bool IsWorldReady();
+
+    // 新游戏/读档 initGame：重置 III 就绪代数（VC/SA 空操作）
+    // 切勿对 III 使用 initScriptsEvent：与 CLEO 2.x 共用 0x48C26B/0x48C575/0x453B43
+    void NotifyGameInit();
 }

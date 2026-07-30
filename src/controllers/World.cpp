@@ -14,7 +14,6 @@
 #endif
 
 namespace {
-    short lockedWeatherType = 0;
     bool wasLockingWeather = false;
     int frozenHour = 0;
     int frozenMinute = 0;
@@ -70,12 +69,26 @@ namespace {
 
 namespace Controllers::World {
     void CaptureWeather() {
-        lockedWeatherType = CWeather::OldWeatherType;
+        MenuState::LockedWeatherType = static_cast<int>(CWeather::OldWeatherType);
+    }
+
+    void ReleaseWeather() {
+        if (wasLockingWeather) {
+            CWeather::ReleaseWeather();
+            wasLockingWeather = false;
+        }
+        MenuState::LockWeather = false;
+        CaptureWeather();
+    }
+
+    void ForceWeatherNow(int id) {
+        CWeather::ForceWeatherNow(static_cast<short>(id));
+        MenuState::LockedWeatherType = id;
     }
 
     void Process() {
         if (MenuState::LockWeather) {
-            CWeather::ForceWeatherNow(lockedWeatherType);
+            CWeather::ForceWeatherNow(static_cast<short>(MenuState::LockedWeatherType));
             wasLockingWeather = true;
         } else {
             if (wasLockingWeather) {

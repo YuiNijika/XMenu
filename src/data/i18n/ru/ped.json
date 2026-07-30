@@ -51,5 +51,14 @@
   "ped.gangMemberIndex": "Слот участника",
   "ped.gangMemberModel": "Модель участника",
   "ped.gangWeaponType": "Оружие банды",
-  "ped.applyGangWeapons": "Применить оружие банды"
+  "ped.applyGangWeapons": "Применить оружие банды",
+  "ped.pedsNoFire": "Педы не стреляют",
+  "ped.pedsNoFireCivilians": "Гражданские",
+  "ped.pedsNoFireGangs": "Банды",
+  "ped.pedsNoFirePolice": "Полиция",
+  "ped.pedsNoFireMission": "Миссия",
+  "ped.pedsLimitPolice": "Ограничить спавн полиции",
+  "ped.pedsLimitGangs": "Ограничить спавн банд",
+  "ped.pedsMaxNearbyPolice": "Макс. полиции рядом",
+  "ped.pedsMaxNearbyGangs": "Макс. банд рядом"
 }

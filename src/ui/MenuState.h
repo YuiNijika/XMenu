@@ -129,6 +129,17 @@ namespace MenuState {
     inline bool PedsMayhem = false;
     inline bool PedsAtkRocket = false;
     inline bool PedsRiot = false;
+    // 行人不开枪
+    inline bool PedsNoFire = false;
+    inline bool PedsNoFireCivilians = true;
+    inline bool PedsNoFireGangs = true;
+    inline bool PedsNoFirePolice = true;
+    inline bool PedsNoFireMission = false;
+    // 人口刷新限制
+    inline bool PedsLimitPolice = false;
+    inline bool PedsLimitGangs = false;
+    inline int PedsMaxNearbyPolice = 8;
+    inline int PedsMaxNearbyGangs = 6;
     inline bool SlutMagnet = false;
     inline bool GangsControl = false;
     inline bool GangsEverywhere = false;
@@ -195,6 +206,7 @@ namespace MenuState {
     inline bool RandomCheatsProgressBar = false;
     inline bool CommandWindowEnabled = false;
     inline bool LockWeather = false;
+    inline int LockedWeatherType = 0;  // 锁定的天气ID，用于跨mod切换持久化
     inline bool DisableReplay = false;
     inline bool DisableCheats = false;
     inline bool ForbiddenAreaWanted = false;

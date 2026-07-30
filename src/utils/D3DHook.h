@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <d3d9.h>
 #include <functional>
+#include <cstdint>
 
 class D3DHook {
 public:

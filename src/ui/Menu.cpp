@@ -1050,7 +1050,9 @@ namespace Menu {
             ImGui::OpenPopup("XMenuUpdateDialog");
         }
 
-        if (ImGui::BeginPopupModal("XMenuUpdateDialog", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        // p_open：右上角 X；点关闭/打开链接后 Dismiss，避免每帧再弹
+        bool updateOpen = true;
+        if (ImGui::BeginPopupModal("XMenuUpdateDialog", &updateOpen, ImGuiWindowFlags_AlwaysAutoResize)) {
             const UpdateChecker::UpdateInfo info = UpdateChecker::GetUpdateInfo();
             const char* sourceText = info.sourceName.empty()
                 ? UpdateChecker::SourceDisplayName(info.source)
@@ -1063,19 +1065,28 @@ namespace Menu {
             ImGui::Text(T("update.source"), sourceText);
             ImGui::Spacing();
 
-            if (ImGui::Button(T("update.openGitHub"), ImVec2(130.0f, 0.0f))) {
+            if (ImGui::Button(T("update.openGitHub"), ImVec2(120.0f, 0.0f))) {
                 ShellExecuteA(nullptr, "open", info.releaseUrl.empty() ? XMENU_GITHUB : info.releaseUrl.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
                 UpdateChecker::Dismiss();
                 ImGui::CloseCurrentPopup();
             }
             ImGui::SameLine();
-            if (ImGui::Button(T("update.openGTAMODX"), ImVec2(130.0f, 0.0f))) {
+            if (ImGui::Button(T("update.openGTAMODX"), ImVec2(120.0f, 0.0f))) {
                 ShellExecuteA(nullptr, "open", XMENU_URL, nullptr, nullptr, SW_SHOWNORMAL);
+                UpdateChecker::Dismiss();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button(T("update.close"), ImVec2(120.0f, 0.0f))) {
                 UpdateChecker::Dismiss();
                 ImGui::CloseCurrentPopup();
             }
 
             ImGui::EndPopup();
+        }
+        if (!updateOpen) {
+            // 标题栏 X：Begin 可能仍为 true，统一在这里 Dismiss
+            UpdateChecker::Dismiss();
         }
     }
 }

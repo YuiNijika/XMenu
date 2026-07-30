@@ -51,5 +51,14 @@
   "ped.gangMemberIndex": "Member slot",
   "ped.gangMemberModel": "Member model",
   "ped.gangWeaponType": "Gang weapon type",
-  "ped.applyGangWeapons": "Apply gang weapons"
+  "ped.applyGangWeapons": "Apply gang weapons",
+  "ped.pedsNoFire": "Peds No Fire",
+  "ped.pedsNoFireCivilians": "Civilians",
+  "ped.pedsNoFireGangs": "Gangs",
+  "ped.pedsNoFirePolice": "Police",
+  "ped.pedsNoFireMission": "Mission",
+  "ped.pedsLimitPolice": "Limit police spawn",
+  "ped.pedsLimitGangs": "Limit gang spawn",
+  "ped.pedsMaxNearbyPolice": "Max nearby police",
+  "ped.pedsMaxNearbyGangs": "Max nearby gangs"
 }

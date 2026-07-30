@@ -19,6 +19,8 @@ namespace Controllers::World {
     void SetFreezeTime(bool enable);
     void SetLockTime(bool enable);
     void SetNoWaterPhysics(bool enable);
+    void ReleaseWeather();
+    void ForceWeatherNow(int id);
     int GetDaysPassed();
     void SetDaysPassed(int days);
     float GetGravity();

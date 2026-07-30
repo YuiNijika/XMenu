@@ -32,6 +32,7 @@
 #include "CGangs.h"
 #include "CPopulation.h"
 #include "CTheZones.h"
+#include "ePedType.h"
 #include "utils/StdExtras.h"
 #include <array>
 #include <cmath>
@@ -272,7 +273,11 @@ bool g_weaponTweaksNeedReapply = true;
 namespace GameLogic {
 
 bool IsWorldReady() {
-    return true;
+    // SA 池启动较早；仅要求本地玩家 ped 存在，避免极早帧空解引用
+    return CWorld::Players && CWorld::Players[CWorld::PlayerInFocus].m_pPed != nullptr;
+}
+
+void NotifyGameInit() {
 }
 
 void Init() {
@@ -1338,6 +1343,12 @@ void SetEveryoneArmed(bool enable) { plugin::patch::Set<bool>(0x969140, enable, 
 void SetPedsMayhem(bool enable) { plugin::patch::Set<bool>(0x96913E, enable, false); }
 void SetPedsAtkRocket(bool enable) { plugin::patch::Set<bool>(0x969158, enable, false); }
 void SetPedsRiot(bool enable) { plugin::patch::Set<bool>(0x969175, enable, false); }
+void SetPedsNoFire(bool /*enable*/) { /* suppression handled in BulletAssist hooks + Ped Process */ }
+
+void ClearPedAiming(CPed* ped) {
+    if (ped) ped->ClearLookFlag();
+}
+
 void SetSlutMagnet(bool enable) { plugin::patch::Set<bool>(0x96915D, enable, false); }
 void SetGangsControl(bool enable) { plugin::patch::Set<bool>(0x96915B, enable, false); }
 void SetGangsEverywhere(bool enable) { plugin::patch::Set<bool>(0x96915A, enable, false); }
@@ -1393,6 +1404,41 @@ void ResetGangModels() {
 void SetGangWeapons(unsigned int gangId, int weapon1, int weapon2, int weapon3) {
     if (gangId > 9) return;
     CGangs::SetGangWeapons(gangId, weapon1, weapon2, weapon3);
+}
+
+bool IsCopPed(const CPed* ped) {
+    return ped && ped->m_nPedType == PED_TYPE_COP;
+}
+
+bool IsGangPed(const CPed* ped) {
+    if (!ped) return false;
+    int t = ped->m_nPedType;
+    // SA gang types are 7..15 typically (GANG1..)
+    return t >= 7 && t <= 15; // covers common gang range; harmless over-approx for safety
+}
+
+bool ShouldSuppressPedFire(CPed* ped) {
+    if (!ped) return false;
+    CPlayerPed* player = FindPlayerPed();
+    if (ped == static_cast<CPed*>(player)) return false; // never suppress player
+
+    if (!MenuState::PedsNoFire) return false;
+
+    const bool isMission = (ped->m_nCreatedBy == 2);
+    const bool isCop = IsCopPed(ped);
+    const bool isGang = IsGangPed(ped);
+    const bool isCiv = !isMission && !isCop && !isGang;
+
+    if (isMission && MenuState::PedsNoFireMission) return true;
+    if (isCop && MenuState::PedsNoFirePolice) return true;
+    if (isGang && MenuState::PedsNoFireGangs) return true;
+    if (isCiv && MenuState::PedsNoFireCivilians) return true;
+    return false;
+}
+
+bool IsMissionPed(CPed* ped) {
+    if (!ped) return false;
+    return ped->m_nCreatedBy == 2;
 }
 
 bool PlayPlayerAnimation(const char* group, const char* name, bool loop) {

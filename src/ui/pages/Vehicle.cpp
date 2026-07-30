@@ -59,7 +59,7 @@ namespace {
                 if (UI::Button(buttonLabel, 3)) {
                     Controllers::Vehicle::Spawn(static_cast<unsigned int>(vehicle.id));
                 }
-                UI::SameLineEvery(index++, 3);
+                UI::SameLine();
             }
         }
 
@@ -264,7 +264,7 @@ namespace Pages::Vehicle {
         ImGui::Spacing();
 
         if (UI::BeginTabBar("VehicleTabs")) {
-            if (UI::BeginTab("VehicleToggles", T("common.toggles"))) {
+                if (UI::BeginTab("VehicleToggles", T("common.toggles"))) {
                 UI::Checkbox(T("vehicle.noDamage"), &MenuState::VehicleNoDamage);
                 UI::SameLine();
                 UI::Checkbox(T("vehicle.autoUnflip"), &MenuState::VehicleAutoUnflip);
@@ -273,12 +273,12 @@ namespace Pages::Vehicle {
                 UI::SameLine();
                 UI::Checkbox(T("vehicle.watertight"), &MenuState::VehicleWatertight);
                 UI::SameLine();
-                if (UI::Checkbox(T("vehicle.flyingCars"), &MenuState::VehicleFlyingCars)) {
-                    Controllers::Vehicle::SetFlyingCars(MenuState::VehicleFlyingCars);
-                }
+                UI::Checkbox(T("vehicle.flyingCars"), &MenuState::VehicleFlyingCars);
 #if defined(GTASA) || defined(GTAVC)
                 UI::SameLine();
                 UI::Checkbox(T("vehicle.boatFly"), &MenuState::VehicleBoatFly);
+#endif
+#if defined(GTASA) || defined(GTAVC)
                 UI::SameLine();
                 UI::Checkbox(T("vehicle.driveWater"), &MenuState::VehicleDriveWater);
                 UI::SameLine();

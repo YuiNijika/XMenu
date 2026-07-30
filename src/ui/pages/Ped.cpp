@@ -128,6 +128,21 @@ namespace Pages::Ped {
                 ImGui::NextColumn();
 #endif
                 ImGui::Columns(1);
+
+                // Peds No Fire
+                ImGui::SeparatorText(T("ped.pedsNoFire"));
+                if (ImGui::Checkbox(T("ped.pedsNoFire"), &MenuState::PedsNoFire)) {
+                    Controllers::Ped::SetPedsNoFire(MenuState::PedsNoFire);
+                }
+                if (MenuState::PedsNoFire) {
+                    ImGui::Indent();
+                    ImGui::Checkbox(T("ped.pedsNoFireCivilians"), &MenuState::PedsNoFireCivilians);
+                    ImGui::Checkbox(T("ped.pedsNoFireGangs"), &MenuState::PedsNoFireGangs);
+                    ImGui::Checkbox(T("ped.pedsNoFirePolice"), &MenuState::PedsNoFirePolice);
+                    ImGui::Checkbox(T("ped.pedsNoFireMission"), &MenuState::PedsNoFireMission);
+                    ImGui::Unindent();
+                }
+
                 UI::EndTab();
             }
 

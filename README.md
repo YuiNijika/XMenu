@@ -38,7 +38,7 @@ XMenu 是一个面向 GTA III、GTA Vice City、GTA San Andreas 的 ASI 菜单�
 | 武器 | 获取武器、弹药、安全模式、滚轮刷武器、自定义射速、线框与骨骼绘制、子弹追踪、子弹穿墙 |
 | 世界 | 时间、天气、游戏速度、环境控制、自由相机、俯视相机、随机作弊 |
 | 传送 | 城市 / 区域选点、快速地图 / 标记、向前传送、持续向前传送 |
-| 行人 | 行人生成与数据列表 |
+| 行人 | 行人生成与数据列表、无火控制、刷新数量限制 |
 | 场景 | 动画、粒子、过场 |
 | 视觉 | 视觉 / 天气选项 |
 | 界面 | 面板模式、列表模式、数值弹窗输入、全局主题色 |
@@ -272,7 +272,7 @@ Author: **鼠子(YuiNijika)**
 - Weapon: grants, ammo, safe mode, scroll-wheel cycling, custom fire rate, wireframe and skeleton ESP, bullet tracking, wallhack
 - World: time, weather, game speed, environment, freecam, top-down cam, random cheats
 - Teleport: city / area locations, quick map / marker, forward teleport, continuous forward teleport
-- Ped: spawn tools and data lists
+- Ped: spawn tools, data lists, no-fire control, spawn population limits
 - Scene: animation, particle, cutscene tools
 - Visual: visual / weather options
 - UI: panel mode, list mode, popup numeric entry, shared themes

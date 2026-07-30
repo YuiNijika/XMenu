@@ -18,7 +18,10 @@
 #include "CHud.h"
 #include "CWeather.h"
 #include "CTheScripts.h"
+#include "CCutsceneMgr.h"
+#include "CMenuManager.h"
 #include "ui/MenuState.h"
+#include "ePedType.h"
 #include "utils/StdExtras.h"
 #include "rw/skeleton.h"
 #include "CMatrix.h"
@@ -174,67 +177,238 @@ namespace GameLogic {
 
 namespace {
     int g_worldReadyStreak = 0;
+    int g_initGeneration = 0;
+    int g_readyGeneration = -1;
     bool g_logicHooksInstalled = false;
+    bool g_loggedCleo = false;
+    int g_keepStuffApplied = -1;
+    int g_framesSinceInitGame = 0;
+    bool g_addressProbeUnsafe = false;   // 一旦SEH或明显坏指针，III本会话不再尝试就绪
+    int g_postTransitionCooldown = 0;       // 过场/大模型流结束后的短冷却
+
+    bool IsCleoPresent() {
+        static int cached = -1;
+        if (cached < 0) {
+            cached = (GetModuleHandleA("III.CLEO.asi")
+                || GetModuleHandleA("CLEO.asi")
+                || GetModuleHandleA("cleo.asi")
+                || GetModuleHandleA("III.CLEO.dll")) ? 1 : 0;
+        }
+        return cached == 1;
+    }
+
+    int RequiredReadyStreak() {
+        // ~0.5s / ~2.5s @60fps；有 CLEO 时 Init 后还要 LoadCustomScripts
+        return IsCleoPresent() ? 150 : 30;
+    }
+
+    // 任务过场加载会同步抽 TXD/Clump（崩溃点 0x5ABD80 落在 RW 流附近，读 target=0xD）
+    // sticky-ready 不能盖过这段窗口：ped/脚本表面仍“活着”，但 RW/流未稳
+    bool IsCutsceneOrStreamBusy() {
+#if defined(GTA3) || !(defined(GTASA) || defined(GTAVC))
+        if (g_addressProbeUnsafe) return true;
+        __try {
+#endif
+            if (CCutsceneMgr::ms_cutsceneProcessing) return true;
+            if (CCutsceneMgr::ms_running) return true;
+            // loadStatus：0 空闲；非 0 表示正在装/刚装完未进入 running 的过渡
+            if (CCutsceneMgr::ms_cutsceneLoadStatus != 0 && !CCutsceneMgr::ms_loaded) return true;
+            if (CStreaming::ms_bLoadingBigModel) return true;
+            if (CTimer::m_CodePause) return true;
+            if (FrontEndMenuManager.m_bMenuActive) return true;
+            if (FrontEndMenuManager.m_bGameNotLoaded) return true;
+            return false;
+#if defined(GTA3) || !(defined(GTASA) || defined(GTAVC))
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+            g_addressProbeUnsafe = true;
+            Log::Error("III 过场/流状态探测异常，已锁定未就绪");
+            return true;
+        }
+#endif
+    }
+
+    void MarkWorldUnsettled() {
+        g_worldReadyStreak = 0;
+        g_readyGeneration = -1;
+    }
 
     bool ArePoolsAlive() {
-        if (!CPools::ms_pPedPool || !CPools::ms_pPedPool->m_pObjects || CPools::ms_pPedPool->m_nSize <= 0) {
+#if defined(GTA3) || !(defined(GTASA) || defined(GTAVC))
+        if (g_addressProbeUnsafe) return false;
+        __try {
+#endif
+            auto* pedPool = CPools::ms_pPedPool;
+            auto* vehPool = CPools::ms_pVehiclePool;
+            if (reinterpret_cast<uintptr_t>(pedPool) < 0x10000) return false;
+            if (reinterpret_cast<uintptr_t>(vehPool) < 0x10000) return false;
+            if (!pedPool || !pedPool->m_pObjects || !pedPool->m_byteMap || pedPool->m_nSize <= 0) {
+                return false;
+            }
+            if (!vehPool || !vehPool->m_pObjects || !vehPool->m_byteMap || vehPool->m_nSize <= 0) {
+                return false;
+            }
+            return true;
+#if defined(GTA3) || !(defined(GTASA) || defined(GTAVC))
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+            g_addressProbeUnsafe = true;
+            Log::Error("III 池指针探测异常（疑似EXE布局与plugin-sdk不匹配或CLEO冲突），已锁定未就绪");
             return false;
         }
-        if (!CPools::ms_pVehiclePool || !CPools::ms_pVehiclePool->m_pObjects || CPools::ms_pVehiclePool->m_nSize <= 0) {
+#endif
+    }
+
+    // 崩溃点 0x438FE4 = CTheScripts::Init → AddScriptToList 读坏链表
+    // Init 中途 pActiveScripts 可能已非空；必须等 ProcessScripts 真正跑过
+    // ScriptsUpdated / CommandsExecuted 只在脚本循环里增长，Init 窗口保持 0
+    // 额外：若plugin-sdk硬编码地址在当前EXE下无效，SEH会捕获并永久未就绪
+    bool AreScriptsSettled() {
+#if defined(GTA3) || !(defined(GTASA) || defined(GTAVC))
+        if (g_addressProbeUnsafe) return false;
+        __try {
+#endif
+            // 只读全局计数与头指针，不调 ProcessOneCommand / 不遍历链表节点
+            CRunningScript* pa = CTheScripts::pActiveScripts;
+            if (pa == nullptr) return false;
+            if (reinterpret_cast<uintptr_t>(pa) < 0x10000) return false;
+            // 计数器若地址错会读到随机；此处保守：两个都为0才认为未跑过
+            if (CTheScripts::ScriptsUpdated == 0 && CTheScripts::CommandsExecuted == 0) {
+                return false;
+            }
+            return true;
+#if defined(GTA3) || !(defined(GTASA) || defined(GTAVC))
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+            g_addressProbeUnsafe = true;
+            Log::Error("III 脚本计数探测异常，已锁定未就绪以保护CTheScripts::Init");
             return false;
         }
-        return true;
+#endif
     }
 
     CPlayerPed* TryGetLocalPlayerPed() {
-        if (!ArePoolsAlive()) {
+#if defined(GTA3) || !(defined(GTASA) || defined(GTAVC))
+        if (g_addressProbeUnsafe) return nullptr;
+        __try {
+#endif
+            if (!ArePoolsAlive()) {
+                return nullptr;
+            }
+            if (!CWorld::Players) {
+                return nullptr;
+            }
+            if (reinterpret_cast<uintptr_t>(CWorld::Players) < 0x10000) {
+                return nullptr;
+            }
+            // 不走 FindPlayerPed，避免半初始化时进游戏函数
+            const unsigned char focus = CWorld::PlayerInFocus;
+            if (focus > 1) {
+                return nullptr;
+            }
+            CPlayerPed* ped = CWorld::Players[focus].m_pPed;
+            if (!ped) {
+                return nullptr;
+            }
+
+            auto* pool = CPools::ms_pPedPool;
+            if (reinterpret_cast<uintptr_t>(pool) < 0x10000) return nullptr;
+            const int index = pool->GetIndex(ped);
+            if (index < 0 || index >= pool->m_nSize) {
+                return nullptr;
+            }
+            if (pool->IsFreeSlotAtIndex(index)) {
+                return nullptr;
+            }
+            return ped;
+#if defined(GTA3) || !(defined(GTASA) || defined(GTAVC))
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+            g_addressProbeUnsafe = true;
+            Log::Error("III 玩家ped探测异常，已锁定未就绪");
             return nullptr;
         }
-        // 不走 FindPlayerPed 游戏函数，直接读静态 Players，避免脚本半初始化时二次进脚本系统
-        const unsigned char focus = CWorld::PlayerInFocus;
-        if (focus > 1) {
-            return nullptr;
-        }
-        CPlayerPed* ped = CWorld::Players[focus].m_pPed;
-        if (!ped) {
-            return nullptr;
-        }
-        // 粗校验：指针落在 ped pool 对象块内
-        const auto* pool = CPools::ms_pPedPool;
-        const auto* begin = reinterpret_cast<const char*>(pool->m_pObjects);
-        const auto* end = begin + static_cast<std::size_t>(pool->m_nSize) * sizeof(CPlayerPed);
-        const auto* ptr = reinterpret_cast<const char*>(ped);
-        if (ptr < begin || ptr >= end) {
-            return nullptr;
-        }
-        return ped;
+#endif
+    }
+}
+
+void NotifyGameInit() {
+    ++g_initGeneration;
+    g_worldReadyStreak = 0;
+    g_readyGeneration = -1;
+    g_framesSinceInitGame = 0;
+    g_postTransitionCooldown = 0;
+    g_keepStuffApplied = -1; // 新游戏/读档代码段可能被还原，下次按需重打补丁
+    // g_addressProbeUnsafe 保留：布局不随读档变，保持锁定更安全
+    if (!g_loggedCleo && IsCleoPresent()) {
+        g_loggedCleo = true;
+        Log::Info("检测到 III.CLEO：延长 world-ready 冷却，避开 CTheScripts::Init/AddScriptToList 窗口");
     }
 }
 
 bool IsWorldReady() {
-    if (!ArePoolsAlive() || !TryGetLocalPlayerPed()) {
-        g_worldReadyStreak = 0;
+    ++g_framesSinceInitGame;
+
+    if (g_addressProbeUnsafe) {
         return false;
     }
-    // 新游戏/读档后等几帧，避开 CTheScripts::Init 与池重建窗口（Grinch 同类问题）
-    if (g_worldReadyStreak < 5) {
+
+    // initGame 刚发生后给游戏/CLEO 更多帧完成脚本链表构建
+    const int minCd = IsCleoPresent() ? 90 : 15;
+    if (g_framesSinceInitGame < minCd) {
+        return false;
+    }
+
+    // 必须先于 sticky-ready：过场加载时 ped 仍在，旧逻辑会一直 true 并继续跑菜单逻辑
+    if (IsCutsceneOrStreamBusy()) {
+        MarkWorldUnsettled();
+        g_postTransitionCooldown = IsCleoPresent() ? 45 : 20;
+        return false;
+    }
+
+    if (g_postTransitionCooldown > 0) {
+        --g_postTransitionCooldown;
+        MarkWorldUnsettled();
+        return false;
+    }
+
+    if (!ArePoolsAlive() || !AreScriptsSettled() || !TryGetLocalPlayerPed()) {
+        MarkWorldUnsettled();
+        return false;
+    }
+
+    // 本代 init 已就绪则保持 true（避免 streak 在边界抖动）
+    if (g_readyGeneration == g_initGeneration) {
+        return true;
+    }
+
+    const int need = RequiredReadyStreak();
+    if (g_worldReadyStreak < need) {
         ++g_worldReadyStreak;
         return false;
     }
+    g_readyGeneration = g_initGeneration;
     return true;
 }
 
 void Init() {
     // 新游戏/读档会再次走 bootstrap，钩子只装一次
+    // 注意：不要 hook initScriptsEvent（0x48C26B 等），CLEO 已 RedirectCall 同一批地址
     if (g_logicHooksInstalled) {
         return;
     }
     g_logicHooksInstalled = true;
 
-    // III BigHead：对齐 Cheat-Menu 的 pre-render 钩子
+    // III BigHead：对齐 Cheat-Menu 的 pre-render 钩子（非脚本路径）
+    // 过场/流窗口禁止改 RwFrame；此处不调 IsWorldReady()（其会 ++ 帧计数）
     static plugin::CdeclEvent<plugin::AddressList<0x4CFE12, plugin::H_CALL>, plugin::PRIORITY_AFTER, plugin::ArgPickN<CPed*, 0>, void(CPed*)> onPreRender;
     onPreRender += [](CPed* ped) {
-        if (!MenuState::BigHeadMode || !ped || !IsWorldReady() || !ped->m_apFrames[2]) {
+        if (!MenuState::BigHeadMode || !ped) {
+            return;
+        }
+        if (g_addressProbeUnsafe || g_readyGeneration != g_initGeneration || g_postTransitionCooldown > 0) {
+            return;
+        }
+        if (IsCutsceneOrStreamBusy()) {
+            return;
+        }
+        if (!ped->m_pRwObject || !ped->m_apFrames[2]) {
             return;
         }
         RwFrame* frame = ped->m_apFrames[2]->m_pFrame;
@@ -375,6 +549,11 @@ bool IsPlayerDead(CPlayerPed* player) {
 }
 
 void SetKeepStuff(bool enable) {
+    // 每帧重写会与其它 ASI（含 CLEO 加载窗口）抢代码页；仅在状态变化时打补丁
+    const int want = enable ? 1 : 0;
+    if (g_keepStuffApplied == want) {
+        return;
+    }
     if (enable) {
         plugin::patch::Nop(0x421507, 7);
         plugin::patch::Nop(0x421724, 7);
@@ -384,6 +563,7 @@ void SetKeepStuff(bool enable) {
         plugin::patch::SetRaw(0x421724, (void*)"\x8B\x0B\xE8\x45\xE4\x0A\x00", 7);
         plugin::patch::SetRaw(0x4217F8, (void*)"\x83\xC4\x14\xE8\x73\xE3\x0A\x00", 8);
     }
+    g_keepStuffApplied = want;
 }
 
 void HealPlayer(CPlayerPed* player) {
@@ -911,6 +1091,53 @@ unsigned int GetGangMemberModel(unsigned int, unsigned int) { return 0; }
 void SetGangMemberModel(unsigned int, unsigned int, unsigned int) {}
 void ResetGangModels() {}
 void SetGangWeapons(unsigned int, int, int, int) {}
+
+bool IsCopPed(const CPed* ped) {
+    return ped && ped->m_ePedType == PED_TYPE_COP;
+}
+bool IsGangPed(const CPed* ped) {
+    if (!ped) return false;
+    int t = ped->m_ePedType;
+    // III has limited gangs; treat any non-cop non-mission special as gang-ish if desired
+    // Conservative: only explicit known if any; else few gangs in III base.
+    return t >= 7 && t <= 12; // safe range guess
+}
+
+void SetPedsNoFire(bool /*enable*/) {}
+
+void ClearPedAiming(CPed* ped) {
+    if (!ped) return;
+#ifdef GTA3
+    ped->ClearObjective();
+#else
+    ped->ClearLookFlag();
+#endif
+}
+
+bool ShouldSuppressPedFire(CPed* ped) {
+    if (!ped) return false;
+    CPlayerPed* player = FindPlayerPed();
+    if (ped == static_cast<CPed*>(player)) return false;
+
+    if (!MenuState::PedsNoFire) return false;
+
+    // III: try createdBy; many scripts use it
+    const bool isMission = (ped->m_nCharCreatedBy == 2);
+    const bool isCop = IsCopPed(ped);
+    const bool isGang = IsGangPed(ped);
+    const bool isCiv = !isMission && !isCop && !isGang;
+
+    if (isMission && MenuState::PedsNoFireMission) return true;
+    if (isCop && MenuState::PedsNoFirePolice) return true;
+    if (isGang && MenuState::PedsNoFireGangs) return true;
+    if (isCiv && MenuState::PedsNoFireCivilians) return true;
+    return false;
+}
+
+bool IsMissionPed(CPed* ped) {
+    if (!ped) return false;
+    return ped->m_nCharCreatedBy == 2;  // MISSION_CHAR
+}
 
 bool PlayPlayerAnimation(const char*, const char*, bool) {
     Log::Warn("III 暂不支持动画页播放，已安全降级");

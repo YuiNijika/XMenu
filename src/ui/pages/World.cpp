@@ -52,6 +52,22 @@ namespace Pages::World {
                 Controllers::World::CaptureWeather();
             }
             Controllers::World::DrawWeatherButtons();
+
+            // Full selector support: id + apply + revert
+            int wid = MenuState::LockedWeatherType;
+            if (ImGui::InputInt(T("world.weatherId"), &wid)) {
+                MenuState::LockedWeatherType = wid;
+            }
+            ImGui::SameLine();
+            if (UI::Button(T("Apply"), 2)) {
+                Controllers::World::ForceWeatherNow(MenuState::LockedWeatherType);
+                MenuState::LockWeather = true;
+            }
+            if (UI::Button(T("world.revertWeather"), 2)) {
+                Controllers::World::ReleaseWeather();
+            }
+            ImGui::SameLine();
+            ImGui::TextDisabled("lock: %d", MenuState::LockedWeatherType);
         }
 
         if (ImGui::CollapsingHeader(T("world.gameRules"), ImGuiTreeNodeFlags_DefaultOpen)) {

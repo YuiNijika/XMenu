@@ -222,6 +222,13 @@ namespace Controllers::Player {
     }
 
     void Process() {
+        // 主循环已门闩，这里再挡一层，避免其它入口在 III/CLEO Init 窗口摸内存
+        if (!GameLogic::IsWorldReady()) {
+            ProcessGodMode(nullptr);
+            ProcessFreeFly(nullptr);
+            return;
+        }
+
         CPlayerPed* player = GetPlayer();
         if (!player) {
             // 玩家未创建时不写 Players[] / 不打补丁，III 启动与读档窗口尤其敏感

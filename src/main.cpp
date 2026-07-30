@@ -63,10 +63,14 @@ namespace {
             return;
         }
 
+        static bool coreInited = false;
         if (bootstrapStage == 0) {
-            Log::Info("分帧初始化[0]: I18n + AppConfig");
-            I18n::Init();
-            AppConfig::Init();
+            if (!coreInited) {
+                Log::Info("分帧初始化[0]: I18n + AppConfig");
+                I18n::Init();
+                AppConfig::Init();
+                coreInited = true;
+            }
             bootstrapStage = 1;
             return;
         }
@@ -104,7 +108,7 @@ namespace {
     }
 
     void InitXMenu() {
-        Log::Info("注册游戏初始化与脚本循环事件");
+        Log::Info("注册游戏初始化事件（驱动订阅延迟到initGame后，以降低CLEO/Init窗口冲突）");
         plugin::Events::initGameEvent.after += []() {
             // 仅放必须尽早、且相对轻量的工作；重 IO / D3D 放到脚本帧分摊
             Log::Info("游戏初始化事件触发（轻量阶段）");
@@ -112,62 +116,79 @@ namespace {
             CFastman92limitAdjuster::Init();
             Log::Info("FLA 初始化完成");
 #endif
-            // 新游戏/读档会再次 init：允许重新分帧；III 的 world-ready 计数在 IsWorldReady 内自行清零
+            // 新游戏/读档：重置 III 就绪门闩。不要用 initScriptsEvent（与 CLEO 抢 0x48C26B 等）
+            GameLogic::NotifyGameInit();
             bootstrapStage = 0;
-        };
 
-        plugin::Events::processScriptsEvent += []() {
-            if (bootstrapStage < 0) {
-                return;
-            }
+            // 延迟安装周期驱动：首次 initGame 后再挂钩，避免在首个 CTheScripts::Init 窗口打补丁
+            static bool driverInstalled = false;
+            if (!driverInstalled) {
+                driverInstalled = true;
 
-            // I18n/配置不碰游戏堆；可在池未就绪时推进
-            // GameLogic::Init / Process / Menu 必须等 III 池与玩家稳定
-            if (bootstrapStage < 4) {
-                if (bootstrapStage >= 1 && !GameLogic::IsWorldReady()) {
-                    return;
-                }
-                AdvanceBootstrap();
-                // 启动帧只推进一个阶段，尽快把控制权交回游戏
-                if (bootstrapStage < 4) {
-                    return;
-                }
-            }
-
-            if (!GameLogic::IsWorldReady()) {
-                return;
-            }
-
-            GameLogic::Process();
-            Menu::Process();
-            D3DHook::MaintainInputState();
-
-            if (!xMenuActive) {
-                CPad* pad = CPad::GetPad(0);
-                if (pad) {
-                    pad->DisablePlayerControls = false;
-                }
-
-                if (XMENU_DEBUG_MODE && D3DHook::HadInitFailure()) {
-                    static unsigned int hintCooldown = 0;
-                    if (hintCooldown++ % 1800 == 0) {
-                        ShowD3DHookFailedMessage();
+                // 将原 processScripts 循环体提取为可复用 lambda
+                static auto s_driver = []() {
+                    if (bootstrapStage < 0) {
+                        return;
                     }
-                }
-                return;
-            }
 
-            static bool lastHotkeyState = false;
-            const bool currentHotkeyState = AppConfig::IsMenuHotkeyPressed();
+                    // I18n/配置不碰游戏堆；可在池未就绪时推进
+                    // GameLogic::Init / Process / Menu 必须等 III 池与玩家稳定
+                    if (bootstrapStage < 4) {
+                        if (bootstrapStage >= 1 && !GameLogic::IsWorldReady()) {
+                            return;
+                        }
+                        AdvanceBootstrap();
+                        // 启动帧只推进一个阶段，尽快把控制权交回游戏
+                        if (bootstrapStage < 4) {
+                            return;
+                        }
+                    }
 
-            if (currentHotkeyState && !lastHotkeyState) {
-                D3DHook::SetMenuVisible(!D3DHook::IsMenuVisible());
-            }
-            lastHotkeyState = currentHotkeyState;
+                    if (!GameLogic::IsWorldReady()) {
+                        return;
+                    }
 
-            CPad* pad = CPad::GetPad(0);
-            if (pad) {
-                pad->DisablePlayerControls = D3DHook::IsInitialized() && D3DHook::IsMenuVisible();
+                    GameLogic::Process();
+                    Menu::Process();
+                    D3DHook::MaintainInputState();
+
+                    if (!xMenuActive) {
+                        CPad* pad = CPad::GetPad(0);
+                        if (pad) {
+                            pad->DisablePlayerControls = false;
+                        }
+
+                        if (XMENU_DEBUG_MODE && D3DHook::HadInitFailure()) {
+                            static unsigned int hintCooldown = 0;
+                            if (hintCooldown++ % 1800 == 0) {
+                                ShowD3DHookFailedMessage();
+                            }
+                        }
+                        return;
+                    }
+
+                    static bool lastHotkeyState = false;
+                    const bool currentHotkeyState = AppConfig::IsMenuHotkeyPressed();
+
+                    if (currentHotkeyState && !lastHotkeyState) {
+                        D3DHook::SetMenuVisible(!D3DHook::IsMenuVisible());
+                    }
+                    lastHotkeyState = currentHotkeyState;
+
+                    CPad* pad = CPad::GetPad(0);
+                    if (pad) {
+                        pad->DisablePlayerControls = D3DHook::IsInitialized() && D3DHook::IsMenuVisible();
+                    }
+                };
+
+                // III：一律 gameProcessEvent。
+                // processScripts 与任务过场/脚本装载同窗；无 CLEO 时 0x5ABD80（RW 流读空）也会在过场加载爆
+#ifdef GTA3
+                plugin::Events::gameProcessEvent += s_driver;
+                Log::Info("III：使用 gameProcessEvent 驱动主循环（避开 processScripts，降低 Init/过场装载冲突）");
+#else
+                plugin::Events::processScriptsEvent += s_driver;
+#endif
             }
         };
     }

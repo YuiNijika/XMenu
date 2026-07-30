@@ -20,6 +20,7 @@
 #include "CCutsceneMgr.h"
 #include "CTheScripts.h"
 #include "ui/MenuState.h"
+#include "ePedType.h"
 #include "utils/StdExtras.h"
 #include "rw/skeleton.h"
 #include <cmath>
@@ -172,7 +173,11 @@ bool PatchBytesIfExpected(const char* label, std::uintptr_t address, const unsig
 namespace GameLogic {
 
 bool IsWorldReady() {
-    return true;
+    // VC 与 SA 类似：玩家 ped 就绪即可；III 的严格门闩在 GameLogic_iii
+    return CWorld::Players && CWorld::Players[CWorld::PlayerInFocus].m_pPed != nullptr;
+}
+
+void NotifyGameInit() {
 }
 
 void Init() {
@@ -852,6 +857,50 @@ unsigned int GetGangMemberModel(unsigned int, unsigned int) { return 0; }
 void SetGangMemberModel(unsigned int, unsigned int, unsigned int) {}
 void ResetGangModels() {}
 void SetGangWeapons(unsigned int, int, int, int) {}
+
+bool IsCopPed(const CPed* ped) {
+    return ped && ped->m_nPedType == PED_TYPE_COP;
+}
+bool IsGangPed(const CPed* ped) {
+    if (!ped) return false;
+    int t = ped->m_nPedType;
+    // VC: GANG1.. etc and specific like VERCETTI
+    return t == PED_TYPE_GANG1 || t == PED_TYPE_GANG2 || t == PED_TYPE_GANG3 ||
+           t == PED_TYPE_GANG4 || t == PED_TYPE_GANG5 || t == PED_TYPE_GANG6 ||
+           t == PED_TYPE_GANG7 || t == PED_TYPE_GANG8 || t == PED_TYPE_GANG9 ||
+           t == PED_TYPE_GANG_VERCETTI;
+}
+
+void SetPedsNoFire(bool /*enable*/) { /* hook + process suppression */ }
+
+void ClearPedAiming(CPed* ped) {
+    if (ped) ped->ClearLookFlag();
+}
+
+bool ShouldSuppressPedFire(CPed* ped) {
+    if (!ped) return false;
+    CPlayerPed* player = FindPlayerPed();
+    if (ped == static_cast<CPed*>(player)) return false;
+
+    if (!MenuState::PedsNoFire) return false;
+
+    // VC mission: m_nPedStatus == 2 per summary
+    const bool isMission = (ped->m_nPedStatus == 2);
+    const bool isCop = IsCopPed(ped);
+    const bool isGang = IsGangPed(ped);
+    const bool isCiv = !isMission && !isCop && !isGang;
+
+    if (isMission && MenuState::PedsNoFireMission) return true;
+    if (isCop && MenuState::PedsNoFirePolice) return true;
+    if (isGang && MenuState::PedsNoFireGangs) return true;
+    if (isCiv && MenuState::PedsNoFireCivilians) return true;
+    return false;
+}
+
+bool IsMissionPed(CPed* ped) {
+    if (!ped) return false;
+    return ped->m_nPedStatus == 2;
+}
 
 bool PlayPlayerAnimation(const char*, const char*, bool) {
     static bool logged = false;

@@ -3,6 +3,7 @@
   "update.availableMessage": "当前版本：%s\n最新版本：%s\n请选择更新来源。",
   "update.openGitHub": "GitHub",
   "update.openGTAMODX": "GTAMODX",
+  "update.close": "关闭",
   "update.details": "版本检测",
   "update.refresh": "刷新检测",
   "update.source": "检测源：%s",
