@@ -12,6 +12,12 @@ namespace Controllers::Vehicle {
     void ApplyAppearance();
     void ApplyCarcols();
     void ResetColors();
+    int GetPrimaryColor();
+    int GetSecondaryColor();
+    void SetPrimaryColor(int color);
+    void SetSecondaryColor(int color);
+    int GetPaintjob();
+    bool SetPaintjob(int paintjob);
     void OpenDoor();
     void PopDoor();
     void WarpToSeat();

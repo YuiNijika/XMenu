@@ -1,7 +1,12 @@
 #pragma once
 
+#include "features/GameLogic.h"
+
 namespace Controllers::World {
     void Process();
+    void SetWeather(int id, bool lock);
+    void ReleaseWeather();
+    bool IsWeatherLocked();
     void CaptureWeather();
     void SetTime(int hour, int minute);
     void GetTime(int& hour, int& minute);
@@ -19,13 +24,15 @@ namespace Controllers::World {
     void SetFreezeTime(bool enable);
     void SetLockTime(bool enable);
     void SetNoWaterPhysics(bool enable);
-    void ReleaseWeather();
+    void DestroyAllPeds();
     void ForceWeatherNow(int id);
     int GetDaysPassed();
     void SetDaysPassed(int days);
     float GetGravity();
     void SetGravity(float gravity);
+    int SpawnPickup(const GameLogic::PickupOptions& options);
     int SpawnPickup();
+    bool RemoveTrackedPickups();
     bool UpdateLastPickup();
     bool RemoveLastPickup();
 

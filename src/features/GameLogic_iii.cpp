@@ -1072,6 +1072,14 @@ void ApplyPedOptions(CPed* ped, const PedSpawnOptions& options) {
     }
 }
 
+void DestroyAllPeds() {
+    CPlayerPed* player = FindPlayerPed();
+    for (CPed* ped : CPools::ms_pPedPool) {
+        if (!ped || ped == static_cast<CPed*>(player) || IsMissionPed(ped)) continue;
+        DeletePed(ped);
+    }
+}
+
 void SetElvisEverywhere(bool enable) { }
 void SetEveryoneArmed(bool enable) { plugin::patch::Set<bool>(0x95CCF6, enable, false); }
 void SetPedsMayhem(bool enable) { if(enable) plugin::Call<0x4911C0>(); }
@@ -1189,7 +1197,6 @@ void FailMission() {
 void SetFightingStyle(int) {}
 void SetWalkingStyle(int) {}
 void ProcessVisualExtras() {}
-void ProcessPlayerCheats(CPlayerPed*) {}
 void MaxWeaponSkills() {}
 void MaxVehicleSkills() {}
 void ApplyAimSkinChanger() {}

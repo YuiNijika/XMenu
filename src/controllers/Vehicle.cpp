@@ -414,6 +414,43 @@ namespace Controllers::Vehicle {
 #endif
     }
 
+    int GetPrimaryColor() {
+        CVehicle* vehicle = GetCurrentVehicle();
+        return vehicle ? static_cast<int>(vehicle->m_nPrimaryColor) : -1;
+    }
+
+    int GetSecondaryColor() {
+        CVehicle* vehicle = GetCurrentVehicle();
+        return vehicle ? static_cast<int>(vehicle->m_nSecondaryColor) : -1;
+    }
+
+    void SetPrimaryColor(int color) {
+        CVehicle* vehicle = GetCurrentVehicle();
+        if (!vehicle) return;
+        if (color < 0) color = 0;
+        if (color > 255) color = 255;
+        vehicle->m_nPrimaryColor = static_cast<unsigned char>(color);
+    }
+
+    void SetSecondaryColor(int color) {
+        CVehicle* vehicle = GetCurrentVehicle();
+        if (!vehicle) return;
+        if (color < 0) color = 0;
+        if (color > 255) color = 255;
+        vehicle->m_nSecondaryColor = static_cast<unsigned char>(color);
+    }
+
+    int GetPaintjob() {
+        return MenuState::VehiclePaintjob;
+    }
+
+    bool SetPaintjob(int paintjob) {
+        if (paintjob < -1 || paintjob > 2) return false;
+        MenuState::VehiclePaintjob = paintjob;
+        ApplyAppearance();
+        return GetCurrentVehicle() != nullptr;
+    }
+
     void OpenDoor() {
         GameLogic::OpenVehicleDoor(GetCurrentVehicle(), MenuState::VehicleDoorIndex);
     }

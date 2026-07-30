@@ -30,8 +30,19 @@ namespace Controllers::Ped {
         return lastSpawnedPed;
     }
 
-    bool SpawnNearPlayer() {
-        lastSpawnedPed = GameLogic::SpawnPedNearPlayer(CurrentOptions());
+    bool GetNoFire() {
+        return MenuState::PedsNoFire;
+    }
+
+    void SetSpawnLimits(bool limitPolice, bool limitGangs, int maxPolice, int maxGangs) {
+        MenuState::PedsLimitPolice = limitPolice;
+        MenuState::PedsLimitGangs = limitGangs;
+        MenuState::PedsMaxNearbyPolice = maxPolice < 0 ? 0 : maxPolice;
+        MenuState::PedsMaxNearbyGangs = maxGangs < 0 ? 0 : maxGangs;
+    }
+
+    bool SpawnNearPlayer(const SpawnOptions& options) {
+        lastSpawnedPed = GameLogic::SpawnPedNearPlayer(options);
         if (!lastSpawnedPed) {
             MenuState::ShowNotice("Ped spawn failed", 2.0);
             Log::Warn("Ped 生成失败：玩家附近生成未返回有效对象");
@@ -41,8 +52,8 @@ namespace Controllers::Ped {
         return true;
     }
 
-    bool SpawnAtMarker() {
-        lastSpawnedPed = GameLogic::SpawnPedAtMarker(CurrentOptions());
+    bool SpawnAtMarker(const SpawnOptions& options) {
+        lastSpawnedPed = GameLogic::SpawnPedAtMarker(options);
         if (!lastSpawnedPed) {
             MenuState::ShowNotice("Ped marker spawn unavailable", 2.0);
             Log::Warn("Ped 标记点生成失败或当前版本不支持");
@@ -50,6 +61,14 @@ namespace Controllers::Ped {
         }
         MenuState::ShowNotice("Ped spawned at marker", 1.5);
         return true;
+    }
+
+    bool SpawnNearPlayer() {
+        return SpawnNearPlayer(CurrentOptions());
+    }
+
+    bool SpawnAtMarker() {
+        return SpawnAtMarker(CurrentOptions());
     }
 
     void DeleteLastSpawnedPed() {

@@ -1,9 +1,17 @@
 #pragma once
 
+#include "features/GameLogic.h"
+
 class CPed;
 
 namespace Controllers::Ped {
+    using SpawnOptions = GameLogic::PedSpawnOptions;
+
     CPed* GetLastSpawnedPed();
+    bool GetNoFire();
+    void SetSpawnLimits(bool limitPolice, bool limitGangs, int maxPolice, int maxGangs);
+    bool SpawnNearPlayer(const SpawnOptions& options);
+    bool SpawnAtMarker(const SpawnOptions& options);
     bool SpawnNearPlayer();
     bool SpawnAtMarker();
     void DeleteLastSpawnedPed();

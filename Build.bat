@@ -11,24 +11,49 @@ set "PREMAKE_ACTION=vs2022"
 if "%~1"=="" goto args_done
 if /i "%~1"=="Debug" (
     set "CONFIG=Debug"
-) else if /i "%~1"=="Release" (
-    set "CONFIG=Release"
-) else if /i "%~1"=="--no-pause" (
-    set "NO_PAUSE=1"
-) else if /i "%~1"=="--toolset" (
     shift
-    if "%~1"=="" (
-        echo [Error] --toolset requires a value, e.g. v145 / v143
-        goto fail
-    )
-    set "PLATFORM_TOOLSET=%~1"
-) else (
-    echo [Error] Unknown argument: %~1
-    echo Usage: Build.bat [Debug^|Release] [--toolset v145] [--no-pause]
+    goto parse_args
+)
+if /i "%~1"=="Release" (
+    set "CONFIG=Release"
+    shift
+    goto parse_args
+)
+if /i "%~1"=="--no-pause" (
+    set "NO_PAUSE=1"
+    shift
+    goto parse_args
+)
+if /i "%~1"=="--toolset" goto parse_toolset
+echo [Error] Unknown argument: %~1
+echo Usage: Build.bat [Debug^|Release] [--toolset v145] [--no-pause]
+goto fail
+
+:parse_toolset
+shift
+if "%~1"=="" (
+    echo [Error] --toolset requires a value, e.g. v145 / v143
     goto fail
 )
+set "TOOLSET_VALUE=%~1"
+if /i "%TOOLSET_VALUE:~0,1%" NEQ "v" (
+    echo [Error] Invalid platform toolset: %TOOLSET_VALUE%
+    echo [Error] Expected a value such as v145 or v143.
+    goto fail
+)
+for /f "delims=0123456789" %%C in ("%TOOLSET_VALUE:~1%") do (
+    echo [Error] Invalid platform toolset: %TOOLSET_VALUE%
+    echo [Error] Expected a value such as v145 or v143.
+    goto fail
+)
+if "%TOOLSET_VALUE:~1%"=="" (
+    echo [Error] Invalid platform toolset: %TOOLSET_VALUE%
+    goto fail
+)
+set "PLATFORM_TOOLSET=%TOOLSET_VALUE%"
 shift
 goto parse_args
+
 :args_done
 
 echo ==========================================
@@ -64,17 +89,46 @@ if not exist "%PLUGIN_SDK_DIR%" (
     goto fail
 )
 
-rem Normalize to absolute path; plugin-sdk vcxproj OutDir uses $(PLUGIN_SDK_DIR)
-for %%I in ("%PLUGIN_SDK_DIR%") do set "PLUGIN_SDK_DIR=%%~fI"
-set "PLUGIN_SDK_DIR=!PLUGIN_SDK_DIR!"
-
-if not exist "build" mkdir "build"
-
 call :resolve_toolchain
 if errorlevel 1 goto fail
 
 if not defined PLATFORM_TOOLSET set "PLATFORM_TOOLSET=!RESOLVED_TOOLSET!"
 if not defined PLATFORM_TOOLSET set "PLATFORM_TOOLSET=v145"
+call :validate_platform_toolset "!PLATFORM_TOOLSET!"
+if errorlevel 1 goto fail
+call :ensure_toolset_available "!PLATFORM_TOOLSET!"
+if errorlevel 1 goto fail
+echo [Info] Resolved PlatformToolset: !PLATFORM_TOOLSET!
+echo [Info] Available PlatformToolsets: !AVAILABLE_TOOLSETS!
+
+rem XBase three-version libraries must use the same toolset as XMenu payloads.
+if not exist "..\XBase\Build.bat" (
+    echo [Error] Missing XBase build script: ..\XBase\Build.bat
+    goto fail
+)
+call "..\XBase\Build.bat" %CONFIG% --toolset !PLATFORM_TOOLSET! --no-pause
+if errorlevel 1 (
+    echo [Error] XBase three-version prerequisite build failed.
+    goto fail
+)
+if not exist "..\XBase\build\bin\%CONFIG%\XBaseSA.lib" (
+    echo [Error] Expected XBaseSA library was not produced.
+    goto fail
+)
+if not exist "..\XBase\build\bin\%CONFIG%\XBaseVC.lib" (
+    echo [Error] Expected XBaseVC library was not produced.
+    goto fail
+)
+if not exist "..\XBase\build\bin\%CONFIG%\XBaseIII.lib" (
+    echo [Error] Expected XBaseIII library was not produced.
+    goto fail
+)
+
+rem Normalize to absolute path; plugin-sdk vcxproj OutDir uses $(PLUGIN_SDK_DIR)
+for %%I in ("%PLUGIN_SDK_DIR%") do set "PLUGIN_SDK_DIR=%%~fI"
+set "PLUGIN_SDK_DIR=!PLUGIN_SDK_DIR!"
+
+if not exist "build" mkdir "build"
 
 echo Using MSBuild: !MSBUILD_EXE!
 if defined VS_INSTALL echo Using VS install: !VS_INSTALL!
@@ -379,6 +433,7 @@ if defined VS_INSTALL (
         for /d %%T in ("%%~fV\Platforms\Win32\PlatformToolsets\v*") do (
             if exist "%%~fT\Toolset.props" (
                 set "TS=%%~nxT"
+                set "TOOLSET_AVAILABLE_!TS!=1"
                 if /i "!TS!"=="v145" set "HAS_V145=1"
                 if /i "!TS!"=="v143" set "HAS_V143=1"
                 if /i "!TS!"=="v142" set "HAS_V142=1"
@@ -407,6 +462,38 @@ if defined HAS_V145 (
 )
 
 if not defined AVAILABLE_TOOLSETS set "AVAILABLE_TOOLSETS=!RESOLVED_TOOLSET!"
+exit /b 0
+
+:validate_platform_toolset
+set "VALIDATED_TOOLSET=%~1"
+if "!VALIDATED_TOOLSET!"=="" (
+    echo [Error] PlatformToolset is empty.
+    exit /b 1
+)
+if /i "!VALIDATED_TOOLSET:~0,1!" NEQ "v" (
+    echo [Error] Invalid PlatformToolset: !VALIDATED_TOOLSET!
+    echo [Error] Expected a value such as v145 or v143.
+    exit /b 1
+)
+for /f "delims=0123456789" %%C in ("!VALIDATED_TOOLSET:~1!") do (
+    echo [Error] Invalid PlatformToolset: !VALIDATED_TOOLSET!
+    echo [Error] Expected a value such as v145 or v143.
+    exit /b 1
+)
+if "!VALIDATED_TOOLSET:~1!"=="" (
+    echo [Error] Invalid PlatformToolset: !VALIDATED_TOOLSET!
+    exit /b 1
+)
+exit /b 0
+
+:ensure_toolset_available
+set "REQUESTED_TOOLSET=%~1"
+call set "TOOLSET_FOUND=%%TOOLSET_AVAILABLE_%REQUESTED_TOOLSET%%%"
+if not defined TOOLSET_FOUND (
+    echo [Error] PlatformToolset !REQUESTED_TOOLSET! is not installed for Win32.
+    echo [Error] Available toolsets: !AVAILABLE_TOOLSETS!
+    exit /b 1
+)
 exit /b 0
 
 rem ============================================================

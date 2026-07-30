@@ -1,6 +1,9 @@
 -- Premake Project Generator for XMenu
 
 PSDK_DIR = os.getenv("PLUGIN_SDK_DIR")
+XBASE_DIR = "../XBase"
+XBASE_LIB_DIR = path.join(XBASE_DIR, "build/bin")
+
 if (PSDK_DIR == nil or PSDK_DIR == "") then
     print("WARNING: PLUGIN_SDK_DIR environment variable not set in system.")
     print("Falling back to local path relative check...")
@@ -70,6 +73,28 @@ function createPayloadProject(projectID)
             PSDK_DIR .. "/shared/",
             PSDK_DIR .. "/shared/game/"
         }
+
+        if projectID == "sa" then
+            includedirs {
+                XBASE_DIR .. "/include",
+                XBASE_DIR .. "/include/imgui",
+                XBASE_DIR .. "/include/kiero"
+            }
+            libdirs {
+                path.join(XBASE_LIB_DIR, "%{cfg.buildcfg}")
+            }
+            links {
+                "XBaseSA"
+            }
+        elseif projectID == "vc" then
+            includedirs { XBASE_DIR .. "/include" }
+            libdirs { path.join(XBASE_LIB_DIR, "%{cfg.buildcfg}") }
+            links { "XBaseVC" }
+        elseif projectID == "iii" then
+            includedirs { XBASE_DIR .. "/include" }
+            libdirs { path.join(XBASE_LIB_DIR, "%{cfg.buildcfg}") }
+            links { "XBaseIII" }
+        end
 
         libdirs {
             PSDK_DIR .. "/output/lib",

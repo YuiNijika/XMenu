@@ -68,8 +68,9 @@ namespace {
 }
 
 namespace Controllers::World {
-    void CaptureWeather() {
-        MenuState::LockedWeatherType = static_cast<int>(CWeather::OldWeatherType);
+    void SetWeather(int id, bool lock) {
+        ForceWeatherNow(id);
+        MenuState::LockWeather = lock;
     }
 
     void ReleaseWeather() {
@@ -79,6 +80,14 @@ namespace Controllers::World {
         }
         MenuState::LockWeather = false;
         CaptureWeather();
+    }
+
+    bool IsWeatherLocked() {
+        return MenuState::LockWeather;
+    }
+
+    void CaptureWeather() {
+        MenuState::LockedWeatherType = static_cast<int>(CWeather::OldWeatherType);
     }
 
     void ForceWeatherNow(int id) {
@@ -202,6 +211,10 @@ namespace Controllers::World {
         GameLogic::SetNoWaterPhysics(enable);
     }
 
+    void DestroyAllPeds() {
+        GameLogic::DestroyAllPeds();
+    }
+
     int GetDaysPassed() {
         return GameLogic::GetDaysPassed();
     }
@@ -218,6 +231,10 @@ namespace Controllers::World {
         GameLogic::SetGravity(gravity);
     }
 
+    int SpawnPickup(const GameLogic::PickupOptions& options) {
+        return GameLogic::SpawnPickupNearPlayer(options);
+    }
+
     int SpawnPickup() {
         const int handle = GameLogic::SpawnPickupNearPlayer(GetPickupOptions());
         if (handle >= 0) {
@@ -228,6 +245,10 @@ namespace Controllers::World {
             Log::Warn("pickup 生成失败");
         }
         return handle;
+    }
+
+    bool RemoveTrackedPickups() {
+        return GameLogic::RemoveTrackedPickups() > 0;
     }
 
     bool UpdateLastPickup() {

@@ -84,15 +84,10 @@ namespace GameLogic {
     void SetKeepStuff(bool enable);
     void HealPlayer(CPlayerPed* player);
     void GiveArmour(CPlayerPed* player);
-    void ProcessAutoHeal(CPlayerPed* player, bool enable);
     void SetWantedLevel(CPlayerPed* player, int level);
     int GetWantedLevel(CPlayerPed* player);
-    void ProcessHardMode(CPlayerPed* player, bool enable);
-    void ProcessRespawnAtDeathPosition(CPlayerPed* player, bool enable);
-    void ProcessFreezeWantedLevel(CPlayerPed* player, bool enable, int level);
     void SetManualPlayerProof(CPlayerPed* player, const ProofState& state);
     bool RequestSaveGame();
-    void ProcessPlayerCheats(CPlayerPed* player);
     void MaxWeaponSkills();
     void MaxVehicleSkills();
     void ApplyAimSkinChanger();
@@ -132,6 +127,7 @@ namespace GameLogic {
     bool GetVehicleTakeLessDamage(CVehicle* vehicle);
     void SetVehicleTakeLessDamage(CVehicle* vehicle, bool enable);
     void BlowUpAllVehicles();
+    void DestroyAllPeds();
     bool IsValidVehicleModel(unsigned int modelId);
     bool IsValidPedModel(unsigned int modelId);
     CVehicle* SpawnVehicle(unsigned int modelId, const SpawnVehicleOptions& options);

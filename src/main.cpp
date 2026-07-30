@@ -27,9 +27,10 @@
 #ifdef GTASA
 #include "fla/Main.h"
 #endif
+#include "integration/XBaseBridge.h"
 
 extern const bool XMENU_DEBUG_MODE = false;
-const char* XMENU_VERSION = "v0.0.4-rc";
+const char* XMENU_VERSION = "v0.1.0-alpha1";
 const char* XMENU_AUTHOR = "鼠子(YuiNijika)";
 const char* XMENU_AUTHOR_TEST = "枫林、狂风晨、IIScar、Happy";
 const char* XMENU_URL = "https://gtamodx.com/mods/xmenu";
@@ -80,6 +81,7 @@ namespace {
             // 资源 JSON 按需懒加载，不在启动路径全量扫盘
             UpdateChecker::Start(XMENU_VERSION);
             GameLogic::Init();
+            XBaseBridge::Init();
             bootstrapStage = 2;
             return;
         }
@@ -118,6 +120,7 @@ namespace {
 #endif
             // 新游戏/读档：重置 III 就绪门闩。不要用 initScriptsEvent（与 CLEO 抢 0x48C26B 等）
             GameLogic::NotifyGameInit();
+            XBaseBridge::NotifyGameInit();
             bootstrapStage = 0;
 
             // 延迟安装周期驱动：首次 initGame 后再挂钩，避免在首个 CTheScripts::Init 窗口打补丁
@@ -147,9 +150,13 @@ namespace {
                     if (!GameLogic::IsWorldReady()) {
                         return;
                     }
+                    if (!XBaseBridge::IsWorldReady()) {
+                        return;
+                    }
 
                     GameLogic::Process();
                     Menu::Process();
+                    XBaseBridge::Process();
                     D3DHook::MaintainInputState();
 
                     if (!xMenuActive) {
@@ -206,6 +213,7 @@ BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved) {
             Log::Error("启动校验失败, XMenu 已停止初始化");
         }
     } else if (nReason == DLL_PROCESS_DETACH) {
+        XBaseBridge::Shutdown();
         D3DHook::Shutdown();
         Log::Shutdown();
     }

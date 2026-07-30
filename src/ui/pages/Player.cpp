@@ -4,6 +4,7 @@
 #include "ui/Widget.h"
 #include "utils/D3DHook.h"
 #include "utils/I18n.h"
+#include "integration/XBaseBridge.h"
 #include "imgui/imgui.h"
 #include <filesystem>
 #include <vector>
@@ -34,11 +35,13 @@ namespace Pages::Player {
         if (UI::Button(T("player.refillArmor"), 3)) {
             Controllers::Player::GiveArmour();
         }
+        UI::BeginDisabled(!XBaseBridge::HasCapability(XBase::FeatureCapability::PlayerSaveGame));
         if (UI::Button(T("player.saveAnywhere"), 3)) {
             if (Controllers::Player::RequestSaveGame()) {
                 D3DHook::SetMenuVisible(false);
             }
         }
+        UI::EndDisabled();
         UI::SameLine();
         if (UI::Button(T("player.addMoney"), 3)) {
             Controllers::Player::GiveMoney();
@@ -69,9 +72,11 @@ namespace Pages::Player {
                 UI::Checkbox(T("player.freezeWantedLevel"), &MenuState::FreezeWantedLevel);
                 UI::NextColumn();
 
+                UI::BeginDisabled(!XBaseBridge::HasCapability(XBase::FeatureCapability::PlayerKeepStuff));
                 if (UI::Checkbox(T("player.keepStuff"), &MenuState::KeepStuff)) {
                     Controllers::Player::SetKeepStuff(MenuState::KeepStuff);
                 }
+                UI::EndDisabled();
                 UI::NextColumn();
                 UI::Checkbox(T("player.autoFlight"), &MenuState::FreeFlyEnabled);
                 UI::NextColumn();

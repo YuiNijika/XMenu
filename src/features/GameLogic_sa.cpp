@@ -748,6 +748,16 @@ void BlowUpAllVehicles() {
     }
 }
 
+void DestroyAllPeds() {
+    CPlayerPed* player = FindPlayerPed();
+    for (CPed* ped : CPools::ms_pPedPool) {
+        if (!ped || ped == static_cast<CPed*>(player) || IsMissionPed(ped)) {
+            continue;
+        }
+        DeletePed(ped);
+    }
+}
+
 void DeleteVehicle(CVehicle* vehicle) {
     if (!vehicle) return;
 
@@ -887,62 +897,6 @@ void ApplyAimSkinChanger() {
     const int model = player->m_pPlayerTargettedPed->m_nModelIndex;
     if (model > 0) {
         SetPlayerSkin(static_cast<unsigned int>(model));
-    }
-}
-
-void ProcessPlayerCheats(CPlayerPed* player) {
-    static bool lastNeverWanted = false;
-    if (MenuState::NeverWanted) {
-        plugin::patch::Set<bool>(0x969171, true, false);
-        if (!lastNeverWanted) {
-            CCheat::NotWantedCheat();
-        }
-        if (player) {
-            SetWantedLevel(player, 0);
-        }
-    } else if (lastNeverWanted) {
-        plugin::patch::Set<bool>(0x969171, false, false);
-    }
-    lastNeverWanted = MenuState::NeverWanted;
-
-    if (player) {
-        // plugin-sdk SA: ped flags are anonymous bitfields on CPed, not m_nPedFlags
-        player->bDontRender = MenuState::InvisiblePlayer ? 1 : 0;
-    }
-
-    plugin::patch::Set<bool>(0x96916C, MenuState::MegaJump, false);
-    plugin::patch::Set<bool>(0x969173, MenuState::MegaPunch, false);
-    plugin::patch::Set<bool>(0x969161, MenuState::CycleJump, false);
-    plugin::patch::Set<bool>(0x96916E, MenuState::InfiniteOxygen, false);
-    plugin::patch::Set<bool>(0x969174, MenuState::NeverHungry, false);
-
-    static float s_originalSprintSpeed = 0.0f;
-    static bool s_hasOriginalSprintSpeed = false;
-    if (!s_hasOriginalSprintSpeed) {
-        s_originalSprintSpeed = plugin::patch::GetFloat(0x8D2458);
-        s_hasOriginalSprintSpeed = true;
-    }
-    plugin::patch::SetFloat(0x8D2458, MenuState::FastSprint ? 0.1f : s_originalSprintSpeed);
-
-    static CodePatch s_sprintEverywherePatch = MakePatch(0x688610, 2);
-    static bool lastSprintEverywhere = false;
-    if (lastSprintEverywhere != MenuState::SprintEverywhere) {
-        lastSprintEverywhere = MenuState::SprintEverywhere;
-        if (MenuState::SprintEverywhere) {
-            static const unsigned char kNopSprint[2] = {0x90, 0x90};
-            s_sprintEverywherePatch.ApplyBytes(kNopSprint);
-        } else {
-            s_sprintEverywherePatch.Restore();
-        }
-    }
-
-    static bool lastDrunk = false;
-    if (MenuState::DrunkEffect) {
-        plugin::Command<plugin::Commands::SET_PLAYER_DRUNKENNESS>(0, 100);
-        lastDrunk = true;
-    } else if (lastDrunk) {
-        plugin::Command<plugin::Commands::SET_PLAYER_DRUNKENNESS>(0, 0);
-        lastDrunk = false;
     }
 }
 

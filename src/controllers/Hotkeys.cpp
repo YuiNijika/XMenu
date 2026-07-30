@@ -8,6 +8,7 @@
 #include "utils/AppConfig.h"
 #include "utils/D3DHook.h"
 #include "utils/I18n.h"
+#include "integration/XBaseBridge.h"
 #include "imgui/imgui.h"
 #include <windows.h>
 #include <unordered_map>
@@ -113,12 +114,16 @@ namespace {
         }
 
         if (actionId == "player.aimSkinChanger") {
-            Controllers::Player::ApplyAimSkinChanger();
+            if (XBaseBridge::HasCapability(XBase::FeatureCapability::PlayerAppearance)) {
+                Controllers::Player::ApplyAimSkinChanger();
+            }
             return;
         }
 
         if (actionId == "player.neverWanted.toggle") {
-            MenuState::NeverWanted = !MenuState::NeverWanted;
+            if (XBaseBridge::HasCapability(XBase::FeatureCapability::PlayerCheats)) {
+                MenuState::NeverWanted = !MenuState::NeverWanted;
+            }
             return;
         }
 

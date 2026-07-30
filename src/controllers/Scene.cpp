@@ -11,6 +11,12 @@ namespace Controllers::Scene {
     void Process() {
     }
 
+    bool PlayPlayerAnimation(const char* group, const char* name, bool loop) {
+        const bool ok = GameLogic::PlayAnimationEx(group, name, loop, false, false);
+        MenuState::ShowNotice(ok ? "Animation started" : "Animation unavailable", 1.8);
+        return ok;
+    }
+
     bool PlayPlayerAnimation() {
         const bool ok = GameLogic::PlayAnimationEx(
             MenuState::SceneAnimGroup,
@@ -27,6 +33,15 @@ namespace Controllers::Scene {
         MenuState::ShowNotice("Animation stopped", 1.5);
     }
 
+    bool SpawnParticleAtPlayer(const char* name) {
+#ifdef GTASA
+        Particle.Play(name);
+        return true;
+#else
+        return GameLogic::SpawnParticleAtPlayer(name);
+#endif
+    }
+
     bool SpawnParticleAtPlayer() {
 #ifdef GTASA
         Particle.Play(MenuState::SceneParticleName);
@@ -36,6 +51,15 @@ namespace Controllers::Scene {
         const bool ok = GameLogic::SpawnParticleAtPlayer(MenuState::SceneParticleName);
         MenuState::ShowNotice(ok ? "Particle spawned" : "Particle unavailable", 1.8);
         return ok;
+#endif
+    }
+
+    bool StartCutscene(const char* name) {
+#ifdef GTASA
+        Cutscene.Play(name, MenuState::SceneCutsceneInterior);
+        return true;
+#else
+        return GameLogic::StartCutscene(name);
 #endif
     }
 

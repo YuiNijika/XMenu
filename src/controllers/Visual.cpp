@@ -3,12 +3,24 @@
 #include "ui/MenuState.h"
 
 namespace Controllers::Visual {
+    void DisplayHud(bool enable) {
+        GameLogic::DisplayHud(enable);
+    }
+
+    void DisplayRadar(bool enable) {
+        GameLogic::DisplayRadar(enable);
+    }
+
+    void SetFilter(int id, float strength) {
+        GameLogic::SetVisualFilter(true, id, strength);
+    }
+
     void ApplyHudState() {
-        GameLogic::DisplayHud(MenuState::VisualHud);
+        DisplayHud(MenuState::VisualHud);
     }
 
     void ApplyRadarState() {
-        GameLogic::DisplayRadar(MenuState::VisualRadar);
+        DisplayRadar(MenuState::VisualRadar);
     }
 
     void ApplyFilterState() {
