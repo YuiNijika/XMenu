@@ -1,7 +1,6 @@
 #include "World.h"
 #include "utils/I18n.h"
-#include "imgui/imgui.h"
-#include "CWeather.h"
+#include <XBase/UI.h>
 
 namespace {
     const char* T(const char* key) {
@@ -11,20 +10,20 @@ namespace {
 
 namespace Controllers::World {
     void DrawWeatherButtons() {
-        if (ImGui::Button(T("weather.sunny"))) {
-            CWeather::ForceWeatherNow(WEATHER_SUNNY);
+        if (XBase::UI::Button(T("weather.sunny"))) {
+            ForceWeatherNow(0);
         }
-        ImGui::SameLine();
-        if (ImGui::Button(T("weather.cloudy"))) {
-            CWeather::ForceWeatherNow(WEATHER_CLOUDY);
+        XBase::UI::SameLine();
+        if (XBase::UI::Button(T("weather.cloudy"))) {
+            ForceWeatherNow(1);
         }
-        ImGui::SameLine();
-        if (ImGui::Button(T("weather.rainy"))) {
-            CWeather::ForceWeatherNow(WEATHER_RAINY);
+        XBase::UI::SameLine();
+        if (XBase::UI::Button(T("weather.rainy"))) {
+            ForceWeatherNow(2);
         }
-        ImGui::SameLine();
-        if (ImGui::Button(T("weather.foggy"))) {
-            CWeather::ForceWeatherNow(WEATHER_FOGGY);
+        XBase::UI::SameLine();
+        if (XBase::UI::Button(T("weather.foggy"))) {
+            ForceWeatherNow(3);
         }
     }
 }

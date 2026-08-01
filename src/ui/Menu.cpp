@@ -1,14 +1,16 @@
 #include "Menu.h"
 #include <array>
-#include <windows.h>
 #include <cstdio>
 #include <cstring>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "game/Runtime.h"
+#include <XBase/Runtime.h>
 #include "utils/Log.h"
-#include "utils/D3DHook.h"
+#include <XBase/Hooks.h>
+#include <XBase/Input.h>
+#include <XBase/Platform.h>
+#include <XBase/UI.h>
 #include "utils/I18n.h"
 #include "utils/UpdateChecker.h"
 #include "utils/AppConfig.h"
@@ -16,8 +18,6 @@
 #include "ui/Widget.h"
 #include "ui/MenuState.h"
 #include "ui/GuiTheme.h"
-#include "imgui/imgui.h"
-#include "imgui/imgui_internal.h"
 #include "ui/pages/Player.h"
 #include "ui/pages/Vehicle.h"
 #include "ui/pages/Teleport.h"
@@ -73,18 +73,20 @@ namespace Menu {
     bool menuVisible = false;
     Page activePage = Page::Player;
     std::vector<Page> pageStack;
+    XBase::UI::MenuSurfaceState listSurfaceState;
+    bool listSurfaceResetPending = false;
 
     void PushPage(Page page) {
         pageStack.push_back(activePage);
         activePage = page;
-        UI::ResetListIndex();
+        listSurfaceResetPending = true;
     }
 
     void PopPage() {
         if (!pageStack.empty()) {
             activePage = pageStack.back();
             pageStack.pop_back();
-            UI::ResetListIndex();
+            listSurfaceResetPending = true;
         }
     }
 
@@ -121,7 +123,7 @@ namespace Menu {
     };
 
     bool IsSaRuntime() {
-        return GameRuntime::Current().target == GameRuntime::Target::SA;
+        return XBase::Runtime::GetGameTarget() == XBase::Runtime::GameTarget::SanAndreas;
     }
 
     bool IsPageAvailable(Page page) {
@@ -158,34 +160,16 @@ namespace Menu {
     void DrawUpdateDialog();
     void DrawVersionBadge();
 
-    void HandleMainWindowDrag() {
-        ImGuiIO& io = ImGui::GetIO();
-        const ImVec2 windowPos = ImGui::GetWindowPos();
-        const ImVec2 windowSize = ImGui::GetWindowSize();
-        const float titleHeight = ImGui::GetFrameHeight();
-        const ImVec2 mouse = io.MousePos;
-
-        const bool inTitleBar =
-            mouse.x >= windowPos.x && mouse.x <= windowPos.x + windowSize.x &&
-            mouse.y >= windowPos.y && mouse.y <= windowPos.y + titleHeight;
-
-        if (inTitleBar && ImGui::IsMouseDown(0) && (io.MouseDelta.x != 0.0f || io.MouseDelta.y != 0.0f)) {
-            ImGui::SetWindowPos(ImVec2(windowPos.x + io.MouseDelta.x, windowPos.y + io.MouseDelta.y));
-        }
-    }
-
     void DrawPageHeader(const char* titleKey) {
-        ImGui::TextUnformatted(T(titleKey));
-        ImGui::Separator();
-        ImGui::Spacing();
+        XBase::UI::Text(T(titleKey));
+        XBase::UI::Separator();
+        XBase::UI::Spacing();
 
         if (MenuState::HasNotice()) {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.78f, 0.25f, 1.0f));
-            ImGui::TextWrapped("%s", MenuState::NoticeText);
-            ImGui::PopStyleColor();
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Spacing();
+            XBase::UI::TextWrapped(MenuState::NoticeText);
+            XBase::UI::Spacing();
+            XBase::UI::Separator();
+            XBase::UI::Spacing();
         }
     }
 
@@ -197,68 +181,57 @@ namespace Menu {
             ? UpdateChecker::SourceDisplayName(info.source)
             : info.sourceName.c_str();
 
-        ImVec4 versionColor = ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
         if (UpdateChecker::IsChecking()) {
             statusText = T("status.checking");
         } else if (info.status == UpdateChecker::VersionStatus::Equal) {
-            versionColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
             statusText = T("status.upToDate");
         } else if (info.status == UpdateChecker::VersionStatus::LocalNewer) {
-            versionColor = ImVec4(1.0f, 0.30f, 0.25f, 1.0f);
             statusText = T("status.localNewer");
         } else if (info.status == UpdateChecker::VersionStatus::RemoteNewer) {
-            versionColor = ImVec4(1.0f, 0.82f, 0.20f, 1.0f);
             statusText = T("status.remoteNewer");
         }
 
-        ImGui::SameLine();
-        ImGui::TextDisabled("%s", XMENU_VERSION);
-        ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, versionColor);
-        ImGui::SmallButton("?##VersionInfo");
-        ImGui::PopStyleColor();
+        std::string tooltip = statusText;
+        tooltip += "\n";
+        tooltip += T("status.localVersion");
+        tooltip += ": ";
+        tooltip += XMENU_VERSION;
+        tooltip += "\n";
+        tooltip += T("status.remoteVersion");
+        tooltip += ": ";
+        tooltip += remoteVersion;
+        tooltip += "\n";
+        tooltip += T("update.source");
+        tooltip += ": ";
+        tooltip += sourceText;
 
-        if (ImGui::IsItemHovered()) {
-            ImGui::BeginTooltip();
-            ImGui::TextUnformatted(statusText);
-            ImGui::Separator();
-            ImGui::Text("%s: %s", T("status.language"), I18n::GetLanguageName(I18n::GetLanguage()));
-            ImGui::Text(T("status.localVersion"), XMENU_VERSION);
-            ImGui::Text(T("status.remoteVersion"), remoteVersion);
-            ImGui::Text(T("update.source"), sourceText);
-            ImGui::EndTooltip();
-        }
+        XBase::UI::SameLine();
+        XBase::UI::TextDisabled(XMENU_VERSION);
+        XBase::UI::SameLine();
+        XBase::UI::Button("?##VersionInfo", {20.0f, 0.0f});
+        XBase::UI::Tooltip(tooltip.c_str());
     }
 
     void DrawNavigation() {
-        ImGui::TextUnformatted("XMenu");
+        XBase::UI::Text("XMenu");
         DrawVersionBadge();
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
+        XBase::UI::Spacing();
+        XBase::UI::Separator();
+        XBase::UI::Spacing();
 
         EnsureActivePageAvailable();
 
         for (const NavItem& item : navItems) {
-            if (!IsPageAvailable(item.page)) {
-                continue;
-            }
-
+            if (!IsPageAvailable(item.page)) continue;
             char label[96] = {};
             LabelWithStableId(label, sizeof(label), item.textKey, item.id);
-            const bool selected = activePage == item.page;
-            if (ImGui::Selectable(label, selected, 0, ImVec2(0.0f, 34.0f))) {
+            if (XBase::UI::Selectable(label, activePage == item.page, {0.0f, 34.0f})) {
                 activePage = item.page;
             }
         }
 
-        const float footerHeight = ImGui::GetTextLineHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
-        const float footerY = ImGui::GetWindowContentRegionMax().y - footerHeight;
-        if (ImGui::GetCursorPosY() < footerY) {
-            ImGui::SetCursorPosY(footerY);
-        }
-        ImGui::Separator();
-        ImGui::TextDisabled("%s: %s", T("status.language"), I18n::GetLanguageName(I18n::GetLanguage()));
+        XBase::UI::Separator();
+        XBase::UI::TextDisabled(T("status.language"), I18n::GetLanguageName(I18n::GetLanguage()).c_str());
     }
 
     void DrawActivePage() {
@@ -295,56 +268,51 @@ namespace Menu {
     }
 
     void DrawSettings() {
-        ImGui::TextUnformatted(T("settings.interfaceLanguage"));
-        ImGui::Spacing();
+        namespace BaseUI = XBase::UI;
+        BaseUI::Text(T("settings.interfaceLanguage"));
+        BaseUI::Spacing();
 
         const std::vector<I18n::LanguageInfo>& languages = I18n::GetAvailableLanguages();
         const std::string currentLanguageCode = I18n::GetCurrentLanguageCode();
-        if (ImGui::BeginCombo("##InterfaceLanguage", I18n::GetLanguageName(currentLanguageCode))) {
+        BaseUI::Combo("##InterfaceLanguage", I18n::GetLanguageName(currentLanguageCode), [&] {
             for (const I18n::LanguageInfo& language : languages) {
                 const bool selected = currentLanguageCode == language.code;
-                if (ImGui::Selectable(language.name.c_str(), selected)) {
+                if (BaseUI::Selectable(language.name.c_str(), selected)) {
                     I18n::SetLanguage(language.code);
                 }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
+                if (selected) BaseUI::FocusLastItemByDefault();
             }
-            ImGui::EndCombo();
-        }
+        });
 
-        ImGui::Spacing();
-        ImGui::TextUnformatted(T("settings.fallbackLanguage"));
+        BaseUI::Spacing();
+        BaseUI::Text(T("settings.fallbackLanguage"));
         const std::string fallbackLanguageCode = AppConfig::GetFallbackLanguageCode();
-        if (ImGui::BeginCombo("##FallbackLanguage", I18n::GetLanguageName(fallbackLanguageCode))) {
+        BaseUI::Combo("##FallbackLanguage", I18n::GetLanguageName(fallbackLanguageCode), [&] {
             for (const I18n::LanguageInfo& language : languages) {
                 const bool selected = fallbackLanguageCode == language.code;
-                if (ImGui::Selectable(language.name.c_str(), selected)) {
+                if (BaseUI::Selectable(language.name.c_str(), selected)) {
                     AppConfig::SetFallbackLanguageCode(language.code);
                 }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
+                if (selected) BaseUI::FocusLastItemByDefault();
             }
-            ImGui::EndCombo();
-        }
-        ImGui::TextDisabled("%s", T("settings.fallbackLanguageHint"));
+        });
+        BaseUI::TextDisabled(T("settings.fallbackLanguageHint"));
 
-        ImGui::Spacing();
-        ImGui::TextDisabled("%s", T("settings.applyImmediately"));
+        BaseUI::Spacing();
+        BaseUI::TextDisabled(T("settings.applyImmediately"));
 
         static char hotkeyInput[32] = "";
         if (hotkeyInput[0] == '\0') {
             std::snprintf(hotkeyInput, sizeof(hotkeyInput), "%s", AppConfig::GetMenuKeyName().c_str());
         }
-        ImGui::Spacing();
-        ImGui::InputTextWithHint(T("settings.menuHotkey"), "M", hotkeyInput, sizeof(hotkeyInput));
-        ImGui::SameLine();
-        if (ImGui::Button(T("settings.applyHotkey"))) {
+        BaseUI::Spacing();
+        BaseUI::InputText(T("settings.menuHotkey"), hotkeyInput, sizeof(hotkeyInput), "M");
+        BaseUI::SameLine();
+        if (BaseUI::Button(T("settings.applyHotkey"))) {
             AppConfig::SetMenuKeyName(hotkeyInput);
             std::snprintf(hotkeyInput, sizeof(hotkeyInput), "%s", AppConfig::GetMenuKeyName().c_str());
         }
-        ImGui::TextDisabled(T("settings.currentHotkey"), AppConfig::GetMenuKeyName().c_str());
+        BaseUI::TextDisabled(T("settings.currentHotkey"), AppConfig::GetMenuKeyName().c_str());
 
         UI::SpacingSeparator();
         DrawGuiSettings();
@@ -375,113 +343,107 @@ namespace Menu {
     }
 
     void DrawGuiSettings() {
-        ImGui::TextUnformatted(T("settings.guiStyle"));
-        ImGui::Spacing();
+        namespace BaseUI = XBase::UI;
+        BaseUI::Text(T("settings.guiStyle"));
+        BaseUI::Spacing();
 
         bool listChanged = UI::Checkbox(T("settings.useListMenu"), &MenuState::UseNativeMenu);
         if (MenuState::UseNativeMenu) {
             listChanged |= UI::Checkbox(T("settings.enableListMouse"), &MenuState::ListMenuMouseInput);
-            ImGui::TextDisabled("%s", T("settings.listMouseHint"));
+            BaseUI::TextDisabled(T("settings.listMouseHint"));
         }
         if (listChanged) {
             AppConfig::Save();
             GuiTheme::Sync();
             if (MenuState::UseNativeMenu) {
-                UI::ResetListIndex();
+                listSurfaceState.selectedIndex = 0;
+                listSurfaceState.itemCount = 0;
             }
         }
 
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        ImGui::TextUnformatted(T("settings.theme"));
-        int currentTheme = GuiTheme::GetThemeIndex();
-        if (ImGui::BeginCombo("##GuiTheme", T(GuiTheme::GetThemeNameKey(currentTheme)))) {
+        BaseUI::Spacing();
+        BaseUI::Separator();
+        BaseUI::Spacing();
+        BaseUI::Text(T("settings.theme"));
+        const int currentTheme = GuiTheme::GetThemeIndex();
+        BaseUI::Combo("##GuiTheme", T(GuiTheme::GetThemeNameKey(currentTheme)), [&] {
             for (int i = 0; i < GuiTheme::ThemeCount; ++i) {
                 const bool selected = i == currentTheme;
-                if (ImGui::Selectable(T(GuiTheme::GetThemeNameKey(i)), selected)) {
+                if (BaseUI::Selectable(T(GuiTheme::GetThemeNameKey(i)), selected)) {
                     AppConfig::SetGuiThemeIndex(i);
                     GuiTheme::Sync();
                 }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
+                if (selected) BaseUI::FocusLastItemByDefault();
             }
-            ImGui::EndCombo();
-        }
+        });
 
         if (!MenuState::UseNativeMenu) {
-            ImGui::Spacing();
-            ImGui::TextUnformatted(T("settings.interactionMode"));
-            int currentInteraction = GuiTheme::GetInteractionIndex();
-            if (ImGui::BeginCombo("##InteractionMode", T(GuiTheme::GetInteractionNameKey(currentInteraction)))) {
+            BaseUI::Spacing();
+            BaseUI::Text(T("settings.interactionMode"));
+            const int currentInteraction = GuiTheme::GetInteractionIndex();
+            BaseUI::Combo("##InteractionMode", T(GuiTheme::GetInteractionNameKey(currentInteraction)), [&] {
                 for (int i = 0; i < GuiTheme::InteractionCount; ++i) {
                     const bool selected = i == currentInteraction;
-                    if (ImGui::Selectable(T(GuiTheme::GetInteractionNameKey(i)), selected)) {
+                    if (BaseUI::Selectable(T(GuiTheme::GetInteractionNameKey(i)), selected)) {
                         AppConfig::SetInteractionMode(i);
                         GuiTheme::Sync();
                     }
-                    if (selected) {
-                        ImGui::SetItemDefaultFocus();
-                    }
+                    if (selected) BaseUI::FocusLastItemByDefault();
                 }
-                ImGui::EndCombo();
-            }
-            ImGui::TextDisabled("%s", T("settings.interactionHint"));
+            });
+            BaseUI::TextDisabled(T("settings.interactionHint"));
         } else {
-            ImGui::Spacing();
-            ImGui::TextDisabled("%s", T("settings.listNavHint"));
+            BaseUI::Spacing();
+            BaseUI::TextDisabled(T("settings.listNavHint"));
         }
     }
 
     void DrawRuntimeSettings() {
-        ImGui::TextUnformatted(T("settings.runtime"));
-        ImGui::Checkbox(T("command.enabled"), &MenuState::CommandWindowEnabled);
+        XBase::UI::Text(T("settings.runtime"));
+        XBase::UI::Checkbox(T("command.enabled"), MenuState::CommandWindowEnabled);
     }
 
     void DrawOverlaySettings() {
-        ImGui::TextUnformatted(T("settings.overlay"));
-        ImGui::TextDisabled("%s", T("settings.overlayHint"));
+        XBase::UI::Text(T("settings.overlay"));
+        XBase::UI::TextDisabled(T("settings.overlayHint"));
 
         bool changed = false;
-        changed |= ImGui::Checkbox(T("overlay.enabled"), &MenuState::OverlayEnabled);
-        ImGui::SameLine();
-        changed |= ImGui::Checkbox(T("overlay.showDetails"), &MenuState::OverlayShowDetails);
-        ImGui::SameLine();
-        changed |= ImGui::Checkbox(T("overlay.showFeatures"), &MenuState::OverlayShowFeatures);
+        changed |= XBase::UI::Checkbox(T("overlay.enabled"), MenuState::OverlayEnabled);
+        XBase::UI::SameLine();
+        changed |= XBase::UI::Checkbox(T("overlay.showDetails"), MenuState::OverlayShowDetails);
+        XBase::UI::SameLine();
+        changed |= XBase::UI::Checkbox(T("overlay.showFeatures"), MenuState::OverlayShowFeatures);
 
-        ImGui::Columns(2, nullptr, false);
-        changed |= ImGui::Checkbox(T("overlay.showPosition"), &MenuState::OverlayShowPosition);
-        ImGui::NextColumn();
-        changed |= ImGui::Checkbox(T("overlay.showPlayer"), &MenuState::OverlayShowPlayer);
-        ImGui::NextColumn();
-        changed |= ImGui::Checkbox(T("overlay.showVehicle"), &MenuState::OverlayShowVehicle);
-        ImGui::NextColumn();
-        changed |= ImGui::Checkbox(T("overlay.showTime"), &MenuState::OverlayShowTime);
-        ImGui::NextColumn();
-        changed |= ImGui::Checkbox(T("overlay.showWorld"), &MenuState::OverlayShowWorld);
-        ImGui::NextColumn();
-        changed |= ImGui::Checkbox(T("overlay.showFps"), &MenuState::OverlayShowFps);
-        ImGui::Columns(1);
+        XBase::UI::Columns(2, nullptr, false);
+        changed |= XBase::UI::Checkbox(T("overlay.showPosition"), MenuState::OverlayShowPosition);
+        XBase::UI::NextColumn();
+        changed |= XBase::UI::Checkbox(T("overlay.showPlayer"), MenuState::OverlayShowPlayer);
+        XBase::UI::NextColumn();
+        changed |= XBase::UI::Checkbox(T("overlay.showVehicle"), MenuState::OverlayShowVehicle);
+        XBase::UI::NextColumn();
+        changed |= XBase::UI::Checkbox(T("overlay.showTime"), MenuState::OverlayShowTime);
+        XBase::UI::NextColumn();
+        changed |= XBase::UI::Checkbox(T("overlay.showWorld"), MenuState::OverlayShowWorld);
+        XBase::UI::NextColumn();
+        changed |= XBase::UI::Checkbox(T("overlay.showFps"), MenuState::OverlayShowFps);
+        XBase::UI::Columns(1);
 
-        if (changed) {
-            AppConfig::Save();
-        }
+        if (changed) AppConfig::Save();
     }
 
     void DrawPersistentStateSettings() {
-        ImGui::TextUnformatted(T("settings.persistentState"));
-        ImGui::TextDisabled("%s", T("settings.persistentStateHint"));
+        namespace BaseUI = XBase::UI;
+        BaseUI::Text(T("settings.persistentState"));
+        BaseUI::TextDisabled(T("settings.persistentStateHint"));
 
         const std::size_t restoreCount = AppConfig::GetPersistentRestoreCount();
-        ImGui::TextDisabled(T("settings.persistentState.restoreCount"), static_cast<int>(restoreCount));
+        BaseUI::TextDisabled(T("settings.persistentState.restoreCount"), static_cast<int>(restoreCount));
 
-        if (ImGui::Button(T("settings.persistentState.captureCurrent"), ImVec2(190.0f, 0.0f))) {
+        if (BaseUI::Button(T("settings.persistentState.captureCurrent"), {190.0f, 0.0f})) {
             AppConfig::CaptureEnabledPersistentFeatures();
         }
-        ImGui::SameLine();
-        if (ImGui::Button(T("settings.persistentState.manage"), ImVec2(140.0f, 0.0f))) {
+        BaseUI::SameLine();
+        if (BaseUI::Button(T("settings.persistentState.manage"), {140.0f, 0.0f})) {
             persistentRestoreDialog.features = AppConfig::GetPersistentFeatureStates();
             persistentRestoreDialog.selected.clear();
             persistentRestoreDialog.selected.reserve(persistentRestoreDialog.features.size());
@@ -490,8 +452,8 @@ namespace Menu {
             }
             persistentRestoreDialog.open = true;
         }
-        ImGui::SameLine();
-        if (ImGui::Button(T("settings.persistentState.clear"), ImVec2(110.0f, 0.0f))) {
+        BaseUI::SameLine();
+        if (BaseUI::Button(T("settings.persistentState.clear"), {110.0f, 0.0f})) {
             AppConfig::ClearPersistentRestoreSelection();
         }
 
@@ -499,110 +461,97 @@ namespace Menu {
     }
 
     void DrawPersistentStatePopup() {
+        namespace BaseUI = XBase::UI;
         if (persistentRestoreDialog.open) {
-            ImGui::OpenPopup(PersistentStatePopupId);
+            BaseUI::OpenModal(PersistentStatePopupId);
             persistentRestoreDialog.open = false;
         }
 
-        ImGui::SetNextWindowSize(ImVec2(720.0f, 520.0f), ImGuiCond_Appearing);
-        if (ImGui::BeginPopupModal(PersistentStatePopupId, nullptr, ImGuiWindowFlags_NoResize)) {
-            ImGui::TextUnformatted(T("settings.persistentState.title"));
-            ImGui::TextWrapped("%s", T("settings.persistentState.description"));
-            ImGui::Spacing();
+        BaseUI::Modal(PersistentStatePopupId, [&] {
+            BaseUI::Text(T("settings.persistentState.title"));
+            BaseUI::TextWrapped(T("settings.persistentState.description"));
+            BaseUI::Spacing();
 
             int selectedCount = 0;
             int enabledCount = 0;
             for (std::size_t i = 0; i < persistentRestoreDialog.features.size(); ++i) {
-                if (persistentRestoreDialog.features[i].enabledNow) {
-                    ++enabledCount;
-                }
-                if (i < persistentRestoreDialog.selected.size() && persistentRestoreDialog.selected[i]) {
-                    ++selectedCount;
-                }
+                if (persistentRestoreDialog.features[i].enabledNow) ++enabledCount;
+                if (i < persistentRestoreDialog.selected.size() && persistentRestoreDialog.selected[i]) ++selectedCount;
             }
-            ImGui::TextDisabled(T("settings.persistentState.dialogCounts"), enabledCount, selectedCount, static_cast<int>(persistentRestoreDialog.features.size()));
+            BaseUI::TextDisabled(T("settings.persistentState.dialogCounts"), enabledCount, selectedCount,
+                static_cast<int>(persistentRestoreDialog.features.size()));
 
-            if (ImGui::Button(T("settings.persistentState.selectEnabled"), ImVec2(150.0f, 0.0f))) {
+            if (BaseUI::Button(T("settings.persistentState.selectEnabled"), {150.0f, 0.0f})) {
                 for (std::size_t i = 0; i < persistentRestoreDialog.features.size(); ++i) {
                     persistentRestoreDialog.selected[i] = persistentRestoreDialog.features[i].enabledNow;
                 }
             }
-            ImGui::SameLine();
-            if (ImGui::Button(T("settings.persistentState.selectNone"), ImVec2(120.0f, 0.0f))) {
+            BaseUI::SameLine();
+            if (BaseUI::Button(T("settings.persistentState.selectNone"), {120.0f, 0.0f})) {
                 for (std::size_t i = 0; i < persistentRestoreDialog.selected.size(); ++i) {
                     persistentRestoreDialog.selected[i] = false;
                 }
             }
-            ImGui::SameLine();
-            if (ImGui::Button(T("settings.persistentState.selectOverlay"), ImVec2(150.0f, 0.0f))) {
+            BaseUI::SameLine();
+            if (BaseUI::Button(T("settings.persistentState.selectOverlay"), {150.0f, 0.0f})) {
                 for (std::size_t i = 0; i < persistentRestoreDialog.features.size(); ++i) {
                     persistentRestoreDialog.selected[i] = persistentRestoreDialog.features[i].group == "overlay";
                 }
             }
 
-            ImGui::Spacing();
-            const float footerHeight = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y * 3.0f;
-            const float tableHeight = ImGui::GetContentRegionAvail().y - footerHeight;
+            BaseUI::Spacing();
+            const float tableHeight = BaseUI::GetContentAvailable().y - 70.0f;
             if (persistentRestoreDialog.features.empty()) {
-                ImGui::BeginChild("PersistentRestoreEmpty", ImVec2(0.0f, tableHeight), true);
-                ImGui::TextDisabled("%s", T("settings.persistentState.noneAvailable"));
-                ImGui::EndChild();
-            } else if (ImGui::BeginTable("PersistentRestoreTable", 3, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY, ImVec2(0.0f, tableHeight))) {
-                ImGui::TableSetupColumn(T("settings.feature"), ImGuiTableColumnFlags_WidthStretch, 0.55f);
-                ImGui::TableSetupColumn(T("settings.persistentState.currentState"), ImGuiTableColumnFlags_WidthStretch, 0.22f);
-                ImGui::TableSetupColumn(T("settings.persistentState.restoreNextLaunch"), ImGuiTableColumnFlags_WidthStretch, 0.23f);
-                ImGui::TableSetupScrollFreeze(0, 1);
-                ImGui::TableHeadersRow();
+                BaseUI::Child("PersistentRestoreEmpty", [&] {
+                    BaseUI::TextDisabled(T("settings.persistentState.noneAvailable"));
+                }, {0.0f, tableHeight}, true);
+            } else {
+                const BaseUI::TableColumn columns[] = {
+                    {T("settings.feature"), 0.55f},
+                    {T("settings.persistentState.currentState"), 0.22f},
+                    {T("settings.persistentState.restoreNextLaunch"), 0.23f}
+                };
+                BaseUI::Table("PersistentRestoreTable", columns, 3, [&] {
+                    std::string currentGroup;
+                    for (std::size_t i = 0; i < persistentRestoreDialog.features.size(); ++i) {
+                        const AppConfig::PersistentFeatureState& feature = persistentRestoreDialog.features[i];
+                        if (feature.group != currentGroup) {
+                            currentGroup = feature.group;
+                            BaseUI::TableNextRow();
+                            BaseUI::TableNextCell();
+                            BaseUI::TextDisabled(T((std::string("settings.persistentState.group.") + currentGroup).c_str()));
+                            BaseUI::TableNextCell();
+                            BaseUI::TableNextCell();
+                        }
 
-                std::string currentGroup;
-                for (std::size_t i = 0; i < persistentRestoreDialog.features.size(); ++i) {
-                    const AppConfig::PersistentFeatureState& feature = persistentRestoreDialog.features[i];
-                    if (feature.group != currentGroup) {
-                        currentGroup = feature.group;
-                        ImGui::TableNextRow();
-                        ImGui::TableNextColumn();
-                        ImGui::TextDisabled("%s", T((std::string("settings.persistentState.group.") + currentGroup).c_str()));
-                        ImGui::TableNextColumn();
-                        ImGui::TableNextColumn();
+                        BaseUI::TableNextRow();
+                        BaseUI::TableNextCell();
+                        BaseUI::Text(T(feature.name.c_str()));
+                        BaseUI::TableNextCell();
+                        BaseUI::Text(T(feature.enabledNow ? "settings.enabled" : "settings.disabled"));
+                        BaseUI::TableNextCell();
+                        char checkboxId[128] = {};
+                        bool selected = persistentRestoreDialog.selected[i];
+                        std::snprintf(checkboxId, sizeof(checkboxId), "##restore_%s", feature.id.c_str());
+                        if (BaseUI::Checkbox(checkboxId, selected)) persistentRestoreDialog.selected[i] = selected;
                     }
-
-                    ImGui::TableNextRow();
-                    ImGui::TableNextColumn();
-                    ImGui::TextUnformatted(T(feature.name.c_str()));
-
-                    ImGui::TableNextColumn();
-                    ImGui::TextUnformatted(T(feature.enabledNow ? "settings.enabled" : "settings.disabled"));
-
-                    ImGui::TableNextColumn();
-                    char checkboxId[128] = {};
-                    bool selected = persistentRestoreDialog.selected[i];
-                    std::snprintf(checkboxId, sizeof(checkboxId), "##restore_%s", feature.id.c_str());
-                    if (ImGui::Checkbox(checkboxId, &selected)) {
-                        persistentRestoreDialog.selected[i] = selected;
-                    }
-                }
-
-                ImGui::EndTable();
+                }, {0.0f, tableHeight});
             }
 
             UI::SpacingSeparator();
-            if (ImGui::Button(T("settings.persistentState.apply"), ImVec2(110.0f, 0.0f))) {
+            if (BaseUI::Button(T("settings.persistentState.apply"), {110.0f, 0.0f})) {
                 std::vector<std::string> selectedIds;
                 for (std::size_t i = 0; i < persistentRestoreDialog.features.size(); ++i) {
-                    if (persistentRestoreDialog.selected[i]) {
-                        selectedIds.push_back(persistentRestoreDialog.features[i].id);
-                    }
+                    if (persistentRestoreDialog.selected[i]) selectedIds.push_back(persistentRestoreDialog.features[i].id);
                 }
                 AppConfig::ApplyPersistentRestoreSelection(selectedIds);
-                ImGui::CloseCurrentPopup();
+                BaseUI::CloseModal();
             }
-            ImGui::SameLine();
-            if (ImGui::Button(T("settings.persistentState.cancel"), ImVec2(110.0f, 0.0f))) {
-                ImGui::CloseCurrentPopup();
+            BaseUI::SameLine();
+            if (BaseUI::Button(T("settings.persistentState.cancel"), {110.0f, 0.0f})) {
+                BaseUI::CloseModal();
             }
-
-            ImGui::EndPopup();
-        }
+        }, {720.0f, 520.0f});
     }
 
     struct ActionHotkeyInputState {
@@ -626,149 +575,45 @@ namespace Menu {
     std::string pendingCaptureActionName;
     std::string pendingCaptureValue;
     bool openActionHotkeyCapturePopup = false;
-    ULONGLONG actionHotkeyCaptureReadyTick = 0;
+    std::uint64_t actionHotkeyCaptureReadyTick = 0;
     const char* ActionHotkeyCapturePopupId = "ActionHotkeyCapturePopup";
 
-    const char* VirtualKeyName(int key) {
-        if (key >= 'A' && key <= 'Z') {
-            static char value[2] = {};
-            value[0] = static_cast<char>(key);
-            value[1] = '\0';
-            return value;
-        }
-        if (key >= '0' && key <= '9') {
-            static char value[2] = {};
-            value[0] = static_cast<char>(key);
-            value[1] = '\0';
-            return value;
-        }
-
-        switch (key) {
-        case VK_BACK: return "BACKSPACE";
-        case VK_TAB: return "TAB";
-        case VK_RETURN: return "ENTER";
-        case VK_ESCAPE: return "ESC";
-        case VK_SPACE: return "SPACE";
-        case VK_PRIOR: return "PAGEUP";
-        case VK_NEXT: return "PAGEDOWN";
-        case VK_END: return "END";
-        case VK_HOME: return "HOME";
-        case VK_LEFT: return "LEFT";
-        case VK_UP: return "UP";
-        case VK_RIGHT: return "RIGHT";
-        case VK_DOWN: return "DOWN";
-        case VK_INSERT: return "INSERT";
-        case VK_DELETE: return "DELETE";
-        case VK_NUMPAD0: return "NUM0";
-        case VK_NUMPAD1: return "NUM1";
-        case VK_NUMPAD2: return "NUM2";
-        case VK_NUMPAD3: return "NUM3";
-        case VK_NUMPAD4: return "NUM4";
-        case VK_NUMPAD5: return "NUM5";
-        case VK_NUMPAD6: return "NUM6";
-        case VK_NUMPAD7: return "NUM7";
-        case VK_NUMPAD8: return "NUM8";
-        case VK_NUMPAD9: return "NUM9";
-        case VK_MULTIPLY: return "MULTIPLY";
-        case VK_ADD: return "ADD";
-        case VK_SUBTRACT: return "SUBTRACT";
-        case VK_DECIMAL: return "DECIMAL";
-        case VK_DIVIDE: return "DIVIDE";
-        case VK_F1: return "F1";
-        case VK_F2: return "F2";
-        case VK_F3: return "F3";
-        case VK_F4: return "F4";
-        case VK_F5: return "F5";
-        case VK_F6: return "F6";
-        case VK_F7: return "F7";
-        case VK_F8: return "F8";
-        case VK_F9: return "F9";
-        case VK_F10: return "F10";
-        case VK_F11: return "F11";
-        case VK_F12: return "F12";
-        default: break;
-        }
-
-        static char fallback[16] = {};
-        std::snprintf(fallback, sizeof(fallback), "VK_%d", key);
-        return fallback;
-    }
-
-    bool IsModifierKey(int key) {
-        return key == VK_CONTROL || key == VK_LCONTROL || key == VK_RCONTROL
-            || key == VK_MENU || key == VK_LMENU || key == VK_RMENU
-            || key == VK_SHIFT || key == VK_LSHIFT || key == VK_RSHIFT;
-    }
-
-    bool IsIgnoredCaptureKey(int key) {
-        return key == VK_LBUTTON || key == VK_RBUTTON || key == VK_CANCEL || key == VK_MBUTTON
-            || key == VK_XBUTTON1 || key == VK_XBUTTON2;
-    }
-
     bool CapturePressedHotkey(std::string& value) {
-        if (GetTickCount64() < actionHotkeyCaptureReadyTick) {
-            return false;
-        }
+        if (XBase::Platform::MonotonicMilliseconds() < actionHotkeyCaptureReadyTick) return false;
 
-        if ((GetAsyncKeyState(VK_BACK) & 0x0001) != 0 || (GetAsyncKeyState(VK_DELETE) & 0x0001) != 0) {
-            value = "None";
-            return true;
-        }
-
-        for (int key = 1; key < 255; ++key) {
-            if (IsModifierKey(key) || IsIgnoredCaptureKey(key)) {
-                continue;
-            }
-            if ((GetAsyncKeyState(key) & 0x0001) == 0) {
-                continue;
-            }
-
-            std::string result;
-            if ((GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0 || (GetAsyncKeyState(VK_LCONTROL) & 0x8000) != 0 || (GetAsyncKeyState(VK_RCONTROL) & 0x8000) != 0) {
-                result += "Ctrl+";
-            }
-            if ((GetAsyncKeyState(VK_MENU) & 0x8000) != 0 || (GetAsyncKeyState(VK_LMENU) & 0x8000) != 0 || (GetAsyncKeyState(VK_RMENU) & 0x8000) != 0) {
-                result += "Alt+";
-            }
-            if ((GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0 || (GetAsyncKeyState(VK_LSHIFT) & 0x8000) != 0 || (GetAsyncKeyState(VK_RSHIFT) & 0x8000) != 0) {
-                result += "Shift+";
-            }
-            result += VirtualKeyName(key);
-            value = result;
-            return true;
-        }
-
-        return false;
+        XBase::Input::Hotkey hotkey;
+        if (!XBase::Input::CapturePressedHotkey(hotkey)) return false;
+        value = XBase::Input::FormatHotkey(hotkey);
+        return true;
     }
 
     void OpenActionHotkeyCapturePopup(const AppConfig::ActionHotkey& action) {
         pendingCaptureActionId = action.id;
         pendingCaptureActionName = action.name;
         pendingCaptureValue = AppConfig::FormatHotkey(action.hotkey);
-        actionHotkeyCaptureReadyTick = GetTickCount64() + 250;
+        actionHotkeyCaptureReadyTick = XBase::Platform::MonotonicMilliseconds() + 250;
         openActionHotkeyCapturePopup = true;
     }
 
     void DrawActionHotkeyCapturePopup() {
+        namespace BaseUI = XBase::UI;
         if (openActionHotkeyCapturePopup) {
-            ImGui::OpenPopup(ActionHotkeyCapturePopupId);
+            BaseUI::OpenModal(ActionHotkeyCapturePopupId);
             openActionHotkeyCapturePopup = false;
         }
 
-        if (ImGui::BeginPopupModal(ActionHotkeyCapturePopupId, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::TextUnformatted(T("settings.hotkeyCaptureTitle"));
-            ImGui::Separator();
-            ImGui::Text(T("settings.hotkeyCaptureAction"), T(pendingCaptureActionName.c_str()));
-            ImGui::Text(T("settings.hotkeyCaptureCurrent"), pendingCaptureValue.c_str());
-            ImGui::TextDisabled("%s", T("settings.hotkeyCaptureHint"));
+        BaseUI::Modal(ActionHotkeyCapturePopupId, [&] {
+            BaseUI::Text(T("settings.hotkeyCaptureTitle"));
+            BaseUI::Separator();
+            BaseUI::Text(T("settings.hotkeyCaptureAction"), T(pendingCaptureActionName.c_str()));
+            BaseUI::Text(T("settings.hotkeyCaptureCurrent"), pendingCaptureValue.c_str());
+            BaseUI::TextDisabled(T("settings.hotkeyCaptureHint"));
 
             std::string captured;
-            if (CapturePressedHotkey(captured)) {
-                pendingCaptureValue = captured;
-            }
+            if (CapturePressedHotkey(captured)) pendingCaptureValue = captured;
 
-            ImGui::Spacing();
-            if (ImGui::Button(T("settings.apply"), ImVec2(120.0f, 0.0f))) {
+            BaseUI::Spacing();
+            if (BaseUI::Button(T("settings.apply"), {120.0f, 0.0f})) {
                 if (!pendingCaptureActionId.empty() && !pendingCaptureValue.empty()) {
                     AppConfig::SetActionHotkeyName(pendingCaptureActionId, pendingCaptureValue);
                     ActionHotkeyInputState& input = actionHotkeyInputs[pendingCaptureActionId];
@@ -779,93 +624,89 @@ namespace Menu {
                 pendingCaptureActionId.clear();
                 pendingCaptureActionName.clear();
                 pendingCaptureValue.clear();
-                ImGui::CloseCurrentPopup();
+                BaseUI::CloseModal();
             }
-            ImGui::SameLine();
-            if (ImGui::Button(T("settings.cancel"), ImVec2(120.0f, 0.0f))) {
+            BaseUI::SameLine();
+            if (BaseUI::Button(T("settings.cancel"), {120.0f, 0.0f})) {
                 pendingCaptureActionId.clear();
                 pendingCaptureActionName.clear();
                 pendingCaptureValue.clear();
-                ImGui::CloseCurrentPopup();
+                BaseUI::CloseModal();
             }
-
-            ImGui::EndPopup();
-        }
+        }, {}, true);
     }
 
     void DrawActionHotkeys() {
-        ImGui::TextUnformatted(T("settings.actionHotkeys"));
-        ImGui::TextDisabled("%s", T("settings.hotkeyHint"));
+        namespace BaseUI = XBase::UI;
+        BaseUI::Text(T("settings.actionHotkeys"));
+        BaseUI::TextDisabled(T("settings.hotkeyHint"));
 
         const std::vector<AppConfig::ActionHotkey>& actions = AppConfig::GetActionHotkeys();
-        if (ImGui::BeginTable("ActionHotkeyTable", 3, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp)) {
-            ImGui::TableSetupColumn(T("settings.action"));
-            ImGui::TableSetupColumn(T("settings.hotkey"));
-            ImGui::TableSetupColumn(T("settings.capture"));
-            ImGui::TableHeadersRow();
-
+        const BaseUI::TableColumn columns[] = {
+            {T("settings.action"), 1.0f},
+            {T("settings.hotkey"), 1.0f},
+            {T("settings.capture"), 1.0f}
+        };
+        BaseUI::Table("ActionHotkeyTable", columns, 3, [&] {
             for (const AppConfig::ActionHotkey& action : actions) {
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::TextUnformatted(T(action.name.c_str()));
+                BaseUI::TableNextRow();
+                BaseUI::TableNextCell();
+                BaseUI::Text(T(action.name.c_str()));
 
-                ImGui::TableNextColumn();
+                BaseUI::TableNextCell();
                 ActionHotkeyInputState& input = ActionHotkeyInput(action);
-                ImGui::TextUnformatted(input.value.data());
+                BaseUI::Text(input.value.data());
 
-                ImGui::TableNextColumn();
+                BaseUI::TableNextCell();
                 char buttonId[96] = {};
                 std::snprintf(buttonId, sizeof(buttonId), "%s##capture_%s", T("settings.setHotkey"), action.id.c_str());
-                if (ImGui::SmallButton(buttonId)) {
-                    OpenActionHotkeyCapturePopup(action);
-                }
+                if (BaseUI::Button(buttonId)) OpenActionHotkeyCapturePopup(action);
             }
-
-            ImGui::EndTable();
-        }
+        });
 
         DrawActionHotkeyCapturePopup();
     }
 
     void DrawConfigSettings() {
-        ImGui::TextUnformatted(T("settings.config"));
-        ImGui::TextDisabled(T("settings.defaultConfigPath"), AppConfig::GetConfigPath().c_str());
-        ImGui::TextUnformatted(T("settings.transferScope"));
-        ImGui::RadioButton(T("settings.transferAll"), &configTransferScope, 0);
-        ImGui::SameLine();
-        ImGui::RadioButton(T("settings.transferCustomLocations"), &configTransferScope, 1);
+        namespace BaseUI = XBase::UI;
+        BaseUI::Text(T("settings.config"));
+        BaseUI::TextDisabled(T("settings.defaultConfigPath"), AppConfig::GetConfigPath().c_str());
+        BaseUI::Text(T("settings.transferScope"));
+        BaseUI::Choice(T("settings.transferAll"), configTransferScope, 0);
+        BaseUI::SameLine();
+        BaseUI::Choice(T("settings.transferCustomLocations"), configTransferScope, 1);
 
         const AppConfig::TransferScope scope = configTransferScope == 1
             ? AppConfig::TransferScope::CustomLocations
             : AppConfig::TransferScope::All;
 
-        if (ImGui::Button(T("settings.importConfig"), ImVec2(130.0f, 0.0f))) {
+        if (BaseUI::Button(T("settings.importConfig"), {130.0f, 0.0f})) {
             configImportText[0] = '\0';
             openConfigImportPopup = true;
         }
-        ImGui::SameLine();
-        if (ImGui::Button(T("settings.exportConfig"), ImVec2(130.0f, 0.0f))) {
+        BaseUI::SameLine();
+        if (BaseUI::Button(T("settings.exportConfig"), {130.0f, 0.0f})) {
             const std::string exported = AppConfig::ExportToText(scope);
             std::snprintf(configExportText, sizeof(configExportText), "%s", exported.c_str());
             if (exported.empty()) {
                 std::snprintf(configStatus, sizeof(configStatus), "%s", T("settings.exportFailed"));
             } else {
-                std::snprintf(configStatus, sizeof(configStatus), "%s", configTransferScope == 1 ? T("settings.exportPartialSuccess") : T("settings.exportSuccess"));
+                std::snprintf(configStatus, sizeof(configStatus), "%s",
+                    configTransferScope == 1 ? T("settings.exportPartialSuccess") : T("settings.exportSuccess"));
                 openConfigExportPopup = true;
             }
         }
 
-        if (configStatus[0] != '\0') {
-            ImGui::TextDisabled("%s", configStatus);
-        }
+        if (configStatus[0] != '\0') BaseUI::TextDisabled(configStatus);
     }
 
     void DrawConfigImportPopup() {
+        namespace BaseUI = XBase::UI;
         char popupTitle[128] = {};
         std::snprintf(popupTitle, sizeof(popupTitle), "%s###%s", T("settings.importTextTitle"), ConfigImportPopupId);
 
         if (openConfigImportPopup) {
-            ImGui::OpenPopup(popupTitle);
+            BaseUI::OpenModal(popupTitle);
             openConfigImportPopup = false;
         }
 
@@ -873,49 +714,45 @@ namespace Menu {
             ? AppConfig::TransferScope::CustomLocations
             : AppConfig::TransferScope::All;
 
-        if (ImGui::BeginPopupModal(popupTitle, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::TextUnformatted(T("settings.importTextTitle"));
-            ImGui::TextUnformatted(T("settings.importTextHint"));
-            ImGui::InputTextMultiline("##ConfigImportText", configImportText, sizeof(configImportText), ImVec2(620.0f, 300.0f));
-            if (ImGui::Button(T("settings.importTextApply"), ImVec2(130.0f, 0.0f))) {
+        BaseUI::Modal(popupTitle, [&] {
+            BaseUI::Text(T("settings.importTextTitle"));
+            BaseUI::Text(T("settings.importTextHint"));
+            BaseUI::InputTextMultiline("##ConfigImportText", configImportText, sizeof(configImportText), {620.0f, 300.0f});
+            if (BaseUI::Button(T("settings.importTextApply"), {130.0f, 0.0f})) {
                 if (AppConfig::ImportFromText(configImportText, scope)) {
                     Resources::ReloadLocations();
-                    std::snprintf(configStatus, sizeof(configStatus), "%s", configTransferScope == 1 ? T("settings.importPartialSuccess") : T("settings.importSuccess"));
-                    ImGui::CloseCurrentPopup();
+                    std::snprintf(configStatus, sizeof(configStatus), "%s",
+                        configTransferScope == 1 ? T("settings.importPartialSuccess") : T("settings.importSuccess"));
+                    BaseUI::CloseModal();
                 } else {
                     std::snprintf(configStatus, sizeof(configStatus), "%s", T("settings.importFailed"));
                 }
             }
-            ImGui::SameLine();
-            if (ImGui::Button(T("settings.close"), ImVec2(130.0f, 0.0f))) {
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::EndPopup();
-        }
+            BaseUI::SameLine();
+            if (BaseUI::Button(T("settings.close"), {130.0f, 0.0f})) BaseUI::CloseModal();
+        }, {}, true);
     }
 
     void DrawConfigExportPopup() {
+        namespace BaseUI = XBase::UI;
         char popupTitle[128] = {};
         std::snprintf(popupTitle, sizeof(popupTitle), "%s###%s", T("settings.exportTextTitle"), ConfigExportPopupId);
 
         if (openConfigExportPopup) {
-            ImGui::OpenPopup(popupTitle);
+            BaseUI::OpenModal(popupTitle);
             openConfigExportPopup = false;
         }
 
-        if (ImGui::BeginPopupModal(popupTitle, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::TextUnformatted(T("settings.exportTextTitle"));
-            ImGui::TextUnformatted(T("settings.exportTextHint"));
-            ImGui::InputTextMultiline("##ConfigExportText", configExportText, sizeof(configExportText), ImVec2(620.0f, 300.0f), ImGuiInputTextFlags_ReadOnly);
-            if (ImGui::Button(T("settings.copyText"), ImVec2(130.0f, 0.0f))) {
-                ImGui::SetClipboardText(configExportText);
+        BaseUI::Modal(popupTitle, [&] {
+            BaseUI::Text(T("settings.exportTextTitle"));
+            BaseUI::Text(T("settings.exportTextHint"));
+            BaseUI::InputTextMultiline("##ConfigExportText", configExportText, sizeof(configExportText), {620.0f, 300.0f}, true);
+            if (BaseUI::Button(T("settings.copyText"), {130.0f, 0.0f})) {
+                BaseUI::SetClipboardText(configExportText);
             }
-            ImGui::SameLine();
-            if (ImGui::Button(T("settings.close"), ImVec2(130.0f, 0.0f))) {
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::EndPopup();
-        }
+            BaseUI::SameLine();
+            if (BaseUI::Button(T("settings.close"), {130.0f, 0.0f})) BaseUI::CloseModal();
+        }, {}, true);
     }
 
     const char* VersionStatusText(UpdateChecker::VersionStatus status) {
@@ -928,19 +765,6 @@ namespace Menu {
         }
     }
 
-    ImVec4 VersionStatusColor(UpdateChecker::VersionStatus status) {
-        if (status == UpdateChecker::VersionStatus::Equal) {
-            return ImGui::GetStyleColorVec4(ImGuiCol_Text);
-        }
-        if (status == UpdateChecker::VersionStatus::LocalNewer) {
-            return ImVec4(1.0f, 0.30f, 0.25f, 1.0f);
-        }
-        if (status == UpdateChecker::VersionStatus::RemoteNewer) {
-            return ImVec4(1.0f, 0.82f, 0.20f, 1.0f);
-        }
-        return ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
-    }
-
     void DrawUpdateSettings() {
         const UpdateChecker::UpdateInfo info = UpdateChecker::GetUpdateInfo();
         const bool checking = UpdateChecker::IsChecking();
@@ -950,161 +774,107 @@ namespace Menu {
             ? UpdateChecker::SourceDisplayName(info.source)
             : info.sourceName.c_str();
 
-        ImGui::TextUnformatted(T("update.details"));
-        ImGui::PushStyleColor(ImGuiCol_Text, VersionStatusColor(info.status));
-        ImGui::TextUnformatted(checking ? T("status.checking") : VersionStatusText(info.status));
-        ImGui::PopStyleColor();
-        ImGui::Text(T("status.localVersion"), XMENU_VERSION);
-        ImGui::Text(T("status.remoteVersion"), remoteVersion);
-        ImGui::Text(T("update.source"), checking ? T("status.checking") : sourceText);
-        ImGui::TextDisabled("%s", T("update.sourceHint"));
+        XBase::UI::Text(T("update.details"));
+        XBase::UI::Text(checking ? T("status.checking") : VersionStatusText(info.status));
+        XBase::UI::Text(T("status.localVersion"), XMENU_VERSION);
+        XBase::UI::Text(T("status.remoteVersion"), remoteVersion);
+        XBase::UI::Text(T("update.source"), checking ? T("status.checking") : sourceText);
+        XBase::UI::TextDisabled(T("update.sourceHint"));
 
-        if (ImGui::Button(T("update.refresh"), ImVec2(130.0f, 0.0f))) {
-            UpdateChecker::Refresh();
-        }
+        if (XBase::UI::Button(T("update.refresh"), {130.0f, 0.0f})) UpdateChecker::Refresh();
         if (checking) {
-            ImGui::SameLine();
-            ImGui::TextDisabled("%s", T("status.checking"));
+            XBase::UI::SameLine();
+            XBase::UI::TextDisabled(T("status.checking"));
         }
-
-        ImGui::Spacing();
-        if (UI::Button(T("update.openGTAMODX"), 2)) {
-            ShellExecuteA(nullptr, "open", XMENU_URL, nullptr, nullptr, SW_SHOWNORMAL);
-        }
-        ImGui::SameLine();
-        if (UI::Button(T("update.openGitHub"), 2)) {
-            ShellExecuteA(nullptr, "open", releaseUrl, nullptr, nullptr, SW_SHOWNORMAL);
-        }
+        XBase::UI::Spacing();
+        if (XBase::UI::Button(T("update.openGTAMODX"), {130.0f, 0.0f})) XBase::Platform::OpenExternal(XMENU_URL);
+        XBase::UI::SameLine();
+        if (XBase::UI::Button(T("update.openGitHub"), {130.0f, 0.0f})) XBase::Platform::OpenExternal(releaseUrl);
     }
 
     void DrawDebugSettings() {
-        ImGui::TextUnformatted(T("settings.debug"));
-        ImGui::Text(T("settings.d3dHookStatus"), D3DHook::GetInitStatus());
-        ImGui::TextDisabled("%s", D3DHook::IsInitialized() ? T("settings.d3dHookInitialized") : T("settings.d3dHookFailed"));
-
-        if (ImGui::Button(T("update.debugShowDialog"), ImVec2(160.0f, 0.0f))) {
-            UpdateChecker::ForceDebugUpdate();
-        }
-    }
-
-    ImVec4 LogColor(const std::string& level) {
-        if (level == "ERROR" || level == "CRASH") {
-            return ImVec4(1.0f, 0.35f, 0.30f, 1.0f);
-        }
-        if (level == "WARN") {
-            return ImVec4(1.0f, 0.78f, 0.25f, 1.0f);
-        }
-        return ImGui::GetStyleColorVec4(ImGuiCol_Text);
+        XBase::UI::Text(T("settings.debug"));
+        XBase::UI::Text(T("settings.d3dHookStatus"), XBase::Hooks::GetStatusText());
+        XBase::UI::TextDisabled(XBase::Hooks::IsInitialized() ? T("settings.d3dHookInitialized") : T("settings.d3dHookFailed"));
+        if (XBase::UI::Button(T("update.debugShowDialog"), {160.0f, 0.0f})) UpdateChecker::ForceDebugUpdate();
     }
 
     void DrawLogViewer() {
-        ImGui::TextUnformatted(T("log.title"));
-        ImGui::SameLine();
-        if (ImGui::SmallButton(T("log.copy"))) {
-            ImGui::SetClipboardText(Log::GetText().c_str());
-        }
+        XBase::UI::Text(T("log.title"));
+        XBase::UI::SameLine();
+        if (XBase::UI::Button(T("log.copy"))) XBase::UI::SetClipboardText(Log::GetText().c_str());
         const std::vector<Log::Entry> entries = Log::GetEntries();
-        const std::size_t totalCount = Log::GetTotalCount();
-        ImGui::SameLine();
-        ImGui::TextDisabled(T("log.counts"), totalCount, entries.size());
-
-        const float height = ImGui::GetTextLineHeightWithSpacing() * 12.0f;
-        ImGui::BeginChild("XMenuLogViewer", ImVec2(0.0f, height), true, ImGuiWindowFlags_HorizontalScrollbar);
-        if (entries.empty()) {
-            ImGui::TextDisabled("%s", T("log.empty"));
-        } else {
-            for (const Log::Entry& entry : entries) {
-                ImGui::PushStyleColor(ImGuiCol_Text, LogColor(entry.level));
-                ImGui::TextUnformatted(entry.line.c_str());
-                ImGui::PopStyleColor();
+        XBase::UI::SameLine();
+        XBase::UI::TextDisabled(T("log.counts"), static_cast<int>(Log::GetTotalCount()), static_cast<int>(entries.size()));
+        XBase::UI::Child("XMenuLogViewer", [&] {
+            if (entries.empty()) {
+                XBase::UI::TextDisabled(T("log.empty"));
+            } else {
+                for (const Log::Entry& entry : entries) XBase::UI::Text(entry.line.c_str());
             }
-            if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 4.0f) {
-                ImGui::SetScrollHereY(1.0f);
-            }
-        }
-        ImGui::EndChild();
+        }, {0.0f, 240.0f}, true);
     }
 
     void DrawAbout() {
-        UI::TextCentered("XMenu");
-        ImGui::TextWrapped(T("about.version"), XMENU_VERSION);
-        ImGui::TextWrapped(T("about.author"), XMENU_AUTHOR);
-        ImGui::TextWrapped(T("about.testing"), XMENU_AUTHOR_TEST);
-        ImGui::TextWrapped(T("about.techStack"), XMENU_TECH_STACK);
-        ImGui::TextWrapped(T("about.openSourceLibs"), XMENU_OPEN_SOURCE_LIBS);
+        XBase::UI::CenterText("XMenu");
+        XBase::UI::TextWrapped(T("about.version"), XMENU_VERSION);
+        XBase::UI::TextWrapped(T("about.author"), XMENU_AUTHOR);
+        XBase::UI::TextWrapped(T("about.testing"), XMENU_AUTHOR_TEST);
+        XBase::UI::TextWrapped(T("about.techStack"), XMENU_TECH_STACK);
+        XBase::UI::TextWrapped(T("about.openSourceLibs"), XMENU_OPEN_SOURCE_LIBS);
         UI::SpacingSeparator();
-        ImGui::TextWrapped("%s", T("about.notice1"));
-        ImGui::TextWrapped("%s", T("about.notice2"));
-        ImGui::Spacing();
-        if (UI::Button(T("about.joinGroup"), 2)) {
-            ShellExecuteA(nullptr, "open", XMENU_QQ_GROUP, nullptr, nullptr, SW_SHOWNORMAL);
-        }
-        ImGui::SameLine();
-        if (UI::Button(T("about.projectPage"), 2)) {
-            ShellExecuteA(nullptr, "open", XMENU_GITHUB, nullptr, nullptr, SW_SHOWNORMAL);
-        }
+        XBase::UI::TextWrapped(T("about.notice1"));
+        XBase::UI::TextWrapped(T("about.notice2"));
+        XBase::UI::Spacing();
+        if (XBase::UI::Button(T("about.joinGroup"), {130.0f, 0.0f})) XBase::Platform::OpenExternal(XMENU_QQ_GROUP);
+        XBase::UI::SameLine();
+        if (XBase::UI::Button(T("about.projectPage"), {130.0f, 0.0f})) XBase::Platform::OpenExternal(XMENU_GITHUB);
     }
 
     void DrawUpdateDialog() {
         if (UpdateChecker::HasUpdate()) {
-            ImGui::OpenPopup("XMenuUpdateDialog");
+            XBase::UI::OpenModal("XMenuUpdateDialog");
         }
 
-        // p_open：右上角 X；点关闭/打开链接后 Dismiss，避免每帧再弹
-        bool updateOpen = true;
-        if (ImGui::BeginPopupModal("XMenuUpdateDialog", &updateOpen, ImGuiWindowFlags_AlwaysAutoResize)) {
+        XBase::UI::Modal("XMenuUpdateDialog", [&] {
             const UpdateChecker::UpdateInfo info = UpdateChecker::GetUpdateInfo();
             const char* sourceText = info.sourceName.empty()
                 ? UpdateChecker::SourceDisplayName(info.source)
                 : info.sourceName.c_str();
-
-            ImGui::TextUnformatted(T("update.availableTitle"));
-            ImGui::Separator();
-            ImGui::Spacing();
-            ImGui::TextWrapped(T("update.availableMessage"), info.currentVersion.c_str(), info.latestVersion.c_str());
-            ImGui::Text(T("update.source"), sourceText);
-            ImGui::Spacing();
-
-            if (ImGui::Button(T("update.openGitHub"), ImVec2(120.0f, 0.0f))) {
-                ShellExecuteA(nullptr, "open", info.releaseUrl.empty() ? XMENU_GITHUB : info.releaseUrl.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+            XBase::UI::Text(T("update.availableTitle"));
+            XBase::UI::Separator();
+            XBase::UI::Spacing();
+            XBase::UI::TextWrapped(T("update.availableMessage"), info.currentVersion.c_str(), info.latestVersion.c_str());
+            XBase::UI::Text(T("update.source"), sourceText);
+            XBase::UI::Spacing();
+            if (XBase::UI::Button(T("update.openGitHub"), {120.0f, 0.0f})) {
+                XBase::Platform::OpenExternal(info.releaseUrl.empty() ? XMENU_GITHUB : info.releaseUrl.c_str());
                 UpdateChecker::Dismiss();
-                ImGui::CloseCurrentPopup();
+                XBase::UI::CloseModal();
             }
-            ImGui::SameLine();
-            if (ImGui::Button(T("update.openGTAMODX"), ImVec2(120.0f, 0.0f))) {
-                ShellExecuteA(nullptr, "open", XMENU_URL, nullptr, nullptr, SW_SHOWNORMAL);
+            XBase::UI::SameLine();
+            if (XBase::UI::Button(T("update.openGTAMODX"), {120.0f, 0.0f})) {
+                XBase::Platform::OpenExternal(XMENU_URL);
                 UpdateChecker::Dismiss();
-                ImGui::CloseCurrentPopup();
+                XBase::UI::CloseModal();
             }
-            ImGui::SameLine();
-            if (ImGui::Button(T("update.close"), ImVec2(120.0f, 0.0f))) {
+            XBase::UI::SameLine();
+            if (XBase::UI::Button(T("update.close"), {120.0f, 0.0f})) {
                 UpdateChecker::Dismiss();
-                ImGui::CloseCurrentPopup();
+                XBase::UI::CloseModal();
             }
-
-            ImGui::EndPopup();
-        }
-        if (!updateOpen) {
-            // 标题栏 X：Begin 可能仍为 true，统一在这里 Dismiss
-            UpdateChecker::Dismiss();
-        }
+        }, {}, true);
     }
 }
 void Menu::Process() {
     Pages::Player::Process();
     Pages::Vehicle::Process();
-    Pages::Ped::Process();
     Pages::Weapon::Process();
-    Pages::World::Process();
-    if (IsSaRuntime()) {
-        Pages::Scene::Process();
-    }
-    Pages::Visual::Process();
-    Pages::Teleport::Process();
-    Controllers::Overlay::Process();
+    Controllers::Teleport::ProcessHost();
     Controllers::Command::Process();
     Controllers::Hotkeys::Process();
-    D3DHook::SetBackgroundRenderActive(
+    Controllers::BulletAssist::Process();
+    XBase::Hooks::SetBackgroundRenderActive(
         MenuState::OverlayEnabled
         || MenuState::CommandWindowEnabled
         || MenuState::QuickTeleportMapActive
@@ -1117,23 +887,12 @@ void Menu::Process() {
 }
 
 void Menu::Draw() {
-    menuVisible = D3DHook::IsMenuVisible();
+    menuVisible = XBase::Hooks::IsMenuVisible();
     char windowTitle[160] = {};
 
     char visibleTitle[128] = {};
     std::snprintf(visibleTitle, sizeof(visibleTitle), T("window.title"), XMENU_AUTHOR);
     std::snprintf(windowTitle, sizeof(windowTitle), "%s###XMenuMainWindow", visibleTitle);
-
-    if (!menuVisible) {
-        // 当菜单关闭时，如果有激活的页面（例如 Player 子菜单），我们重置为 Player 主菜单（或者根菜单）
-        // 这样下次打开菜单时不会停留在深层子页面。也可以保留当前页面，取决于需求。
-        // 对于 overlay 相关的渲染，不能被 return 截断
-    }
-
-    // Process controllers related to UI even when menu is hidden, e.g., overlay.
-    // However, overlay rendering should happen inside D3DHook Present hook independently.
-    // If the overlay is drawn from here, we need to draw it regardless of menuVisible.
-    // if (!menuVisible) return;
 
     if (menuVisible) {
         GuiTheme::Sync();
@@ -1156,45 +915,41 @@ void Menu::Draw() {
                 }
             }
 
-            UI::BeginListShell(visibleTitle, subtitle, !pageStack.empty());
-
-            if (pageStack.empty()) {
-                for (const NavItem& item : navItems) {
-                    if (!IsPageAvailable(item.page)) continue;
-                    if (UI::Button(T(item.textKey))) {
-                        PushPage(item.page);
+            const XBase::UI::MenuSurfaceResult surfaceResult = XBase::UI::MenuSurface(
+                "XMenuMainWindow",
+                visibleTitle,
+                subtitle,
+                listSurfaceState,
+                MenuState::ListMenuMouseInput,
+                !pageStack.empty(),
+                [&] {
+                    if (pageStack.empty()) {
+                        for (const NavItem& item : navItems) {
+                            if (!IsPageAvailable(item.page)) continue;
+                            if (UI::Button(T(item.textKey))) PushPage(item.page);
+                        }
+                    } else {
+                        DrawActivePage();
                     }
-                }
-            } else {
-                DrawActivePage();
+                });
+            if (surfaceResult.backRequested && !pageStack.empty()) PopPage();
+            if (listSurfaceResetPending) {
+                listSurfaceState.selectedIndex = 0;
+                listSurfaceState.itemCount = 0;
+                listSurfaceResetPending = false;
             }
-
-            UI::EndListShell();
         } else {
-            ImGui::SetNextWindowSize(ImVec2(780.0f, 520.0f), ImGuiCond_FirstUseEver);
-
+            XBase::UI::SetNextWindowSize({780.0f, 520.0f}, true);
             bool windowOpen = true;
-            if (ImGui::Begin(windowTitle, &windowOpen, ImGuiWindowFlags_NoCollapse)) {
-                HandleMainWindowDrag();
-                ImGui::BeginChild("XMenuSidebar", ImVec2(170.0f, 0.0f), true);
-                DrawNavigation();
-                ImGui::EndChild();
-
-                ImGui::SameLine();
-
-                ImGui::BeginChild("XMenuContent", ImVec2(0.0f, 0.0f), true);
-                DrawActivePage();
-                ImGui::EndChild();
-
+            XBase::UI::Window("XMenuMainWindow", windowTitle, [&] {
+                XBase::UI::Child("XMenuSidebar", [&] { DrawNavigation(); }, {170.0f, 0.0f}, true);
+                XBase::UI::SameLine();
+                XBase::UI::Child("XMenuContent", [&] { DrawActivePage(); }, {0.0f, 0.0f}, true);
                 DrawUpdateDialog();
                 DrawConfigImportPopup();
                 DrawConfigExportPopup();
-            }
-            ImGui::End();
-
-            if (!windowOpen) {
-                D3DHook::SetMenuVisible(false);
-            }
+            }, &windowOpen, XBase::UI::Flag(XBase::UI::WindowFlag::NoCollapse));
+            if (!windowOpen) XBase::Hooks::SetMenuVisible(false);
         }
     }
 

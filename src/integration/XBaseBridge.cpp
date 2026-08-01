@@ -10,7 +10,7 @@ bool IsWorldReady() {
 }
 
 void Init() {
-    XBase::Core::Init(XBase::Core::DomainBit(XBase::Core::Domain::Player));
+    XBase::Core::Init(XBase::Core::AllDomains);
 }
 
 void Process() {
@@ -29,12 +29,24 @@ void Shutdown() {
     XBase::Core::Shutdown();
 }
 
+XBase::CapabilitySupport GetCapabilitySupport(XBase::Capability capability) {
+    return XBase::GetCapabilitySupport(capability);
+}
+
+XBase::CapabilitySupport GetCapabilitySupport(XBase::FeatureCapability capability) {
+    return XBase::GetCapabilitySupport(capability);
+}
+
 bool HasCapability(XBase::Capability capability) {
     return XBase::HasCapability(capability);
 }
 
 bool HasCapability(XBase::FeatureCapability capability) {
     return XBase::HasCapability(capability);
+}
+
+bool IsDomainEnabled(XBase::Core::Domain domain) {
+    return XBase::Core::IsDomainEnabled(domain);
 }
 
 } // namespace XBaseBridge

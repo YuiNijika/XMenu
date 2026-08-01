@@ -6,11 +6,10 @@
 #include "Teleport.h"
 #include "ui/MenuState.h"
 #include "utils/AppConfig.h"
-#include "utils/D3DHook.h"
+#include <XBase/Hooks.h>
+#include <XBase/Teleport.h>
 #include "utils/I18n.h"
 #include "integration/XBaseBridge.h"
-#include "imgui/imgui.h"
-#include <windows.h>
 #include <unordered_map>
 #include <cstdio>
 #include <string>
@@ -20,11 +19,7 @@ namespace {
     constexpr float ForwardTeleportBaseIntervalMs = 180.0f;
 
     float ForwardTeleportFrameScale() {
-        if (!ImGui::GetCurrentContext()) {
-            return 16.6667f / ForwardTeleportBaseIntervalMs;
-        }
-
-        float deltaMs = ImGui::GetIO().DeltaTime * 1000.0f;
+        float deltaMs = XBase::Hooks::GetFrameDeltaSeconds() * 1000.0f;
         if (deltaMs < 1.0f) {
             deltaMs = 1.0f;
         }
@@ -35,16 +30,11 @@ namespace {
     }
 
     bool HasBlockingUiInput() {
-        if (D3DHook::IsMenuVisible()) {
+        if (XBase::Hooks::IsMenuVisible()) {
             return true;
         }
 
-        if (!ImGui::GetCurrentContext()) {
-            return false;
-        }
-
-        const ImGuiIO& io = ImGui::GetIO();
-        return io.WantTextInput || io.WantCaptureKeyboard;
+        return XBase::Hooks::IsKeyboardCaptureActive();
     }
 
     void UpdatePreviousStatesOnly() {
@@ -66,7 +56,7 @@ namespace {
         }
 
         if (actionId == "teleport.marker") {
-            Controllers::Teleport::Marker(MenuState::SpawnUnderwater);
+            XBase::Teleport::Marker(MenuState::SpawnUnderwater);
             return;
         }
 
@@ -78,7 +68,7 @@ namespace {
         }
 
         if (actionId == "teleport.forward") {
-            Controllers::Teleport::Forward(MenuState::TeleportForwardDistance);
+            XBase::Teleport::Forward(MenuState::TeleportForwardDistance);
             return;
         }
 
@@ -173,7 +163,7 @@ namespace Controllers::Hotkeys {
             if (action.id == "teleport.forward") {
                 if (pressed && MenuState::TeleportForwardHold) {
                     const float continuousDistance = MenuState::TeleportForwardDistance * ForwardTeleportFrameScale();
-                    Controllers::Teleport::Forward(continuousDistance);
+                    XBase::Teleport::Forward(continuousDistance);
                 } else if (pressed && !wasPressed) {
                     Dispatch(action.id);
                     ShowActionNotice(action);

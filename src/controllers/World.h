@@ -1,9 +1,8 @@
 #pragma once
 
-#include "features/GameLogic.h"
+#include <XBase/Types.h>
 
 namespace Controllers::World {
-    void Process();
     void SetWeather(int id, bool lock);
     void ReleaseWeather();
     bool IsWeatherLocked();
@@ -30,16 +29,10 @@ namespace Controllers::World {
     void SetDaysPassed(int days);
     float GetGravity();
     void SetGravity(float gravity);
-    int SpawnPickup(const GameLogic::PickupOptions& options);
+    int SpawnPickup(const XBase::Types::PickupOptions& options);
     int SpawnPickup();
     bool RemoveTrackedPickups();
     bool UpdateLastPickup();
     bool RemoveLastPickup();
 
-    // Freecam
-    void EnableFreecam();
-    void DisableFreecam();
-    void DisableTopDownCam();
-
-    void DrawRandomCheatsList();
 }

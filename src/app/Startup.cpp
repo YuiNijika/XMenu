@@ -1,52 +1,36 @@
 #include "Startup.h"
-#include "defines.h"
-#include "plugin.h"
-#include "GameVersion.h"
 #include "utils/Log.h"
-#include <windows.h>
 
-namespace {
-    bool IsSupportedGameVersion() {
-        const unsigned int gameVersion = plugin::GetGameVersion();
-
-#ifdef GTASA
-        return gameVersion == GAME_10US_HOODLUM || gameVersion == GAME_10US_COMPACT;
-#else
-        return gameVersion == BY_GAME(0, GAME_10EN, GAME_10EN);
-#endif
-    }
-
-    bool IsUnsupportedOnlineRuntimeLoaded() {
-#ifdef GTASA
-        return GetModuleHandleA("SAMP.dll") || GetModuleHandleA("SAMP.asi");
-#elif GTAVC
-        return GetModuleHandleA("vcmp-proxy.dll") || GetModuleHandleA("vcmp-proxy.asi");
-#else
-        return false;
-#endif
-    }
-}
+#include <XBase/Platform.h>
+#include <XBase/Runtime.h>
 
 namespace Startup {
     bool Validate() {
-        if (!IsSupportedGameVersion()) {
+        const XBase::Runtime::ValidationResult validation = XBase::Runtime::ValidateEnvironment();
+        if (validation.success) {
+            Log::Info("启动校验完成：当前环境可用");
+            return true;
+        }
+
+        switch (validation.failure) {
+        case XBase::Runtime::ValidationFailure::UnsupportedGameVersion:
             Log::Error("启动校验失败：当前游戏版本不受支持");
-            MessageBoxA(
-                HWND_DESKTOP,
-                "Unknown game version. GTA " BY_GAME("SA v1.0 US Hoodlum or Compact", "VC v1.0 EN", "III v1.0 EN") " is required.",
+            XBase::Platform::ShowError(
                 "XMenu",
-                MB_ICONERROR
-            );
-            return false;
-        }
-
-        if (IsUnsupportedOnlineRuntimeLoaded()) {
+                "Unknown or unsupported game version. A supported original 1.0 executable is required.");
+            break;
+        case XBase::Runtime::ValidationFailure::OnlineRuntimeDetected:
             Log::Error("启动校验失败：检测到联机运行时");
-            MessageBoxA(HWND_DESKTOP, "Online multiplayer runtime detected. XMenu is disabled for this session.", "XMenu", MB_ICONERROR);
-            return false;
+            XBase::Platform::ShowError(
+                "XMenu",
+                "Online multiplayer runtime detected. XMenu is disabled for this session.");
+            break;
+        case XBase::Runtime::ValidationFailure::None:
+        default:
+            Log::Error("启动校验失败：未知运行时错误");
+            XBase::Platform::ShowError("XMenu", validation.message);
+            break;
         }
-
-        Log::Info("启动校验完成：当前环境可用");
-        return true;
+        return false;
     }
 }

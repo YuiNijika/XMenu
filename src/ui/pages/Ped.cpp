@@ -4,7 +4,7 @@
 #include "ui/MenuState.h"
 #include "ui/Widget.h"
 #include "utils/I18n.h"
-#include "imgui/imgui.h"
+#include <XBase/UI.h>
 #include <cstdio>
 #include <cstring>
 
@@ -13,10 +13,22 @@ namespace {
         return I18n::T(key);
     }
 
+    bool Checkbox(const char* label, bool* value) {
+        return value && XBase::UI::Checkbox(label, *value);
+    }
+
+    bool InputInt(const char* label, int* value) {
+        return value && XBase::UI::Input(label, *value);
+    }
+
+    bool InputFloat(const char* label, float* value, float step, float fastStep, const char* format) {
+        return value && XBase::UI::Input(label, *value, step, fastStep, format);
+    }
+
     void DrawPedList() {
         const Resources::PedTable table = Resources::GetPeds();
         if (table.count == 0) {
-            ImGui::TextWrapped("%s", T("ped.noListData"));
+            XBase::UI::TextWrapped(T("ped.noListData"));
             return;
         }
 
@@ -31,8 +43,8 @@ namespace {
             if (currentCategoryKey != ped.category) {
                 currentCategoryKey = ped.category;
                 index = 0;
-                ImGui::Spacing();
-                ImGui::SeparatorText(translatedCategory);
+                XBase::UI::Spacing();
+                XBase::UI::SeparatorText(translatedCategory);
             }
 
             char buttonLabel[96];
@@ -47,161 +59,155 @@ namespace {
 }
 
 namespace Pages::Ped {
-    void Process() {
-        Controllers::Ped::Process();
-    }
-
     void Draw() {
-        if (UI::BeginTabBar("PedTabs")) {
-            if (UI::BeginTab("ped.toggles", T("common.toggles"))) {
-                ImGui::Columns(2, nullptr, false);
+        XBase::UI::Tabs("PedTabs", [&] {
+            XBase::UI::Tab("ped.toggles", T("common.toggles"), [&] {
+                XBase::UI::Columns(2, nullptr, false);
 #if defined(GTASA) || defined(GTA3)
-                ImGui::Checkbox(T("ped.bigHeadMode"), &MenuState::BigHeadMode);
-                ImGui::NextColumn();
+                Checkbox(T("ped.bigHeadMode"), &MenuState::BigHeadMode);
+                XBase::UI::NextColumn();
 #endif
 #ifdef GTASA
-                ImGui::Checkbox(T("ped.thinBodyMode"), &MenuState::ThinBodyMode);
-                ImGui::NextColumn();
-                if (ImGui::Checkbox(T("ped.elvisEverywhere"), &MenuState::ElvisEverywhere)) {
+                Checkbox(T("ped.thinBodyMode"), &MenuState::ThinBodyMode);
+                XBase::UI::NextColumn();
+                if (Checkbox(T("ped.elvisEverywhere"), &MenuState::ElvisEverywhere)) {
                     Controllers::Ped::SetElvisEverywhere(MenuState::ElvisEverywhere);
                 }
-                ImGui::NextColumn();
-                if (ImGui::Checkbox(T("ped.everyoneArmed"), &MenuState::EveryoneArmed)) {
+                XBase::UI::NextColumn();
+                if (Checkbox(T("ped.everyoneArmed"), &MenuState::EveryoneArmed)) {
                     Controllers::Ped::SetEveryoneArmed(MenuState::EveryoneArmed);
                 }
-                ImGui::NextColumn();
-                if (ImGui::Checkbox(T("ped.pedsMayhem"), &MenuState::PedsMayhem)) {
+                XBase::UI::NextColumn();
+                if (Checkbox(T("ped.pedsMayhem"), &MenuState::PedsMayhem)) {
                     Controllers::Ped::SetPedsMayhem(MenuState::PedsMayhem);
                 }
-                ImGui::NextColumn();
-                if (ImGui::Checkbox(T("ped.pedsAtkRocket"), &MenuState::PedsAtkRocket)) {
+                XBase::UI::NextColumn();
+                if (Checkbox(T("ped.pedsAtkRocket"), &MenuState::PedsAtkRocket)) {
                     Controllers::Ped::SetPedsAtkRocket(MenuState::PedsAtkRocket);
                 }
-                ImGui::NextColumn();
-                if (ImGui::Checkbox(T("ped.pedsRiot"), &MenuState::PedsRiot)) {
+                XBase::UI::NextColumn();
+                if (Checkbox(T("ped.pedsRiot"), &MenuState::PedsRiot)) {
                     Controllers::Ped::SetPedsRiot(MenuState::PedsRiot);
                 }
-                ImGui::NextColumn();
-                if (ImGui::Checkbox(T("ped.slutMagnet"), &MenuState::SlutMagnet)) {
+                XBase::UI::NextColumn();
+                if (Checkbox(T("ped.slutMagnet"), &MenuState::SlutMagnet)) {
                     Controllers::Ped::SetSlutMagnet(MenuState::SlutMagnet);
                 }
-                ImGui::NextColumn();
-                if (ImGui::Checkbox(T("ped.gangsControl"), &MenuState::GangsControl)) {
+                XBase::UI::NextColumn();
+                if (Checkbox(T("ped.gangsControl"), &MenuState::GangsControl)) {
                     Controllers::Ped::SetGangsControl(MenuState::GangsControl);
                 }
-                ImGui::NextColumn();
-                if (ImGui::Checkbox(T("ped.gangsEverywhere"), &MenuState::GangsEverywhere)) {
+                XBase::UI::NextColumn();
+                if (Checkbox(T("ped.gangsEverywhere"), &MenuState::GangsEverywhere)) {
                     Controllers::Ped::SetGangsEverywhere(MenuState::GangsEverywhere);
                 }
-                ImGui::NextColumn();
+                XBase::UI::NextColumn();
 #endif
 #ifdef GTAVC
-                if (ImGui::Checkbox(T("ped.everyoneArmed"), &MenuState::EveryoneArmed)) {
+                if (Checkbox(T("ped.everyoneArmed"), &MenuState::EveryoneArmed)) {
                     Controllers::Ped::SetEveryoneArmed(MenuState::EveryoneArmed);
                 }
-                ImGui::NextColumn();
-                if (ImGui::Checkbox(T("ped.slutMagnet"), &MenuState::SlutMagnet)) {
+                XBase::UI::NextColumn();
+                if (Checkbox(T("ped.slutMagnet"), &MenuState::SlutMagnet)) {
                     Controllers::Ped::SetSlutMagnet(MenuState::SlutMagnet);
                 }
-                ImGui::NextColumn();
-                if (ImGui::Checkbox(T("ped.noProstitutes"), &MenuState::PedNoProstitutes)) {
+                XBase::UI::NextColumn();
+                if (Checkbox(T("ped.noProstitutes"), &MenuState::PedNoProstitutes)) {
                     Controllers::Ped::SetNoProstitutes(MenuState::PedNoProstitutes);
                 }
-                ImGui::NextColumn();
+                XBase::UI::NextColumn();
 #endif
 #ifdef GTA3
-                if (ImGui::Checkbox(T("ped.everyoneArmed"), &MenuState::EveryoneArmed)) {
+                if (Checkbox(T("ped.everyoneArmed"), &MenuState::EveryoneArmed)) {
                     Controllers::Ped::SetEveryoneArmed(MenuState::EveryoneArmed);
                 }
-                ImGui::NextColumn();
-                if (ImGui::Checkbox(T("ped.pedsMayhem"), &MenuState::PedsMayhem)) {
+                XBase::UI::NextColumn();
+                if (Checkbox(T("ped.pedsMayhem"), &MenuState::PedsMayhem)) {
                     Controllers::Ped::SetPedsMayhem(MenuState::PedsMayhem);
                 }
-                ImGui::NextColumn();
-                if (ImGui::Checkbox(T("ped.pedsRiot"), &MenuState::PedsRiot)) {
+                XBase::UI::NextColumn();
+                if (Checkbox(T("ped.pedsRiot"), &MenuState::PedsRiot)) {
                     Controllers::Ped::SetPedsRiot(MenuState::PedsRiot);
                 }
-                ImGui::NextColumn();
-                if (ImGui::Checkbox(T("ped.nastyLimbs"), &MenuState::PedNastyLimbs)) {
+                XBase::UI::NextColumn();
+                if (Checkbox(T("ped.nastyLimbs"), &MenuState::PedNastyLimbs)) {
                     Controllers::Ped::SetNastyLimbs(MenuState::PedNastyLimbs);
                 }
-                ImGui::NextColumn();
+                XBase::UI::NextColumn();
 #endif
-                ImGui::Columns(1);
+                XBase::UI::Columns(1);
 
                 // Peds No Fire
-                ImGui::SeparatorText(T("ped.pedsNoFire"));
-                if (ImGui::Checkbox(T("ped.pedsNoFire"), &MenuState::PedsNoFire)) {
+                XBase::UI::SeparatorText(T("ped.pedsNoFire"));
+                if (Checkbox(T("ped.pedsNoFire"), &MenuState::PedsNoFire)) {
                     Controllers::Ped::SetPedsNoFire(MenuState::PedsNoFire);
                 }
                 if (MenuState::PedsNoFire) {
-                    ImGui::Indent();
-                    ImGui::Checkbox(T("ped.pedsNoFireCivilians"), &MenuState::PedsNoFireCivilians);
-                    ImGui::Checkbox(T("ped.pedsNoFireGangs"), &MenuState::PedsNoFireGangs);
-                    ImGui::Checkbox(T("ped.pedsNoFirePolice"), &MenuState::PedsNoFirePolice);
-                    ImGui::Checkbox(T("ped.pedsNoFireMission"), &MenuState::PedsNoFireMission);
-                    ImGui::Unindent();
+                    XBase::UI::Indented([&] {
+                        Checkbox(T("ped.pedsNoFireCivilians"), &MenuState::PedsNoFireCivilians);
+                        Checkbox(T("ped.pedsNoFireGangs"), &MenuState::PedsNoFireGangs);
+                        Checkbox(T("ped.pedsNoFirePolice"), &MenuState::PedsNoFirePolice);
+                        Checkbox(T("ped.pedsNoFireMission"), &MenuState::PedsNoFireMission);
+                    });
                 }
 
-                UI::EndTab();
-            }
+                });
 
-            if (UI::BeginTab("ped.spawnPed", T("ped.spawnPed"))) {
-                ImGui::TextWrapped("%s", T("ped.hint"));
-                ImGui::PushItemWidth(160.0f);
-                ImGui::InputInt(T("ped.modelId"), &MenuState::PedSpawnModel);
-                ImGui::InputInt(T("ped.type"), &MenuState::PedSpawnType);
-                ImGui::InputInt(T("ped.gangType"), &MenuState::PedGangType);
-                ImGui::InputInt(T("ped.weaponModel"), &MenuState::PedWeaponModel);
-                ImGui::InputFloat(T("ped.health"), &MenuState::PedHealth, 1.0f, 10.0f, "%.1f");
-                ImGui::InputFloat(T("ped.armour"), &MenuState::PedArmour, 1.0f, 10.0f, "%.1f");
-                ImGui::PopItemWidth();
+            XBase::UI::Tab("ped.spawnPed", T("ped.spawnPed"), [&] {
+                XBase::UI::TextWrapped(T("ped.hint"));
+                XBase::UI::PushItemWidth(160.0f);
+                InputInt(T("ped.modelId"), &MenuState::PedSpawnModel);
+                InputInt(T("ped.type"), &MenuState::PedSpawnType);
+                InputInt(T("ped.gangType"), &MenuState::PedGangType);
+                InputInt(T("ped.weaponModel"), &MenuState::PedWeaponModel);
+                InputFloat(T("ped.health"), &MenuState::PedHealth, 1.0f, 10.0f, "%.1f");
+                InputFloat(T("ped.armour"), &MenuState::PedArmour, 1.0f, 10.0f, "%.1f");
+                XBase::UI::PopItemWidth();
 
-                ImGui::Checkbox(T("ped.asGang"), &MenuState::PedSpawnAsGang);
-                ImGui::SameLine();
-                ImGui::Checkbox(T("ped.freeze"), &MenuState::PedFreeze);
-                ImGui::SameLine();
-                ImGui::Checkbox(T("ped.hostile"), &MenuState::PedHostile);
+                Checkbox(T("ped.asGang"), &MenuState::PedSpawnAsGang);
+                XBase::UI::SameLine();
+                Checkbox(T("ped.freeze"), &MenuState::PedFreeze);
+                XBase::UI::SameLine();
+                Checkbox(T("ped.hostile"), &MenuState::PedHostile);
 
-                ImGui::Checkbox(T("ped.smoking"), &MenuState::SmokingEffect);
-                ImGui::SameLine();
-                ImGui::Checkbox(T("ped.flies"), &MenuState::FliesEffect);
+                Checkbox(T("ped.smoking"), &MenuState::SmokingEffect);
+                XBase::UI::SameLine();
+                Checkbox(T("ped.flies"), &MenuState::FliesEffect);
 
                 UI::SpacingSeparator();
                 if (UI::Button(T("ped.spawnNear"), 3)) {
                     Controllers::Ped::SpawnNearPlayer();
                 }
-                ImGui::SameLine();
+                XBase::UI::SameLine();
                 if (UI::Button(T("ped.spawnMarker"), 3)) {
                     Controllers::Ped::SpawnAtMarker();
                 }
-                ImGui::SameLine();
+                XBase::UI::SameLine();
                 if (UI::Button(T("ped.deleteLast"), 3)) {
                     Controllers::Ped::DeleteLastSpawnedPed();
                 }
 
-                ImGui::TextDisabled("%s", Controllers::Ped::GetLastSpawnedPed() ? T("ped.lastSpawnedYes") : T("ped.lastSpawnedNo"));
+                XBase::UI::TextDisabled(Controllers::Ped::GetLastSpawnedId() ? T("ped.lastSpawnedYes") : T("ped.lastSpawnedNo"));
 
                 UI::SpacingSeparator();
-                ImGui::TextWrapped("%s", T("ped.listHint"));
+                XBase::UI::TextWrapped(T("ped.listHint"));
                 UI::SpacingSeparator();
                 DrawPedList();
-                UI::EndTab();
-            }
+                });
 
 #ifdef GTASA
-            if (UI::BeginTab("ped.gangs", T("ped.gangs"))) {
-                if (ImGui::Checkbox(T("ped.gangWarsActive"), &MenuState::GangWarsActive)) {
+            XBase::UI::Tab("ped.gangs", T("ped.gangs"), [&] {
+                if (Checkbox(T("ped.gangWarsActive"), &MenuState::GangWarsActive)) {
                     Controllers::Ped::SetGangWarsActive(MenuState::GangWarsActive);
                 }
                 if (UI::Button(T("ped.startGangWar"), 3)) {
                     Controllers::Ped::StartGangWar(true);
                 }
-                ImGui::SameLine();
+                XBase::UI::SameLine();
                 if (UI::Button(T("ped.endGangWar"), 3)) {
                     Controllers::Ped::EndGangWar();
                 }
-                ImGui::SameLine();
+                XBase::UI::SameLine();
                 if (UI::Button(T("ped.resetGangModels"), 3)) {
                     Controllers::Ped::ResetGangModels();
                 }
@@ -236,10 +242,8 @@ namespace Pages::Ped {
                         MenuState::GangWeaponType,
                         MenuState::GangWeaponType);
                 }
-                UI::EndTab();
-            }
+                });
 #endif
-            UI::EndTabBar();
-        }
+            });
     }
 }

@@ -2,5 +2,4 @@
 
 namespace Pages::Scene {
     void Draw();
-    void Process();
 }

@@ -1,13 +1,13 @@
 #include "Player.h"
 #include "ui/MenuState.h"
-#include "utils/D3DHook.h"
+#include <XBase/Hooks.h>
+#include <XBase/Input.h>
 #include "utils/AppConfig.h"
 #include <XBase/Capabilities.h>
 #include <XBase/Player.h>
 #ifdef GTASA
 #include <XBase/Weapon.h>
 #endif
-#include <windows.h>
 
 namespace {
     int ClampWantedLevel(int level) {
@@ -27,8 +27,8 @@ namespace {
         return value < 2.0f ? 2.0f : value;
     }
 
-    bool IsKeyDown(int key) {
-        return (GetAsyncKeyState(key) & 0x8000) != 0;
+    bool IsKeyDown(XBase::Input::Key key) {
+        return XBase::Input::IsDown(key);
     }
 
     bool IsAutoFlightHoldActive() {
@@ -37,7 +37,7 @@ namespace {
     }
 
     void ProcessFreeFly(bool active) {
-        const bool menuVisible = D3DHook::IsMenuVisible();
+        const bool menuVisible = XBase::Hooks::IsMenuVisible();
         if (!active || menuVisible) return;
 
         const float speed = MenuState::FreeFlySpeed > 0.05f ? MenuState::FreeFlySpeed : 0.05f;
@@ -45,22 +45,22 @@ namespace {
         float right = 0.0f;
         float up = 0.0f;
 
-        if (IsKeyDown('W')) {
+        if (IsKeyDown(XBase::Input::Key::W)) {
             forward += speed;
         }
-        if (IsKeyDown('S')) {
+        if (IsKeyDown(XBase::Input::Key::S)) {
             forward -= speed;
         }
-        if (IsKeyDown('D')) {
+        if (IsKeyDown(XBase::Input::Key::D)) {
             right += speed;
         }
-        if (IsKeyDown('A')) {
+        if (IsKeyDown(XBase::Input::Key::A)) {
             right -= speed;
         }
-        if (IsKeyDown(VK_SPACE)) {
+        if (IsKeyDown(XBase::Input::Key::Space)) {
             up += speed;
         }
-        if (IsKeyDown('C')) {
+        if (IsKeyDown(XBase::Input::Key::C)) {
             up -= speed;
         }
 
@@ -70,13 +70,12 @@ namespace {
     }
 }
 
-namespace Controllers::Player {
-    CPlayerPed* GetPlayer() {
-        return static_cast<CPlayerPed*>(XBase::Player::GetHandle());
+    bool GetPlayerAvailable() {
+        return XBase::Player::IsAvailable();
     }
 
     void Process() {
-        const bool menuVisible = D3DHook::IsMenuVisible();
+        const bool menuVisible = XBase::Hooks::IsMenuVisible();
         const bool freeFlyActive = MenuState::FreeFlyEnabled || (!menuVisible && IsAutoFlightHoldActive());
 
         XBase::Player::RuntimeOptions options;

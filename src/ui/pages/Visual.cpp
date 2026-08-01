@@ -1,11 +1,11 @@
 #include "Visual.h"
-#include "controllers/Visual.h"
 #include "ui/MenuState.h"
 #include "ui/Widget.h"
 #include "utils/DataManager.h"
 #include "utils/I18n.h"
 #include "utils/JsonLoader.h"
-#include "imgui/imgui.h"
+#include <XBase/UI.h>
+#include <XBase/Visual.h>
 #include <cstdio>
 #include <filesystem>
 #include <string>
@@ -66,7 +66,7 @@ namespace {
         static VisualList visuals;
         LoadVisuals(visuals);
         if (visuals.entries.empty()) {
-            ImGui::TextDisabled("%s", T("visual.noListData"));
+            XBase::UI::TextDisabled(T("visual.noListData"));
             return;
         }
 
@@ -76,8 +76,8 @@ namespace {
             if (currentCategory != entry.category) {
                 currentCategory = entry.category;
                 index = 0;
-                ImGui::Spacing();
-                ImGui::SeparatorText(T(currentCategory.c_str()));
+                XBase::UI::Spacing();
+                XBase::UI::SeparatorText(T(currentCategory.c_str()));
             }
 
             const char* translatedName = T(entry.name.c_str());
@@ -86,7 +86,7 @@ namespace {
             if (UI::Button(label, 3)) {
                 MenuState::VisualFilter = true;
                 MenuState::VisualFilterId = entry.id;
-                Controllers::Visual::ApplyFilterState();
+                XBase::Visual::SetFilter(MenuState::VisualFilterId, MenuState::VisualTimecycStrength);
             }
             UI::SameLineEvery(index++, 3);
         }
@@ -94,57 +94,53 @@ namespace {
 }
 
 namespace Pages::Visual {
-    void Process() {
-        Controllers::Visual::Process();
-    }
-
     void Draw() {
-        if (ImGui::Checkbox(T("visual.hud"), &MenuState::VisualHud)) {
-            Controllers::Visual::ApplyHudState();
+        if (XBase::UI::Checkbox(T("visual.hud"), MenuState::VisualHud)) {
+            XBase::Visual::DisplayHud(MenuState::VisualHud);
         }
-        ImGui::SameLine();
-        if (ImGui::Checkbox(T("visual.radar"), &MenuState::VisualRadar)) {
-            Controllers::Visual::ApplyRadarState();
+        XBase::UI::SameLine();
+        if (XBase::UI::Checkbox(T("visual.radar"), MenuState::VisualRadar)) {
+            XBase::Visual::DisplayRadar(MenuState::VisualRadar);
         }
 
 #ifdef GTASA
         UI::SpacingSeparator();
-        ImGui::Columns(2, nullptr, false);
-        ImGui::Checkbox(T("visual.squareRadar"), &MenuState::VisualSquareRadar);
-        ImGui::TextDisabled("%s", T("visual.squareRadarHint"));
-        ImGui::NextColumn();
-        ImGui::Checkbox(T("visual.noRadarRot"), &MenuState::VisualNoRadarRot);
-        ImGui::NextColumn();
-        ImGui::Checkbox(T("visual.fullscreenMap"), &MenuState::VisualFullscreenMap);
-        ImGui::NextColumn();
-        ImGui::Checkbox(T("visual.unfogMap"), &MenuState::VisualUnfogMap);
-        ImGui::NextColumn();
-        ImGui::Checkbox(T("visual.hideAreaNames"), &MenuState::VisualHideAreaNames);
-        ImGui::NextColumn();
-        ImGui::Checkbox(T("visual.hideVehicleNames"), &MenuState::VisualHideVehicleNames);
-        ImGui::NextColumn();
-        ImGui::Checkbox(T("visual.nightVision"), &MenuState::VisualNightVision);
-        ImGui::NextColumn();
-        ImGui::Checkbox(T("visual.infrared"), &MenuState::VisualInfrared);
-        ImGui::Columns(1);
+        XBase::UI::Columns(2, nullptr, false);
+        XBase::UI::Checkbox(T("visual.squareRadar"), MenuState::VisualSquareRadar);
+        XBase::UI::TextDisabled(T("visual.squareRadarHint"));
+        XBase::UI::NextColumn();
+        XBase::UI::Checkbox(T("visual.noRadarRot"), MenuState::VisualNoRadarRot);
+        XBase::UI::NextColumn();
+        XBase::UI::Checkbox(T("visual.fullscreenMap"), MenuState::VisualFullscreenMap);
+        XBase::UI::NextColumn();
+        XBase::UI::Checkbox(T("visual.unfogMap"), MenuState::VisualUnfogMap);
+        XBase::UI::NextColumn();
+        XBase::UI::Checkbox(T("visual.hideAreaNames"), MenuState::VisualHideAreaNames);
+        XBase::UI::NextColumn();
+        XBase::UI::Checkbox(T("visual.hideVehicleNames"), MenuState::VisualHideVehicleNames);
+        XBase::UI::NextColumn();
+        XBase::UI::Checkbox(T("visual.nightVision"), MenuState::VisualNightVision);
+        XBase::UI::NextColumn();
+        XBase::UI::Checkbox(T("visual.infrared"), MenuState::VisualInfrared);
+        XBase::UI::Columns(1);
 #endif
 
         UI::SpacingSeparator();
-        ImGui::Checkbox(T("visual.filter"), &MenuState::VisualFilter);
-        ImGui::PushItemWidth(160.0f);
-        ImGui::InputInt(T("visual.filterId"), &MenuState::VisualFilterId);
-        ImGui::BeginDisabled(true);
-        ImGui::SliderFloat(T("visual.timecycStrength"), &MenuState::VisualTimecycStrength, 0.0f, 2.0f, "%.2f");
-        ImGui::EndDisabled();
-        ImGui::PopItemWidth();
-        ImGui::TextDisabled("%s", T("visual.timecycStrengthHint"));
+        XBase::UI::Checkbox(T("visual.filter"), MenuState::VisualFilter);
+        XBase::UI::PushItemWidth(160.0f);
+        XBase::UI::Input(T("visual.filterId"), MenuState::VisualFilterId);
+        XBase::UI::Disabled(true, [&] {
+            XBase::UI::Slider(T("visual.timecycStrength"), MenuState::VisualTimecycStrength, 0.0f, 2.0f, "%.2f");
+        });
+        XBase::UI::PopItemWidth();
+        XBase::UI::TextDisabled(T("visual.timecycStrengthHint"));
         if (UI::Button(T("visual.applyFilter"))) {
-            Controllers::Visual::ApplyFilterState();
+            XBase::Visual::SetFilter(MenuState::VisualFilterId, MenuState::VisualTimecycStrength);
         }
-        ImGui::TextWrapped("%s", T("visual.filterHint"));
+        XBase::UI::TextWrapped(T("visual.filterHint"));
 
         UI::SpacingSeparator();
-        ImGui::TextWrapped("%s", T("visual.listHint"));
+        XBase::UI::TextWrapped(T("visual.listHint"));
         DrawVisualList();
     }
 }

@@ -1,29 +1,29 @@
 #include "Teleport.h"
 #include "ui/MenuState.h"
 #include "utils/I18n.h"
-#include "imgui/imgui.h"
-#include <windows.h>
+#include <XBase/Teleport.h>
+#include <XBase/UI.h>
 
 namespace {
     bool lastMapMouseDown = false;
 
-    ImVec2 MapToScreen(const CVector& pos, const ImVec2& origin, const ImVec2& size) {
+    XBase::Vec2 MapToScreen(const XBase::Vec3& pos, XBase::Vec2 origin, XBase::Vec2 size) {
         const float width = MenuState::TeleportMapWidth != 0.0f ? MenuState::TeleportMapWidth : 6000.0f;
         const float height = MenuState::TeleportMapHeight != 0.0f ? MenuState::TeleportMapHeight : 6000.0f;
-        return ImVec2(origin.x + ((pos.x + width * 0.5f) / width) * size.x, origin.y + ((height * 0.5f - pos.y) / height) * size.y);
+        return {origin.x + ((pos.x + width * 0.5f) / width) * size.x, origin.y + ((height * 0.5f - pos.y) / height) * size.y};
     }
 
-    CVector ScreenToMap(const ImVec2& point, const ImVec2& origin, const ImVec2& size) {
+    XBase::Vec3 ScreenToMap(XBase::Vec2 point, XBase::Vec2 origin, XBase::Vec2 size) {
         const float width = MenuState::TeleportMapWidth != 0.0f ? MenuState::TeleportMapWidth : 6000.0f;
         const float height = MenuState::TeleportMapHeight != 0.0f ? MenuState::TeleportMapHeight : 6000.0f;
         const float x = ((point.x - origin.x) / size.x) * width - width * 0.5f;
         const float y = height * 0.5f - ((point.y - origin.y) / size.y) * height;
-        return CVector(x, y, 0.0f);
+        return {x, y, 0.0f};
     }
 }
 
 namespace Controllers::Teleport {
-    void Process() {
+    void ProcessHost() {
         if (!MenuState::QuickTeleport) {
             MenuState::QuickTeleportMapActive = false;
         }
@@ -35,34 +35,34 @@ namespace Controllers::Teleport {
             return;
         }
 
-        ImGui::SetNextWindowSize(ImVec2(420.0f, 420.0f), ImGuiCond_FirstUseEver);
-        if (ImGui::Begin(I18n::T("quickMap.title"), &MenuState::QuickTeleportMapActive, ImGuiWindowFlags_NoCollapse)) {
-            ImGui::TextUnformatted(I18n::T("quickMap.hint"));
-            const ImVec2 canvasPos = ImGui::GetCursorScreenPos();
-            const float available = ImGui::GetContentRegionAvail().x;
-            const ImVec2 canvasSize(available > 260.0f ? available : 260.0f, available > 260.0f ? available : 260.0f);
-            ImDrawList* drawList = ImGui::GetWindowDrawList();
-            drawList->AddRectFilled(canvasPos, ImVec2(canvasPos.x + canvasSize.x, canvasPos.y + canvasSize.y), IM_COL32(20, 25, 32, 220));
-            drawList->AddRect(canvasPos, ImVec2(canvasPos.x + canvasSize.x, canvasPos.y + canvasSize.y), IM_COL32(160, 180, 210, 255));
+        XBase::UI::SetNextWindowSize({420.0f, 420.0f}, true);
+        XBase::UI::Window("QuickTeleportMap", I18n::T("quickMap.title"), [&] {
+            XBase::UI::Text(I18n::T("quickMap.hint"));
+            const XBase::Vec2 canvasPos = XBase::UI::GetCursorScreenPosition();
+            const float available = XBase::UI::GetContentAvailable().x;
+            const XBase::Vec2 canvasSize{available > 260.0f ? available : 260.0f, available > 260.0f ? available : 260.0f};
+            XBase::UI::Canvas::RectFilled(canvasPos, {canvasPos.x + canvasSize.x, canvasPos.y + canvasSize.y}, {20, 25, 32, 220});
+            XBase::UI::Canvas::Rect(canvasPos, {canvasPos.x + canvasSize.x, canvasPos.y + canvasSize.y}, {160, 180, 210, 255});
 
-            const ImVec2 center(canvasPos.x + canvasSize.x * 0.5f, canvasPos.y + canvasSize.y * 0.5f);
-            drawList->AddLine(ImVec2(center.x, canvasPos.y), ImVec2(center.x, canvasPos.y + canvasSize.y), IM_COL32(80, 90, 105, 180));
-            drawList->AddLine(ImVec2(canvasPos.x, center.y), ImVec2(canvasPos.x + canvasSize.x, center.y), IM_COL32(80, 90, 105, 180));
+            const XBase::Vec2 center{canvasPos.x + canvasSize.x * 0.5f, canvasPos.y + canvasSize.y * 0.5f};
+            XBase::UI::Canvas::Line({center.x, canvasPos.y}, {center.x, canvasPos.y + canvasSize.y}, {80, 90, 105, 180});
+            XBase::UI::Canvas::Line({canvasPos.x, center.y}, {canvasPos.x + canvasSize.x, center.y}, {80, 90, 105, 180});
 
-            const CVector playerPos = GetCurrentPosition();
-            const ImVec2 playerPoint = MapToScreen(playerPos, canvasPos, canvasSize);
-            drawList->AddCircleFilled(playerPoint, 5.0f, IM_COL32(80, 220, 120, 255));
+            XBase::Vec3 playerPos;
+            if (XBase::Teleport::TryGetCurrentPosition(playerPos)) {
+                const XBase::Vec2 playerPoint = MapToScreen(playerPos, canvasPos, canvasSize);
+                XBase::UI::Canvas::CircleFilled(playerPoint, 5.0f, {80, 220, 120, 255});
+            }
 
-            ImGui::InvisibleButton("##QuickMapCanvas", canvasSize);
-            const bool hovered = ImGui::IsItemHovered();
-            const bool mouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+            XBase::UI::InvisibleButton("##QuickMapCanvas", canvasSize);
+            const bool hovered = XBase::UI::IsLastItemHovered();
+            const bool mouseDown = XBase::UI::IsMouseDown(XBase::UI::MouseButton::Left);
             if (hovered && mouseDown && !lastMapMouseDown) {
-                const CVector target = ScreenToMap(ImGui::GetIO().MousePos, canvasPos, canvasSize);
-                MapPosition(target.x, target.y, MenuState::SpawnUnderwater);
+                const XBase::Vec3 target = ScreenToMap(XBase::UI::GetMousePosition(), canvasPos, canvasSize);
+                XBase::Teleport::MapPosition(target.x, target.y, MenuState::SpawnUnderwater);
                 MenuState::QuickTeleportMapActive = false;
             }
             lastMapMouseDown = mouseDown;
-        }
-        ImGui::End();
+        }, &MenuState::QuickTeleportMapActive, XBase::UI::Flag(XBase::UI::WindowFlag::NoCollapse));
     }
 }

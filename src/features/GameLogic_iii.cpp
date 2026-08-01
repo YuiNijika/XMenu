@@ -430,9 +430,6 @@ void Init() {
     };
 }
 
-void Process() {
-}
-
 ProofState GetPlayerProofState(CPlayerPed* player) {
     ProofState state;
     if (!player) return state;
@@ -1159,43 +1156,10 @@ bool PlayAnimationEx(const char* group, const char* name, bool loop, bool, bool)
 void StopPlayerAnimation() {
 }
 
-bool SpawnParticleAtPlayer(const char*) {
-    Log::Warn("III 暂不支持粒子页，已安全降级");
-    return false;
-}
-
 void ProcessSmokingEffect(CPlayerPed*, bool) {}
 
 void ProcessFliesEffect(CPlayerPed*, bool) {}
 
-bool StartCutscene(const char*) {
-    Log::Warn("III 暂不支持 cutscene 页，已安全降级");
-    return false;
-}
-
-void StopCutscene() {
-}
-
-bool IsCutsceneRunning() {
-    return false;
-}
-
-const char* GetMissionStatus() {
-    static char status[160];
-    std::snprintf(status, sizeof(status), "commands=0 missionFlag=0 activeScripts=%s", CTheScripts::pActiveScripts ? "yes" : "no");
-    return status;
-}
-
-void StartMission(int missionId) {
-    Log::Warn("III 暂不支持加载任务");
-}
-
-void FailMission() {
-    Log::Warn("III 暂不支持强制失败任务");
-}
-
-void SetFightingStyle(int) {}
-void SetWalkingStyle(int) {}
 void ProcessVisualExtras() {}
 void MaxWeaponSkills() {}
 void MaxVehicleSkills() {}

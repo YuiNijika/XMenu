@@ -1,7 +1,9 @@
 #pragma once
-#include "imgui/imgui.h"
+#include <XBase/ValueTypes.h>
 
 namespace GuiTheme {
+    using Color = XBase::ColorF;
+    using Vec2 = XBase::Vec2;
     enum class ThemeId : int {
         Default = 0,
         DarkDeep = 1,
@@ -17,35 +19,35 @@ namespace GuiTheme {
     struct Theme {
         ThemeId id;
         const char* nameKey;
-        ImVec4 Text;
-        ImVec4 TextDisabled;
-        ImVec4 WindowBg;
-        ImVec4 ChildBg;
-        ImVec4 Header;
-        ImVec4 HeaderHovered;
-        ImVec4 HeaderActive;
-        ImVec4 Button;
-        ImVec4 ButtonHovered;
-        ImVec4 ButtonActive;
-        ImVec4 FrameBg;
-        ImVec4 FrameBgHovered;
-        ImVec4 FrameBgActive;
-        ImVec4 CheckMark;
-        ImVec4 SliderGrab;
-        ImVec4 SliderGrabActive;
-        ImVec4 TabHovered;
-        ImVec4 TabActive;
-        ImVec4 Separator;
-        ImVec4 NavHighlight;
-        ImVec4 PopupBg;
-        ImVec4 Border;
-        ImVec4 TitleBg;
-        ImVec4 TitleBgActive;
-        ImVec4 ScrollbarBg;
-        ImVec4 ScrollbarGrab;
+        Color Text;
+        Color TextDisabled;
+        Color WindowBg;
+        Color ChildBg;
+        Color Header;
+        Color HeaderHovered;
+        Color HeaderActive;
+        Color Button;
+        Color ButtonHovered;
+        Color ButtonActive;
+        Color FrameBg;
+        Color FrameBgHovered;
+        Color FrameBgActive;
+        Color CheckMark;
+        Color SliderGrab;
+        Color SliderGrabActive;
+        Color TabHovered;
+        Color TabActive;
+        Color Separator;
+        Color NavHighlight;
+        Color PopupBg;
+        Color Border;
+        Color TitleBg;
+        Color TitleBgActive;
+        Color ScrollbarBg;
+        Color ScrollbarGrab;
         float WindowRounding;
-        ImVec2 WindowPadding;
-        ImVec2 ItemSpacing;
+        Vec2 WindowPadding;
+        Vec2 ItemSpacing;
         float FrameRounding;
         float TabRounding;
     };
@@ -68,7 +70,7 @@ namespace GuiTheme {
     void SetInteractionByIndex(int index);
     const char* GetInteractionNameKey(int index);
 
-    // 将主题写入全局 ImGuiStyle（需已有 Context）
+    // 应用到 XBase 渲染主题（需运行时已初始化）
     void ApplyToStyle();
 
     // 按列表/面板 + 交互模式同步键盘导航与鼠标开关
@@ -77,7 +79,7 @@ namespace GuiTheme {
     // 每帧轻量同步（交互标志）；主题仅在变更时重写 Style
     void Sync();
 
-    // 列表模式且未开鼠标时：隐藏系统/ImGui 光标
+    // 列表模式且未开鼠标时：隐藏菜单光标
     bool WantsMouseCursor();
 
     // 兼容：等同 ApplyToStyle / 空操作

@@ -1,12 +1,12 @@
 #include "Weapon.h"
 #include "controllers/Weapon.h"
-#include "game/Runtime.h"
+#include <XBase/Runtime.h>
 #include "ui/MenuState.h"
 #include "resources/ResourceData.h"
 #include "ui/Widget.h"
 #include "utils/I18n.h"
-#include "utils/D3DHook.h"
-#include "imgui/imgui.h"
+#include <XBase/Hooks.h>
+#include <XBase/UI.h>
 #include <cstring>
 #include <vector>
 
@@ -44,8 +44,8 @@ namespace {
                 currentCategory = translatedCategory;
                 currentCategoryKey = weapon.category;
                 index = 0;
-                ImGui::Spacing();
-                ImGui::SeparatorText(translatedCategory);
+                XBase::UI::Spacing();
+                XBase::UI::SeparatorText(translatedCategory);
             }
 
             // 翻译武器名称
@@ -66,7 +66,7 @@ namespace Pages::Weapon {
         Controllers::Weapon::Process();
 
         // Weapon cycler auto-give when menu is closed
-        if (!MenuState::WeaponCyclerEnabled || D3DHook::IsMenuVisible()) {
+        if (!MenuState::WeaponCyclerEnabled || XBase::Hooks::IsMenuVisible()) {
             return;
         }
 
@@ -83,7 +83,7 @@ namespace Pages::Weapon {
         }
         if (s_cyclerWeapons.empty()) return;
 
-        const float wheel = D3DHook::ConsumeRawWheelDelta();
+        const float wheel = XBase::Hooks::ConsumeWheelDelta();
         if (wheel > -0.1f && wheel < 0.1f) return;
 
         const int maxIdx = static_cast<int>(s_cyclerWeapons.size()) - 1;
@@ -111,82 +111,82 @@ namespace Pages::Weapon {
 
     void Draw() {
         if (!Controllers::Weapon::HasPlayer()) {
-            ImGui::Text("%s", T("weapon.playerNotReady"));
+            XBase::UI::Text(T("weapon.playerNotReady"));
             return;
         }
 
         if (UI::Button(T("weapon.dropWeapon"), 4)) {
             Controllers::Weapon::DropWeapon();
         }
-        ImGui::SameLine();
+        XBase::UI::SameLine();
         if (UI::Button(T("weapon.clearWeapons"), 4)) {
             Controllers::Weapon::ClearAll();
         }
-        ImGui::SameLine();
+        XBase::UI::SameLine();
         if (UI::Button(T("weapon.removePickups"), 4)) {
             Controllers::Weapon::RemovePickups();
         }
 
-        ImGui::Spacing();
+        XBase::UI::Spacing();
 
-        if (UI::BeginTabBar("WeaponTabs")) {
-            if (UI::BeginTab("weapon.toggles", T("common.toggles"))) {
+        XBase::UI::Tabs("WeaponTabs", [&] {
+            XBase::UI::Tab("weapon.toggles", T("common.toggles"), [&] {
                 bool weaponStatsChanged = false;
 
-                ImGui::Columns(3, nullptr, false);
-                weaponStatsChanged |= ImGui::Checkbox(T("weapon.highDamage"), &MenuState::HugeWeaponDamage);
-                ImGui::NextColumn();
-                if (ImGui::Checkbox(T("weapon.fastReload"), &MenuState::FastReload)) {
+                XBase::UI::Columns(3, nullptr, false);
+                weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.highDamage"), MenuState::HugeWeaponDamage);
+                XBase::UI::NextColumn();
+                if (XBase::UI::Checkbox(T("weapon.fastReload"), MenuState::FastReload)) {
                     Controllers::Weapon::ResetStats();
                 }
-                ImGui::NextColumn();
-                ImGui::Checkbox(T("weapon.infiniteAmmo"), &MenuState::InfiniteAmmo);
-                ImGui::NextColumn();
-                weaponStatsChanged |= ImGui::Checkbox(T("weapon.longRange"), &MenuState::LongWeaponRange);
+                XBase::UI::NextColumn();
+                XBase::UI::Checkbox(T("weapon.infiniteAmmo"), MenuState::InfiniteAmmo);
+                XBase::UI::NextColumn();
+                weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.longRange"), MenuState::LongWeaponRange);
 #ifdef GTASA
-                ImGui::NextColumn();
-                ImGui::Checkbox(T("weapon.autoAim"), &MenuState::WeaponAutoAim);
-                ImGui::NextColumn();
-                weaponStatsChanged |= ImGui::Checkbox(T("weapon.moveWhileAiming"), &MenuState::MoveAim);
-                ImGui::NextColumn();
-                weaponStatsChanged |= ImGui::Checkbox(T("weapon.moveWhileFiring"), &MenuState::MoveFire);
-                ImGui::NextColumn();
-                weaponStatsChanged |= ImGui::Checkbox(T("weapon.noSpread"), &MenuState::NoSpread);
-                ImGui::NextColumn();
-                weaponStatsChanged |= ImGui::Checkbox(T("weapon.rapidFire"), &MenuState::RapidFire);
-                ImGui::NextColumn();
-                weaponStatsChanged |= ImGui::Checkbox(T("weapon.dualWield"), &MenuState::DualWield);
+                XBase::UI::NextColumn();
+                XBase::UI::Checkbox(T("weapon.autoAim"), MenuState::WeaponAutoAim);
+                XBase::UI::NextColumn();
+                weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.moveWhileAiming"), MenuState::MoveAim);
+                XBase::UI::NextColumn();
+                weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.moveWhileFiring"), MenuState::MoveFire);
+                XBase::UI::NextColumn();
+                weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.noSpread"), MenuState::NoSpread);
+                XBase::UI::NextColumn();
+                weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.rapidFire"), MenuState::RapidFire);
+                XBase::UI::NextColumn();
+                weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.dualWield"), MenuState::DualWield);
 #else
-                ImGui::NextColumn();
-                weaponStatsChanged |= ImGui::Checkbox(T("weapon.noSpread"), &MenuState::NoSpread);
+                XBase::UI::NextColumn();
+                weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.noSpread"), MenuState::NoSpread);
 #endif
-                ImGui::NextColumn();
-                weaponStatsChanged |= ImGui::Checkbox(T("weapon.fireRate"), &MenuState::WeaponFireRateEnabled);
+                XBase::UI::NextColumn();
+                weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.fireRate"), MenuState::WeaponFireRateEnabled);
 #if defined(GTAVC) || defined(GTASA)
-                ImGui::NextColumn();
-                ImGui::Checkbox(T("weapon.pedEsp"), &MenuState::WeaponPedEsp);
-                ImGui::NextColumn();
-                ImGui::Checkbox(T("weapon.pedColEsp"), &MenuState::WeaponPedColEsp);
-                ImGui::NextColumn();
-                ImGui::Checkbox(T("weapon.pedSkeleton"), &MenuState::WeaponPedSkeleton);
-                ImGui::NextColumn();
-                ImGui::Checkbox(T("weapon.vehicleEsp"), &MenuState::WeaponVehicleEsp);
-                ImGui::NextColumn();
-                ImGui::Checkbox(T("weapon.vehicleColEsp"), &MenuState::WeaponVehicleColEsp);
-                ImGui::NextColumn();
-                ImGui::Checkbox(T("weapon.bulletTrack"), &MenuState::WeaponBulletTrack);
-                ImGui::NextColumn();
-                ImGui::Checkbox(T("weapon.bulletThroughWalls"), &MenuState::WeaponBulletThroughWalls);
+                XBase::UI::NextColumn();
+                XBase::UI::Checkbox(T("weapon.pedEsp"), MenuState::WeaponPedEsp);
+                XBase::UI::NextColumn();
+                XBase::UI::Checkbox(T("weapon.pedColEsp"), MenuState::WeaponPedColEsp);
+                XBase::UI::NextColumn();
+                XBase::UI::Checkbox(T("weapon.pedSkeleton"), MenuState::WeaponPedSkeleton);
+                XBase::UI::NextColumn();
+                XBase::UI::Checkbox(T("weapon.vehicleEsp"), MenuState::WeaponVehicleEsp);
+                XBase::UI::NextColumn();
+                XBase::UI::Checkbox(T("weapon.vehicleColEsp"), MenuState::WeaponVehicleColEsp);
+                XBase::UI::NextColumn();
+                XBase::UI::Checkbox(T("weapon.bulletTrack"), MenuState::WeaponBulletTrack);
+                XBase::UI::NextColumn();
+                XBase::UI::Checkbox(T("weapon.bulletThroughWalls"), MenuState::WeaponBulletThroughWalls);
 #endif
-                ImGui::Columns(1);
+                XBase::UI::Columns(1);
 
                 if (MenuState::WeaponFireRateEnabled) {
-                    ImGui::Spacing();
-                    ImGui::PushItemWidth(220.0f);
-                    if (ImGui::SliderFloat(T("weapon.fireRateValue"), &MenuState::WeaponFireRate, 0.25f, 10.0f, "x%.2f")) {
+                    XBase::UI::Spacing();
+                    XBase::UI::PushItemWidth(220.0f);
+                    if (XBase::UI::Slider(T("weapon.fireRateValue"), MenuState::WeaponFireRate, 0.25f, 10.0f, "x%.2f")) {
                         weaponStatsChanged = true;
                     }
-                    ImGui::PopItemWidth();
+                    XBase::UI::PopItemWidth();
                     if (MenuState::WeaponFireRate < 0.25f) {
                         MenuState::WeaponFireRate = 0.25f;
                     }
@@ -197,31 +197,31 @@ namespace Pages::Weapon {
 
 #if defined(GTAVC) || defined(GTASA)
                 if (MenuState::WeaponBulletTrack) {
-                    ImGui::Spacing();
-                    ImGui::TextUnformatted(T("weapon.trackFilter"));
-                    ImGui::Columns(5, nullptr, false);
-                    ImGui::Checkbox(T("weapon.trackCivilian"), &MenuState::WeaponTrackCivilian);
-                    ImGui::NextColumn();
-                    ImGui::Checkbox(T("weapon.trackFriend"), &MenuState::WeaponTrackFriend);
-                    ImGui::NextColumn();
-                    ImGui::Checkbox(T("weapon.trackHostile"), &MenuState::WeaponTrackHostile);
-                    ImGui::NextColumn();
-                    ImGui::Checkbox(T("weapon.trackNeutral"), &MenuState::WeaponTrackNeutral);
-                    ImGui::NextColumn();
-                    ImGui::Checkbox(T("weapon.bulletHardLock"), &MenuState::WeaponBulletHardLock);
-                    ImGui::Columns(1);
+                    XBase::UI::Spacing();
+                    XBase::UI::Text(T("weapon.trackFilter"));
+                    XBase::UI::Columns(5, nullptr, false);
+                    XBase::UI::Checkbox(T("weapon.trackCivilian"), MenuState::WeaponTrackCivilian);
+                    XBase::UI::NextColumn();
+                    XBase::UI::Checkbox(T("weapon.trackFriend"), MenuState::WeaponTrackFriend);
+                    XBase::UI::NextColumn();
+                    XBase::UI::Checkbox(T("weapon.trackHostile"), MenuState::WeaponTrackHostile);
+                    XBase::UI::NextColumn();
+                    XBase::UI::Checkbox(T("weapon.trackNeutral"), MenuState::WeaponTrackNeutral);
+                    XBase::UI::NextColumn();
+                    XBase::UI::Checkbox(T("weapon.bulletHardLock"), MenuState::WeaponBulletHardLock);
+                    XBase::UI::Columns(1);
 
-                    ImGui::Spacing();
-                    ImGui::TextUnformatted(T("weapon.aimPart"));
-                    ImGui::Columns(4, nullptr, false);
-                    ImGui::RadioButton(T("weapon.aimHead"), &MenuState::WeaponBulletAimPart, 0);
-                    ImGui::NextColumn();
-                    ImGui::RadioButton(T("weapon.aimChest"), &MenuState::WeaponBulletAimPart, 1);
-                    ImGui::NextColumn();
-                    ImGui::RadioButton(T("weapon.aimBelly"), &MenuState::WeaponBulletAimPart, 2);
-                    ImGui::NextColumn();
-                    ImGui::RadioButton(T("weapon.aimLegs"), &MenuState::WeaponBulletAimPart, 3);
-                    ImGui::Columns(1);
+                    XBase::UI::Spacing();
+                    XBase::UI::Text(T("weapon.aimPart"));
+                    XBase::UI::Columns(4, nullptr, false);
+                    XBase::UI::Choice(T("weapon.aimHead"), MenuState::WeaponBulletAimPart, 0);
+                    XBase::UI::NextColumn();
+                    XBase::UI::Choice(T("weapon.aimChest"), MenuState::WeaponBulletAimPart, 1);
+                    XBase::UI::NextColumn();
+                    XBase::UI::Choice(T("weapon.aimBelly"), MenuState::WeaponBulletAimPart, 2);
+                    XBase::UI::NextColumn();
+                    XBase::UI::Choice(T("weapon.aimLegs"), MenuState::WeaponBulletAimPart, 3);
+                    XBase::UI::Columns(1);
                     if (MenuState::WeaponBulletAimPart < 0) {
                         MenuState::WeaponBulletAimPart = 0;
                     }
@@ -229,11 +229,11 @@ namespace Pages::Weapon {
                         MenuState::WeaponBulletAimPart = 3;
                     }
 
-                    ImGui::Spacing();
-                    ImGui::PushItemWidth(220.0f);
-                    ImGui::SliderFloat(T("weapon.bulletLockRange"), &MenuState::WeaponBulletLockRange, 10.0f, 300.0f, "%.0f");
-                    ImGui::SliderInt(T("weapon.bulletMaxTargets"), &MenuState::WeaponBulletMaxTargets, 1, 16);
-                    ImGui::PopItemWidth();
+                    XBase::UI::Spacing();
+                    XBase::UI::PushItemWidth(220.0f);
+                    XBase::UI::Slider(T("weapon.bulletLockRange"), MenuState::WeaponBulletLockRange, 10.0f, 300.0f, "%.0f");
+                    XBase::UI::Slider(T("weapon.bulletMaxTargets"), MenuState::WeaponBulletMaxTargets, 1, 16);
+                    XBase::UI::PopItemWidth();
                     if (MenuState::WeaponBulletLockRange < 10.0f) {
                         MenuState::WeaponBulletLockRange = 10.0f;
                     }
@@ -253,27 +253,26 @@ namespace Pages::Weapon {
                     Controllers::Weapon::ResetStats();
                 }
 
-                UI::EndTab();
-            }
+                });
 
-            if (UI::BeginTab("weapon.getWeapon", T("weapon.getWeapon"))) {
-                ImGui::PushItemWidth(160);
-                ImGui::InputInt(T("weapon.ammo"), &MenuState::WeaponAmmo);
+            XBase::UI::Tab("weapon.getWeapon", T("weapon.getWeapon"), [&] {
+                XBase::UI::PushItemWidth(160);
+                XBase::UI::Input(T("weapon.ammo"), MenuState::WeaponAmmo);
                 if (MenuState::WeaponAmmo < 0) MenuState::WeaponAmmo = 0;
                 if (MenuState::WeaponAmmo > 99999) MenuState::WeaponAmmo = 99999;
-                ImGui::PopItemWidth();
+                XBase::UI::PopItemWidth();
 
-                ImGui::Checkbox(T("weapon.safeMode"), &MenuState::WeaponSafeMode);
+                XBase::UI::Checkbox(T("weapon.safeMode"), MenuState::WeaponSafeMode);
 
-                ImGui::PushItemWidth(160);
+                XBase::UI::PushItemWidth(160);
 #ifdef GTASA
-                ImGui::InputInt(T("weapon.typeId"), &MenuState::WeaponSpawnId);
+                XBase::UI::Input(T("weapon.typeId"), MenuState::WeaponSpawnId);
 #else
-                ImGui::InputInt(T("weapon.modelId"), &MenuState::WeaponSpawnId);
+                XBase::UI::Input(T("weapon.modelId"), MenuState::WeaponSpawnId);
 #endif
                 if (MenuState::WeaponSpawnId < 0) MenuState::WeaponSpawnId = 0;
-                ImGui::PopItemWidth();
-                ImGui::SameLine();
+                XBase::UI::PopItemWidth();
+                XBase::UI::SameLine();
                 if (UI::Button(T("weapon.getById"), 2)) {
 #ifdef GTASA
                     Controllers::Weapon::Give(static_cast<unsigned int>(MenuState::WeaponSpawnId), static_cast<unsigned int>(MenuState::WeaponAmmo));
@@ -282,24 +281,24 @@ namespace Pages::Weapon {
 #endif
                 }
 
-                ImGui::Spacing();
+                XBase::UI::Spacing();
 
-                if (GameRuntime::Current().target == GameRuntime::Target::III) {
+                if (XBase::Runtime::GetGameTarget() == XBase::Runtime::GameTarget::III) {
                     if (UI::Button(T("weapon.getAll"), 4)) {
                         Controllers::Weapon::GiveAll();
                     }
                 } else {
-                    ImGui::Checkbox(T("weapon.cyclerEnable"), &MenuState::WeaponCyclerEnabled);
+                    XBase::UI::Checkbox(T("weapon.cyclerEnable"), MenuState::WeaponCyclerEnabled);
                 }
 
-                if (GameRuntime::Current().target != GameRuntime::Target::III) {
-                    ImGui::SeparatorText(T("weapon.cyclerTitle"));
+                if (XBase::Runtime::GetGameTarget() != XBase::Runtime::GameTarget::III) {
+                    XBase::UI::SeparatorText(T("weapon.cyclerTitle"));
 
-                    ImGui::PushItemWidth(160);
-                    ImGui::InputInt("##cyclerInputId", &MenuState::WeaponCyclerInputId);
+                    XBase::UI::PushItemWidth(160);
+                    XBase::UI::Input("##cyclerInputId", MenuState::WeaponCyclerInputId);
                     if (MenuState::WeaponCyclerInputId < 0) MenuState::WeaponCyclerInputId = 0;
-                    ImGui::PopItemWidth();
-                    ImGui::SameLine();
+                    XBase::UI::PopItemWidth();
+                    XBase::UI::SameLine();
                     if (UI::Button(T("weapon.cyclerGive"), 2)) {
                         const unsigned int ammo = static_cast<unsigned int>(MenuState::WeaponAmmo);
 #ifdef GTASA
@@ -310,7 +309,7 @@ namespace Pages::Weapon {
                     }
 
                     if (MenuState::WeaponCyclerEnabled) {
-                        float wheel = ImGui::GetIO().MouseWheel;
+                        const float wheel = XBase::Hooks::ConsumeWheelDelta();
                         if (wheel > 0.1f || wheel < -0.1f) {
                             const unsigned int ammo = static_cast<unsigned int>(MenuState::WeaponAmmo);
                             const unsigned int spawnId = static_cast<unsigned int>(MenuState::WeaponCyclerInputId);
@@ -322,16 +321,13 @@ namespace Pages::Weapon {
                                 Controllers::Weapon::GiveModelSilent(spawnId, ammo);
 #endif
                             }
-                            ImGui::GetIO().MouseWheel = 0.0f;
                         }
                     }
                 }
 
-                ImGui::Spacing();
+                XBase::UI::Spacing();
                 DrawWeaponList();
-                UI::EndTab();
-            }
-            UI::EndTabBar();
-        }
+                });
+            });
     }
 }

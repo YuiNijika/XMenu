@@ -6,7 +6,8 @@
 #include "Teleport.h"
 #include "ui/MenuState.h"
 #include "utils/I18n.h"
-#include "imgui/imgui.h"
+#include <XBase/Teleport.h>
+#include <XBase/UI.h>
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -30,7 +31,7 @@ namespace {
         float x = 0.0f, y = 0.0f, z = 10.0f;
         int id = 0;
         if (std::sscanf(raw, "tp %f %f %f", &x, &y, &z) == 3) {
-            Controllers::Teleport::To(x, y, z);
+            XBase::Teleport::To(x, y, z);
             AddLine(I18n::T("command.teleported"));
             return;
         }
@@ -70,26 +71,22 @@ namespace Controllers::Command {
             return;
         }
 
-        ImGui::SetNextWindowSize(ImVec2(520.0f, 280.0f), ImGuiCond_FirstUseEver);
-        if (ImGui::Begin(I18n::T("command.title"), &MenuState::CommandWindowEnabled)) {
-            ImGui::BeginChild("CommandHistory", ImVec2(0.0f, -32.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
-            for (const std::string& line : history) {
-                ImGui::TextUnformatted(line.c_str());
-            }
-            if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 4.0f) {
-                ImGui::SetScrollHereY(1.0f);
-            }
-            ImGui::EndChild();
+        XBase::UI::SetNextWindowSize({520.0f, 280.0f}, true);
+        XBase::UI::Window("CommandWindow", I18n::T("command.title"), [&] {
+            XBase::UI::Child("CommandHistory", [&] {
+                for (const std::string& line : history) {
+                    XBase::UI::Text(line.c_str());
+                }
+            }, {0.0f, -32.0f}, true);
 
-            ImGui::PushItemWidth(-72.0f);
-            const bool submit = ImGui::InputText("##CommandInput", input, sizeof(input), ImGuiInputTextFlags_EnterReturnsTrue);
-            ImGui::PopItemWidth();
-            ImGui::SameLine();
-            if (ImGui::Button(I18n::T("command.run")) || submit) {
+            XBase::UI::PushItemWidth(-72.0f);
+            const bool submit = XBase::UI::InputText("##CommandInput", input, sizeof(input), nullptr, false, true);
+            XBase::UI::PopItemWidth();
+            XBase::UI::SameLine();
+            if (XBase::UI::Button(I18n::T("command.run")) || submit) {
                 Execute(input);
                 input[0] = '\0';
             }
-        }
-        ImGui::End();
+        }, &MenuState::CommandWindowEnabled);
     }
 }

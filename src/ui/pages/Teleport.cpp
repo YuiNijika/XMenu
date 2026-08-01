@@ -1,11 +1,11 @@
 #include "Teleport.h"
-#include "controllers/Teleport.h"
 #include "ui/MenuState.h"
 #include "resources/ResourceData.h"
 #include "ui/Widget.h"
 #include "utils/I18n.h"
 #include "utils/AppConfig.h"
-#include "imgui/imgui.h"
+#include <XBase/Teleport.h>
+#include <XBase/UI.h>
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -40,7 +40,11 @@ namespace {
     }
 
     void WriteCurrentPosition(char* output, std::size_t outputSize) {
-        const CVector pos = Controllers::Teleport::GetCurrentPosition();
+        XBase::Vec3 pos;
+        if (!XBase::Teleport::TryGetCurrentPosition(pos)) {
+            std::snprintf(output, outputSize, "--");
+            return;
+        }
         std::snprintf(output, outputSize, "%.2f, %.2f, %.2f", pos.x, pos.y, pos.z);
     }
 
@@ -61,15 +65,15 @@ namespace {
                 currentCategory = translatedCategory;
                 currentCategoryKey = location.category;
                 index = 0;
-                ImGui::Spacing();
-                ImGui::SeparatorText(translatedCategory);
+                XBase::UI::Spacing();
+                XBase::UI::SeparatorText(translatedCategory);
             }
 
             // 翻译地点名称
             const std::string translatedName = TranslateLocationName(location.name);
             
             if (UI::Button(translatedName.c_str(), 2)) {
-                Controllers::Teleport::To(location.x, location.y, location.z, location.interior);
+                XBase::Teleport::To(location.x, location.y, location.z, location.interior);
             }
             UI::SameLineEvery(index++, 2);
         }
@@ -77,10 +81,6 @@ namespace {
 }
 
 namespace Pages::Teleport {
-    void Process() {
-        Controllers::Teleport::Process();
-    }
-
     void Draw() {
         static char coordInput[128] = "0, 0, 10";
         static char currentCoordText[128] = "";
@@ -88,87 +88,87 @@ namespace Pages::Teleport {
 
         WriteCurrentPosition(currentCoordText, sizeof(currentCoordText));
 
-        if (UI::BeginTabBar("TeleportTabs")) {
-            if (UI::BeginTab("teleport.tab", T("tab.teleport"))) {
+        XBase::UI::Tabs("TeleportTabs", [&] {
+            XBase::UI::Tab("teleport.tab", T("tab.teleport"), [&] {
 #ifdef GTASA
-                ImGui::Columns(2, nullptr, false);
-                ImGui::Checkbox(T("teleport.quickMapTeleport"), &MenuState::QuickTeleport);
-                ImGui::NextColumn();
-                ImGui::Checkbox(T("teleport.allowUnderwaterLanding"), &MenuState::SpawnUnderwater);
-                ImGui::Checkbox(T("teleport.quickMarkerTeleport"), &MenuState::TeleportMarker);
-                ImGui::Columns(1);
+                XBase::UI::Columns(2, nullptr, false);
+                XBase::UI::Checkbox(T("teleport.quickMapTeleport"), MenuState::QuickTeleport);
+                XBase::UI::NextColumn();
+                XBase::UI::Checkbox(T("teleport.allowUnderwaterLanding"), MenuState::SpawnUnderwater);
+                XBase::UI::Checkbox(T("teleport.quickMarkerTeleport"), MenuState::TeleportMarker);
+                XBase::UI::Columns(1);
 #endif
 
-                ImGui::Spacing();
-                ImGui::InputTextWithHint(T("teleport.currentCoordinates"), "x, y, z", currentCoordText, sizeof(currentCoordText), ImGuiInputTextFlags_ReadOnly);
-                ImGui::PushItemWidth(-142.0f);
-                ImGui::InputTextWithHint(T("teleport.coordinates"), "x, y, z", coordInput, sizeof(coordInput));
-                ImGui::PopItemWidth();
-                ImGui::SameLine();
-                if (ImGui::Button(T("teleport.readCurrentValues"), ImVec2(132.0f, 0.0f))) {
+                XBase::UI::Spacing();
+                XBase::UI::InputText(T("teleport.currentCoordinates"), currentCoordText, sizeof(currentCoordText), "x, y, z", true);
+                XBase::UI::PushItemWidth(-142.0f);
+                XBase::UI::InputText(T("teleport.coordinates"), coordInput, sizeof(coordInput), "x, y, z");
+                XBase::UI::PopItemWidth();
+                XBase::UI::SameLine();
+                if (XBase::UI::Button(T("teleport.readCurrentValues"), {132.0f, 0.0f})) {
                     std::snprintf(coordInput, sizeof(coordInput), "%s", currentCoordText);
                 }
-                ImGui::Spacing();
+                XBase::UI::Spacing();
 
                 if (UI::Button(T("teleport.toCoordinates"), 4)) {
                     float x = 0.0f;
                     float y = 0.0f;
                     float z = 10.0f;
                     if (std::sscanf(coordInput, "%f,%f,%f", &x, &y, &z) == 3) {
-                        Controllers::Teleport::To(x, y, z + 1.0f);
+                        XBase::Teleport::To(x, y, z + 1.0f);
                     }
                 }
-                ImGui::SameLine();
+                XBase::UI::SameLine();
 #ifdef GTASA
                 if (UI::Button(T("teleport.byMapPosition"), 4)) {
                     float x = 0.0f;
                     float y = 0.0f;
                     float z = 10.0f;
                     if (std::sscanf(coordInput, "%f,%f,%f", &x, &y, &z) == 3) {
-                        Controllers::Teleport::MapPosition(x, y, MenuState::SpawnUnderwater);
+                        XBase::Teleport::MapPosition(x, y, MenuState::SpawnUnderwater);
                     }
                 }
-                ImGui::SameLine();
+                XBase::UI::SameLine();
                 if (UI::Button(T("teleport.toMarker"), 4)) {
-                    Controllers::Teleport::Marker(MenuState::SpawnUnderwater);
+                    XBase::Teleport::Marker(MenuState::SpawnUnderwater);
                 }
 #else
                 if (UI::Button(T("teleport.mapCenter"), 4)) {
-                    Controllers::Teleport::Center();
+                    XBase::Teleport::Center();
                 }
 #endif
-                ImGui::SameLine();
+                XBase::UI::SameLine();
                 if (UI::Button(T("teleport.moveForward"), 4)) {
-                    Controllers::Teleport::Forward(MenuState::TeleportForwardDistance);
+                    XBase::Teleport::Forward(MenuState::TeleportForwardDistance);
                 }
 
-                ImGui::Spacing();
+                XBase::UI::Spacing();
                 bool teleportSettingsChanged = false;
-                ImGui::PushItemWidth(180.0f);
-                teleportSettingsChanged |= ImGui::InputFloat(T("teleport.forwardDistance"), &MenuState::TeleportForwardDistance, 1.0f, 5.0f, "%.1f");
-                ImGui::PopItemWidth();
+                XBase::UI::PushItemWidth(180.0f);
+                teleportSettingsChanged |= XBase::UI::Input(T("teleport.forwardDistance"), MenuState::TeleportForwardDistance, 1.0f, 5.0f, "%.1f");
+                XBase::UI::PopItemWidth();
                 if (MenuState::TeleportForwardDistance < 0.1f) {
                     MenuState::TeleportForwardDistance = 0.1f;
                     teleportSettingsChanged = true;
                 }
-                teleportSettingsChanged |= ImGui::Checkbox(T("teleport.forwardHold"), &MenuState::TeleportForwardHold);
-                ImGui::TextDisabled("%s", T("teleport.forwardHoldHint"));
+                teleportSettingsChanged |= XBase::UI::Checkbox(T("teleport.forwardHold"), MenuState::TeleportForwardHold);
+                XBase::UI::TextDisabled(T("teleport.forwardHoldHint"));
                 if (teleportSettingsChanged) {
                     AppConfig::Save();
                 }
 
 #ifdef GTASA
-                if (MenuState::QuickTeleport && ImGui::CollapsingHeader(T("teleport.customMapSize"))) {
+                if (MenuState::QuickTeleport && XBase::UI::CollapsingHeader(T("teleport.customMapSize"))) {
                     static float mapWidthDraft = MenuState::TeleportMapWidth;
                     static float mapHeightDraft = MenuState::TeleportMapHeight;
-                    ImGui::TextWrapped("%s", T("teleport.customMapSizeHint"));
-                    ImGui::InputFloat(T("teleport.width"), &mapWidthDraft, 1.0f, 100.0f, "%.1f");
-                    ImGui::InputFloat(T("teleport.height"), &mapHeightDraft, 1.0f, 100.0f, "%.1f");
+                    XBase::UI::TextWrapped(T("teleport.customMapSizeHint"));
+                    XBase::UI::Input(T("teleport.width"), mapWidthDraft, 1.0f, 100.0f, "%.1f");
+                    XBase::UI::Input(T("teleport.height"), mapHeightDraft, 1.0f, 100.0f, "%.1f");
                     if (UI::Button(T("teleport.applyMapSize"), 2)) {
                         MenuState::TeleportMapWidth = mapWidthDraft;
                         MenuState::TeleportMapHeight = mapHeightDraft;
                     }
-                    ImGui::SameLine();
+                    XBase::UI::SameLine();
                     if (UI::Button(T("teleport.restoreDefault"), 2)) {
                         mapWidthDraft = 6000.0f;
                         mapHeightDraft = 6000.0f;
@@ -177,12 +177,11 @@ namespace Pages::Teleport {
                     }
                 }
 #endif
-                UI::EndTab();
-            }
+                });
 
-            if (UI::BeginTab("teleport.locations", T("teleport.locations"))) {
-                ImGui::InputTextWithHint(T("teleport.locationName"), T("teleport.customLocation"), locationName, sizeof(locationName));
-                ImGui::InputTextWithHint(T("teleport.locationCoordinates"), "x, y, z", currentCoordText, sizeof(currentCoordText), ImGuiInputTextFlags_ReadOnly);
+            XBase::UI::Tab("teleport.locations", T("teleport.locations"), [&] {
+                XBase::UI::InputText(T("teleport.locationName"), locationName, sizeof(locationName), T("teleport.customLocation"));
+                XBase::UI::InputText(T("teleport.locationCoordinates"), currentCoordText, sizeof(currentCoordText), "x, y, z", true);
                 if (UI::Button(T("teleport.addLocation"))) {
                     float x = 0.0f;
                     float y = 0.0f;
@@ -194,10 +193,8 @@ namespace Pages::Teleport {
 
                 UI::SpacingSeparator();
                 DrawLocationList();
-                UI::EndTab();
-            }
+                });
 
-            UI::EndTabBar();
-        }
+            });
     }
 }

@@ -1,13 +1,15 @@
 #include "Overlay.h"
-#include "Player.h"
 #include "Vehicle.h"
+#include <XBase/Teleport.h>
+#include <XBase/Types.h>
+#include <XBase/UI.h>
+#include <XBase/Player.h>
+#include <XBase/Vehicle.h>
 #include "Teleport.h"
 #include "World.h"
 #include "ui/MenuState.h"
 #include "utils/I18n.h"
 #include "utils/UpdateChecker.h"
-#include "imgui/imgui.h"
-#include "CVehicle.h"
 #include <cstdio>
 #include <string>
 
@@ -31,12 +33,12 @@ namespace {
     }
 
     void DrawDetailLine(const char* labelKey, const char* value) {
-        ImGui::TextWrapped(T("overlay.detailLine"), T(labelKey), value ? value : "");
+        XBase::UI::TextWrapped(T("overlay.detailLine"), T(labelKey), value ? value : "");
     }
 
     void DrawSectionTitle(const char* labelKey) {
-        ImGui::Spacing();
-        ImGui::TextDisabled("%s", T(labelKey));
+        XBase::UI::Spacing();
+        XBase::UI::TextDisabled(T(labelKey));
     }
 
     void AppendEnabled(std::string& value, const char* labelKey) {
@@ -60,36 +62,45 @@ namespace {
 }
 
 namespace Controllers::Overlay {
-    void Process() {
-    }
-
     void Draw() {
         if (!MenuState::OverlayEnabled) {
             return;
         }
 
-        ImGui::SetNextWindowBgAlpha(0.35f);
-        ImGui::SetNextWindowPos(ImVec2(12.0f, 12.0f), ImGuiCond_Always);
-        if (ImGui::Begin("XMenuOverlay", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav)) {
-            ImGui::TextUnformatted(T("overlay.title"));
+        constexpr XBase::UI::WindowFlags overlayFlags =
+            XBase::UI::Flag(XBase::UI::WindowFlag::NoTitleBar) |
+            XBase::UI::Flag(XBase::UI::WindowFlag::NoResize) |
+            XBase::UI::Flag(XBase::UI::WindowFlag::AlwaysAutoResize) |
+            XBase::UI::Flag(XBase::UI::WindowFlag::NoMove) |
+            XBase::UI::Flag(XBase::UI::WindowFlag::NoSavedSettings) |
+            XBase::UI::Flag(XBase::UI::WindowFlag::NoFocusOnAppearing) |
+            XBase::UI::Flag(XBase::UI::WindowFlag::NoNavigation);
 
-            CVehicle* vehicle = Controllers::Vehicle::GetCurrentVehicle();
+        XBase::UI::SetNextWindowBackgroundAlpha(0.35f);
+        XBase::UI::SetNextWindowPosition({12.0f, 12.0f}, true);
+        XBase::UI::Window("XMenuOverlay", "XMenuOverlay", [&] {
+            XBase::UI::Text(T("overlay.title"));
+
+            const XBase::Player::PlayerSnapshot player = XBase::Player::GetSnapshot();
+            const XBase::Vehicle::VehicleSnapshot vehicle = XBase::Vehicle::GetSnapshot();
             int hour = 0;
             int minute = 0;
             Controllers::World::GetTime(hour, minute);
 
             if (MenuState::OverlayShowFps) {
-                ImGui::Text(T("overlay.fps"), ImGui::GetIO().Framerate);
+                XBase::UI::Text(T("overlay.fps"), XBase::UI::GetFrameRate());
             }
             if (MenuState::OverlayShowPosition) {
-                const CVector pos = Controllers::Teleport::GetCurrentPosition();
-                ImGui::Text(T("overlay.position"), pos.x, pos.y, pos.z);
+                XBase::Vec3 pos;
+                if (XBase::Teleport::TryGetCurrentPosition(pos)) {
+                    XBase::UI::Text(T("overlay.position"), pos.x, pos.y, pos.z);
+                }
             }
             if (MenuState::OverlayShowTime) {
-                ImGui::Text(T("overlay.time"), hour, minute);
+                XBase::UI::Text(T("overlay.time"), hour, minute);
             }
             if (MenuState::OverlayShowPlayer) {
-                ImGui::Text(T("overlay.player"), Controllers::Player::GetHealth(), Controllers::Player::GetArmour(), Controllers::Player::GetWantedLevel(), Controllers::Player::GetMoney());
+                XBase::UI::Text(T("overlay.player"), player.health, player.armour, player.wantedLevel, player.money);
             }
 
             const UpdateChecker::UpdateInfo updateInfo = UpdateChecker::GetUpdateInfo();
@@ -123,7 +134,7 @@ namespace Controllers::Overlay {
                 }
 
                 if (MenuState::OverlayShowPlayer) {
-                    const GameTypes::ProofState playerProofs = Controllers::Player::GetProofState();
+                    const XBase::Types::ProofState& playerProofs = player.proofs;
                     std::string playerProofDetail;
                     AppendProof(playerProofDetail, "overlay.proofBullet", playerProofs.bullet);
                     AppendProof(playerProofDetail, "overlay.proofCollision", playerProofs.collision);
@@ -137,23 +148,23 @@ namespace Controllers::Overlay {
                 }
 
                 if (MenuState::OverlayShowVehicle) {
-                    if (vehicle) {
+                    if (vehicle.id) {
                         char vehicleDetail[96] = {};
-                        std::snprintf(vehicleDetail, sizeof(vehicleDetail), T("overlay.vehicleDetailValue"), vehicle->m_nModelIndex, Controllers::Vehicle::GetHealth());
+                        std::snprintf(vehicleDetail, sizeof(vehicleDetail), T("overlay.vehicleDetailValue"), vehicle.modelId, vehicle.health);
                         DrawDetailLine("overlay.vehicleDetailLabel", vehicleDetail);
 
                         std::string vehicleState;
-                        if (Controllers::Vehicle::GetLights()) {
+                        if (vehicle.lights) {
                             AppendEnabled(vehicleState, "overlay.vehicleLights");
                         }
-                        if (Controllers::Vehicle::GetLocked()) {
+                        if (vehicle.locked) {
                             AppendEnabled(vehicleState, "overlay.vehicleLocked");
                         }
                         if (!vehicleState.empty()) {
                             DrawDetailLine("overlay.vehicleStateLabel", vehicleState.c_str());
                         }
 
-                        const GameLogic::ProofState vehicleProofs = Controllers::Vehicle::GetProofState();
+                        const XBase::Types::ProofState vehicleProofs = Controllers::Vehicle::GetProofState();
                         std::string vehicleProofDetail;
                         AppendProof(vehicleProofDetail, "overlay.proofBullet", vehicleProofs.bullet);
                         AppendProof(vehicleProofDetail, "overlay.proofCollision", vehicleProofs.collision);
@@ -196,10 +207,9 @@ namespace Controllers::Overlay {
 
                 if (!features.empty()) {
                     DrawSectionTitle("overlay.featuresTitle");
-                    ImGui::TextWrapped("%s", features.c_str());
+                    XBase::UI::TextWrapped(features.c_str());
                 }
             }
-        }
-        ImGui::End();
+        }, nullptr, overlayFlags);
     }
 }

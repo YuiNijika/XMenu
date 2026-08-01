@@ -304,10 +304,6 @@ void Init() {
     };
 }
 
-void Process() {
-    ProcessDeferredAnimUnload();
-}
-
 ProofState GetPlayerProofState(CPlayerPed* player) {
     ProofState state;
     if (!player) return state;
@@ -1435,16 +1431,6 @@ void StopPlayerAnimation() {
     plugin::Command<plugin::Commands::CLEAR_CHAR_TASKS>(CPools::GetPedRef(player));
 }
 
-bool SpawnParticleAtPlayer(const char* name) {
-    CPlayerPed* player = FindPlayerPed();
-    if (!player || !name || name[0] == '\0') return false;
-    const CVector pos = player->GetPosition();
-    int fx = 0;
-    plugin::Command<plugin::Commands::CREATE_FX_SYSTEM>(name, pos.x, pos.y, pos.z + 1.0f, 0, &fx);
-    plugin::Command<plugin::Commands::PLAY_AND_KILL_FX_SYSTEM>(fx);
-    return true;
-}
-
 void ProcessSmokingEffect(CPlayerPed* player, bool enable) {
     if (!enable || !player) return;
     static DWORD lastSmokeTick = 0;
@@ -1470,80 +1456,6 @@ void ProcessFliesEffect(CPlayerPed* player, bool enable) {
     int fx = 0;
     plugin::Command<plugin::Commands::CREATE_FX_SYSTEM>("insects", pos.x + rx, pos.y + ry, pos.z + rz, 0, &fx);
     plugin::Command<plugin::Commands::PLAY_AND_KILL_FX_SYSTEM>(fx);
-}
-
-bool StartCutscene(const char* name) {
-    if (!name || name[0] == '\0') return false;
-    CCutsceneMgr::DeleteCutsceneData();
-    CCutsceneMgr::LoadCutsceneData(name);
-    CCutsceneMgr::StartCutscene();
-    return true;
-}
-
-void StopCutscene() {
-    CCutsceneMgr::DeleteCutsceneData();
-}
-
-bool IsCutsceneRunning() {
-    return CCutsceneMgr::ms_running || CCutsceneMgr::ms_cutsceneProcessing;
-}
-
-const char* GetMissionStatus() {
-    static char status[160];
-    std::snprintf(status, sizeof(status), "commands=%u missionFlag=%d activeScripts=%s", CTheScripts::CommandsExecuted, CTheScripts::OnAMissionFlag, CTheScripts::pActiveScripts ? "yes" : "no");
-    return status;
-}
-
-void StartMission(int missionId) {
-    CPlayerPed* player = FindPlayerPed();
-    if (!player) return;
-
-    if (CTheScripts::OnAMissionFlag && player->m_nAreaCode == 0) {
-        player->SetWantedLevel(0);
-        plugin::Command<plugin::Commands::LOAD_AND_LAUNCH_MISSION_INTERNAL>(missionId);
-        Log::Info("任务已强制加载: " + std::to_string(missionId));
-    } else {
-        Log::Warn("任务加载失败：不在任务中或在室内");
-    }
-}
-
-void FailMission() {
-    if (!CCutsceneMgr::ms_running) {
-        plugin::Command<plugin::Commands::FAIL_CURRENT_MISSION>();
-        Log::Info("已强制失败当前任务");
-    }
-}
-
-void SetFightingStyle(int styleIndex) {
-    CPlayerPed* player = FindPlayerPed();
-    if (!player) return;
-    if (styleIndex < 0) styleIndex = 0;
-    if (styleIndex > 4) styleIndex = 4;
-    plugin::Command<plugin::Commands::GIVE_MELEE_ATTACK_TO_CHAR>(CPools::GetPedRef(player), styleIndex + 4, 6);
-}
-
-void SetWalkingStyle(int styleIndex) {
-    static const char* walkStyles[] = {
-        "default", "man", "shuffle", "oldman", "gang1", "gang2", "oldfatman",
-        "fatman", "jogger", "drunkman", "blindman", "swat", "woman", "shopping", "busywoman",
-        "sexywoman", "pro", "oldwoman", "fatwoman", "jogwoman", "oldfatwoman", "skate"
-    };
-    const int count = static_cast<int>(sizeof(walkStyles) / sizeof(walkStyles[0]));
-    if (styleIndex < 0 || styleIndex >= count) return;
-
-    CPlayerPed* player = FindPlayerPed();
-    if (!player) return;
-    const char* style = walkStyles[styleIndex];
-    if (std::strcmp(style, "default") == 0) {
-        plugin::patch::Set<DWORD>(0x609A4E, 0x4D48689);
-        plugin::patch::Set<WORD>(0x609A52, 0);
-    } else {
-        plugin::patch::Nop(0x609A4E, 6);
-        plugin::Command<plugin::Commands::REQUEST_ANIMATION>(style);
-        plugin::Command<plugin::Commands::LOAD_ALL_MODELS_NOW>();
-        plugin::Command<plugin::Commands::SET_ANIM_GROUP_FOR_CHAR>(CPools::GetPedRef(player), style);
-        plugin::Command<plugin::Commands::REMOVE_ANIMATION>(style);
-    }
 }
 
 void DisplayHud(bool enable) {

@@ -2,5 +2,4 @@
 
 namespace Pages::Teleport {
     void Draw();
-    void Process();
 }

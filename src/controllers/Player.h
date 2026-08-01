@@ -1,11 +1,10 @@
 #pragma once
 #include "game/Types.h"
 
-class CPlayerPed;
-
 namespace Controllers::Player {
-    CPlayerPed* GetPlayer();
+    bool GetPlayerAvailable();
     void Process();
+
     void Heal();
     void GiveArmour();
     void GiveMoney();

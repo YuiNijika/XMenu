@@ -2,5 +2,4 @@
 
 namespace Pages::Ped {
     void Draw();
-    void Process();
 }

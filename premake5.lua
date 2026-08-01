@@ -71,14 +71,14 @@ function createPayloadProject(projectID)
             PSDK_DIR .. "/plugin_" .. projectID .. "/game_" .. projectID .. "/enums/",
             PSDK_DIR .. "/plugin_" .. projectID .. "/game_" .. projectID .. "/rw/",
             PSDK_DIR .. "/shared/",
-            PSDK_DIR .. "/shared/game/"
+            PSDK_DIR .. "/shared/game/",
+            XBASE_DIR .. "/include",
+            XBASE_DIR .. "/include/imgui"
         }
 
         if projectID == "sa" then
             includedirs {
-                XBASE_DIR .. "/include",
-                XBASE_DIR .. "/include/imgui",
-                XBASE_DIR .. "/include/kiero"
+                XBASE_DIR .. "/include"
             }
             libdirs {
                 path.join(XBASE_LIB_DIR, "%{cfg.buildcfg}")
@@ -108,7 +108,8 @@ function createPayloadProject(projectID)
             "src/**.cpp",
             "include/**.h",
             "include/**.cpp",
-            "include/**.c"
+            "include/**.c",
+            path.join(XBASE_DIR, "src/PayloadEntry.cpp")
         }
 
         files {
@@ -127,10 +128,12 @@ function createPayloadProject(projectID)
         }
 
         removefiles {
-            "src/loader/**.h",
-            "src/loader/**.cpp",
             "src/core/**.h",
-            "src/core/**.cpp"
+            "src/core/**.cpp",
+            "src/utils/d3dhook.cpp",
+            "include/imgui/**.cpp",
+            "include/kiero/**.cpp",
+            "include/kiero/**.c"
         }
 
         if (upperID ~= "SA") then
@@ -184,12 +187,22 @@ function createUnifiedProject()
         targetextension ".asi"
 
         files {
-            "src/loader/**.h",
-            "src/loader/**.cpp"
+            path.join(XBASE_DIR, "src/BootstrapEntry.cpp")
         }
 
-        includedirs { 
-            "src/loader/"
+        includedirs {
+            path.join(XBASE_DIR, "src")
+        }
+        libdirs {
+            path.join(XBASE_LIB_DIR, "%{cfg.buildcfg}")
+        }
+        links {
+            "XBaseBootstrap"
+        }
+        removelinks {
+            "d3d9",
+            "Pdh",
+            "urlmon"
         }
 
         filter "configurations:Debug"

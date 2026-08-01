@@ -196,14 +196,6 @@ namespace MenuState {
     inline int GangWeaponType = 0;
     inline bool FreeFlyEnabled = false;
     inline float FreeFlySpeed = 1.0f;
-    inline bool FreecamEnabled = false;
-    inline float FreecamFov = 70.0f;
-    inline int FreecamSpeedMul = 1;
-    inline bool TopDownCamEnabled = false;
-    inline int TopDownCamZoom = 40;
-    inline bool RandomCheatsEnabled = false;
-    inline int RandomCheatsInterval = 5;
-    inline bool RandomCheatsProgressBar = false;
     inline bool CommandWindowEnabled = false;
     inline bool LockWeather = false;
     inline int LockedWeatherType = 0;  // 锁定的天气ID，用于跨mod切换持久化

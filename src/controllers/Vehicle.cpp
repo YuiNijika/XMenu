@@ -1,443 +1,163 @@
 #include "Vehicle.h"
-#include "features/GameLogic.h"
+#include <XBase/Types.h>
+#include <XBase/Vehicle.h>
+#include <XBase/VehicleEffects.h>
+#include <XBase/Capabilities.h>
+#include <XBase/Cheats.h>
+#include "integration/XBaseBridge.h"
 #include "utils/Log.h"
 #include "resources/ResourceData.h"
 #include "ui/MenuState.h"
-#include "plugin.h"
-#include "extensions/ScriptCommands.h"
-#include "CPools.h"
-#include "CPlayerPed.h"
-#include "CVehicle.h"
 #include "CMessages.h"
-#include <windows.h>
 #include <string>
 
-#ifdef GTASA
-#include "CRadar.h"
-#include "CMenuManager.h"
-#include "CModelInfo.h"
-#include "neon_sa.h"
-#include "paint_sa.h"
-#endif
-
 namespace {
-    CVehicle* savedVehicle = nullptr;
-    CVehicle* effectVehicle = nullptr;
-    GameLogic::ProofState savedVehicleProofs;
-    bool hasSavedVehicleProofs = false;
-    bool spawnInProgress = false;
-    CVehicle* trackedSpawnedVehicle = nullptr;
-    CVehicle* pendingCleanupVehicle = nullptr;
-    DWORD pendingCleanupReadyTick = 0;
-    DWORD spawnWindowStartTick = 0;
-    unsigned int spawnWindowCount = 0;
-    DWORD lastLimitMessageTick = 0;
-    constexpr DWORD SpawnRateWindowMs = 3000;
-    constexpr unsigned int MaxSpawnsPerWindow = 2;
-    constexpr DWORD LimitMessageCooldownMs = 1000;
-
-    GameLogic::SpawnVehicleOptions GetCurrentSpawnOptions() {
-        GameLogic::SpawnVehicleOptions options;
+    XBase::Vehicle::SpawnOptions GetCurrentSpawnOptions() {
+        XBase::Vehicle::SpawnOptions options;
         options.asDriver = MenuState::VehicleSpawnAsDriver;
         options.aircraftInAir = MenuState::VehicleSpawnAircraftInAir;
         options.cleanupPrevious = MenuState::VehicleCleanupAfterSpawn;
         return options;
     }
 
-    void ShowSpawnLimitMessage() {
-        const DWORD now = GetTickCount();
-        if (lastLimitMessageTick != 0 && now - lastLimitMessageTick < LimitMessageCooldownMs) {
-            return;
-        }
-
-        lastLimitMessageTick = now;
-        CMessages::AddMessageJumpQ("XMenu: Vehicle spawn is too frequent", 1200, 0);
-        MenuState::ShowNotice("载具生成过于频繁，请稍后再试", 2.0);
-    }
-
-    bool CanConsumeSpawnQuota(unsigned int modelId) {
-        const DWORD now = GetTickCount();
-        if (spawnWindowStartTick == 0 || now - spawnWindowStartTick >= SpawnRateWindowMs) {
-            spawnWindowStartTick = now;
-            spawnWindowCount = 0;
-        }
-
-        if (spawnWindowCount >= MaxSpawnsPerWindow) {
-            Log::Warn("载具生成被限流：" + std::to_string(SpawnRateWindowMs) + "ms 内最多允许 "
-                + std::to_string(MaxSpawnsPerWindow) + " 次，模型 ID " + std::to_string(modelId));
-            ShowSpawnLimitMessage();
-            return false;
-        }
-
-        ++spawnWindowCount;
-        return true;
-    }
-
-    bool ExecuteSpawnNow(unsigned int modelId, const GameLogic::SpawnVehicleOptions& options);
-
-    bool IsVehicleInPool(CVehicle* vehicle) {
-        if (!vehicle) {
-            return false;
-        }
-
-        for (CVehicle* poolVehicle : CPools::ms_pVehiclePool) {
-            if (poolVehicle == vehicle) {
-                return true;
+    void ReportVehicleEvents() {
+        XBase::Vehicle::VehicleEvent event;
+        while (XBase::Vehicle::PollEvent(event)) {
+            if (event.type == XBase::Vehicle::VehicleEventType::SpawnRejected) {
+                Log::Warn("XBase Vehicle spawn rejected: model " + std::to_string(event.modelId));
+                if (event.reason == XBase::Vehicle::SpawnFailureReason::RateLimited) {
+                    CMessages::AddMessageJumpQ("XBase: Vehicle spawn is too frequent", 1200, 0);
+                    MenuState::ShowNotice("载具生成过于频繁，请稍后再试", 2.0);
+                }
+            } else if (event.type == XBase::Vehicle::VehicleEventType::PreviousVehicleCleaned) {
+                Log::Info("XBase Vehicle previous vehicle cleaned");
+            } else if (event.type == XBase::Vehicle::VehicleEventType::PreviousVehicleCleanupSkipped) {
+                Log::Warn("XBase Vehicle previous vehicle cleanup skipped");
             }
         }
-        return false;
     }
 
-    bool IsPlayerUsingVehicle(CVehicle* vehicle) {
-        if (!vehicle || !IsVehicleInPool(vehicle)) {
-            return false;
-        }
+    bool ExecuteSpawnNow(unsigned int modelId, const XBase::Vehicle::SpawnOptions& options) {
+        XBase::Vehicle::SpawnPolicy policy;
+        XBase::Vehicle::SetSpawnPolicy(policy);
 
-        CPlayerPed* player = FindPlayerPed();
-        if (!player) {
-            return false;
+        const XBase::Vehicle::SpawnResult result =
+            XBase::Vehicle::SpawnEx(modelId, options);
+        ReportVehicleEvents();
+        if (!result.success) {
+            Log::Warn("XBase Vehicle spawn failed: model " + std::to_string(modelId));
         }
-
-        const int hplayer = CPools::GetPedRef(player);
-        return plugin::Command<plugin::Commands::IS_CHAR_IN_ANY_CAR>(hplayer) && player->m_pVehicle == vehicle;
+        return result.success;
     }
 
-    void TrackSpawnedVehicle(CVehicle* vehicle, bool cleanupPrevious) {
-        if (!vehicle || !IsVehicleInPool(vehicle)) {
-            return;
-        }
-
-        if (cleanupPrevious && trackedSpawnedVehicle && trackedSpawnedVehicle != vehicle && IsVehicleInPool(trackedSpawnedVehicle)) {
-            if (IsPlayerUsingVehicle(trackedSpawnedVehicle)) {
-                Log::Warn("跳过立即清理旧 XMenu 载具：玩家正在使用");
-            } else {
-                GameLogic::DeleteVehicle(trackedSpawnedVehicle);
-                Log::Info("旧 XMenu 载具已立即清理");
-            }
-        }
-
-        trackedSpawnedVehicle = vehicle;
-        Log::Info("已追踪 XMenu 生成载具");
-    }
-
-    void ProcessSpawnedVehicleCleanup() {
-        if (!MenuState::VehicleCleanupAfterSpawn) {
-            pendingCleanupVehicle = nullptr;
-            pendingCleanupReadyTick = 0;
-            return;
-        }
-
-        if (!pendingCleanupVehicle) {
-            return;
-        }
-
-        if (!IsVehicleInPool(pendingCleanupVehicle)) {
-            pendingCleanupVehicle = nullptr;
-            pendingCleanupReadyTick = 0;
-            return;
-        }
-
-        const DWORD now = GetTickCount();
-        if (pendingCleanupReadyTick != 0 && now < pendingCleanupReadyTick) {
-            return;
-        }
-
-        if (IsPlayerUsingVehicle(pendingCleanupVehicle)) {
-            Log::Warn("跳过清理旧 XMenu 载具：玩家正在使用");
-            pendingCleanupVehicle = nullptr;
-            pendingCleanupReadyTick = 0;
-            return;
-        }
-
-        GameLogic::DeleteVehicle(pendingCleanupVehicle);
-        Log::Info("旧 XMenu 载具已清理");
-        pendingCleanupVehicle = nullptr;
-        pendingCleanupReadyTick = 0;
-    }
-
-    bool ExecuteSpawnNow(unsigned int modelId, const GameLogic::SpawnVehicleOptions& options) {
-        if (spawnInProgress) {
-            Log::Warn("载具生成被拒绝：已有生成流程正在执行，模型 ID " + std::to_string(modelId));
-            ShowSpawnLimitMessage();
-            return false;
-        }
-
-        if (!CanConsumeSpawnQuota(modelId)) {
-            return false;
-        }
-
-        spawnInProgress = true;
-        Log::Info("载具生成开始：模型 ID " + std::to_string(modelId));
-
-        if (!GameLogic::IsValidVehicleModel(modelId)) {
-            spawnInProgress = false;
-            Log::Error("载具生成失败：底层校验拒绝模型 ID " + std::to_string(modelId));
-            return false;
-        }
-
-        CVehicle* spawnedVehicle = GameLogic::SpawnVehicle(modelId, options);
-        const bool ok = spawnedVehicle != nullptr;
-        if (ok) {
-            TrackSpawnedVehicle(spawnedVehicle, options.cleanupPrevious);
-        }
-        spawnInProgress = false;
-        return ok;
-    }
-
-    void RestoreVehicleProofs() {
-        if (!hasSavedVehicleProofs || !savedVehicle) {
-            return;
-        }
-
-        if (IsVehicleInPool(savedVehicle)) {
-            GameLogic::SetVehicleProofState(savedVehicle, savedVehicleProofs);
-        }
-        savedVehicle = nullptr;
-        hasSavedVehicleProofs = false;
-    }
-
-    void ProcessNoDamage(CVehicle* vehicle) {
-        if (!MenuState::VehicleNoDamage) {
-            RestoreVehicleProofs();
-            return;
-        }
-
-        if (!vehicle) {
-            return;
-        }
-
-        // 玩家换车很频繁，切到新车前先把上一辆车的防护状态还回去。
-        if (!hasSavedVehicleProofs || savedVehicle != vehicle) {
-            RestoreVehicleProofs();
-            savedVehicleProofs = GameLogic::GetVehicleProofState(vehicle);
-            savedVehicle = vehicle;
-            hasSavedVehicleProofs = true;
-        }
-
-        GameLogic::SetVehicleInvincible(vehicle, true);
-    }
-
-    void RestoreVehicleEffectsIfNeeded() {
-        if (!effectVehicle) {
-            return;
-        }
-
-        if (!IsVehicleInPool(effectVehicle)) {
-            effectVehicle = nullptr;
-            return;
-        }
-
-        if (!MenuState::VehicleHeavy) {
-            GameLogic::SetVehicleHeavy(effectVehicle, false);
-        }
-        if (!MenuState::VehicleWatertight) {
-            GameLogic::SetVehicleWatertight(effectVehicle, false);
-        }
-        if (!MenuState::VehicleHeavy && !MenuState::VehicleWatertight) {
-            effectVehicle = nullptr;
-        }
-    }
-
-    void ProcessVehicleEffects(CVehicle* vehicle) {
-        if (!vehicle) {
-            RestoreVehicleEffectsIfNeeded();
-            return;
-        }
-
-        if (effectVehicle && effectVehicle != vehicle) {
-            if (IsVehicleInPool(effectVehicle)) {
-                GameLogic::SetVehicleHeavy(effectVehicle, false);
-                GameLogic::SetVehicleWatertight(effectVehicle, false);
-            }
-            effectVehicle = nullptr;
-        }
-
-        effectVehicle = vehicle;
-        GameLogic::SetVehicleHeavy(vehicle, MenuState::VehicleHeavy);
-        GameLogic::SetVehicleWatertight(vehicle, MenuState::VehicleWatertight);
-        RestoreVehicleEffectsIfNeeded();
-    }
 }
 
 namespace Controllers::Vehicle {
-    CVehicle* GetCurrentVehicle() {
-        CPlayerPed* player = FindPlayerPed();
-        if (!player) {
-            return nullptr;
-        }
-
-        const int hplayer = CPools::GetPedRef(player);
-        if (!plugin::Command<plugin::Commands::IS_CHAR_IN_ANY_CAR>(hplayer)) {
-            return nullptr;
-        }
-
-        CVehicle* vehicle = player->m_pVehicle;
-        return IsVehicleInPool(vehicle) ? vehicle : nullptr;
+    XBase::VehicleId GetCurrentVehicleId() {
+        return XBase::Vehicle::GetCurrentId();
     }
 
-    void Process() {
-        ProcessSpawnedVehicleCleanup();
+    void SyncRuntimeOptions() {
+        XBase::Vehicle::RuntimeOptions runtimeOptions;
+        runtimeOptions.noDamage = MenuState::VehicleNoDamage;
+        runtimeOptions.autoUnflip = MenuState::VehicleAutoUnflip;
+        runtimeOptions.heavy = MenuState::VehicleHeavy;
+        runtimeOptions.watertight = MenuState::VehicleWatertight;
+        runtimeOptions.speedLock = MenuState::VehicleSpeedLock;
+        runtimeOptions.speed = MenuState::VehicleSpeed;
+        XBase::Vehicle::SetRuntimeOptions(runtimeOptions);
+    }
 
-        CVehicle* vehicle = GetCurrentVehicle();
-        ProcessNoDamage(vehicle);
+    void ProcessHost() {
+        ReportVehicleEvents();
 
-        GameLogic::SetTrafficDensity(MenuState::VehicleTrafficClearRadius / 100.0f);
-        GameLogic::ProcessVehicleCheats(vehicle);
+        const bool hasVehicle = static_cast<bool>(GetCurrentVehicleId());
+        SyncRuntimeOptions();
 
-        if (!vehicle) {
-            ProcessVehicleEffects(nullptr);
+        XBase::Vehicle::SetTrafficDensity(MenuState::VehicleTrafficClearRadius / 100.0f);
+        if (!hasVehicle) {
             return;
         }
 
-        if (MenuState::VehicleAutoUnflip && vehicle->IsUpsideDown()) {
-            GameLogic::UnflipVehicle(vehicle);
-        }
-
-        GameLogic::SetVehicleSpeedLock(vehicle, MenuState::VehicleSpeedLock, MenuState::VehicleSpeed);
-
+        /*
+         * 产品配置在宿主同步；车辆持续状态、自动驾驶与 SA 特效由 XBase 领域持有。
+         */
 #ifdef GTASA
-        if (MenuState::VehicleNeon) {
-            Neon.Install(vehicle, MenuState::VehicleNeonColorR, MenuState::VehicleNeonColorG, MenuState::VehicleNeonColorB);
-        } else {
-            Neon.Remove(vehicle);
-        }
+        XBase::VehicleEffects::NeonSettings neonSettings;
+        neonSettings.enabled = MenuState::VehicleNeon;
+        neonSettings.red = MenuState::VehicleNeonColorR;
+        neonSettings.green = MenuState::VehicleNeonColorG;
+        neonSettings.blue = MenuState::VehicleNeonColorB;
+        XBase::VehicleEffects::ApplyCurrentNeon(neonSettings);
 
-        static CVehicle* s_autoDriveVehicle = nullptr;
-        static float s_lastTargetX = 0.0f;
-        static float s_lastTargetY = 0.0f;
-        static float s_lastTargetZ = 0.0f;
-        static bool s_hasIssuedTask = false;
-
-        if (MenuState::VehicleAutoDrive) {
-            const int hVeh = CPools::GetVehicleRef(vehicle);
-            const int model = vehicle->m_nModelIndex;
-            float targetX = 0.0f, targetY = 0.0f, targetZ = 0.0f;
-            bool hasTarget = false;
-
-            // blip 下标 clamp，避免越界
-            const unsigned int blipIndex = static_cast<unsigned int>(LOWORD(FrontEndMenuManager.m_nTargetBlipIndex));
-            if (blipIndex < MAX_RADAR_TRACES) {
-                const tRadarTrace& targetBlip = CRadar::ms_RadarTrace[blipIndex];
-                if (targetBlip.m_nRadarSprite == RADAR_SPRITE_WAYPOINT) {
-                    targetX = targetBlip.m_vecPos.x;
-                    targetY = targetBlip.m_vecPos.y;
-                    targetZ = targetBlip.m_vecPos.z;
-                    hasTarget = true;
-                }
-            }
-
-            if (!hasTarget) {
-                MenuState::VehicleAutoDrive = false;
-                s_hasIssuedTask = false;
-                s_autoDriveVehicle = nullptr;
-            } else {
-                const bool vehicleChanged = (s_autoDriveVehicle != vehicle);
-                const bool targetChanged = !s_hasIssuedTask ||
-                    targetX != s_lastTargetX || targetY != s_lastTargetY || targetZ != s_lastTargetZ;
-
-                // 仅首次开启 / 目标变化 / 换车时下发，禁止每帧刷任务
-                if (vehicleChanged || targetChanged) {
-                    s_autoDriveVehicle = vehicle;
-                    s_lastTargetX = targetX;
-                    s_lastTargetY = targetY;
-                    s_lastTargetZ = targetZ;
-                    s_hasIssuedTask = true;
-
-                    if (CModelInfo::IsBoatModel(model)) {
-                        plugin::Command<plugin::Commands::BOAT_GOTO_COORDS>(hVeh, targetX, targetY, targetZ);
-                    } else if (CModelInfo::IsPlaneModel(model)) {
-                        CVector p = vehicle->GetPosition();
-                        if (p.z < 250.0f) {
-                            p.z = 300.0f;
-                            vehicle->SetPosn(p);
-                        }
-                        plugin::Command<plugin::Commands::PLANE_GOTO_COORDS>(hVeh, targetX, targetY, 300.0f, 30, 200);
-                    } else if (CModelInfo::IsHeliModel(model)) {
-                        CVector p = vehicle->GetPosition();
-                        if (p.z < 150.0f) {
-                            p.z = 200.0f;
-                            vehicle->SetPosn(p);
-                        }
-                        plugin::Command<plugin::Commands::HELI_GOTO_COORDS>(hVeh, targetX, targetY, 200.0f, 30, 200);
-                    } else if (!CModelInfo::IsTrainModel(model)) {
-                        plugin::Command<plugin::Commands::CAR_GOTO_COORDINATES>(hVeh, targetX, targetY, targetZ);
-                    }
-                }
-            }
-        } else {
-            s_hasIssuedTask = false;
-            s_autoDriveVehicle = nullptr;
-        }
+        XBase::Vehicle::SetAutoDriveToWaypoint(MenuState::VehicleAutoDrive);
 #else
-        GameLogic::ProcessAutoDrive(vehicle, MenuState::VehicleAutoDrive, MenuState::VehicleAutoDriveSpeed);
+        // VC/III auto-drive ABI remains unsupported; the UI capability disables it.
 #endif
-
-        ProcessVehicleEffects(vehicle);
     }
 
     void Repair() {
-        GameLogic::RepairVehicle(GetCurrentVehicle());
+        XBase::Vehicle::Repair();
     }
 
     void Start() {
-        GameLogic::SetVehicleForwardSpeed(GetCurrentVehicle(), 40.0f);
+        XBase::Vehicle::Start();
     }
 
     void Stop() {
-        GameLogic::StopVehicle(GetCurrentVehicle());
+        XBase::Vehicle::Stop();
     }
 
     void ApplyAppearance() {
-        GameLogic::VehicleAppearanceOptions options;
-        options.primaryColor = MenuState::VehicleColorPrimary;
-        options.secondaryColor = MenuState::VehicleColorSecondary;
-        options.paintjob = MenuState::VehiclePaintjob;
-        options.modId = MenuState::VehicleModId;
-        GameLogic::ApplyVehicleAppearance(GetCurrentVehicle(), options);
+        if (!XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleColors)) {
+            return;
+        }
+
+        XBase::Vehicle::Colors colors;
+        colors.primary = MenuState::VehicleColorPrimary;
+        colors.secondary = MenuState::VehicleColorSecondary;
+        colors.tertiary = MenuState::VehicleColorTertiary;
+        colors.quaternary = MenuState::VehicleColorQuaternary;
+        XBase::Vehicle::SetColors(colors);
+        if (XBaseBridge::HasCapability(XBase::FeatureCapability::VehiclePaintjob) &&
+            MenuState::VehiclePaintjob >= 0) {
+            XBase::Vehicle::SetPaintjob(MenuState::VehiclePaintjob);
+        }
+        if (XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleUpgrades) &&
+            MenuState::VehicleModId > 0) {
+            XBase::Vehicle::AddUpgrade(static_cast<unsigned int>(MenuState::VehicleModId));
+        }
     }
 
     void ApplyCarcols() {
-#ifdef GTASA
-        CVehicle* veh = GetCurrentVehicle();
-        if (veh) {
-            Paint.SetCarcols(veh, MenuState::VehicleColorPrimary, MenuState::VehicleColorSecondary, MenuState::VehicleColorTertiary, MenuState::VehicleColorQuaternary, true);
-        }
-#endif
+        if (!XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleColors)) return;
+        XBase::Vehicle::Colors colors;
+        colors.primary = MenuState::VehicleColorPrimary;
+        colors.secondary = MenuState::VehicleColorSecondary;
+        colors.tertiary = MenuState::VehicleColorTertiary;
+        colors.quaternary = MenuState::VehicleColorQuaternary;
+        XBase::Vehicle::SetColors(colors);
     }
 
     void ResetColors() {
-#ifdef GTASA
-        CVehicle* veh = GetCurrentVehicle();
-        if (veh) {
-            Paint.ResetColor(veh);
-        }
-#endif
+        if (!XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleColors)) return;
+        XBase::Vehicle::SetColors(XBase::Vehicle::Colors{});
     }
 
     int GetPrimaryColor() {
-        CVehicle* vehicle = GetCurrentVehicle();
-        return vehicle ? static_cast<int>(vehicle->m_nPrimaryColor) : -1;
+        return XBase::Vehicle::GetPrimaryColor();
     }
 
     int GetSecondaryColor() {
-        CVehicle* vehicle = GetCurrentVehicle();
-        return vehicle ? static_cast<int>(vehicle->m_nSecondaryColor) : -1;
+        return XBase::Vehicle::GetSecondaryColor();
     }
 
     void SetPrimaryColor(int color) {
-        CVehicle* vehicle = GetCurrentVehicle();
-        if (!vehicle) return;
-        if (color < 0) color = 0;
-        if (color > 255) color = 255;
-        vehicle->m_nPrimaryColor = static_cast<unsigned char>(color);
+        XBase::Vehicle::SetPrimaryColor(color);
     }
 
     void SetSecondaryColor(int color) {
-        CVehicle* vehicle = GetCurrentVehicle();
-        if (!vehicle) return;
-        if (color < 0) color = 0;
-        if (color > 255) color = 255;
-        vehicle->m_nSecondaryColor = static_cast<unsigned char>(color);
+        XBase::Vehicle::SetSecondaryColor(color);
     }
 
     int GetPaintjob() {
@@ -448,161 +168,163 @@ namespace Controllers::Vehicle {
         if (paintjob < -1 || paintjob > 2) return false;
         MenuState::VehiclePaintjob = paintjob;
         ApplyAppearance();
-        return GetCurrentVehicle() != nullptr;
+        return static_cast<bool>(GetCurrentVehicleId());
     }
 
     void OpenDoor() {
-        GameLogic::OpenVehicleDoor(GetCurrentVehicle(), MenuState::VehicleDoorIndex);
+        XBase::Vehicle::OpenDoor(MenuState::VehicleDoorIndex);
     }
 
     void PopDoor() {
-        GameLogic::PopVehicleDoor(GetCurrentVehicle(), MenuState::VehicleDoorIndex);
+        if (!XBaseBridge::HasCapability(XBase::FeatureCapability::VehiclePopDoors)) return;
+        XBase::Vehicle::PopDoor(MenuState::VehicleDoorIndex);
     }
 
     void WarpToSeat() {
-        GameLogic::WarpPlayerToVehicleSeat(GetCurrentVehicle(), MenuState::VehicleSeatIndex);
+        XBase::Vehicle::WarpToSeat(MenuState::VehicleSeatIndex);
     }
 
     void SetTrafficDensity(float density) {
-        GameLogic::SetTrafficDensity(density);
+        XBase::Vehicle::SetTrafficDensity(density);
     }
 
     void SetFlyingCars(bool enable) {
-        GameLogic::SetFlyingCars(enable);
+        XBase::Cheats::FlyingCars(enable);
     }
 
     void SetEngine(bool enable) {
-        GameLogic::SetVehicleEngine(GetCurrentVehicle(), enable);
+        XBase::Vehicle::SetEngine(enable);
     }
 
     void Unflip() {
-        GameLogic::UnflipVehicle(GetCurrentVehicle());
+        XBase::Vehicle::Unflip();
     }
 
     void SetHeavy(bool enable) {
-        GameLogic::SetVehicleHeavy(GetCurrentVehicle(), enable);
+        XBase::Vehicle::SetHeavy(enable);
     }
 
     void SetWatertight(bool enable) {
-        GameLogic::SetVehicleWatertight(GetCurrentVehicle(), enable);
+        XBase::Vehicle::SetWatertight(enable);
     }
 
     float GetHealth() {
-        return GameLogic::GetVehicleHealth(GetCurrentVehicle());
+        return XBase::Vehicle::GetHealth();
     }
 
     void SetHealth(float health) {
-        GameLogic::SetVehicleHealth(GetCurrentVehicle(), health);
+        XBase::Vehicle::SetHealth(health);
     }
 
     bool GetLights() {
-        return GameLogic::GetVehicleLights(GetCurrentVehicle());
+        return XBase::Vehicle::GetLights();
     }
 
     void SetLights(bool enable) {
-        GameLogic::SetVehicleLights(GetCurrentVehicle(), enable);
+        XBase::Vehicle::SetLights(enable);
     }
 
     bool GetLocked() {
-        return GameLogic::GetVehicleLocked(GetCurrentVehicle());
+        return XBase::Vehicle::GetLocked();
     }
 
     void SetLocked(bool enable) {
-        GameLogic::SetVehicleLocked(GetCurrentVehicle(), enable);
+        XBase::Vehicle::SetLocked(enable);
     }
 
-    GameLogic::ProofState GetProofState() {
-        return GameLogic::GetVehicleProofState(GetCurrentVehicle());
+    XBase::Types::ProofState GetProofState() {
+        return XBase::Vehicle::GetProofState();
     }
 
-    void SetProofState(const GameLogic::ProofState& state) {
-        GameLogic::SetVehicleProofState(GetCurrentVehicle(), state);
+    void SetProofState(const XBase::Types::ProofState& state) {
+        XBase::Vehicle::SetProofState(state);
     }
 
     bool GetVisible() {
-        return GameLogic::GetVehicleVisible(GetCurrentVehicle());
+        return XBase::Vehicle::GetVisible();
     }
 
     void SetVisible(bool enable) {
-        GameLogic::SetVehicleVisible(GetCurrentVehicle(), enable);
+        XBase::Vehicle::SetVisible(enable);
     }
 
     bool GetAlwaysSkidMarks() {
-        return GameLogic::GetVehicleAlwaysSkidMarks(GetCurrentVehicle());
+        return XBase::Vehicle::GetAlwaysSkidMarks();
     }
 
     void SetAlwaysSkidMarks(bool enable) {
-        GameLogic::SetVehicleAlwaysSkidMarks(GetCurrentVehicle(), enable);
+        XBase::Vehicle::SetAlwaysSkidMarks(enable);
     }
 
     bool GetDisableParticles() {
-        return GameLogic::GetVehicleDisableParticles(GetCurrentVehicle());
+        return XBase::Vehicle::GetDisableParticles();
     }
 
     void SetDisableParticles(bool enable) {
-        GameLogic::SetVehicleDisableParticles(GetCurrentVehicle(), enable);
+        XBase::Vehicle::SetDisableParticles(enable);
     }
 
     bool GetDriverTargetable() {
-        return GameLogic::GetVehicleDriverTargetable(GetCurrentVehicle());
+        return XBase::Vehicle::GetDriverTargetable();
     }
 
     void SetDriverTargetable(bool enable) {
-        GameLogic::SetVehicleDriverTargetable(GetCurrentVehicle(), enable);
+        XBase::Vehicle::SetDriverTargetable(enable);
     }
 
     bool GetHeatSeekingTargetable() {
-        return GameLogic::GetVehicleHeatSeekingTargetable(GetCurrentVehicle());
+        return XBase::Vehicle::GetHeatSeekingTargetable();
     }
 
     void SetHeatSeekingTargetable(bool enable) {
-        GameLogic::SetVehicleHeatSeekingTargetable(GetCurrentVehicle(), enable);
+        XBase::Vehicle::SetHeatSeekingTargetable(enable);
     }
 
     bool GetPetrolTankWeakPoint() {
-        return GameLogic::GetVehiclePetrolTankWeakPoint(GetCurrentVehicle());
+        return XBase::Vehicle::GetPetrolTankWeakPoint();
     }
 
     void SetPetrolTankWeakPoint(bool enable) {
-        GameLogic::SetVehiclePetrolTankWeakPoint(GetCurrentVehicle(), enable);
+        XBase::Vehicle::SetPetrolTankWeakPoint(enable);
     }
 
     bool GetSirenOrAlarm() {
-        return GameLogic::GetVehicleSirenOrAlarm(GetCurrentVehicle());
+        return XBase::Vehicle::GetSirenOrAlarm();
     }
 
     void SetSirenOrAlarm(bool enable) {
-        GameLogic::SetVehicleSirenOrAlarm(GetCurrentVehicle(), enable);
+        XBase::Vehicle::SetSirenOrAlarm(enable);
     }
 
     bool GetTakeLessDamage() {
-        return GameLogic::GetVehicleTakeLessDamage(GetCurrentVehicle());
+        return XBase::Vehicle::GetTakeLessDamage();
     }
 
     void SetTakeLessDamage(bool enable) {
-        GameLogic::SetVehicleTakeLessDamage(GetCurrentVehicle(), enable);
+        XBase::Vehicle::SetTakeLessDamage(enable);
     }
 
     void BlowUpAll() {
-        GameLogic::BlowUpAllVehicles();
+        XBase::Vehicle::BlowUpAll();
     }
 
     void ApplySpeedLock() {
-        GameLogic::SetVehicleSpeedLock(GetCurrentVehicle(), MenuState::VehicleSpeedLock, MenuState::VehicleSpeed);
+        XBase::Vehicle::ApplySpeedLock(
+            MenuState::VehicleSpeedLock ? MenuState::VehicleSpeed : 0.0f);
     }
 
     void ApplyTargetSpeed() {
-        GameLogic::SetVehicleForwardSpeed(GetCurrentVehicle(), MenuState::VehicleSpeed);
+        XBase::Vehicle::ApplyTargetSpeed(MenuState::VehicleSpeed);
     }
 
     void RestoreDefaultTargetSpeed() {
         MenuState::VehicleSpeed = 60.0f;
-        ApplyTargetSpeed();
+        XBase::Vehicle::RestoreTargetSpeed();
         ApplySpeedLock();
     }
 
     bool Spawn(unsigned int modelId) {
-        const GameLogic::SpawnVehicleOptions options = GetCurrentSpawnOptions();
+        const XBase::Vehicle::SpawnOptions options = GetCurrentSpawnOptions();
         return ExecuteSpawnNow(modelId, options);
     }
 }

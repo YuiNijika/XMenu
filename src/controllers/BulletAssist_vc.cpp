@@ -1,6 +1,7 @@
 #include "BulletAssist.h"
 #include "ui/MenuState.h"
 #include "features/GameLogic.h"
+#include <XBase/BulletAssist.h>
 #include "utils/Log.h"
 #include "plugin.h"
 #include "CWorld.h"
@@ -944,7 +945,9 @@ namespace {
         }
         if (firingEntity && !IsLocalPlayerEntity(firingEntity)) {
             CPed* firer = static_cast<CPed*>(firingEntity);
-            if (GameLogic::ShouldSuppressPedFire(firer)) {
+            const int firerId = firer ? CPools::GetPedRef(firer) : -1;
+            if (XBase::BulletAssist::ShouldSuppressPedFire(
+                    XBase::PedId{firerId >= 0 ? static_cast<std::uint32_t>(firerId) + 1u : 0u})) {
                 return false;
             }
         }
@@ -959,7 +962,9 @@ namespace {
             return false;
         }
         if (vehicle && vehicle->m_pDriver && vehicle->m_pDriver != player) {
-            if (GameLogic::ShouldSuppressPedFire(vehicle->m_pDriver)) {
+            const int driverId = vehicle->m_pDriver ? CPools::GetPedRef(vehicle->m_pDriver) : -1;
+            if (XBase::BulletAssist::ShouldSuppressPedFire(
+                    XBase::PedId{driverId >= 0 ? static_cast<std::uint32_t>(driverId) + 1u : 0u})) {
                 return false;
             }
         }

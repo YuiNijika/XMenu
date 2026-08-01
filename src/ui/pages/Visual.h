@@ -2,5 +2,4 @@
 
 namespace Pages::Visual {
     void Draw();
-    void Process();
 }

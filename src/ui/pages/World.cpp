@@ -1,217 +1,223 @@
 #include "World.h"
 #include "controllers/World.h"
 #include "ui/MenuState.h"
-#include "ui/Widget.h"
 #include "utils/AppConfig.h"
 #include "utils/I18n.h"
-#include "imgui/imgui.h"
+#include <XBase/Camera.h>
+#include <XBase/Cheats.h>
+#include <XBase/UI.h>
 
 namespace {
-    const char* T(const char* key) {
-        return I18n::T(key);
-    }
+const char* T(const char* key) {
+    return I18n::T(key);
+}
 }
 
 namespace Pages::World {
-    void Process() {
-        Controllers::World::Process();
+void Draw() {
+    namespace UI = XBase::UI;
+
+    if (UI::CollapsingHeader(T("world.time"), true)) {
+        int hour = 0;
+        int minute = 0;
+        Controllers::World::GetTime(hour, minute);
+
+        UI::PushItemWidth(150.0f);
+        const bool timeChanged = UI::Slider(T("world.hour"), hour, 0, 23)
+            | UI::Slider(T("world.minute"), minute, 0, 59);
+        UI::PopItemWidth();
+        if (timeChanged) {
+            Controllers::World::SetTime(hour, minute);
+        }
+
+        if (UI::Checkbox(T("world.lockCurrentTime"), MenuState::WorldLockTime)) {
+            Controllers::World::SetLockTime(MenuState::WorldLockTime);
+            AppConfig::Save();
+        }
+        if (UI::Button(T("world.syncRealTime"))) {
+            Controllers::World::SyncTimeWithSystemClock();
+        }
     }
 
-    void Draw() {
-        if (ImGui::CollapsingHeader(T("world.time"), ImGuiTreeNodeFlags_DefaultOpen)) {
-            int hour = 0;
-            int minute = 0;
-            Controllers::World::GetTime(hour, minute);
-
-            ImGui::PushItemWidth(150);
-            bool timeChanged = false;
-            if (ImGui::SliderInt(T("world.hour"), &hour, 0, 23)) {
-                timeChanged = true;
-            }
-            if (ImGui::SliderInt(T("world.minute"), &minute, 0, 59)) {
-                timeChanged = true;
-            }
-            ImGui::PopItemWidth();
-
-            if (timeChanged) {
-                Controllers::World::SetTime(hour, minute);
-            }
-
-            if (ImGui::Checkbox(T("world.lockCurrentTime"), &MenuState::WorldLockTime)) {
-                Controllers::World::SetLockTime(MenuState::WorldLockTime);
-                AppConfig::Save();
-            }
-
-            if (UI::Button(T("world.syncRealTime"))) {
-                Controllers::World::SyncTimeWithSystemClock();
-            }
+    if (UI::CollapsingHeader(T("world.weather"), true)) {
+        if (UI::Checkbox(T("world.lockCurrentWeather"), MenuState::LockWeather)) {
+            Controllers::World::CaptureWeather();
         }
+        Controllers::World::DrawWeatherButtons();
 
-        if (ImGui::CollapsingHeader(T("world.weather"), ImGuiTreeNodeFlags_DefaultOpen)) {
-            if (ImGui::Checkbox(T("world.lockCurrentWeather"), &MenuState::LockWeather)) {
-                Controllers::World::CaptureWeather();
-            }
-            Controllers::World::DrawWeatherButtons();
-
-            // Full selector support: id + apply + revert
-            int wid = MenuState::LockedWeatherType;
-            if (ImGui::InputInt(T("world.weatherId"), &wid)) {
-                MenuState::LockedWeatherType = wid;
-            }
-            ImGui::SameLine();
-            if (UI::Button(T("Apply"), 2)) {
-                Controllers::World::ForceWeatherNow(MenuState::LockedWeatherType);
-                MenuState::LockWeather = true;
-            }
-            if (UI::Button(T("world.revertWeather"), 2)) {
-                Controllers::World::ReleaseWeather();
-            }
-            ImGui::SameLine();
-            ImGui::TextDisabled("lock: %d", MenuState::LockedWeatherType);
+        int weatherId = MenuState::LockedWeatherType;
+        if (UI::Input(T("world.weatherId"), weatherId)) {
+            MenuState::LockedWeatherType = weatherId;
         }
+        UI::SameLine();
+        if (UI::Button(T("Apply"))) {
+            Controllers::World::ForceWeatherNow(MenuState::LockedWeatherType);
+            MenuState::LockWeather = true;
+        }
+        if (UI::Button(T("world.revertWeather"))) {
+            Controllers::World::ReleaseWeather();
+        }
+        UI::SameLine();
+        UI::TextDisabled("lock:");
+        UI::SameLine();
+        UI::Text("%d", MenuState::LockedWeatherType);
+    }
 
-        if (ImGui::CollapsingHeader(T("world.gameRules"), ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::Columns(2, nullptr, false);
-            if (ImGui::Checkbox(T("world.disableReplay"), &MenuState::DisableReplay)) {
-                Controllers::World::SetDisableReplay(MenuState::DisableReplay);
-            }
-            ImGui::NextColumn();
-            if (ImGui::Checkbox(T("world.disableCheats"), &MenuState::DisableCheats)) {
-                Controllers::World::SetDisableCheats(MenuState::DisableCheats);
-            }
-            ImGui::NextColumn();
-            if (ImGui::Checkbox(T("world.fasterClock"), &MenuState::FasterClock)) {
-                Controllers::World::SetFasterClock(MenuState::FasterClock);
-            }
-            ImGui::NextColumn();
-            if (ImGui::Checkbox(T("world.freezeTime"), &MenuState::FreezeTime)) {
-                Controllers::World::SetFreezeTime(MenuState::FreezeTime);
-            }
+    if (UI::CollapsingHeader(T("world.gameRules"), true)) {
+        UI::Columns(2, nullptr, false);
+        if (UI::Checkbox(T("world.disableReplay"), MenuState::DisableReplay)) {
+            Controllers::World::SetDisableReplay(MenuState::DisableReplay);
+        }
+        UI::NextColumn();
+        if (UI::Checkbox(T("world.disableCheats"), MenuState::DisableCheats)) {
+            Controllers::World::SetDisableCheats(MenuState::DisableCheats);
+        }
+        UI::NextColumn();
+        if (UI::Checkbox(T("world.fasterClock"), MenuState::FasterClock)) {
+            Controllers::World::SetFasterClock(MenuState::FasterClock);
+        }
+        UI::NextColumn();
+        if (UI::Checkbox(T("world.freezeTime"), MenuState::FreezeTime)) {
+            Controllers::World::SetFreezeTime(MenuState::FreezeTime);
+        }
 #ifdef GTASA
-            ImGui::NextColumn();
-            if (ImGui::Checkbox(T("world.disableForbiddenAreaWanted"), &MenuState::ForbiddenAreaWanted)) {
-                Controllers::World::SetForbiddenAreaWanted(MenuState::ForbiddenAreaWanted);
-            }
-            ImGui::NextColumn();
-            if (ImGui::Checkbox(T("world.freePayNSpray"), &MenuState::FreePayNSpray)) {
-                Controllers::World::SetFreePayNSpray(MenuState::FreePayNSpray);
-            }
-            ImGui::NextColumn();
-            ImGui::Checkbox(T("world.solidWater"), &MenuState::SolidWater);
-            if (ImGui::Checkbox(T("world.noWaterPhysics"), &MenuState::NoWaterPhysics)) {
-                Controllers::World::SetNoWaterPhysics(MenuState::NoWaterPhysics);
-            }
+        UI::NextColumn();
+        if (UI::Checkbox(T("world.disableForbiddenAreaWanted"), MenuState::ForbiddenAreaWanted)) {
+            Controllers::World::SetForbiddenAreaWanted(MenuState::ForbiddenAreaWanted);
+        }
+        UI::NextColumn();
+        if (UI::Checkbox(T("world.freePayNSpray"), MenuState::FreePayNSpray)) {
+            Controllers::World::SetFreePayNSpray(MenuState::FreePayNSpray);
+        }
+        UI::NextColumn();
+        UI::Checkbox(T("world.solidWater"), MenuState::SolidWater);
+        if (UI::Checkbox(T("world.noWaterPhysics"), MenuState::NoWaterPhysics)) {
+            Controllers::World::SetNoWaterPhysics(MenuState::NoWaterPhysics);
+        }
 #endif
-            ImGui::Columns(1);
-            ImGui::Spacing();
-            ImGui::PushItemWidth(150);
+        UI::Columns(1);
+        UI::Spacing();
+        UI::PushItemWidth(150.0f);
 
-            ImGui::InputInt(T("world.daysPassed"), &MenuState::DaysPassed);
-            ImGui::SameLine();
-            if (UI::Button(T("world.setDays"), 4)) {
-                if (MenuState::DaysPassed < 0) MenuState::DaysPassed = 0;
-                if (MenuState::DaysPassed > 9999) MenuState::DaysPassed = 9999;
-                Controllers::World::SetDaysPassed(MenuState::DaysPassed);
-            }
-            ImGui::SameLine();
-            if (UI::Button(T("world.readDays"), 4)) {
-                MenuState::DaysPassed = Controllers::World::GetDaysPassed();
-            }
-
-            float gravity = Controllers::World::GetGravity();
-            if (ImGui::SliderFloat(T("world.gravity"), &gravity, -1.0f, 1.0f, "%.3f")) {
-                Controllers::World::SetGravity(gravity);
-            }
-
-            ImGui::InputInt(T("world.fpsLimit"), &MenuState::FpsLimit);
-            ImGui::SameLine();
-            if (UI::Button(T("world.setFps"), 4)) {
-                if (MenuState::FpsLimit < 1) MenuState::FpsLimit = 1;
-                if (MenuState::FpsLimit > 999) MenuState::FpsLimit = 999;
-                Controllers::World::SetFpsLimit(MenuState::FpsLimit);
-            }
-            ImGui::SameLine();
-            if (UI::Button(T("world.readFps"), 4)) {
-                MenuState::FpsLimit = Controllers::World::GetFpsLimit();
-            }
-            ImGui::PopItemWidth();
+        UI::Input(T("world.daysPassed"), MenuState::DaysPassed);
+        UI::SameLine();
+        if (UI::Button(T("world.setDays"))) {
+            if (MenuState::DaysPassed < 0) MenuState::DaysPassed = 0;
+            if (MenuState::DaysPassed > 9999) MenuState::DaysPassed = 9999;
+            Controllers::World::SetDaysPassed(MenuState::DaysPassed);
+        }
+        UI::SameLine();
+        if (UI::Button(T("world.readDays"))) {
+            MenuState::DaysPassed = Controllers::World::GetDaysPassed();
         }
 
-        if (ImGui::CollapsingHeader(T("world.pickup"), ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::TextWrapped("%s", T("world.pickupTip"));
-            ImGui::PushItemWidth(160);
-            ImGui::InputInt(T("world.pickupModelId"), &MenuState::PickupModelId);
-            ImGui::InputInt(T("world.pickupType"), &MenuState::PickupType);
-            ImGui::InputInt(T("world.pickupQuantity"), &MenuState::PickupQuantity);
+        float gravity = Controllers::World::GetGravity();
+        if (UI::Slider(T("world.gravity"), gravity, -1.0f, 1.0f, "%.3f")) {
+            Controllers::World::SetGravity(gravity);
+        }
+
+        UI::Input(T("world.fpsLimit"), MenuState::FpsLimit);
+        UI::SameLine();
+        if (UI::Button(T("world.setFps"))) {
+            if (MenuState::FpsLimit < 1) MenuState::FpsLimit = 1;
+            if (MenuState::FpsLimit > 999) MenuState::FpsLimit = 999;
+            Controllers::World::SetFpsLimit(MenuState::FpsLimit);
+        }
+        UI::SameLine();
+        if (UI::Button(T("world.readFps"))) {
+            MenuState::FpsLimit = Controllers::World::GetFpsLimit();
+        }
+        UI::PopItemWidth();
+    }
+
+    if (UI::CollapsingHeader(T("world.pickup"), true)) {
+        UI::TextWrapped(T("world.pickupTip"));
+        UI::PushItemWidth(160.0f);
+        UI::Input(T("world.pickupModelId"), MenuState::PickupModelId);
+        UI::Input(T("world.pickupType"), MenuState::PickupType);
+        UI::Input(T("world.pickupQuantity"), MenuState::PickupQuantity);
 #ifndef GTA3
-            ImGui::InputInt(T("world.pickupMoneyPerDay"), &MenuState::PickupMoneyPerDay);
-            ImGui::Checkbox(T("world.pickupEmpty"), &MenuState::PickupEmpty);
+        UI::Input(T("world.pickupMoneyPerDay"), MenuState::PickupMoneyPerDay);
+        UI::Checkbox(T("world.pickupEmpty"), MenuState::PickupEmpty);
 #endif
-            ImGui::PopItemWidth();
+        UI::PopItemWidth();
 
-            if (UI::Button(T("world.spawnPickup"))) {
-                Controllers::World::SpawnPickup();
-            }
-            ImGui::SameLine();
-            if (UI::Button(T("world.updateLastPickup"))) {
-                Controllers::World::UpdateLastPickup();
-            }
-            ImGui::SameLine();
-            if (UI::Button(T("world.removeLastPickup"))) {
-                Controllers::World::RemoveLastPickup();
-            }
-        }
+        if (UI::Button(T("world.spawnPickup"))) Controllers::World::SpawnPickup();
+        UI::SameLine();
+        if (UI::Button(T("world.updateLastPickup"))) Controllers::World::UpdateLastPickup();
+        UI::SameLine();
+        if (UI::Button(T("world.removeLastPickup"))) Controllers::World::RemoveLastPickup();
+    }
 
-        if (ImGui::CollapsingHeader(T("world.gameSpeed"), ImGuiTreeNodeFlags_DefaultOpen)) {
-            float speed = Controllers::World::GetGameSpeed();
-            if (ImGui::SliderFloat(T("world.multiplier"), &speed, 0.1f, 5.0f, "%.1fx")) {
-                Controllers::World::SetGameSpeed(speed);
-            }
-            if (UI::Button(T("world.restoreSpeed"))) {
-                Controllers::World::SetGameSpeed(1.0f);
-            }
+    if (UI::CollapsingHeader(T("world.gameSpeed"), true)) {
+        float speed = Controllers::World::GetGameSpeed();
+        if (UI::Slider(T("world.multiplier"), speed, 0.1f, 5.0f, "%.1fx")) {
+            Controllers::World::SetGameSpeed(speed);
         }
+        if (UI::Button(T("world.restoreSpeed"))) {
+            Controllers::World::SetGameSpeed(1.0f);
+        }
+    }
 
 #ifdef GTASA
-        if (ImGui::CollapsingHeader(T("world.freecam"), ImGuiTreeNodeFlags_DefaultOpen)) {
-            if (ImGui::Checkbox(T("world.enableFreecam"), &MenuState::FreecamEnabled)) {
-                if (MenuState::FreecamEnabled) {
-                    Controllers::World::EnableFreecam();
-                } else {
-                    Controllers::World::DisableFreecam();
-                }
-            }
+    XBase::Camera::Settings cameraSettings = XBase::Camera::GetSettings();
+    XBase::Camera::Mode cameraMode = XBase::Camera::GetMode();
 
-            if (MenuState::FreecamEnabled) {
-                ImGui::TextWrapped("%s", T("world.freecamControls"));
-                ImGui::SliderFloat(T("world.freecamFov"), &MenuState::FreecamFov, 10.0f, 115.0f);
-                ImGui::SliderInt(T("world.freecamSpeedMul"), &MenuState::FreecamSpeedMul, 1, 10);
-            }
+    if (UI::CollapsingHeader(T("world.freecam"), true)) {
+        bool enabled = cameraMode == XBase::Camera::Mode::Freecam;
+        if (UI::Checkbox(T("world.enableFreecam"), enabled)) {
+            const XBase::Camera::Mode requested = enabled
+                ? XBase::Camera::Mode::Freecam
+                : XBase::Camera::Mode::Disabled;
+            XBase::Camera::SetMode(requested);
+            cameraMode = XBase::Camera::GetMode();
         }
-
-        if (ImGui::CollapsingHeader(T("world.topDownCam"), ImGuiTreeNodeFlags_DefaultOpen)) {
-            if (ImGui::Checkbox(T("world.enableTopDownCam"), &MenuState::TopDownCamEnabled)) {
-                if (!MenuState::TopDownCamEnabled) {
-                    Controllers::World::DisableTopDownCam();
-                }
-            }
-            if (MenuState::TopDownCamEnabled) {
-                ImGui::SliderInt(T("world.topDownCamZoom"), &MenuState::TopDownCamZoom, 10, 100);
-            }
+        if (cameraMode == XBase::Camera::Mode::Freecam) {
+            UI::TextWrapped(T("world.freecamControls"));
+            const bool settingsChanged =
+                UI::Slider(T("world.freecamFov"), cameraSettings.freecamFov, 10.0f, 115.0f)
+                | UI::Slider(T("world.freecamSpeedMul"), cameraSettings.freecamSpeed, 1, 10);
+            if (settingsChanged) XBase::Camera::SetSettings(cameraSettings);
         }
-
-        if (ImGui::CollapsingHeader(T("world.randomCheats"), ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::Checkbox(T("world.enableRandomCheats"), &MenuState::RandomCheatsEnabled);
-            if (MenuState::RandomCheatsEnabled) {
-                ImGui::Checkbox(T("world.showRandomCheatsProgress"), &MenuState::RandomCheatsProgressBar);
-                ImGui::SliderInt(T("world.randomCheatsInterval"), &MenuState::RandomCheatsInterval, 1, 60);
-                
-                if (ImGui::TreeNode(T("world.randomCheatsList"))) {
-                    Controllers::World::DrawRandomCheatsList();
-                    ImGui::TreePop();
-                }
-            }
-        }
-#endif
     }
+
+    if (UI::CollapsingHeader(T("world.topDownCam"), true)) {
+        bool enabled = cameraMode == XBase::Camera::Mode::TopDown;
+        if (UI::Checkbox(T("world.enableTopDownCam"), enabled)) {
+            const XBase::Camera::Mode requested = enabled
+                ? XBase::Camera::Mode::TopDown
+                : XBase::Camera::Mode::Disabled;
+            XBase::Camera::SetMode(requested);
+            cameraMode = XBase::Camera::GetMode();
+        }
+        if (cameraMode == XBase::Camera::Mode::TopDown
+            && UI::Slider(T("world.topDownCamZoom"), cameraSettings.topDownZoom, 10, 100)) {
+            XBase::Camera::SetSettings(cameraSettings);
+        }
+    }
+
+    if (UI::CollapsingHeader(T("world.randomCheats"), true)) {
+        XBase::Cheats::RandomSettings randomSettings = XBase::Cheats::GetRandomSettings();
+        bool settingsChanged = UI::Checkbox(T("world.enableRandomCheats"), randomSettings.enabled);
+        if (randomSettings.enabled) {
+            settingsChanged |= UI::Checkbox(
+                T("world.showRandomCheatsProgress"), randomSettings.showProgress);
+            settingsChanged |= UI::Slider(
+                T("world.randomCheatsInterval"), randomSettings.intervalSeconds, 1, 60);
+            UI::Tree(T("world.randomCheatsList"), [] {
+                const std::size_t count = XBase::Cheats::GetRandomCheatCount();
+                for (std::size_t index = 0; index < count; ++index) {
+                    const char* name = XBase::Cheats::GetRandomCheatName(index);
+                    if (!name) continue;
+                    const bool selected = XBase::Cheats::IsRandomCheatEnabled(index);
+                    if (XBase::UI::MenuItem(name, selected)) {
+                        XBase::Cheats::SetRandomCheatEnabled(index, !selected);
+                    }
+                }
+            });
+        }
+        if (settingsChanged) XBase::Cheats::SetRandomSettings(randomSettings);
+    }
+#endif
 }
+} // namespace Pages::World

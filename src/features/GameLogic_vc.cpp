@@ -183,9 +183,6 @@ void NotifyGameInit() {
 void Init() {
 }
 
-void Process() {
-}
-
 ProofState GetPlayerProofState(CPlayerPed* player) {
     ProofState state;
     if (!player) return state;
@@ -926,54 +923,10 @@ bool PlayAnimationEx(const char* group, const char* name, bool loop, bool, bool)
 void StopPlayerAnimation() {
 }
 
-bool SpawnParticleAtPlayer(const char*) {
-    static bool logged = false;
-    if (!logged) {
-        logged = true;
-        Log::Warn("VC 暂不支持粒子页，已安全降级");
-    }
-    return false;
-}
-
 void ProcessSmokingEffect(CPlayerPed*, bool) {}
 
 void ProcessFliesEffect(CPlayerPed*, bool) {}
 
-bool StartCutscene(const char*) {
-    static bool logged = false;
-    if (!logged) {
-        logged = true;
-        Log::Warn("VC 暂不支持 cutscene 页，已安全降级");
-    }
-    return false;
-}
-
-void StopCutscene() {
-}
-
-bool IsCutsceneRunning() {
-    return false;
-}
-
-const char* GetMissionStatus() {
-    static char status[160];
-    std::snprintf(status, sizeof(status), "commands=0 missionFlag=0 activeScripts=%s", CTheScripts::pActiveScripts ? "yes" : "no");
-    return status;
-}
-
-void StartMission(int missionId) {
-    Log::Warn("VC 暂不支持加载任务");
-}
-
-void FailMission() {
-    if (!CCutsceneMgr::ms_running) {
-        plugin::Command<plugin::Commands::FAIL_CURRENT_MISSION>();
-        Log::Info("VC 已强制失败当前任务");
-    }
-}
-
-void SetFightingStyle(int) {}
-void SetWalkingStyle(int) {}
 void ProcessVisualExtras() {}
 void MaxWeaponSkills() {}
 void MaxVehicleSkills() {}

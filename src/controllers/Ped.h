@@ -1,21 +1,15 @@
 #pragma once
 
-#include "features/GameLogic.h"
-
-class CPed;
+#include <XBase/Ped.h>
+#include <XBase/Types.h>
 
 namespace Controllers::Ped {
-    using SpawnOptions = GameLogic::PedSpawnOptions;
+    using SpawnOptions = XBase::Types::PedSpawnOptions;
 
-    CPed* GetLastSpawnedPed();
-    bool GetNoFire();
-    void SetSpawnLimits(bool limitPolice, bool limitGangs, int maxPolice, int maxGangs);
-    bool SpawnNearPlayer(const SpawnOptions& options);
-    bool SpawnAtMarker(const SpawnOptions& options);
+    XBase::PedId GetLastSpawnedId();
     bool SpawnNearPlayer();
     bool SpawnAtMarker();
     void DeleteLastSpawnedPed();
-    void Process();
     void SetElvisEverywhere(bool enable);
     void SetEveryoneArmed(bool enable);
     void SetPedsMayhem(bool enable);

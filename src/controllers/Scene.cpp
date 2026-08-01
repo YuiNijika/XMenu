@@ -1,124 +1,87 @@
 #include "Scene.h"
-#include "features/GameLogic.h"
+#include <XBase/Scene.h>
 #include "ui/MenuState.h"
 
-#ifdef GTASA
-#include "cutscene_sa.h"
-#include "particle_sa.h"
-#endif
+#include <cerrno>
+#include <climits>
+#include <cstdlib>
 
 namespace Controllers::Scene {
-    void Process() {
-    }
+    namespace {
+        bool ParseInterior(const char* value, int& interior) {
+            if (!value || !value[0]) {
+                interior = 0;
+                return true;
+            }
 
-    bool PlayPlayerAnimation(const char* group, const char* name, bool loop) {
-        const bool ok = GameLogic::PlayAnimationEx(group, name, loop, false, false);
-        MenuState::ShowNotice(ok ? "Animation started" : "Animation unavailable", 1.8);
-        return ok;
+            errno = 0;
+            char* end = nullptr;
+            const long parsed = std::strtol(value, &end, 10);
+            if (errno != 0 || end == value || *end != '\0' || parsed < 0 || parsed > UCHAR_MAX) {
+                return false;
+            }
+            interior = static_cast<int>(parsed);
+            return true;
+        }
     }
 
     bool PlayPlayerAnimation() {
-        const bool ok = GameLogic::PlayAnimationEx(
+        const bool ok = XBase::Scene::PlayAnimation(
             MenuState::SceneAnimGroup,
             MenuState::SceneAnimName,
-            MenuState::SceneAnimLoop,
-            MenuState::SceneAnimSecondary,
-            MenuState::SceneAnimOnPed);
+            MenuState::SceneAnimLoop);
         MenuState::ShowNotice(ok ? "Animation started" : "Animation unavailable", 1.8);
         return ok;
     }
 
     void StopPlayerAnimation() {
-        GameLogic::StopPlayerAnimation();
+        XBase::Scene::StopAnimation();
         MenuState::ShowNotice("Animation stopped", 1.5);
     }
 
-    bool SpawnParticleAtPlayer(const char* name) {
-#ifdef GTASA
-        Particle.Play(name);
-        return true;
-#else
-        return GameLogic::SpawnParticleAtPlayer(name);
-#endif
-    }
-
     bool SpawnParticleAtPlayer() {
-#ifdef GTASA
-        Particle.Play(MenuState::SceneParticleName);
-        MenuState::ShowNotice("Particle spawned", 1.8);
-        return true;
-#else
-        const bool ok = GameLogic::SpawnParticleAtPlayer(MenuState::SceneParticleName);
+        const bool ok = XBase::Scene::PlayParticle(MenuState::SceneParticleName);
         MenuState::ShowNotice(ok ? "Particle spawned" : "Particle unavailable", 1.8);
         return ok;
-#endif
-    }
-
-    bool StartCutscene(const char* name) {
-#ifdef GTASA
-        Cutscene.Play(name, MenuState::SceneCutsceneInterior);
-        return true;
-#else
-        return GameLogic::StartCutscene(name);
-#endif
     }
 
     bool StartCutscene() {
-#ifdef GTASA
-        Cutscene.Play(MenuState::SceneCutsceneName, MenuState::SceneCutsceneInterior);
-        return true;
-#else
-        const bool ok = GameLogic::StartCutscene(MenuState::SceneCutsceneName);
+        int interior = 0;
+        const bool ok = ParseInterior(MenuState::SceneCutsceneInterior, interior)
+            && XBase::Scene::StartCutscene(MenuState::SceneCutsceneName, interior);
         MenuState::ShowNotice(ok ? "Cutscene started" : "Cutscene unavailable", 1.8);
         return ok;
-#endif
     }
 
     void StopCutscene() {
-#ifdef GTASA
-        Cutscene.Stop();
-#else
-        GameLogic::StopCutscene();
-#endif
+        XBase::Scene::StopCutscene();
     }
 
     bool IsCutsceneRunning() {
-#ifdef GTASA
-        return Cutscene.IsRunning();
-#else
-        return GameLogic::IsCutsceneRunning();
-#endif
+        return XBase::Scene::IsCutsceneRunning();
     }
 
     const char* GetMissionStatus() {
-        return GameLogic::GetMissionStatus();
-    }
-
-    void StartMission(int missionId) {
-        GameLogic::StartMission(missionId);
+        return XBase::Scene::GetMissionStatus();
     }
 
     void FailMission() {
-        GameLogic::FailMission();
+        XBase::Scene::FailMission();
     }
 
     void SetFightingStyle(int styleIndex) {
-        GameLogic::SetFightingStyle(styleIndex);
+        XBase::Scene::SetFightingStyle(styleIndex);
     }
 
     void SetWalkingStyle(int styleIndex) {
-        GameLogic::SetWalkingStyle(styleIndex);
+        XBase::Scene::SetWalkingStyle(styleIndex);
     }
 
     void RemoveAllParticles() {
-#ifdef GTASA
-        Particle.RemoveAll();
-#endif
+        XBase::Scene::RemoveAllParticles();
     }
 
     void RemoveLatestParticle() {
-#ifdef GTASA
-        Particle.RemoveLatest();
-#endif
+        XBase::Scene::RemoveLatestParticle();
     }
 }

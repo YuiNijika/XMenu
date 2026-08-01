@@ -1,18 +1,14 @@
 #pragma once
+
 #include "DataManager.h"
-#include <windows.h>
+#include <XBase/Input.h>
+
 #include <cstddef>
-#include <cstring>
 #include <string>
 #include <vector>
 
 namespace AppConfig {
-    struct Hotkey {
-        int key = 'M';
-        bool ctrl = false;
-        bool alt = false;
-        bool shift = false;
-    };
+    using Hotkey = XBase::Input::Hotkey;
 
     struct ActionHotkey {
         std::string id;
@@ -61,7 +57,6 @@ namespace AppConfig {
 
     const Hotkey& GetMenuHotkey();
     bool IsMenuHotkeyPressed();
-    int GetMenuKeyVirtualKey();
     std::string GetMenuKeyName();
     void SetMenuKeyName(const std::string& keyName);
     std::string GetFallbackLanguageCode();

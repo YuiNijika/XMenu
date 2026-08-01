@@ -186,17 +186,8 @@ namespace GameLogic {
     bool PlayPlayerAnimation(const char* group, const char* name, bool loop);
     bool PlayAnimationEx(const char* group, const char* name, bool loop, bool secondary, bool onTargetPed);
     void StopPlayerAnimation();
-    bool SpawnParticleAtPlayer(const char* name);
     void ProcessSmokingEffect(CPlayerPed* player, bool enable);
     void ProcessFliesEffect(CPlayerPed* player, bool enable);
-    bool StartCutscene(const char* name);
-    void StopCutscene();
-    bool IsCutsceneRunning();
-    const char* GetMissionStatus();
-    void StartMission(int missionId);
-    void FailMission();
-    void SetFightingStyle(int styleIndex);
-    void SetWalkingStyle(int styleIndex);
 
     // 视觉
     void DisplayHud(bool enable);
@@ -248,7 +239,6 @@ namespace GameLogic {
 
     // 通用
     void Init();
-    void Process();
 
     // 未就绪时禁止碰游戏内存 / 打补丁 / 跑菜单逻辑
     // III：池 + 玩家 ped + 脚本已真正 Process（避开 CLEO Init/AddScriptToList）+ 冷却帧

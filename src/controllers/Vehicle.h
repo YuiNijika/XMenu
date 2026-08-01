@@ -1,11 +1,11 @@
 #pragma once
-#include "features/GameLogic.h"
-
-class CVehicle;
+#include <XBase/Types.h>
+#include <XBase/ValueTypes.h>
 
 namespace Controllers::Vehicle {
-    CVehicle* GetCurrentVehicle();
-    void Process();
+    XBase::VehicleId GetCurrentVehicleId();
+    void SyncRuntimeOptions();
+    void ProcessHost();
     void Repair();
     void Start();
     void Stop();
@@ -33,8 +33,8 @@ namespace Controllers::Vehicle {
     void SetLights(bool enable);
     bool GetLocked();
     void SetLocked(bool enable);
-    GameLogic::ProofState GetProofState();
-    void SetProofState(const GameLogic::ProofState& state);
+    XBase::Types::ProofState GetProofState();
+    void SetProofState(const XBase::Types::ProofState& state);
     bool GetVisible();
     void SetVisible(bool enable);
     bool GetAlwaysSkidMarks();

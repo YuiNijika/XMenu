@@ -1,5 +1,7 @@
 #include "AppConfig.h"
-#include "game/Runtime.h"
+#include <XBase/Input.h>
+#include <XBase/Platform.h>
+#include <XBase/Runtime.h>
 #include "ui/GuiTheme.h"
 #include "ui/MenuState.h"
 #include "utils/JsonLoader.h"
@@ -33,10 +35,10 @@ namespace {
     std::unordered_map<std::string, bool> persistentEnabled;
     std::unordered_map<std::string, bool> persistentValues;
     bool syncingPersistentState = false;
-    ULONGLONG persistentSyncReadyTick = 0;
-    ULONGLONG lastPersistentSyncTick = 0;
-    constexpr ULONGLONG PersistentStartupDelayMs = 15000;
-    constexpr ULONGLONG PersistentWriteCooldownMs = 5000;
+    std::uint64_t persistentSyncReadyTick = 0;
+    std::uint64_t lastPersistentSyncTick = 0;
+    constexpr std::uint64_t PersistentStartupDelayMs = 15000;
+    constexpr std::uint64_t PersistentWriteCooldownMs = 5000;
 
     struct PersistentStateBinding {
         const char* id;
@@ -158,7 +160,7 @@ namespace {
     }
 
     bool IsSaRuntime() {
-        return GameRuntime::Current().target == GameRuntime::Target::SA;
+        return XBase::Runtime::GetGameTarget() == XBase::Runtime::GameTarget::SanAndreas;
     }
 
     bool IsPersistentFeatureSupported(const char* id) {
@@ -193,18 +195,18 @@ namespace {
             || feature == "weapon.trackFriend" || feature == "weapon.trackHostile"
             || feature == "weapon.trackNeutral" || feature == "weapon.bulletHardLock"
             || feature == "weapon.bulletThroughWalls") {
-            return IsSaRuntime() || GameRuntime::Current().target == GameRuntime::Target::VC;
+            return IsSaRuntime() || XBase::Runtime::GetGameTarget() == XBase::Runtime::GameTarget::ViceCity;
         }
 
         if (feature == "ped.bigHeadMode") {
             // SA 皮肤缩放 + III pre-render 钩子；VC 无实现
-            return IsSaRuntime() || GameRuntime::Current().target == GameRuntime::Target::III;
+            return IsSaRuntime() || XBase::Runtime::GetGameTarget() == XBase::Runtime::GameTarget::III;
         }
         if (feature == "ped.noProstitutes") {
-            return GameRuntime::Current().target == GameRuntime::Target::VC;
+            return XBase::Runtime::GetGameTarget() == XBase::Runtime::GameTarget::ViceCity;
         }
         if (feature == "ped.nastyLimbs") {
-            return GameRuntime::Current().target == GameRuntime::Target::III;
+            return XBase::Runtime::GetGameTarget() == XBase::Runtime::GameTarget::III;
         }
 
         return true;
@@ -252,53 +254,11 @@ namespace {
         }
     }
 
-    std::string DirectoryFromModule(HMODULE module) {
-        if (!module) {
-            return "";
-        }
-
-        char path[MAX_PATH] = {};
-        const DWORD size = GetModuleFileNameA(module, path, MAX_PATH);
-        if (size == 0) {
-            return "";
-        }
-
-        std::string directory(path, size);
-        const std::size_t slash = directory.find_last_of("\\/");
-        if (slash != std::string::npos) {
-            return directory.substr(0, slash + 1);
-        }
-        return "";
-    }
-
     std::string XMenuModuleDirectory() {
-        const std::string asiDirectory = DirectoryFromModule(GetModuleHandleA("XMenu.asi"));
-        if (!asiDirectory.empty()) {
-            return asiDirectory;
-        }
-
-        HMODULE module = nullptr;
-        GetModuleHandleExA(
-            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-            reinterpret_cast<LPCSTR>(&XMenuModuleDirectory),
-            &module
-        );
-        return DirectoryFromModule(module);
-    }
-
-    bool EnsureDirectory(const std::string& path) {
-        if (path.empty()) {
-            return false;
-        }
-        if (CreateDirectoryA(path.c_str(), nullptr)) {
-            return true;
-        }
-        return GetLastError() == ERROR_ALREADY_EXISTS;
-    }
-
-    bool FileExists(const std::string& path) {
-        const DWORD attributes = GetFileAttributesA(path.c_str());
-        return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
+        const std::string asiDirectory = XBase::Platform::ModuleDirectory("XMenu.asi");
+        return asiDirectory.empty()
+            ? XBase::Platform::CurrentModuleDirectory()
+            : asiDirectory;
     }
 
     std::string XMenuDataDirectory() {
@@ -323,12 +283,12 @@ namespace {
 
     std::string ReadConfigPath() {
         const std::string path = ConfigPath();
-        if (FileExists(path)) {
+        if (XBase::Platform::FileExists(path)) {
             return path;
         }
 
         const std::string legacyPath = LegacyConfigPath();
-        if (FileExists(legacyPath)) {
+        if (XBase::Platform::FileExists(legacyPath)) {
             return legacyPath;
         }
 
@@ -345,220 +305,72 @@ namespace {
         return value;
     }
 
-    std::string Upper(std::string value) {
-        for (char& ch : value) {
-            ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    XBase::Input::Key LegacyVirtualKeyToKey(int virtualKey) {
+        using XBase::Input::Key;
+        if (virtualKey >= '0' && virtualKey <= '9') {
+            return static_cast<Key>(static_cast<unsigned int>(Key::Digit0) + virtualKey - '0');
         }
-        return value;
+        if (virtualKey >= 'A' && virtualKey <= 'Z') {
+            return static_cast<Key>(static_cast<unsigned int>(Key::A) + virtualKey - 'A');
+        }
+        if (virtualKey >= 0x60 && virtualKey <= 0x69) {
+            return static_cast<Key>(static_cast<unsigned int>(Key::Num0) + virtualKey - 0x60);
+        }
+        if (virtualKey >= 0x70 && virtualKey <= 0x7B) {
+            return static_cast<Key>(static_cast<unsigned int>(Key::F1) + virtualKey - 0x70);
+        }
+
+        switch (virtualKey) {
+        case 0x08: return Key::Backspace;
+        case 0x09: return Key::Tab;
+        case 0x0D: return Key::Enter;
+        case 0x1B: return Key::Escape;
+        case 0x20: return Key::Space;
+        case 0x21: return Key::PageUp;
+        case 0x22: return Key::PageDown;
+        case 0x23: return Key::End;
+        case 0x24: return Key::Home;
+        case 0x25: return Key::Left;
+        case 0x26: return Key::Up;
+        case 0x27: return Key::Right;
+        case 0x28: return Key::Down;
+        case 0x2D: return Key::Insert;
+        case 0x2E: return Key::Delete;
+        case 0x6A: return Key::Multiply;
+        case 0x6B: return Key::Add;
+        case 0x6D: return Key::Subtract;
+        case 0x6E: return Key::Decimal;
+        case 0x6F: return Key::Divide;
+        default: return Key::None;
+        }
     }
 
-    std::vector<std::string> SplitKeyExpression(const std::string& rawValue) {
-        std::vector<std::string> parts;
-        std::string current;
+    bool ParseLegacyHotkey(const JsonLoader::JsonValue& value, AppConfig::Hotkey& hotkey) {
+        if (value.type != JsonLoader::JsonValue::OBJECT) return false;
 
-        for (const char ch : rawValue) {
-            if (ch == '+') {
-                const std::string part = Trim(current);
-                if (!part.empty()) {
-                    parts.push_back(part);
-                }
-                current.clear();
-                continue;
-            }
-            current.push_back(ch);
+        const int virtualKey = static_cast<int>(JsonLoader::GetNumber(value, "key", 0.0));
+        hotkey = {};
+        hotkey.key = LegacyVirtualKeyToKey(virtualKey);
+        if (hotkey.key == XBase::Input::Key::None && virtualKey != 0) return false;
+        if (JsonLoader::GetBool(value, "ctrl", false)) {
+            hotkey.modifiers |= XBase::Input::ModifierBit(XBase::Input::Modifier::Ctrl);
         }
-
-        const std::string part = Trim(current);
-        if (!part.empty()) {
-            parts.push_back(part);
+        if (JsonLoader::GetBool(value, "alt", false)) {
+            hotkey.modifiers |= XBase::Input::ModifierBit(XBase::Input::Modifier::Alt);
         }
-        return parts;
-    }
-
-    const std::unordered_map<std::string, int>& KeyMap() {
-        static const std::unordered_map<std::string, int> keys = {
-            {"BACKSPACE", VK_BACK}, {"BACK", VK_BACK},
-            {"TAB", VK_TAB},
-            {"ENTER", VK_RETURN}, {"RETURN", VK_RETURN},
-            {"SHIFT", VK_SHIFT}, {"LSHIFT", VK_LSHIFT}, {"RSHIFT", VK_RSHIFT},
-            {"CTRL", VK_CONTROL}, {"CONTROL", VK_CONTROL}, {"LCTRL", VK_LCONTROL}, {"RCTRL", VK_RCONTROL},
-            {"ALT", VK_MENU}, {"MENU", VK_MENU}, {"LALT", VK_LMENU}, {"RALT", VK_RMENU},
-            {"PAUSE", VK_PAUSE}, {"CAPSLOCK", VK_CAPITAL}, {"CAPS", VK_CAPITAL},
-            {"ESC", VK_ESCAPE}, {"ESCAPE", VK_ESCAPE},
-            {"SPACE", VK_SPACE}, {"SPACEBAR", VK_SPACE},
-            {"PAGEUP", VK_PRIOR}, {"PGUP", VK_PRIOR},
-            {"PAGEDOWN", VK_NEXT}, {"PGDN", VK_NEXT},
-            {"END", VK_END}, {"HOME", VK_HOME},
-            {"LEFT", VK_LEFT}, {"UP", VK_UP}, {"RIGHT", VK_RIGHT}, {"DOWN", VK_DOWN},
-            {"PRINTSCREEN", VK_SNAPSHOT}, {"PRTSC", VK_SNAPSHOT},
-            {"INSERT", VK_INSERT}, {"INS", VK_INSERT},
-            {"DELETE", VK_DELETE}, {"DEL", VK_DELETE},
-            {"WIN", VK_LWIN}, {"LWIN", VK_LWIN}, {"RWIN", VK_RWIN},
-            {"NUM0", VK_NUMPAD0}, {"NUMPAD0", VK_NUMPAD0},
-            {"NUM1", VK_NUMPAD1}, {"NUMPAD1", VK_NUMPAD1},
-            {"NUM2", VK_NUMPAD2}, {"NUMPAD2", VK_NUMPAD2},
-            {"NUM3", VK_NUMPAD3}, {"NUMPAD3", VK_NUMPAD3},
-            {"NUM4", VK_NUMPAD4}, {"NUMPAD4", VK_NUMPAD4},
-            {"NUM5", VK_NUMPAD5}, {"NUMPAD5", VK_NUMPAD5},
-            {"NUM6", VK_NUMPAD6}, {"NUMPAD6", VK_NUMPAD6},
-            {"NUM7", VK_NUMPAD7}, {"NUMPAD7", VK_NUMPAD7},
-            {"NUM8", VK_NUMPAD8}, {"NUMPAD8", VK_NUMPAD8},
-            {"NUM9", VK_NUMPAD9}, {"NUMPAD9", VK_NUMPAD9},
-            {"MULTIPLY", VK_MULTIPLY}, {"NUM*", VK_MULTIPLY},
-            {"ADD", VK_ADD}, {"NUM+", VK_ADD},
-            {"SUBTRACT", VK_SUBTRACT}, {"NUM-", VK_SUBTRACT},
-            {"DECIMAL", VK_DECIMAL}, {"NUM.", VK_DECIMAL},
-            {"DIVIDE", VK_DIVIDE}, {"NUM/", VK_DIVIDE},
-            {"F1", VK_F1}, {"F2", VK_F2}, {"F3", VK_F3}, {"F4", VK_F4},
-            {"F5", VK_F5}, {"F6", VK_F6}, {"F7", VK_F7}, {"F8", VK_F8},
-            {"F9", VK_F9}, {"F10", VK_F10}, {"F11", VK_F11}, {"F12", VK_F12},
-            {"F13", VK_F13}, {"F14", VK_F14}, {"F15", VK_F15}, {"F16", VK_F16},
-            {"F17", VK_F17}, {"F18", VK_F18}, {"F19", VK_F19}, {"F20", VK_F20},
-            {"F21", VK_F21}, {"F22", VK_F22}, {"F23", VK_F23}, {"F24", VK_F24},
-            {"NUMLOCK", VK_NUMLOCK}, {"SCROLLLOCK", VK_SCROLL}, {"SCROLL", VK_SCROLL},
-            {";", VK_OEM_1}, {":", VK_OEM_1},
-            {"=", VK_OEM_PLUS}, {"PLUS", VK_OEM_PLUS},
-            {",", VK_OEM_COMMA}, {"COMMA", VK_OEM_COMMA},
-            {"-", VK_OEM_MINUS}, {"MINUS", VK_OEM_MINUS},
-            {".", VK_OEM_PERIOD}, {"PERIOD", VK_OEM_PERIOD},
-            {"/", VK_OEM_2}, {"SLASH", VK_OEM_2},
-            {"`", VK_OEM_3}, {"~", VK_OEM_3}, {"BACKQUOTE", VK_OEM_3},
-            {"[", VK_OEM_4}, {"LBRACKET", VK_OEM_4},
-            {"\\", VK_OEM_5}, {"BACKSLASH", VK_OEM_5},
-            {"]", VK_OEM_6}, {"RBRACKET", VK_OEM_6},
-            {"'", VK_OEM_7}, {"QUOTE", VK_OEM_7}
-        };
-        return keys;
-    }
-
-    int KeyNameToVirtualKey(const std::string& rawName) {
-        const std::string name = Upper(Trim(rawName));
-        if (name.empty()) {
-            return 0;
+        if (JsonLoader::GetBool(value, "shift", false)) {
+            hotkey.modifiers |= XBase::Input::ModifierBit(XBase::Input::Modifier::Shift);
         }
-
-        if (name.size() == 1) {
-            const char ch = name[0];
-            if ((ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9')) {
-                return ch;
-            }
-        }
-
-        const auto mapped = KeyMap().find(name);
-        if (mapped != KeyMap().end()) {
-            return mapped->second;
-        }
-
-        if (name.rfind("VK_", 0) == 0) {
-            return KeyNameToVirtualKey(name.substr(3));
-        }
-
-        if (name.rfind("0X", 0) == 0) {
-            return static_cast<int>(std::strtol(name.c_str(), nullptr, 16));
-        }
-
-        bool numeric = true;
-        for (const char ch : name) {
-            if (!std::isdigit(static_cast<unsigned char>(ch))) {
-                numeric = false;
-                break;
-            }
-        }
-        if (numeric) {
-            return std::atoi(name.c_str());
-        }
-
-        return 0;
-    }
-
-    bool IsKeyDown(int virtualKey) {
-        return virtualKey > 0 && (GetKeyState(virtualKey) & 0x8000) != 0;
-    }
-
-    bool IsModifierDown(bool required, int genericKey, int leftKey, int rightKey) {
-        if (!required) {
-            return true;
-        }
-        return IsKeyDown(genericKey) || IsKeyDown(leftKey) || IsKeyDown(rightKey);
+        return true;
     }
 
     std::string CanonicalHotkeyName(const AppConfig::Hotkey& hotkey) {
-        if (hotkey.key <= 0) {
-            return "None";
-        }
-
-        std::vector<std::string> parts;
-        if (hotkey.ctrl) {
-            parts.push_back("Ctrl");
-        }
-        if (hotkey.alt) {
-            parts.push_back("Alt");
-        }
-        if (hotkey.shift) {
-            parts.push_back("Shift");
-        }
-
-        std::string keyName;
-        for (const auto& item : KeyMap()) {
-            if (item.second == hotkey.key && item.first.size() > keyName.size()) {
-                keyName = item.first;
-            }
-        }
-
-        if (hotkey.key >= 'A' && hotkey.key <= 'Z') {
-            keyName = static_cast<char>(hotkey.key);
-        } else if (hotkey.key >= '0' && hotkey.key <= '9') {
-            keyName = static_cast<char>(hotkey.key);
-        } else if (keyName.empty()) {
-            keyName = "VK_" + std::to_string(hotkey.key);
-        }
-
-        parts.push_back(keyName);
-
-        std::ostringstream stream;
-        for (std::size_t i = 0; i < parts.size(); ++i) {
-            if (i > 0) {
-                stream << "+";
-            }
-            stream << parts[i];
-        }
-        return stream.str();
+        return XBase::Input::FormatHotkey(hotkey);
     }
 
     AppConfig::Hotkey ParseHotkey(const std::string& keyName, bool& valid) {
         AppConfig::Hotkey hotkey;
-        valid = false;
-
-        const std::string normalized = Upper(Trim(keyName));
-        if (normalized.empty() || normalized == "NONE" || normalized == "DISABLED") {
-            hotkey.key = 0;
-            valid = true;
-            return hotkey;
-        }
-
-        const std::vector<std::string> parts = SplitKeyExpression(keyName);
-        for (const std::string& rawPart : parts) {
-            const std::string part = Upper(Trim(rawPart));
-            if (part == "CTRL" || part == "CONTROL" || part == "LCTRL" || part == "RCTRL") {
-                hotkey.ctrl = true;
-                continue;
-            }
-            if (part == "ALT" || part == "MENU" || part == "LALT" || part == "RALT") {
-                hotkey.alt = true;
-                continue;
-            }
-            if (part == "SHIFT" || part == "LSHIFT" || part == "RSHIFT") {
-                hotkey.shift = true;
-                continue;
-            }
-
-            const int virtualKey = KeyNameToVirtualKey(part);
-            if (virtualKey > 0) {
-                hotkey.key = virtualKey;
-                valid = true;
-            }
-        }
-
+        valid = XBase::Input::ParseHotkey(keyName, hotkey);
         return hotkey;
     }
 
@@ -667,7 +479,7 @@ namespace {
             action.hotkey = ParseHotkey(defaults[i].key, valid);
             if (!valid) {
                 action.hotkey = AppConfig::Hotkey{};
-                action.hotkey.key = 0;
+                action.hotkey.key = XBase::Input::Key::None;
             }
             actionHotkeys.push_back(action);
         }
@@ -686,11 +498,18 @@ namespace {
                 continue;
             }
 
-            const std::string keyName = item.second.type == JsonLoader::JsonValue::STRING
-                ? item.second.string_value
-                : JsonLoader::GetString(item.second, "hotkey", "");
+            AppConfig::Hotkey parsed;
             bool valid = false;
-            AppConfig::Hotkey parsed = ParseHotkey(keyName, valid);
+            if (item.second.type == JsonLoader::JsonValue::STRING) {
+                parsed = ParseHotkey(item.second.string_value, valid);
+            } else {
+                const std::string keyName = JsonLoader::GetString(item.second, "hotkey", "");
+                if (!keyName.empty()) {
+                    parsed = ParseHotkey(keyName, valid);
+                } else {
+                    valid = ParseLegacyHotkey(item.second, parsed);
+                }
+            }
             if (valid) {
                 action->hotkey = parsed;
             }
@@ -787,7 +606,7 @@ namespace {
     }
 
     const char* GameKey() {
-        return GameRuntime::CurrentKey();
+        return XBase::Runtime::GetGameKey();
     }
 
     const JsonLoader::JsonValue& GameConfigRoot(const JsonLoader::JsonValue& root, const char* gameKey) {
@@ -962,12 +781,7 @@ namespace {
         file << indent << "  \"interaction\": " << MenuState::GuiInteractionMode << ",\n";
         file << indent << "  \"UseNativeMenu\": " << (MenuState::UseNativeMenu ? "true" : "false") << ",\n";
         file << indent << "  \"ListMenuMouseInput\": " << (MenuState::ListMenuMouseInput ? "true" : "false") << ",\n";
-        file << indent << "  \"hotkey\": {\n";
-        file << indent << "    \"key\": " << menuHotkey.key << ",\n";
-        file << indent << "    \"ctrl\": " << (menuHotkey.ctrl ? "true" : "false") << ",\n";
-        file << indent << "    \"alt\": " << (menuHotkey.alt ? "true" : "false") << ",\n";
-        file << indent << "    \"shift\": " << (menuHotkey.shift ? "true" : "false") << "\n";
-        file << indent << "  }\n";
+        file << indent << "  \"hotkey\": \"" << EscapeJson(CanonicalHotkeyName(menuHotkey)) << "\"\n";
         file << indent << "}" << (trailingComma ? "," : "") << "\n";
     }
 
@@ -1109,7 +923,15 @@ namespace {
         LoadGuiConfig(gameConfig);
 
         const JsonLoader::JsonValue& menu = ObjectOrNull(gameConfig, "menu");
-        ApplyMenuKey(JsonLoader::GetString(menu, "toggleKey", DefaultMenuKey));
+        const JsonLoader::JsonValue& toggleKey = ObjectOrNull(menu, "toggleKey");
+        const JsonLoader::JsonValue& legacyHotkey = ObjectOrNull(menu, "hotkey");
+        if (toggleKey.type == JsonLoader::JsonValue::STRING) {
+            ApplyMenuKey(toggleKey.string_value);
+        } else if (!ParseLegacyHotkey(legacyHotkey, menuHotkey)) {
+            ApplyMenuKey(DefaultMenuKey);
+        } else {
+            menuKeyName = CanonicalHotkeyName(menuHotkey);
+        }
         fallbackLanguageCode = JsonLoader::GetString(menu, "fallbackLanguage", "zh");
         I18n::SetFallbackLanguage(fallbackLanguageCode);
         fallbackLanguageCode = I18n::GetFallbackLanguageCode();
@@ -1212,7 +1034,7 @@ namespace {
         if (!valid) {
             Log::Warn(std::string("菜单快捷键无效，已回退到 M: ") + keyName);
             parsed = AppConfig::Hotkey{};
-            parsed.key = 'M';
+            parsed.key = XBase::Input::Key::M;
         }
 
         menuHotkey = parsed;
@@ -1231,9 +1053,9 @@ namespace AppConfig {
         fallbackLanguageCode = I18n::GetFallbackLanguageCode();
 
         const std::string path = ReadConfigPath();
-        EnsureDirectory(XMenuDataDirectory());
+        XBase::Platform::EnsureDirectory(XMenuDataDirectory());
         const JsonLoader::JsonValue root = JsonLoader::LoadFromFile(path);
-        persistentSyncReadyTick = GetTickCount64() + PersistentStartupDelayMs;
+        persistentSyncReadyTick = XBase::Platform::MonotonicMilliseconds() + PersistentStartupDelayMs;
         if (root.type != JsonLoader::JsonValue::OBJECT) {
             Log::Info(std::string("配置文件不存在或为空，将创建默认配置: ") + path);
             Save();
@@ -1245,7 +1067,7 @@ namespace AppConfig {
     }
 
     void Save() {
-        EnsureDirectory(XMenuDataDirectory());
+        XBase::Platform::EnsureDirectory(XMenuDataDirectory());
         SaveToPath(ConfigPath());
     }
 
@@ -1363,7 +1185,7 @@ namespace AppConfig {
             persistentValues[binding.id] = currentValue ? true : binding.defaultValue;
         }
 
-        persistentSyncReadyTick = GetTickCount64() + PersistentStartupDelayMs;
+        persistentSyncReadyTick = XBase::Platform::MonotonicMilliseconds() + PersistentStartupDelayMs;
         Save();
     }
 
@@ -1383,7 +1205,7 @@ namespace AppConfig {
             persistentValues[binding.id] = restore ? true : binding.defaultValue;
         }
 
-        persistentSyncReadyTick = GetTickCount64() + PersistentStartupDelayMs;
+        persistentSyncReadyTick = XBase::Platform::MonotonicMilliseconds() + PersistentStartupDelayMs;
         Save();
     }
 
@@ -1397,12 +1219,12 @@ namespace AppConfig {
             persistentValues[binding.id] = binding.defaultValue;
         }
 
-        persistentSyncReadyTick = GetTickCount64() + PersistentStartupDelayMs;
+        persistentSyncReadyTick = XBase::Platform::MonotonicMilliseconds() + PersistentStartupDelayMs;
         Save();
     }
 
     void SyncPersistentState() {
-        const ULONGLONG now = GetTickCount64();
+        const std::uint64_t now = XBase::Platform::MonotonicMilliseconds();
         if (syncingPersistentState || now < persistentSyncReadyTick || now - lastPersistentSyncTick < PersistentWriteCooldownMs) {
             return;
         }
@@ -1422,14 +1244,7 @@ namespace AppConfig {
     }
 
     bool IsMenuHotkeyPressed() {
-        return IsModifierDown(menuHotkey.ctrl, VK_CONTROL, VK_LCONTROL, VK_RCONTROL)
-            && IsModifierDown(menuHotkey.alt, VK_MENU, VK_LMENU, VK_RMENU)
-            && IsModifierDown(menuHotkey.shift, VK_SHIFT, VK_LSHIFT, VK_RSHIFT)
-            && IsKeyDown(menuHotkey.key);
-    }
-
-    int GetMenuKeyVirtualKey() {
-        return menuHotkey.key;
+        return XBase::Input::IsDown(menuHotkey);
     }
 
     std::string GetMenuKeyName() {
@@ -1497,18 +1312,11 @@ namespace AppConfig {
     }
 
     bool IsHotkeyPressed(const Hotkey& hotkey) {
-        if (hotkey.key <= 0) {
-            return false;
-        }
-
-        return IsModifierDown(hotkey.ctrl, VK_CONTROL, VK_LCONTROL, VK_RCONTROL)
-            && IsModifierDown(hotkey.alt, VK_MENU, VK_LMENU, VK_RMENU)
-            && IsModifierDown(hotkey.shift, VK_SHIFT, VK_LSHIFT, VK_RSHIFT)
-            && IsKeyDown(hotkey.key);
+        return XBase::Input::IsDown(hotkey);
     }
 
     std::string FormatHotkey(const Hotkey& hotkey) {
-        return CanonicalHotkeyName(hotkey);
+        return XBase::Input::FormatHotkey(hotkey);
     }
 
     const std::vector<DataManager::LocationData>& GetCustomLocations() {
