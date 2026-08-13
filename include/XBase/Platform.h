@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace XBase::Platform {
 
@@ -22,8 +23,17 @@ std::string ModuleDirectory(const char* moduleName);
 
 // Returns the directory containing the XBase implementation module.
 std::string CurrentModuleDirectory();
+bool IsModuleLoaded(const char* moduleName);
 
 bool EnsureDirectory(const std::string& path);
+bool DirectoryExists(const std::string& path);
 bool FileExists(const std::string& path);
+bool ReadTextFile(const std::string& path, std::string& output);
+bool WriteTextFile(const std::string& path, const std::string& content);
+std::vector<std::string> ListDirectories(const std::string& path);
+bool ReadModuleResource(int resourceId, std::string& output);
+
+// Downloads a text resource through the platform transport.
+bool DownloadText(const char* url, std::string& output);
 
 } // namespace XBase::Platform

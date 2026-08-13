@@ -3,6 +3,7 @@
 #include "ui/MenuState.h"
 #include "ui/Widget.h"
 #include <XBase/Hooks.h>
+#include <XBase/Platform.h>
 #include <XBase/UI.h>
 #include "utils/I18n.h"
 #include "integration/XBaseBridge.h"
@@ -79,30 +80,37 @@ namespace Pages::Player {
                 UI::Checkbox(T("player.autoFlight"), &MenuState::FreeFlyEnabled);
                 UI::NextColumn();
 
-#ifdef GTASA
-                UI::Checkbox(T("player.neverWanted"), &MenuState::NeverWanted);
+                const auto drawPlayerToggle = [&](XBase::FeatureCapability capability, const char* label, bool& value) {
+                    XBase::UI::Disabled(!XBaseBridge::HasCapability(capability), [&] {
+                        UI::Checkbox(label, &value);
+                    });
+                    UI::NextColumn();
+                };
+                drawPlayerToggle(XBase::FeatureCapability::PlayerNeverWanted,
+                    T("player.neverWanted"), MenuState::NeverWanted);
+                drawPlayerToggle(XBase::FeatureCapability::PlayerSuperJump,
+                    T("player.megaJump"), MenuState::MegaJump);
+                drawPlayerToggle(XBase::FeatureCapability::PlayerSuperPunch,
+                    T("player.megaPunch"), MenuState::MegaPunch);
+                drawPlayerToggle(XBase::FeatureCapability::PlayerCycleJump,
+                    T("player.cycleJump"), MenuState::CycleJump);
+                drawPlayerToggle(XBase::FeatureCapability::PlayerUnderwaterBreathing,
+                    T("player.infiniteOxygen"), MenuState::InfiniteOxygen);
+                drawPlayerToggle(XBase::FeatureCapability::PlayerNeverHungry,
+                    T("player.neverHungry"), MenuState::NeverHungry);
+                drawPlayerToggle(XBase::FeatureCapability::PlayerFastSprint,
+                    T("player.fastSprint"), MenuState::FastSprint);
+                drawPlayerToggle(XBase::FeatureCapability::PlayerDrunkEffect,
+                    T("player.drunkEffect"), MenuState::DrunkEffect);
+                drawPlayerToggle(XBase::FeatureCapability::PlayerSprintEverywhere,
+                    T("player.sprintEverywhere"), MenuState::SprintEverywhere);
+                drawPlayerToggle(XBase::FeatureCapability::PlayerAimSkinChanger,
+                    T("player.aimSkinChanger"), MenuState::AimSkinChanger);
+
+                XBase::UI::Disabled(!XBaseBridge::HasCapability(XBase::FeatureCapability::PlayerRuntimeEffects), [&] {
+                    UI::Checkbox(T("player.invisible"), &MenuState::InvisiblePlayer);
+                });
                 UI::NextColumn();
-                UI::Checkbox(T("player.invisible"), &MenuState::InvisiblePlayer);
-                UI::NextColumn();
-                UI::Checkbox(T("player.megaJump"), &MenuState::MegaJump);
-                UI::NextColumn();
-                UI::Checkbox(T("player.megaPunch"), &MenuState::MegaPunch);
-                UI::NextColumn();
-                UI::Checkbox(T("player.cycleJump"), &MenuState::CycleJump);
-                UI::NextColumn();
-                UI::Checkbox(T("player.infiniteOxygen"), &MenuState::InfiniteOxygen);
-                UI::NextColumn();
-                UI::Checkbox(T("player.neverHungry"), &MenuState::NeverHungry);
-                UI::NextColumn();
-                UI::Checkbox(T("player.fastSprint"), &MenuState::FastSprint);
-                UI::NextColumn();
-                UI::Checkbox(T("player.drunkEffect"), &MenuState::DrunkEffect);
-                UI::NextColumn();
-                UI::Checkbox(T("player.sprintEverywhere"), &MenuState::SprintEverywhere);
-                UI::NextColumn();
-                UI::Checkbox(T("player.aimSkinChanger"), &MenuState::AimSkinChanger);
-                UI::NextColumn();
-#endif
 
                 bool freeHealth = Controllers::Player::GetFreeHealthcare();
                 if (UI::Checkbox(T("player.freeHospital"), &freeHealth)) {
@@ -220,45 +228,56 @@ namespace Pages::Player {
 
 #ifdef GTASA
             XBase::UI::Tab("player_appearance", T("player.appearance"), [&] {
-                UI::PushItemWidth(160);
-                UI::InputInt(T("player.skinModel"), &MenuState::PlayerSkinModel);
-                UI::PopItemWidth();
-                UI::SameLine();
-                if (UI::Button(T("player.applySkin"), 4)) {
-                    Controllers::Player::SetSkin(static_cast<unsigned int>(MenuState::PlayerSkinModel < 0 ? 0 : MenuState::PlayerSkinModel));
-                }
+                const bool canAppearance =
+                    XBaseBridge::HasCapability(XBase::FeatureCapability::PlayerAppearance);
+                XBase::UI::Disabled(!canAppearance, [&] {
+                    UI::PushItemWidth(160);
+                    UI::InputInt(T("player.skinModel"), &MenuState::PlayerSkinModel);
+                    UI::PopItemWidth();
+                    UI::SameLine();
+                    if (UI::Button(T("player.applySkin"), 4)) {
+                        Controllers::Player::SetSkin(static_cast<unsigned int>(
+                            MenuState::PlayerSkinModel < 0 ? 0 : MenuState::PlayerSkinModel));
+                    }
+                });
 
-                UI::PushItemWidth(120);
-                UI::InputInt(T("player.clothesTexture"), &MenuState::PlayerClothesTexture);
-                UI::SameLine();
-                UI::InputInt(T("player.clothesModel"), &MenuState::PlayerClothesModel);
-                UI::SameLine();
-                UI::InputInt(T("player.clothesBodyPart"), &MenuState::PlayerClothesBodyPart);
-                UI::PopItemWidth();
-                if (UI::Button(T("player.applyClothes"), 2)) {
-                    Controllers::Player::ApplyClothes(
-                        MenuState::PlayerClothesTexture,
-                        MenuState::PlayerClothesModel,
-                        MenuState::PlayerClothesBodyPart);
-                }
+                XBase::UI::Disabled(
+                    !XBaseBridge::HasCapability(XBase::FeatureCapability::PlayerClothes), [&] {
+                        UI::PushItemWidth(120);
+                        UI::InputInt(T("player.clothesTexture"), &MenuState::PlayerClothesTexture);
+                        UI::SameLine();
+                        UI::InputInt(T("player.clothesModel"), &MenuState::PlayerClothesModel);
+                        UI::SameLine();
+                        UI::InputInt(T("player.clothesBodyPart"), &MenuState::PlayerClothesBodyPart);
+                        UI::PopItemWidth();
+                        if (UI::Button(T("player.applyClothes"), 2)) {
+                            Controllers::Player::ApplyClothes(
+                                MenuState::PlayerClothesTexture,
+                                MenuState::PlayerClothesModel,
+                                MenuState::PlayerClothesBodyPart);
+                        }
+                    });
 
                 UI::SpacingSeparator();
-                UI::PushItemWidth(160);
-                UI::InputInt(T("player.statId"), &MenuState::PlayerStatId);
-                UI::SameLine();
-                UI::InputFloat(T("player.statValue"), &MenuState::PlayerStatValue, 1.0f, 10.0f, "%.1f");
-                UI::PopItemWidth();
-                UI::SameLine();
-                if (UI::Button(T("player.setStat"), 4)) {
-                    Controllers::Player::SetStat(MenuState::PlayerStatId, MenuState::PlayerStatValue);
-                }
-                if (UI::Button(T("player.maxWeaponSkills"), 2)) {
-                    Controllers::Player::MaxWeaponSkills();
-                }
-                UI::SameLine();
-                if (UI::Button(T("player.maxVehicleSkills"), 2)) {
-                    Controllers::Player::MaxVehicleSkills();
-                }
+                XBase::UI::Disabled(
+                    !XBaseBridge::HasCapability(XBase::FeatureCapability::PlayerStats), [&] {
+                        UI::PushItemWidth(160);
+                        UI::InputInt(T("player.statId"), &MenuState::PlayerStatId);
+                        UI::SameLine();
+                        UI::InputFloat(T("player.statValue"), &MenuState::PlayerStatValue, 1.0f, 10.0f, "%.1f");
+                        UI::PopItemWidth();
+                        UI::SameLine();
+                        if (UI::Button(T("player.setStat"), 4)) {
+                            Controllers::Player::SetStat(MenuState::PlayerStatId, MenuState::PlayerStatValue);
+                        }
+                        if (UI::Button(T("player.maxWeaponSkills"), 2)) {
+                            Controllers::Player::MaxWeaponSkills();
+                        }
+                        UI::SameLine();
+                        if (UI::Button(T("player.maxVehicleSkills"), 2)) {
+                            Controllers::Player::MaxVehicleSkills();
+                        }
+                    });
                 });
 
             XBase::UI::Tab("player_skins", T("player.customSkins"), [&] {
@@ -272,7 +291,7 @@ namespace Pages::Player {
                 static char skinFilter[128] = {};
 
                 if (!skinsLoaded) {
-                    if (GetModuleHandleA("modloader.asi")) {
+                    if (XBase::Platform::IsModuleLoaded("modloader.asi")) {
                         std::string path = "modloader/CustomSkinsLoader/";
                         if (std::filesystem::is_directory(path)) {
                             for (auto& p : std::filesystem::recursive_directory_iterator(path)) {

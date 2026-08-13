@@ -1,5 +1,6 @@
 {
   "weapon.playerNotReady": "プレイヤーの準備ができていません。セーブ読み込み後に使用してください。",
+  "weapon.unavailable": "このゲームバックエンドでは武器機能を利用できません。",
   "weapon.getAll": "全武器を取得",
   "weapon.dropWeapon": "現在の武器を落とす",
   "weapon.clearWeapons": "武器を全消去",
@@ -52,6 +53,7 @@
   "weapon.cyclerGive": "生成",
   "weapon.safeMode": "セーフモード",
   "weapon.invalidId": "無効な武器ID",
+  "weapon.operationFailed": "武器操作に失敗したか、現在利用できません",
   "weapon.cyclerEnable": "ホイールで全武器付与",
   "weapon.weaponGiven": "武器を取得しました",
   "weapon.allGiven": "全武器を取得しました",

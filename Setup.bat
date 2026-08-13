@@ -35,23 +35,14 @@ if not exist "tools\premake5.exe" (
     goto fail
 )
 
-if "%PLUGIN_SDK_DIR%"=="" (
-    if exist "..\plugin-sdk\" (
-        set "PLUGIN_SDK_DIR=%~dp0..\plugin-sdk"
-        echo [Info] Auto-detected PLUGIN_SDK_DIR=!PLUGIN_SDK_DIR!
-    ) else if exist "..\..\plugin-sdk\" (
-        set "PLUGIN_SDK_DIR=%~dp0..\..\plugin-sdk"
-        echo [Info] Auto-detected PLUGIN_SDK_DIR=!PLUGIN_SDK_DIR!
-    ) else (
-        echo [Warning] PLUGIN_SDK_DIR environment variable is not set.
-        echo Please enter the absolute path to your plugin-sdk directory.
-        echo Example: E:\GTA\dev\plugin-sdk
-        set /p PLUGIN_SDK_DIR="Path to plugin-sdk: "
+for %%T in (XBaseBootstrap XBasePayloadEntry XBaseSA XBaseVC XBaseIII) do (
+    if not exist "lib\%%T.lib" (
+        echo [Error] Missing local XBase SDK library: lib\%%T.lib
+        goto fail
     )
 )
-
-if not exist "%PLUGIN_SDK_DIR%" (
-    echo [Error] Invalid plugin-sdk directory: %PLUGIN_SDK_DIR%
+if not exist "include\XBase\XBase.h" (
+    echo [Error] Missing local XBase SDK headers: include\XBase\XBase.h
     goto fail
 )
 

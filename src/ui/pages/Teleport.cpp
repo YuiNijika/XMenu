@@ -4,6 +4,7 @@
 #include "ui/Widget.h"
 #include "utils/I18n.h"
 #include "utils/AppConfig.h"
+#include "integration/XBaseBridge.h"
 #include <XBase/Teleport.h>
 #include <XBase/UI.h>
 #include <cstdio>
@@ -86,9 +87,14 @@ namespace Pages::Teleport {
         static char currentCoordText[128] = "";
         static char locationName[128] = "";
 
-        WriteCurrentPosition(currentCoordText, sizeof(currentCoordText));
+        if (XBaseBridge::HasCapability(XBase::FeatureCapability::TeleportBasic)) {
+            WriteCurrentPosition(currentCoordText, sizeof(currentCoordText));
+        } else {
+            std::snprintf(currentCoordText, sizeof(currentCoordText), "--");
+        }
 
-        XBase::UI::Tabs("TeleportTabs", [&] {
+        XBase::UI::Disabled(!XBaseBridge::HasCapability(XBase::FeatureCapability::TeleportBasic), [&] {
+            XBase::UI::Tabs("TeleportTabs", [&] {
             XBase::UI::Tab("teleport.tab", T("tab.teleport"), [&] {
 #ifdef GTASA
                 XBase::UI::Columns(2, nullptr, false);
@@ -196,5 +202,6 @@ namespace Pages::Teleport {
                 });
 
             });
+        });
     }
 }

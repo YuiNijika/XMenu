@@ -1,5 +1,6 @@
 {
   "weapon.playerNotReady": "Игрок еще не готов. Подождите загрузки сохранения.",
+  "weapon.unavailable": "Функции оружия недоступны для этого игрового бэкенда.",
   "weapon.getAll": "Получить всё оружие",
   "weapon.dropWeapon": "Выбросить текущее оружие",
   "weapon.clearWeapons": "Очистить оружие",
@@ -52,6 +53,7 @@
   "weapon.cyclerGive": "Выдать",
   "weapon.safeMode": "Безопасный режим",
   "weapon.invalidId": "Неверный ID оружия",
+  "weapon.operationFailed": "Операция с оружием не выполнена или недоступна",
   "weapon.cyclerEnable": "Колёсико: выдать всё",
   "weapon.weaponGiven": "Оружие добавлено",
   "weapon.allGiven": "Всё оружие добавлено",

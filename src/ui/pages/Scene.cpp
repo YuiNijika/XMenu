@@ -5,7 +5,9 @@
 #include "utils/DataManager.h"
 #include "utils/I18n.h"
 #include "utils/JsonLoader.h"
+#include <XBase/Capabilities.h>
 #include <XBase/UI.h>
+#include "integration/XBaseBridge.h"
 #include "resources/ResourceData.h"
 #include <cstdio>
 #include <filesystem>
@@ -197,6 +199,8 @@ namespace Pages::Scene {
     void Draw() {
         XBase::UI::Tabs("SceneTabs", [&] {
             XBase::UI::Tab("scene.animation", T("scene.animation"), [&] {
+                XBase::UI::Disabled(
+                    !XBaseBridge::HasCapability(XBase::FeatureCapability::SceneAnimation), [&] {
                 XBase::UI::InputText(T("scene.animGroup"), MenuState::SceneAnimGroup, sizeof(MenuState::SceneAnimGroup));
                 XBase::UI::InputText(T("scene.animName"), MenuState::SceneAnimName, sizeof(MenuState::SceneAnimName));
                 XBase::UI::Checkbox(T("scene.loop"), MenuState::SceneAnimLoop);
@@ -217,9 +221,12 @@ namespace Pages::Scene {
                 XBase::UI::TextWrapped(T("scene.animationListHint"));
                 DrawAnimationList();
                 });
+                });
 
 #ifdef GTASA
             XBase::UI::Tab("scene.styles", T("scene.styles"), [&] {
+                XBase::UI::Disabled(
+                    !XBaseBridge::HasCapability(XBase::FeatureCapability::SceneAnimation), [&] {
                 UI::PushItemWidth(180);
                 UI::SliderInt(T("scene.fightStyle"), &MenuState::SceneFightStyle, 0, 15);
                 UI::SliderInt(T("scene.walkStyle"), &MenuState::SceneWalkStyle, 0, 21);
@@ -232,9 +239,12 @@ namespace Pages::Scene {
                     Controllers::Scene::SetWalkingStyle(MenuState::SceneWalkStyle);
                 }
                 });
+                });
 #endif
 
             XBase::UI::Tab("scene.particle", T("scene.particle"), [&] {
+                XBase::UI::Disabled(
+                    !XBaseBridge::HasCapability(XBase::FeatureCapability::SceneParticle), [&] {
                 static LiveList<NamedValueEntry> particles;
                 LoadNamedValues(particles, "particles.json", "particles", "effect");
                 XBase::UI::InputText(T("scene.particleName"), MenuState::SceneParticleName, sizeof(MenuState::SceneParticleName));
@@ -253,8 +263,11 @@ namespace Pages::Scene {
                 XBase::UI::TextWrapped(T("scene.particleListHint"));
                 DrawNamedValueList(particles, "scene.noListData", "particle", ApplyParticle);
                 });
+                });
 
             XBase::UI::Tab("scene.cutscene", T("scene.cutscene"), [&] {
+                XBase::UI::Disabled(
+                    !XBaseBridge::HasCapability(XBase::FeatureCapability::SceneCutscene), [&] {
                 static LiveList<NamedValueEntry> cutscenes;
                 LoadNamedValues(cutscenes, "cutscenes.json", "cutscenes", "interior");
                 XBase::UI::InputText(T("scene.cutsceneName"), MenuState::SceneCutsceneName, sizeof(MenuState::SceneCutsceneName));
@@ -271,8 +284,11 @@ namespace Pages::Scene {
                 XBase::UI::TextWrapped(T("scene.cutsceneListHint"));
                 DrawNamedValueList(cutscenes, "scene.noListData", "cutscene", ApplyCutscene);
                 });
+                });
 
             XBase::UI::Tab("scene.missions", T("scene.missions"), [&] {
+                XBase::UI::Disabled(
+                    !XBaseBridge::HasCapability(XBase::FeatureCapability::SceneMission), [&] {
                 XBase::UI::TextWrapped(Controllers::Scene::GetMissionStatus());
                 XBase::UI::Spacing();
                 
@@ -282,6 +298,7 @@ namespace Pages::Scene {
 
                 UI::SpacingSeparator();
                 DrawMissionList();
+                });
                 });
             });
     }

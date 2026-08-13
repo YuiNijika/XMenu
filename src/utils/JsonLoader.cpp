@@ -1,8 +1,7 @@
 #include "JsonLoader.h"
 #include "utils/Log.h"
-#include <fstream>
+#include <XBase/Platform.h>
 #include <sstream>
-#include <windows.h>
 
 namespace JsonLoader {
 namespace {
@@ -163,49 +162,20 @@ JsonValue Parse(const std::string& json) {
 }
 
 JsonValue LoadFromFile(const std::string& filepath) {
-    std::ifstream file(filepath, std::ios::binary);
-    if (!file.is_open()) {
+    std::string content;
+    if (!XBase::Platform::ReadTextFile(filepath, content)) {
         Log::Warn(std::string("无法打开JSON文件: ") + filepath);
         return JsonValue();
     }
-    
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    std::string content = buffer.str();
-    
     return Parse(content);
 }
 
 JsonValue LoadFromResource(int resourceId) {
-    HMODULE hModule = nullptr;
-    GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                      (LPCSTR)&LoadFromResource, &hModule);
-    
-    if (!hModule) {
-        Log::Warn("无法获取模块句柄");
-        return JsonValue();
-    }
-    
-    HRSRC hResource = FindResourceA(hModule, MAKEINTRESOURCEA(resourceId), RT_RCDATA);
-    if (!hResource) {
-        Log::Warn(std::string("找不到资源ID: ") + std::to_string(resourceId));
-        return JsonValue();
-    }
-    
-    HGLOBAL hLoaded = LoadResource(hModule, hResource);
-    if (!hLoaded) {
+    std::string content;
+    if (!XBase::Platform::ReadModuleResource(resourceId, content)) {
         Log::Warn(std::string("无法加载资源ID: ") + std::to_string(resourceId));
         return JsonValue();
     }
-    
-    const DWORD size = SizeofResource(hModule, hResource);
-    const void* data = LockResource(hLoaded);
-    if (!data || size == 0) {
-        Log::Warn(std::string("资源数据为空，ID: ") + std::to_string(resourceId));
-        return JsonValue();
-    }
-    
-    std::string content(static_cast<const char*>(data), size);
     return Parse(content);
 }
 

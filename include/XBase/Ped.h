@@ -18,6 +18,7 @@ struct PedSnapshot {
     bool gang = false;
 };
 
+void Init();
 void Process();
 void NotifyGameInit();
 void Shutdown();

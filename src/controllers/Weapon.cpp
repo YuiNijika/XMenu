@@ -2,15 +2,15 @@
 #include <XBase/Weapon.h>
 #include <XBase/Capabilities.h>
 #include <XBase/Player.h>
+#include <XBase/Host.h>
 #include "resources/ResourceData.h"
 #include "ui/MenuState.h"
 #include "utils/I18n.h"
-#include "CMessages.h"
 #include <unordered_set>
 
 namespace {
     void ShowWeaponMessage(const char* hudText, const char* noticeText) {
-        CMessages::AddMessageJumpQ(hudText, 1200, 0);
+        XBase::Host::ShowMessage(hudText);
         MenuState::ShowNotice(noticeText, 2.0);
     }
 
@@ -40,64 +40,114 @@ namespace Controllers::Weapon {
     }
 
     void Process() {
-        XBase::Weapon::SetInfiniteAmmo(MenuState::InfiniteAmmo);
-        XBase::Weapon::SetFastReload(MenuState::FastReload);
+        const bool hasRuntimeEffects = XBase::HasCapability(XBase::FeatureCapability::WeaponRuntimeEffects);
+        const bool hasStatOverrides = XBase::HasCapability(XBase::FeatureCapability::WeaponStatOverrides);
+        const bool hasGive = XBase::HasCapability(XBase::FeatureCapability::WeaponGive);
+
+        if (!hasRuntimeEffects) {
+            MenuState::InfiniteAmmo = false;
+            MenuState::FastReload = false;
+        }
+        if (!hasStatOverrides) {
+            MenuState::HugeWeaponDamage = false;
+            MenuState::LongWeaponRange = false;
+            MenuState::WeaponAutoAim = false;
+            MenuState::MoveAim = false;
+            MenuState::MoveFire = false;
+            MenuState::NoSpread = false;
+            MenuState::RapidFire = false;
+            MenuState::DualWield = false;
+            MenuState::WeaponFireRateEnabled = false;
+        }
+        if (!hasGive) {
+            MenuState::WeaponCyclerEnabled = false;
+        }
+
+        if (hasRuntimeEffects) {
+            XBase::Weapon::SetInfiniteAmmo(MenuState::InfiniteAmmo);
+            XBase::Weapon::SetFastReload(MenuState::FastReload);
+        }
     }
 
-    void GiveAll() {
-        XBase::Weapon::GiveAll();
+    bool GiveAll() {
+        if (!XBase::Weapon::GiveAll()) {
+            ShowWeaponMessage("XMenu: Weapon operation failed", I18n::T("weapon.operationFailed"));
+            return false;
+        }
         ShowWeaponMessage("XMenu: All weapons added", I18n::T("weapon.allGiven"));
+        return true;
     }
 
-    void ClearAll() {
-        XBase::Weapon::ClearAll();
+    bool ClearAll() {
+        if (!XBase::Weapon::ClearAll()) {
+            ShowWeaponMessage("XMenu: Weapon operation failed", I18n::T("weapon.operationFailed"));
+            return false;
+        }
         ShowWeaponMessage("XMenu: Weapons cleared", I18n::T("weapon.weaponsCleared"));
+        return true;
     }
 
-    void DropWeapon() {
-        XBase::Weapon::DropWeapon();
+    bool DropWeapon() {
+        if (!XBase::Weapon::DropWeapon()) {
+            ShowWeaponMessage("XMenu: Weapon operation failed", I18n::T("weapon.operationFailed"));
+            return false;
+        }
         ShowWeaponMessage("XMenu: Weapon dropped", I18n::T("weapon.weaponDropped"));
+        return true;
     }
 
-    void DropCurrent() {
-        XBase::Weapon::DropCurrent();
+    bool DropCurrent() {
+        if (!XBase::Weapon::DropCurrent()) {
+            ShowWeaponMessage("XMenu: Weapon operation failed", I18n::T("weapon.operationFailed"));
+            return false;
+        }
         ShowWeaponMessage("XMenu: Current weapon removed", I18n::T("weapon.currentRemoved"));
+        return true;
     }
 
-    void RemovePickups() {
+    int RemovePickups() {
         const int removed = XBase::Weapon::RemoveTrackedPickups();
         ShowWeaponMessage(
             removed > 0 ? "XMenu: Pickups removed" : "XMenu: No pickups to remove",
             removed > 0 ? I18n::T("weapon.pickupsRemoved") : I18n::T("weapon.noPickupsToRemove")
         );
+        return removed;
     }
 
-    void Give(unsigned int weaponType, unsigned int ammo) {
+    bool Give(unsigned int weaponType, unsigned int ammo) {
         if (MenuState::WeaponSafeMode && !IsValidWeaponTypeId(weaponType)) {
             ShowWeaponMessage("XMenu: Invalid weapon ID", I18n::T("weapon.invalidId"));
-            return;
+            return false;
         }
-        XBase::Weapon::Give(weaponType, ammo);
+        if (!XBase::Weapon::Give(weaponType, ammo)) {
+            ShowWeaponMessage("XMenu: Weapon operation failed", I18n::T("weapon.operationFailed"));
+            return false;
+        }
         ShowWeaponMessage("XMenu: Weapon added", I18n::T("weapon.weaponGiven"));
+        return true;
     }
 
-    void GiveModel(unsigned int weaponModel, unsigned int ammo) {
+    bool GiveModel(unsigned int weaponModel, unsigned int ammo) {
         if (MenuState::WeaponSafeMode && !IsValidWeaponModelId(weaponModel)) {
             ShowWeaponMessage("XMenu: Invalid weapon model ID", I18n::T("weapon.invalidId"));
-            return;
+            return false;
         }
-        XBase::Weapon::GiveModel(weaponModel, ammo);
+        if (!XBase::Weapon::GiveModel(weaponModel, ammo)) {
+            ShowWeaponMessage("XMenu: Weapon operation failed", I18n::T("weapon.operationFailed"));
+            return false;
+        }
         ShowWeaponMessage("XMenu: Weapon added", I18n::T("weapon.weaponGiven"));
+        return true;
     }
 
-    void GiveSilent(unsigned int weaponType, unsigned int ammo) {
-        if (MenuState::WeaponSafeMode && !IsValidWeaponTypeId(weaponType)) return;
-        XBase::Weapon::Give(weaponType, ammo);
+    bool GiveSilent(unsigned int weaponType, unsigned int ammo) {
+        if (MenuState::WeaponSafeMode && !IsValidWeaponTypeId(weaponType)) return false;
+        return XBase::Weapon::Give(weaponType, ammo);
     }
 
-    void GiveModelSilent(unsigned int weaponModel, unsigned int ammo) {
-        if (MenuState::WeaponSafeMode && !IsValidWeaponModelId(weaponModel)) return;
-        XBase::Weapon::GiveModel(weaponModel, ammo);
+    bool GiveModelSilent(unsigned int weaponModel, unsigned int ammo) {
+        if (MenuState::WeaponSafeMode && !IsValidWeaponModelId(weaponModel)) return false;
+        return XBase::Weapon::GiveModel(weaponModel, ammo);
     }
 
     bool IsValidWeaponTypeId(unsigned int weaponType) {
@@ -110,7 +160,7 @@ namespace Controllers::Weapon {
         return s_validModelIds.count(weaponModel) > 0;
     }
 
-    void ResetStats() {
-        XBase::Weapon::ResetStats();
+    bool ResetStats() {
+        return XBase::Weapon::ResetStats();
     }
 }

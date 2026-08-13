@@ -96,6 +96,7 @@
   "command.title": "Command window",
   "command.run": "Run",
   "command.teleported": "Teleported",
+  "command.operationFailed": "Command failed or is unavailable",
   "command.vehicleSpawned": "Vehicle spawned",
   "command.vehicleSpawnFailed": "Vehicle spawn failed",
   "command.healed": "Healed",

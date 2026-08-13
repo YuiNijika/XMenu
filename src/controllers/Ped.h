@@ -10,6 +10,9 @@ namespace Controllers::Ped {
     bool SpawnNearPlayer();
     bool SpawnAtMarker();
     void DeleteLastSpawnedPed();
+    void SetBigHead(bool enable);
+    void SetThinBody(bool enable);
+    void Process();
     void SetElvisEverywhere(bool enable);
     void SetEveryoneArmed(bool enable);
     void SetPedsMayhem(bool enable);

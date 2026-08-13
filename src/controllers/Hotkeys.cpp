@@ -50,98 +50,102 @@ namespace {
         MenuState::ShowNotice(message, 1.5);
     }
 
-    void Dispatch(const std::string& actionId) {
+    bool Dispatch(const std::string& actionId) {
         if (!AppConfig::IsActionHotkeySupportedForRuntime(actionId)) {
-            return;
+            return false;
         }
 
         if (actionId == "teleport.marker") {
-            XBase::Teleport::Marker(MenuState::SpawnUnderwater);
-            return;
+            return XBase::Teleport::Marker(MenuState::SpawnUnderwater);
         }
 
         if (actionId == "teleport.quickMap") {
             MenuState::QuickTeleport = true;
             MenuState::QuickTeleportMapActive = !MenuState::QuickTeleportMapActive;
             MenuState::ShowNotice(MenuState::QuickTeleportMapActive ? I18n::T("quickMap.opened") : I18n::T("quickMap.closed"), 1.5);
-            return;
+            return true;
         }
 
         if (actionId == "teleport.forward") {
-            XBase::Teleport::Forward(MenuState::TeleportForwardDistance);
-            return;
+            return XBase::Teleport::Forward(MenuState::TeleportForwardDistance);
         }
 
         if (actionId == "player.freeFly.toggle") {
             MenuState::FreeFlyEnabled = !MenuState::FreeFlyEnabled;
             MenuState::ShowNotice(I18n::T(MenuState::FreeFlyEnabled ? "player.freeFlyEnabled" : "player.freeFlyDisabled"), 1.5);
-            return;
+            return true;
         }
 
         if (actionId == "command.toggle") {
             MenuState::CommandWindowEnabled = !MenuState::CommandWindowEnabled;
-            return;
+            return true;
         }
 
         if (actionId == "overlay.toggle") {
             MenuState::OverlayEnabled = !MenuState::OverlayEnabled;
-            return;
+            return true;
         }
 
         if (actionId == "player.heal") {
             Controllers::Player::Heal();
-            return;
+            return true;
         }
 
         if (actionId == "player.armour") {
             Controllers::Player::GiveArmour();
-            return;
+            return true;
         }
 
         if (actionId == "player.clearWanted") {
             Controllers::Player::ClearWantedLevel();
-            return;
+            return true;
         }
 
         if (actionId == "player.aimSkinChanger") {
-            if (XBaseBridge::HasCapability(XBase::FeatureCapability::PlayerAppearance)) {
-                Controllers::Player::ApplyAimSkinChanger();
+            if (!XBaseBridge::HasCapability(XBase::FeatureCapability::PlayerAimSkinChanger)) {
+                return false;
             }
-            return;
+            Controllers::Player::ApplyAimSkinChanger();
+            return true;
         }
 
         if (actionId == "player.neverWanted.toggle") {
-            if (XBaseBridge::HasCapability(XBase::FeatureCapability::PlayerCheats)) {
-                MenuState::NeverWanted = !MenuState::NeverWanted;
+            if (!XBaseBridge::HasCapability(XBase::FeatureCapability::PlayerNeverWanted)) {
+                return false;
             }
-            return;
+            MenuState::NeverWanted = !MenuState::NeverWanted;
+            return true;
         }
 
         if (actionId == "vehicle.repair") {
             Controllers::Vehicle::Repair();
-            return;
+            return true;
         }
 
         if (actionId == "vehicle.unflip") {
             Controllers::Vehicle::Unflip();
-            return;
+            return true;
         }
 
         if (actionId == "vehicle.stop") {
             Controllers::Vehicle::Stop();
-            return;
+            return true;
         }
 
         if (actionId == "weapon.giveAll") {
-            Controllers::Weapon::GiveAll();
-            return;
+            return Controllers::Weapon::GiveAll();
         }
 
         if (actionId == "world.toggleFreezeTime") {
+            if (!XBaseBridge::HasCapability(XBase::FeatureCapability::WorldFreezeTime)) {
+                return false;
+            }
             MenuState::FreezeTime = !MenuState::FreezeTime;
             Controllers::World::SetFreezeTime(MenuState::FreezeTime);
-            return;
+            return true;
         }
+
+        return false;
     }
 }
 
@@ -165,18 +169,17 @@ namespace Controllers::Hotkeys {
                     const float continuousDistance = MenuState::TeleportForwardDistance * ForwardTeleportFrameScale();
                     XBase::Teleport::Forward(continuousDistance);
                 } else if (pressed && !wasPressed) {
-                    Dispatch(action.id);
-                    ShowActionNotice(action);
+                    if (Dispatch(action.id)) {
+                        ShowActionNotice(action);
+                    }
                 }
                 previousActionStates[action.id] = pressed;
                 continue;
             }
 
-            if (pressed) {
-                if (!wasPressed) {
-                    Dispatch(action.id);
-                }
-                if (!wasPressed && action.id != "teleport.quickMap") {
+            if (pressed && !wasPressed) {
+                const bool succeeded = Dispatch(action.id);
+                if (succeeded && action.id != "teleport.quickMap") {
                     ShowActionNotice(action);
                 }
             }

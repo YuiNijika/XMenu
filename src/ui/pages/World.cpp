@@ -5,7 +5,9 @@
 #include "utils/I18n.h"
 #include <XBase/Camera.h>
 #include <XBase/Cheats.h>
+#include <XBase/Capabilities.h>
 #include <XBase/UI.h>
+#include "integration/XBaseBridge.h"
 
 namespace {
 const char* T(const char* key) {
@@ -17,7 +19,12 @@ namespace Pages::World {
 void Draw() {
     namespace UI = XBase::UI;
 
+    const auto withCapability = [](XBase::FeatureCapability capability, const XBase::UI::DrawFn& draw) {
+        XBase::UI::Disabled(!XBaseBridge::HasCapability(capability), draw);
+    };
+
     if (UI::CollapsingHeader(T("world.time"), true)) {
+        withCapability(XBase::FeatureCapability::WorldTime, [&] {
         int hour = 0;
         int minute = 0;
         Controllers::World::GetTime(hour, minute);
@@ -37,9 +44,11 @@ void Draw() {
         if (UI::Button(T("world.syncRealTime"))) {
             Controllers::World::SyncTimeWithSystemClock();
         }
+        });
     }
 
     if (UI::CollapsingHeader(T("world.weather"), true)) {
+        withCapability(XBase::FeatureCapability::WorldWeather, [&] {
         if (UI::Checkbox(T("world.lockCurrentWeather"), MenuState::LockWeather)) {
             Controllers::World::CaptureWeather();
         }
@@ -61,76 +70,86 @@ void Draw() {
         UI::TextDisabled("lock:");
         UI::SameLine();
         UI::Text("%d", MenuState::LockedWeatherType);
+        });
     }
 
     if (UI::CollapsingHeader(T("world.gameRules"), true)) {
         UI::Columns(2, nullptr, false);
-        if (UI::Checkbox(T("world.disableReplay"), MenuState::DisableReplay)) {
-            Controllers::World::SetDisableReplay(MenuState::DisableReplay);
-        }
-        UI::NextColumn();
-        if (UI::Checkbox(T("world.disableCheats"), MenuState::DisableCheats)) {
-            Controllers::World::SetDisableCheats(MenuState::DisableCheats);
-        }
-        UI::NextColumn();
-        if (UI::Checkbox(T("world.fasterClock"), MenuState::FasterClock)) {
-            Controllers::World::SetFasterClock(MenuState::FasterClock);
-        }
-        UI::NextColumn();
-        if (UI::Checkbox(T("world.freezeTime"), MenuState::FreezeTime)) {
-            Controllers::World::SetFreezeTime(MenuState::FreezeTime);
-        }
+        const auto drawRule = [&](XBase::FeatureCapability capability, const char* label,
+                                  bool& value, const XBase::UI::DrawFn& apply) {
+            withCapability(capability, [&] {
+                if (UI::Checkbox(label, value)) apply();
+            });
+            UI::NextColumn();
+        };
+        drawRule(XBase::FeatureCapability::WorldDisableReplay,
+            T("world.disableReplay"), MenuState::DisableReplay,
+            [&] { Controllers::World::SetDisableReplay(MenuState::DisableReplay); });
+        drawRule(XBase::FeatureCapability::WorldDisableCheats,
+            T("world.disableCheats"), MenuState::DisableCheats,
+            [&] { Controllers::World::SetDisableCheats(MenuState::DisableCheats); });
+        drawRule(XBase::FeatureCapability::WorldFasterClock,
+            T("world.fasterClock"), MenuState::FasterClock,
+            [&] { Controllers::World::SetFasterClock(MenuState::FasterClock); });
+        drawRule(XBase::FeatureCapability::WorldFreezeTime,
+            T("world.freezeTime"), MenuState::FreezeTime,
+            [&] { Controllers::World::SetFreezeTime(MenuState::FreezeTime); });
+        drawRule(XBase::FeatureCapability::WorldForbiddenAreaWanted,
+            T("world.disableForbiddenAreaWanted"), MenuState::ForbiddenAreaWanted,
+            [&] { Controllers::World::SetForbiddenAreaWanted(MenuState::ForbiddenAreaWanted); });
+        drawRule(XBase::FeatureCapability::WorldFreePayNSpray,
+            T("world.freePayNSpray"), MenuState::FreePayNSpray,
+            [&] { Controllers::World::SetFreePayNSpray(MenuState::FreePayNSpray); });
 #ifdef GTASA
-        UI::NextColumn();
-        if (UI::Checkbox(T("world.disableForbiddenAreaWanted"), MenuState::ForbiddenAreaWanted)) {
-            Controllers::World::SetForbiddenAreaWanted(MenuState::ForbiddenAreaWanted);
-        }
-        UI::NextColumn();
-        if (UI::Checkbox(T("world.freePayNSpray"), MenuState::FreePayNSpray)) {
-            Controllers::World::SetFreePayNSpray(MenuState::FreePayNSpray);
-        }
-        UI::NextColumn();
         UI::Checkbox(T("world.solidWater"), MenuState::SolidWater);
-        if (UI::Checkbox(T("world.noWaterPhysics"), MenuState::NoWaterPhysics)) {
-            Controllers::World::SetNoWaterPhysics(MenuState::NoWaterPhysics);
-        }
+        UI::NextColumn();
 #endif
+        drawRule(XBase::FeatureCapability::WorldNoWaterPhysics,
+            T("world.noWaterPhysics"), MenuState::NoWaterPhysics,
+            [&] { Controllers::World::SetNoWaterPhysics(MenuState::NoWaterPhysics); });
         UI::Columns(1);
         UI::Spacing();
         UI::PushItemWidth(150.0f);
 
-        UI::Input(T("world.daysPassed"), MenuState::DaysPassed);
-        UI::SameLine();
-        if (UI::Button(T("world.setDays"))) {
-            if (MenuState::DaysPassed < 0) MenuState::DaysPassed = 0;
-            if (MenuState::DaysPassed > 9999) MenuState::DaysPassed = 9999;
-            Controllers::World::SetDaysPassed(MenuState::DaysPassed);
-        }
-        UI::SameLine();
-        if (UI::Button(T("world.readDays"))) {
-            MenuState::DaysPassed = Controllers::World::GetDaysPassed();
-        }
+        withCapability(XBase::FeatureCapability::WorldDaysPassed, [&] {
+            UI::Input(T("world.daysPassed"), MenuState::DaysPassed);
+            UI::SameLine();
+            if (UI::Button(T("world.setDays"))) {
+                if (MenuState::DaysPassed < 0) MenuState::DaysPassed = 0;
+                if (MenuState::DaysPassed > 9999) MenuState::DaysPassed = 9999;
+                Controllers::World::SetDaysPassed(MenuState::DaysPassed);
+            }
+            UI::SameLine();
+            if (UI::Button(T("world.readDays"))) {
+                MenuState::DaysPassed = Controllers::World::GetDaysPassed();
+            }
+        });
 
-        float gravity = Controllers::World::GetGravity();
-        if (UI::Slider(T("world.gravity"), gravity, -1.0f, 1.0f, "%.3f")) {
-            Controllers::World::SetGravity(gravity);
-        }
+        withCapability(XBase::FeatureCapability::WorldGravity, [&] {
+            float gravity = Controllers::World::GetGravity();
+            if (UI::Slider(T("world.gravity"), gravity, -1.0f, 1.0f, "%.3f")) {
+                Controllers::World::SetGravity(gravity);
+            }
+        });
 
-        UI::Input(T("world.fpsLimit"), MenuState::FpsLimit);
-        UI::SameLine();
-        if (UI::Button(T("world.setFps"))) {
-            if (MenuState::FpsLimit < 1) MenuState::FpsLimit = 1;
-            if (MenuState::FpsLimit > 999) MenuState::FpsLimit = 999;
-            Controllers::World::SetFpsLimit(MenuState::FpsLimit);
-        }
-        UI::SameLine();
-        if (UI::Button(T("world.readFps"))) {
-            MenuState::FpsLimit = Controllers::World::GetFpsLimit();
-        }
+        withCapability(XBase::FeatureCapability::WorldFpsLimit, [&] {
+            UI::Input(T("world.fpsLimit"), MenuState::FpsLimit);
+            UI::SameLine();
+            if (UI::Button(T("world.setFps"))) {
+                if (MenuState::FpsLimit < 1) MenuState::FpsLimit = 1;
+                if (MenuState::FpsLimit > 999) MenuState::FpsLimit = 999;
+                Controllers::World::SetFpsLimit(MenuState::FpsLimit);
+            }
+            UI::SameLine();
+            if (UI::Button(T("world.readFps"))) {
+                MenuState::FpsLimit = Controllers::World::GetFpsLimit();
+            }
+        });
         UI::PopItemWidth();
     }
 
     if (UI::CollapsingHeader(T("world.pickup"), true)) {
+        withCapability(XBase::FeatureCapability::WorldPickups, [&] {
         UI::TextWrapped(T("world.pickupTip"));
         UI::PushItemWidth(160.0f);
         UI::Input(T("world.pickupModelId"), MenuState::PickupModelId);
@@ -147,9 +166,11 @@ void Draw() {
         if (UI::Button(T("world.updateLastPickup"))) Controllers::World::UpdateLastPickup();
         UI::SameLine();
         if (UI::Button(T("world.removeLastPickup"))) Controllers::World::RemoveLastPickup();
+        });
     }
 
     if (UI::CollapsingHeader(T("world.gameSpeed"), true)) {
+        withCapability(XBase::FeatureCapability::WorldGameSpeed, [&] {
         float speed = Controllers::World::GetGameSpeed();
         if (UI::Slider(T("world.multiplier"), speed, 0.1f, 5.0f, "%.1fx")) {
             Controllers::World::SetGameSpeed(speed);
@@ -157,6 +178,7 @@ void Draw() {
         if (UI::Button(T("world.restoreSpeed"))) {
             Controllers::World::SetGameSpeed(1.0f);
         }
+        });
     }
 
 #ifdef GTASA

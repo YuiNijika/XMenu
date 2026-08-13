@@ -92,18 +92,37 @@ namespace {
         XBase::Player::SetInfiniteSprint(MenuState::InfiniteSprint);
         if (XBase::HasCapability(XBase::FeatureCapability::PlayerKeepStuff)) {
             XBase::Player::SetKeepStuff(MenuState::KeepStuff);
+        } else {
+            MenuState::KeepStuff = false;
         }
-#ifdef GTASA
-        XBase::Player::SetNeverWanted(MenuState::NeverWanted);
-        XBase::Player::SuperJump(MenuState::MegaJump);
-        XBase::Player::SuperPunch(MenuState::MegaPunch);
-        XBase::Player::SetCycleJump(MenuState::CycleJump);
-        XBase::Player::UnderwaterBreathing(MenuState::InfiniteOxygen);
-        XBase::Player::SetNeverHungry(MenuState::NeverHungry);
-        XBase::Player::SetFastSprint(MenuState::FastSprint);
-        XBase::Player::SetSprintEverywhere(MenuState::SprintEverywhere);
-        XBase::Player::SetDrunkEffect(MenuState::DrunkEffect);
-#endif
+        const auto syncToggle = [](XBase::FeatureCapability capability, bool& state, auto&& setter) {
+            if (!XBase::HasCapability(capability)) {
+                state = false;
+                return;
+            }
+            setter(state);
+        };
+        syncToggle(XBase::FeatureCapability::PlayerNeverWanted, MenuState::NeverWanted,
+            [](bool enabled) { XBase::Player::SetNeverWanted(enabled); });
+        syncToggle(XBase::FeatureCapability::PlayerSuperJump, MenuState::MegaJump,
+            [](bool enabled) { XBase::Player::SuperJump(enabled); });
+        syncToggle(XBase::FeatureCapability::PlayerSuperPunch, MenuState::MegaPunch,
+            [](bool enabled) { XBase::Player::SuperPunch(enabled); });
+        syncToggle(XBase::FeatureCapability::PlayerCycleJump, MenuState::CycleJump,
+            [](bool enabled) { XBase::Player::SetCycleJump(enabled); });
+        syncToggle(XBase::FeatureCapability::PlayerUnderwaterBreathing, MenuState::InfiniteOxygen,
+            [](bool enabled) { XBase::Player::UnderwaterBreathing(enabled); });
+        syncToggle(XBase::FeatureCapability::PlayerNeverHungry, MenuState::NeverHungry,
+            [](bool enabled) { XBase::Player::SetNeverHungry(enabled); });
+        syncToggle(XBase::FeatureCapability::PlayerFastSprint, MenuState::FastSprint,
+            [](bool enabled) { XBase::Player::SetFastSprint(enabled); });
+        syncToggle(XBase::FeatureCapability::PlayerSprintEverywhere, MenuState::SprintEverywhere,
+            [](bool enabled) { XBase::Player::SetSprintEverywhere(enabled); });
+        syncToggle(XBase::FeatureCapability::PlayerDrunkEffect, MenuState::DrunkEffect,
+            [](bool enabled) { XBase::Player::SetDrunkEffect(enabled); });
+        if (!XBase::HasCapability(XBase::FeatureCapability::PlayerAimSkinChanger)) {
+            MenuState::AimSkinChanger = false;
+        }
         ProcessFreeFly(freeFlyActive);
     }
 
@@ -207,8 +226,8 @@ namespace {
         XBase::Player::MoveDown(distance);
     }
 
-    void SetKeepStuff(bool enable) {
-        XBase::Player::SetKeepStuff(enable);
+    bool SetKeepStuff(bool enable) {
+        return XBase::Player::SetKeepStuff(enable);
     }
 
     bool GetFreeHealthcare() {
@@ -249,11 +268,11 @@ namespace {
 #endif
     }
 
-    void MaxVehicleSkills() {
-        XBase::Player::MaxVehicleSkills();
+    bool MaxVehicleSkills() {
+        return XBase::Player::MaxVehicleSkills();
     }
 
-    void ApplyAimSkinChanger() {
-        XBase::Player::ApplyAimSkinChanger();
+    bool ApplyAimSkinChanger() {
+        return XBase::Player::ApplyAimSkinChanger();
     }
 }

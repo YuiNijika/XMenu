@@ -14,7 +14,7 @@
 #include <string>
 
 #include "app/Startup.h"
-#include "features/GameLogic.h"
+#include "controllers/BulletAssist.h"
 #include "integration/XBaseBridge.h"
 #include "ui/Menu.h"
 #include "utils/AppConfig.h"
@@ -34,8 +34,8 @@ const char* XMENU_URL = "https://gtamodx.com/mods/xmenu";
 const char* XMENU_GITHUB = "https://github.com/YuiNijika/XMenu";
 const char* XMENU_GITHUB_API = "https://api.github.com/repos/YuiNijika/XMenu/releases/latest";
 const char* XMENU_QQ_GROUP = "https://gtamodx.com/qqun";
-const char* XMENU_TECH_STACK = "C++ / DirectX 9 / Windows API";
-const char* XMENU_OPEN_SOURCE_LIBS = "Dear ImGui, kiero, MinHook, plugin-sdk";
+const char* XMENU_TECH_STACK = "C++ / XBase Runtime API";
+const char* XMENU_OPEN_SOURCE_LIBS = "XBase";
 
 namespace {
 
@@ -45,9 +45,8 @@ XBase::Hooks::DrawCallbackId xMenuDrawCallbackId;
 // -1=等待游戏初始化，0=配置，1=产品逻辑，2=渲染 Hook，3=收尾，4=就绪。
 int bootstrapStage = -1;
 
-void ShowD3DHookFailedMessage() {
-    XBase::Host::ShowMessage(
-        "XMenu: D3D9 Hook 初始化失败，菜单渲染不可用；GTA III/VC 请确认已安装 D3D8to9 wrapper");
+void ShowRenderBackendFailedMessage() {
+    XBase::Host::ShowMessage("XMenu: XBase 渲染后端初始化失败，菜单渲染不可用");
 }
 
 void AdvanceBootstrap() {
@@ -66,16 +65,16 @@ void AdvanceBootstrap() {
     }
 
     if (bootstrapStage == 1) {
-        Log::Info("分帧初始化[1]: GameLogic + UpdateChecker");
+        Log::Info("分帧初始化[1]: XBase + UpdateChecker");
         UpdateChecker::Start(XMENU_VERSION);
-        GameLogic::Init();
         XBaseBridge::Init();
+        Controllers::BulletAssist::Init();
         bootstrapStage = 2;
         return;
     }
 
     if (bootstrapStage == 2) {
-        Log::Info("分帧初始化[2]: D3D Hook");
+        Log::Info("分帧初始化[2]: XBase 渲染后端");
         xMenuDrawCallbackId = XBase::Hooks::RegisterDrawCallback([]() {
             Menu::Draw();
         });
@@ -83,7 +82,7 @@ void AdvanceBootstrap() {
 
         if (hookReady) {
             xMenuActive = true;
-            Log::Info("D3D Hook 初始化成功");
+            Log::Info("XBase 渲染后端初始化成功");
         } else {
             if (xMenuDrawCallbackId) {
                 XBase::Hooks::UnregisterDrawCallback(xMenuDrawCallbackId);
@@ -91,8 +90,8 @@ void AdvanceBootstrap() {
             }
             xMenuActive = false;
             XBase::Hooks::SetMenuVisible(false);
-            ShowD3DHookFailedMessage();
-            Log::Error("D3D9 Hook 初始化失败；菜单渲染不可用，脚本逻辑继续执行");
+            ShowRenderBackendFailedMessage();
+            Log::Error("XBase 渲染后端初始化失败；菜单渲染不可用，脚本逻辑继续执行");
         }
         bootstrapStage = 3;
         return;
@@ -126,7 +125,7 @@ void OnProcess() {
     if (!xMenuActive) {
         if (XMENU_DEBUG_MODE && XBase::Hooks::HadInitFailure()) {
             static unsigned int hintCooldown = 0;
-            if (hintCooldown++ % 1800 == 0) ShowD3DHookFailedMessage();
+            if (hintCooldown++ % 1800 == 0) ShowRenderBackendFailedMessage();
         }
         return;
     }
@@ -154,6 +153,7 @@ extern "C" void XMenuPayloadAttach() {
 }
 
 extern "C" void XMenuPayloadDetach() {
+    Controllers::BulletAssist::Shutdown();
     XBase::Host::Shutdown();
     XBaseBridge::Shutdown();
     if (xMenuDrawCallbackId) {

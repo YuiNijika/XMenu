@@ -1,6 +1,7 @@
 #include "Overlay.h"
 #include "Vehicle.h"
 #include <XBase/Teleport.h>
+#include <XBase/Capabilities.h>
 #include <XBase/Types.h>
 #include <XBase/UI.h>
 #include <XBase/Player.h>
@@ -90,7 +91,8 @@ namespace Controllers::Overlay {
             if (MenuState::OverlayShowFps) {
                 XBase::UI::Text(T("overlay.fps"), XBase::UI::GetFrameRate());
             }
-            if (MenuState::OverlayShowPosition) {
+            if (MenuState::OverlayShowPosition
+                && XBase::HasCapability(XBase::FeatureCapability::TeleportBasic)) {
                 XBase::Vec3 pos;
                 if (XBase::Teleport::TryGetCurrentPosition(pos)) {
                     XBase::UI::Text(T("overlay.position"), pos.x, pos.y, pos.z);

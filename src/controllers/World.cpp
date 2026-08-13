@@ -1,6 +1,7 @@
 #include "World.h"
 #include <XBase/World.h>
 #include <XBase/Cheats.h>
+#include <XBase/Capabilities.h>
 #include "ui/MenuState.h"
 #include "utils/Log.h"
 #include "utils/I18n.h"
@@ -38,6 +39,21 @@ namespace {
 }
 
 namespace Controllers::World {
+    void ProcessHost() {
+        const auto clip = [](XBase::FeatureCapability capability, bool& state) {
+            if (!XBase::HasCapability(capability)) state = false;
+        };
+        clip(XBase::FeatureCapability::WorldTime, MenuState::WorldLockTime);
+        clip(XBase::FeatureCapability::WorldWeather, MenuState::LockWeather);
+        clip(XBase::FeatureCapability::WorldDisableReplay, MenuState::DisableReplay);
+        clip(XBase::FeatureCapability::WorldDisableCheats, MenuState::DisableCheats);
+        clip(XBase::FeatureCapability::WorldFasterClock, MenuState::FasterClock);
+        clip(XBase::FeatureCapability::WorldFreezeTime, MenuState::FreezeTime);
+        clip(XBase::FeatureCapability::WorldForbiddenAreaWanted, MenuState::ForbiddenAreaWanted);
+        clip(XBase::FeatureCapability::WorldFreePayNSpray, MenuState::FreePayNSpray);
+        clip(XBase::FeatureCapability::WorldNoWaterPhysics, MenuState::NoWaterPhysics);
+    }
+
     void SetWeather(int id, bool lock) {
         XBase::World::SetWeather(id, lock);
         MenuState::LockWeather = lock;

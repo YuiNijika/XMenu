@@ -50,6 +50,13 @@ namespace Controllers::Ped {
         XBase::Ped::DeleteLastSpawned();
     }
 
+    void SetBigHead(bool enable) { XBase::Ped::SetBigHead(enable); }
+    void SetThinBody(bool enable) { XBase::Ped::SetThinBody(enable); }
+    void Process() {
+        XBase::Ped::SetBigHead(MenuState::BigHeadMode);
+        XBase::Ped::SetThinBody(MenuState::ThinBodyMode);
+    }
+
     void SetElvisEverywhere(bool enable) { XBase::Ped::SetElvisEverywhere(enable); }
     void SetEveryoneArmed(bool enable) { XBase::Ped::SetEveryoneArmed(enable); }
     void SetPedsMayhem(bool enable) { XBase::Ped::SetPedsMayhem(enable); }

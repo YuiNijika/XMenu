@@ -1,14 +1,11 @@
 #include "UpdateChecker.h"
 #include "utils/AppConfig.h"
 #include "utils/Log.h"
-#include <windows.h>
-#include <urlmon.h>
+#include <XBase/Platform.h>
 #include <atomic>
 #include <cctype>
 #include <ctime>
 #include <cstdio>
-#include <fstream>
-#include <iterator>
 #include <mutex>
 #include <sstream>
 #include <string>
@@ -293,21 +290,11 @@ namespace {
     }
 
     bool DownloadText(const char* url, std::string& output, const char* label) {
-        char cachePath[MAX_PATH] = {};
-        const HRESULT result = URLDownloadToCacheFileA(nullptr, url, cachePath, MAX_PATH, 0, nullptr);
-        if (FAILED(result) || cachePath[0] == '\0') {
+        if (!XBase::Platform::DownloadText(url, output)) {
             Log::Warn(std::string("更新检查失败：无法请求 ") + label);
             return false;
         }
-
-        std::ifstream file(cachePath, std::ios::binary);
-        if (!file.is_open()) {
-            Log::Warn(std::string("更新检查失败：无法读取 ") + label + " 响应缓存");
-            return false;
-        }
-
-        output.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
-        return !output.empty();
+        return true;
     }
 
     bool TryGtamodx(std::string& latestVersion, std::string& releaseUrl) {

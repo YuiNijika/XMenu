@@ -68,27 +68,6 @@ if not exist "tools\premake5.exe" (
     goto fail
 )
 
-rem Prefer the environment variable, then fall back to nearby plugin-sdk folders.
-if "%PLUGIN_SDK_DIR%"=="" (
-    if exist "..\plugin-sdk\" (
-        set "PLUGIN_SDK_DIR=%~dp0..\plugin-sdk"
-        echo [Info] Auto-detected PLUGIN_SDK_DIR=!PLUGIN_SDK_DIR!
-    ) else if exist "..\..\plugin-sdk\" (
-        set "PLUGIN_SDK_DIR=%~dp0..\..\plugin-sdk"
-        echo [Info] Auto-detected PLUGIN_SDK_DIR=!PLUGIN_SDK_DIR!
-    ) else (
-        echo [Warning] PLUGIN_SDK_DIR environment variable is not set.
-        echo Please enter the absolute path to your plugin-sdk directory.
-        echo Example: E:\GTA\dev\plugin-sdk
-        set /p PLUGIN_SDK_DIR="Path to plugin-sdk: "
-    )
-)
-
-if not exist "%PLUGIN_SDK_DIR%" (
-    echo [Error] Invalid plugin-sdk directory: %PLUGIN_SDK_DIR%
-    goto fail
-)
-
 call :resolve_toolchain
 if errorlevel 1 goto fail
 
@@ -101,32 +80,22 @@ if errorlevel 1 goto fail
 echo [Info] Resolved PlatformToolset: !PLATFORM_TOOLSET!
 echo [Info] Available PlatformToolsets: !AVAILABLE_TOOLSETS!
 
-rem XBase three-version libraries must use the same toolset as XMenu payloads.
-if not exist "..\XBase\Build.bat" (
-    echo [Error] Missing XBase build script: ..\XBase\Build.bat
+rem XMenu consumes the staged XBase Release SDK only.
+if /i not "%CONFIG%"=="Release" (
+    echo [Error] Local XBase SDK currently contains Release libraries only.
+    echo [Error] Build XBase Debug and stage it separately before using Debug.
     goto fail
 )
-call "..\XBase\Build.bat" %CONFIG% --toolset !PLATFORM_TOOLSET! --no-pause
-if errorlevel 1 (
-    echo [Error] XBase three-version prerequisite build failed.
+for %%T in (XBaseBootstrap XBasePayloadEntry XBaseSA XBaseVC XBaseIII) do (
+    if not exist "lib\%%T.lib" (
+        echo [Error] Missing local XBase SDK library: lib\%%T.lib
+        goto fail
+    )
+)
+if not exist "include\XBase\XBase.h" (
+    echo [Error] Missing local XBase SDK headers: include\XBase\XBase.h
     goto fail
 )
-if not exist "..\XBase\build\bin\%CONFIG%\XBaseSA.lib" (
-    echo [Error] Expected XBaseSA library was not produced.
-    goto fail
-)
-if not exist "..\XBase\build\bin\%CONFIG%\XBaseVC.lib" (
-    echo [Error] Expected XBaseVC library was not produced.
-    goto fail
-)
-if not exist "..\XBase\build\bin\%CONFIG%\XBaseIII.lib" (
-    echo [Error] Expected XBaseIII library was not produced.
-    goto fail
-)
-
-rem Normalize to absolute path; plugin-sdk vcxproj OutDir uses $(PLUGIN_SDK_DIR)
-for %%I in ("%PLUGIN_SDK_DIR%") do set "PLUGIN_SDK_DIR=%%~fI"
-set "PLUGIN_SDK_DIR=!PLUGIN_SDK_DIR!"
 
 if not exist "build" mkdir "build"
 
@@ -135,14 +104,13 @@ if defined VS_INSTALL echo Using VS install: !VS_INSTALL!
 if defined CL_EXE echo Using cl.exe: !CL_EXE!
 echo Using PlatformToolset: !PLATFORM_TOOLSET!
 if defined AVAILABLE_TOOLSETS echo Available toolsets: !AVAILABLE_TOOLSETS!
-echo Using PLUGIN_SDK_DIR: !PLUGIN_SDK_DIR!
 echo.
 echo NOTE: Microsoft\VC\v180 is MSBuild targets path, NOT PlatformToolset.
 echo       On VS 18 the real C++ toolset is usually v145.
 echo.
 
-call :ensure_plugin_sdk_libs
-if errorlevel 1 goto fail
+echo Removing stale generated project files...
+del /Q "build\*.sln" "build\*.vcxproj" "build\*.vcxproj.filters" "build\*.vcxproj.user" >nul 2>nul
 
 echo Generating Visual Studio project files (premake action: !PREMAKE_ACTION!)...
 tools\premake5.exe !PREMAKE_ACTION!
@@ -155,6 +123,9 @@ if not exist "build\XMenu.sln" (
     echo [Error] build\XMenu.sln not found after generation.
     goto fail
 )
+
+call :validate_xbase_sdk_boundary
+if errorlevel 1 goto fail
 
 rem Prefer MSBuild property override. File rewrite is optional (IDE convenience only)
 rem and must never corrupt premake UTF-8 output.
@@ -245,88 +216,57 @@ echo.
 goto success
 
 rem ============================================================
-rem Build plugin-sdk static libs if missing.
-rem XMenu links:
-rem   SA  -> plugin.lib      (TargetName Plugin)
-rem   VC  -> plugin_vc.lib   (TargetName Plugin_VC)
-rem   III -> plugin_iii.lib  (TargetName Plugin_III)
-rem Windows paths are case-insensitive.
+rem Generated projects must consume only the staged XBase SDK.
 rem ============================================================
-:ensure_plugin_sdk_libs
-if not defined PLUGIN_SDK_DIR exit /b 1
-if not defined MSBUILD_EXE exit /b 1
-if not defined PLATFORM_TOOLSET set "PLATFORM_TOOLSET=v145"
-
-set "PSDK_LIB=!PLUGIN_SDK_DIR!\output\lib"
-if not exist "!PSDK_LIB!" mkdir "!PSDK_LIB!"
-
-set "NEED_BUILD=0"
-if /i "%CONFIG%"=="Debug" (
-    if not exist "!PSDK_LIB!\plugin_d.lib" if not exist "!PSDK_LIB!\Plugin_d.lib" set "NEED_BUILD=1"
-    if not exist "!PSDK_LIB!\plugin_vc_d.lib" if not exist "!PSDK_LIB!\Plugin_VC_d.lib" set "NEED_BUILD=1"
-    if not exist "!PSDK_LIB!\plugin_iii_d.lib" if not exist "!PSDK_LIB!\Plugin_III_d.lib" set "NEED_BUILD=1"
-    set "PSDK_CFG=zDebug"
-) else (
-    if not exist "!PSDK_LIB!\plugin.lib" if not exist "!PSDK_LIB!\Plugin.lib" set "NEED_BUILD=1"
-    if not exist "!PSDK_LIB!\plugin_vc.lib" if not exist "!PSDK_LIB!\Plugin_VC.lib" set "NEED_BUILD=1"
-    if not exist "!PSDK_LIB!\plugin_iii.lib" if not exist "!PSDK_LIB!\Plugin_III.lib" set "NEED_BUILD=1"
-    set "PSDK_CFG=Release"
-)
-
-if "!NEED_BUILD!"=="0" (
-    echo [Info] plugin-sdk libs already present in !PSDK_LIB!
-    exit /b 0
-)
-
-echo [Info] plugin-sdk libs missing. Building Plugin_SA / Plugin_VC / Plugin_III ^(!PSDK_CFG!^)...
-echo        This is a one-time (or occasional) step and may take several minutes.
-
-if not exist "!PLUGIN_SDK_DIR!\plugin_sa\Plugin_SA.vcxproj" (
-    echo [Error] Missing !PLUGIN_SDK_DIR!\plugin_sa\Plugin_SA.vcxproj
-    exit /b 1
-)
-if not exist "!PLUGIN_SDK_DIR!\plugin_vc\Plugin_VC.vcxproj" (
-    echo [Error] Missing !PLUGIN_SDK_DIR!\plugin_vc\Plugin_VC.vcxproj
-    exit /b 1
-)
-if not exist "!PLUGIN_SDK_DIR!\plugin_III\Plugin_III.vcxproj" (
-    echo [Error] Missing !PLUGIN_SDK_DIR!\plugin_III\Plugin_III.vcxproj
-    exit /b 1
-)
-
-set "PSDK_PROPS=/p:Configuration=!PSDK_CFG! /p:Platform=Win32 /p:PlatformToolset=!PLATFORM_TOOLSET! /verbosity:minimal"
-
-"!MSBUILD_EXE!" "!PLUGIN_SDK_DIR!\plugin_sa\Plugin_SA.vcxproj" /m !PSDK_PROPS!
-if errorlevel 1 (
-    echo [Error] Failed to build plugin-sdk Plugin_SA ^(!PSDK_CFG!^).
-    exit /b 1
-)
-"!MSBUILD_EXE!" "!PLUGIN_SDK_DIR!\plugin_vc\Plugin_VC.vcxproj" /m !PSDK_PROPS!
-if errorlevel 1 (
-    echo [Error] Failed to build plugin-sdk Plugin_VC ^(!PSDK_CFG!^).
-    exit /b 1
-)
-"!MSBUILD_EXE!" "!PLUGIN_SDK_DIR!\plugin_III\Plugin_III.vcxproj" /m !PSDK_PROPS!
-if errorlevel 1 (
-    echo [Error] Failed to build plugin-sdk Plugin_III ^(!PSDK_CFG!^).
-    exit /b 1
-)
-
-if /i "%CONFIG%"=="Debug" (
-    if not exist "!PSDK_LIB!\plugin_d.lib" if not exist "!PSDK_LIB!\Plugin_d.lib" (
-        echo [Error] Expected !PSDK_LIB!\Plugin_d.lib was not produced.
-        echo Ensure PLUGIN_SDK_DIR is set correctly ^(used by plugin-sdk OutDir^).
-        exit /b 1
-    )
-) else (
-    if not exist "!PSDK_LIB!\plugin.lib" if not exist "!PSDK_LIB!\Plugin.lib" (
-        echo [Error] Expected !PSDK_LIB!\Plugin.lib was not produced.
-        echo Ensure PLUGIN_SDK_DIR is set correctly ^(used by plugin-sdk OutDir^).
+:validate_xbase_sdk_boundary
+for %%P in (XMenu XMenuPayloadSA XMenuPayloadVC XMenuPayloadIII XMenuInstaller) do (
+    if not exist "build\%%P.vcxproj" (
+        echo [Error] Missing generated project: build\%%P.vcxproj
         exit /b 1
     )
 )
 
-echo [Info] plugin-sdk libs ready in !PSDK_LIB!
+rem Any generated target crossing into XBase sources or legacy SDKs is invalid.
+findstr /S /I /M /C:"..\XBase" /C:"../XBase" /C:"PayloadEntry.cpp" /C:"BootstrapEntry.cpp" /C:"plugin-sdk" /C:"plugin.h" /C:"plugin_sa" /C:"plugin_vc" /C:"plugin_III" /C:"PSDK_DIR" /C:"PLUGIN_SDK_DIR" /C:"imgui" /C:"kiero" /C:"MinHook" /C:"MH_" "build\*.vcxproj" "build\*.sln" >nul 2>nul
+if not errorlevel 1 (
+    echo [Error] Generated projects crossed the staged XBase SDK boundary.
+    exit /b 1
+)
+
+rem Installer owns its platform dependencies; loader and payloads must not.
+findstr /I /M /C:"d3d9" /C:"Direct3D" /C:"urlmon.lib" /C:"Pdh.lib" /C:"shell32.lib" /C:"ole32.lib" "build\XMenu.vcxproj" "build\XMenuPayload*.vcxproj" >nul 2>nul
+if not errorlevel 1 (
+    echo [Error] Generated runtime projects still link platform or renderer libraries directly.
+    exit /b 1
+)
+
+findstr /I /C:"XBaseBootstrap.lib" "build\XMenu.vcxproj" >nul 2>nul
+if errorlevel 1 (
+    echo [Error] Loader project does not link XBaseBootstrap.lib.
+    exit /b 1
+)
+findstr /I /C:"/WHOLEARCHIVE:XBaseBootstrap.lib" "build\XMenu.vcxproj" >nul 2>nul
+if errorlevel 1 (
+    echo [Error] Loader project does not retain the XBase bootstrap entry object.
+    exit /b 1
+)
+for %%G in (SA VC III) do (
+    findstr /I /C:"XBase%%G.lib" "build\XMenuPayload%%G.vcxproj" >nul 2>nul
+    if errorlevel 1 (
+        echo [Error] Payload project %%G does not link XBase%%G.lib.
+        exit /b 1
+    )
+    findstr /I /C:"XBasePayloadEntry.lib" "build\XMenuPayload%%G.vcxproj" >nul 2>nul
+    if errorlevel 1 (
+        echo [Error] Payload project %%G does not link XBasePayloadEntry.lib.
+        exit /b 1
+    )
+    findstr /I /C:"/WHOLEARCHIVE:XBasePayloadEntry.lib" "build\XMenuPayload%%G.vcxproj" >nul 2>nul
+    if errorlevel 1 (
+        echo [Error] Payload project %%G does not retain the XBase payload entry object.
+        exit /b 1
+    )
+)
 exit /b 0
 
 rem ============================================================

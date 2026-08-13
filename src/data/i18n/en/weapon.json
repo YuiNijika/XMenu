@@ -1,5 +1,6 @@
 {
   "weapon.playerNotReady": "Player is not ready. Wait until the save is loaded.",
+  "weapon.unavailable": "Weapon features are unavailable for this game backend.",
   "weapon.getAll": "Get all weapons",
   "weapon.dropWeapon": "Drop weapon",
   "weapon.clearWeapons": "Clear weapons",
@@ -52,6 +53,7 @@
   "weapon.cyclerGive": "Spawn",
   "weapon.safeMode": "Safe mode",
   "weapon.invalidId": "Invalid weapon ID",
+  "weapon.operationFailed": "Weapon operation failed or is unavailable",
   "weapon.cyclerEnable": "Scroll-wheel spawn all",
   "weapon.weaponGiven": "Weapon added",
   "weapon.allGiven": "All weapons added",

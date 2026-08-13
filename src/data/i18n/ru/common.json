@@ -96,6 +96,7 @@
   "command.title": "Окно команд",
   "command.run": "Выполнить",
   "command.teleported": "Телепорт выполнен",
+  "command.operationFailed": "Команда не выполнена или недоступна",
   "command.vehicleSpawned": "Транспорт создан",
   "command.vehicleSpawnFailed": "Не удалось создать транспорт",
   "command.healed": "Здоровье восстановлено",

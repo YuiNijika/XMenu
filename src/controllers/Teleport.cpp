@@ -1,6 +1,7 @@
 #include "Teleport.h"
 #include "ui/MenuState.h"
 #include "utils/I18n.h"
+#include "integration/XBaseBridge.h"
 #include <XBase/Teleport.h>
 #include <XBase/UI.h>
 
@@ -24,6 +25,13 @@ namespace {
 
 namespace Controllers::Teleport {
     void ProcessHost() {
+        if (!XBaseBridge::HasCapability(XBase::FeatureCapability::TeleportBasic)) {
+            MenuState::QuickTeleport = false;
+            MenuState::QuickTeleportMapActive = false;
+            MenuState::TeleportMarker = false;
+            MenuState::TeleportForwardHold = false;
+            return;
+        }
         if (!MenuState::QuickTeleport) {
             MenuState::QuickTeleportMapActive = false;
         }

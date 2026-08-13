@@ -1,12 +1,10 @@
 #include "I18n.h"
 #include "utils/JsonLoader.h"
 #include "utils/Log.h"
-#include <fstream>
-#include <iterator>
+#include <XBase/Platform.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <windows.h>
 
 namespace {
     using Dictionary = std::unordered_map<std::string, std::string>;
@@ -77,39 +75,16 @@ namespace {
     }
 
     bool FileExists(const std::string& path) {
-        const DWORD attributes = GetFileAttributesA(path.c_str());
-        return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
+        return XBase::Platform::FileExists(path);
     }
 
     bool DirectoryExists(const std::string& path) {
-        const DWORD attributes = GetFileAttributesA(path.c_str());
-        return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-    }
-
-    std::string DirectoryFromModule(HMODULE module) {
-        char path[MAX_PATH] = {};
-        const DWORD size = GetModuleFileNameA(module, path, MAX_PATH);
-        if (size == 0) return "";
-
-        std::string directory(path, size);
-        const std::size_t slash = directory.find_last_of("\\/");
-        if (slash == std::string::npos) return "";
-        return directory.substr(0, slash + 1);
-    }
-
-    std::string ModuleDirectory() {
-        HMODULE module = nullptr;
-        GetModuleHandleExA(
-            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-            reinterpret_cast<LPCSTR>(&ModuleDirectory),
-            &module
-        );
-        return DirectoryFromModule(module);
+        return XBase::Platform::DirectoryExists(path);
     }
 
     std::string AsiDirectory() {
-        const std::string asiDirectory = DirectoryFromModule(GetModuleHandleA("XMenu.asi"));
-        return asiDirectory.empty() ? ModuleDirectory() : asiDirectory;
+        const std::string asiDirectory = XBase::Platform::ModuleDirectory("XMenu.asi");
+        return asiDirectory.empty() ? XBase::Platform::CurrentModuleDirectory() : asiDirectory;
     }
 
     std::string NormalizeDirectory(std::string path) {
@@ -120,10 +95,9 @@ namespace {
     }
 
     bool LoadDictionaryFile(const std::string& languageCode, const std::string& path) {
-        std::ifstream file(path, std::ios::binary);
-        if (!file.is_open()) return false;
+        std::string content;
+        if (!XBase::Platform::ReadTextFile(path, content)) return false;
 
-        const std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         Dictionary& dictionary = dictionaries[languageCode];
         const std::size_t before = dictionary.size();
         ParseFlatJson(content, dictionary);
@@ -193,16 +167,8 @@ namespace {
         if (!DirectoryExists(baseDir)) return false;
 
         bool loaded = false;
-        WIN32_FIND_DATAA data = {};
-        HANDLE find = FindFirstFileA((baseDir + "*").c_str(), &data);
-        if (find != INVALID_HANDLE_VALUE) {
-            do {
-                const std::string name = data.cFileName;
-                if (name == "." || name == "..") continue;
-                if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) continue;
-                loaded = LoadLanguageIndex(baseDir + name + "\\", name) || loaded;
-            } while (FindNextFileA(find, &data));
-            FindClose(find);
+        for (const std::string& name : XBase::Platform::ListDirectories(baseDir)) {
+            loaded = LoadLanguageIndex(baseDir + name + "\\", name) || loaded;
         }
 
         loaded = LoadLegacyLanguage(baseDir, "zh", (const char*)u8"简体中文") || loaded;

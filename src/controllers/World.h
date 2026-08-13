@@ -3,6 +3,7 @@
 #include <XBase/Types.h>
 
 namespace Controllers::World {
+    void ProcessHost();
     void SetWeather(int id, bool lock);
     void ReleaseWeather();
     bool IsWeatherLocked();

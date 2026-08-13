@@ -6,6 +6,7 @@
 #include "Teleport.h"
 #include "ui/MenuState.h"
 #include "utils/I18n.h"
+#include <XBase/Capabilities.h>
 #include <XBase/Teleport.h>
 #include <XBase/UI.h>
 #include <cstdio>
@@ -31,8 +32,10 @@ namespace {
         float x = 0.0f, y = 0.0f, z = 10.0f;
         int id = 0;
         if (std::sscanf(raw, "tp %f %f %f", &x, &y, &z) == 3) {
-            XBase::Teleport::To(x, y, z);
-            AddLine(I18n::T("command.teleported"));
+            const bool supported = XBase::HasCapability(XBase::FeatureCapability::TeleportBasic);
+            AddLine(supported && XBase::Teleport::To(x, y, z)
+                ? I18n::T("command.teleported")
+                : I18n::T("command.operationFailed"));
             return;
         }
         if (std::sscanf(raw, "veh %d", &id) == 1) {
@@ -54,8 +57,9 @@ namespace {
             return;
         }
         if (std::strcmp(raw, "weapons") == 0) {
-            Controllers::Weapon::GiveAll();
-            AddLine(I18n::T("command.weaponsGranted"));
+            AddLine(Controllers::Weapon::GiveAll()
+                ? I18n::T("command.weaponsGranted")
+                : I18n::T("command.operationFailed"));
             return;
         }
         AddLine(I18n::T("command.unknown"));

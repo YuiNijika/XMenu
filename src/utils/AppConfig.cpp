@@ -1,5 +1,6 @@
 #include "AppConfig.h"
 #include <XBase/Input.h>
+#include <XBase/Capabilities.h>
 #include <XBase/Platform.h>
 #include <XBase/Runtime.h>
 #include "ui/GuiTheme.h"
@@ -10,7 +11,6 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
-#include <fstream>
 #include <sstream>
 #include <unordered_map>
 
@@ -169,9 +169,18 @@ namespace {
         }
 
         const std::string feature = id;
-        if (feature == "weapon.dualWield" || feature == "weapon.moveAim" || feature == "weapon.moveFire"
-            || feature == "weapon.autoAim"
-            || feature == "world.disableForbiddenAreaWanted" || feature == "world.freePayNSpray"
+        if (feature == "weapon.infiniteAmmo" || feature == "weapon.fastReload") {
+            return XBase::HasCapability(XBase::FeatureCapability::WeaponRuntimeEffects);
+        }
+        if (feature == "weapon.hugeDamage" || feature == "weapon.longRange" || feature == "weapon.rapidFire"
+            || feature == "weapon.fireRate" || feature == "weapon.dualWield" || feature == "weapon.moveAim"
+            || feature == "weapon.moveFire" || feature == "weapon.noSpread" || feature == "weapon.autoAim") {
+            return XBase::HasCapability(XBase::FeatureCapability::WeaponStatOverrides);
+        }
+        if (feature.rfind("visual.", 0) == 0) {
+            return XBase::HasCapability(XBase::FeatureCapability::VisualRadarOptions);
+        }
+        if (feature == "world.disableForbiddenAreaWanted" || feature == "world.freePayNSpray"
             || feature == "player.megaJump" || feature == "player.megaPunch" || feature == "player.cycleJump"
             || feature == "player.infiniteOxygen" || feature == "player.neverHungry" || feature == "player.fastSprint"
             || feature == "player.drunkEffect" || feature == "player.sprintEverywhere" || feature == "player.aimSkinChanger"
@@ -182,20 +191,34 @@ namespace {
             || feature == "ped.thinBodyMode" || feature == "ped.gangWarsActive"
             || feature == "ped.elvisEverywhere" || feature == "ped.pedsAtkRocket" || feature == "ped.gangsControl"
             || feature == "ped.gangsEverywhere"
-            || feature == "visual.squareRadar" || feature == "visual.noRadarRot" || feature == "visual.fullscreenMap"
-            || feature == "visual.unfogMap" || feature == "visual.hideAreaNames" || feature == "visual.hideVehicleNames"
-            || feature == "visual.nightVision" || feature == "visual.infrared"
             || feature == "world.solidWater" || feature == "world.noWaterPhysics") {
             return IsSaRuntime();
         }
 
-        if (feature == "weapon.pedEsp" || feature == "weapon.pedColEsp" || feature == "weapon.pedSkeleton"
-            || feature == "weapon.vehicleEsp" || feature == "weapon.vehicleColEsp"
-            || feature == "weapon.bulletTrack" || feature == "weapon.trackCivilian"
-            || feature == "weapon.trackFriend" || feature == "weapon.trackHostile"
-            || feature == "weapon.trackNeutral" || feature == "weapon.bulletHardLock"
-            || feature == "weapon.bulletThroughWalls") {
-            return IsSaRuntime() || XBase::Runtime::GetGameTarget() == XBase::Runtime::GameTarget::ViceCity;
+        if (feature == "weapon.pedEsp") {
+            return XBase::HasCapability(XBase::FeatureCapability::BulletAssistPedBounds);
+        }
+        if (feature == "weapon.pedColEsp") {
+            return XBase::HasCapability(XBase::FeatureCapability::BulletAssistPedCollision);
+        }
+        if (feature == "weapon.pedSkeleton") {
+            return XBase::HasCapability(XBase::FeatureCapability::BulletAssistPedSkeleton);
+        }
+        if (feature == "weapon.vehicleEsp") {
+            return XBase::HasCapability(XBase::FeatureCapability::BulletAssistVehicleBounds);
+        }
+        if (feature == "weapon.vehicleColEsp") {
+            return XBase::HasCapability(XBase::FeatureCapability::BulletAssistVehicleCollision);
+        }
+        if (feature == "weapon.bulletHardLock") {
+            return XBase::HasCapability(XBase::FeatureCapability::BulletAssistHardLock);
+        }
+        if (feature == "weapon.bulletThroughWalls") {
+            return XBase::HasCapability(XBase::FeatureCapability::BulletAssistThroughWalls);
+        }
+        if (feature == "weapon.bulletTrack" || feature == "weapon.trackCivilian"
+            || feature == "weapon.trackFriend" || feature == "weapon.trackHostile" || feature == "weapon.trackNeutral") {
+            return XBase::HasCapability(XBase::FeatureCapability::BulletAssistTracking);
         }
 
         if (feature == "ped.bigHeadMode") {
@@ -218,8 +241,13 @@ namespace {
         }
 
         const std::string action = id;
-        if (action == "teleport.marker" || action == "teleport.quickMap"
-            || action == "player.aimSkinChanger" || action == "player.neverWanted.toggle") {
+        if (action == "teleport.marker" || action == "teleport.quickMap" || action == "teleport.forward") {
+            return XBase::HasCapability(XBase::FeatureCapability::TeleportBasic);
+        }
+        if (action == "weapon.giveAll") {
+            return XBase::HasCapability(XBase::FeatureCapability::WeaponGive);
+        }
+        if (action == "player.aimSkinChanger" || action == "player.neverWanted.toggle") {
             return IsSaRuntime();
         }
 
@@ -1019,13 +1047,13 @@ namespace {
     bool SaveToPath(const std::string& path, const JsonLoader::JsonValue* sourceRoot = nullptr, AppConfig::TransferScope scope = AppConfig::TransferScope::All) {
         const JsonLoader::JsonValue existingRoot = sourceRoot ? *sourceRoot : JsonLoader::LoadFromFile(ReadConfigPath());
 
-        std::ofstream file(path, std::ios::binary | std::ios::trunc);
-        if (!file.is_open()) {
+        std::ostringstream output;
+        if (!WriteConfigData(output, &existingRoot, scope)
+            || !XBase::Platform::WriteTextFile(path, output.str())) {
             Log::Warn(std::string("配置文件写入失败: ") + path);
             return false;
         }
-
-        return WriteConfigData(file, &existingRoot, scope);
+        return true;
     }
 
     void ApplyMenuKey(const std::string& keyName) {

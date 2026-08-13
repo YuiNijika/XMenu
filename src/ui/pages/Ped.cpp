@@ -1,5 +1,6 @@
 #include "Ped.h"
 #include "controllers/Ped.h"
+#include "integration/XBaseBridge.h"
 #include "resources/ResourceData.h"
 #include "ui/MenuState.h"
 #include "ui/Widget.h"
@@ -64,11 +65,19 @@ namespace Pages::Ped {
             XBase::UI::Tab("ped.toggles", T("common.toggles"), [&] {
                 XBase::UI::Columns(2, nullptr, false);
 #if defined(GTASA) || defined(GTA3)
-                Checkbox(T("ped.bigHeadMode"), &MenuState::BigHeadMode);
+                XBase::UI::Disabled(!XBaseBridge::HasCapability(XBase::FeatureCapability::PedBigHead), [&] {
+                    if (Checkbox(T("ped.bigHeadMode"), &MenuState::BigHeadMode)) {
+                        Controllers::Ped::SetBigHead(MenuState::BigHeadMode);
+                    }
+                });
                 XBase::UI::NextColumn();
 #endif
 #ifdef GTASA
-                Checkbox(T("ped.thinBodyMode"), &MenuState::ThinBodyMode);
+                XBase::UI::Disabled(!XBaseBridge::HasCapability(XBase::FeatureCapability::PedThinBody), [&] {
+                    if (Checkbox(T("ped.thinBodyMode"), &MenuState::ThinBodyMode)) {
+                        Controllers::Ped::SetThinBody(MenuState::ThinBodyMode);
+                    }
+                });
                 XBase::UI::NextColumn();
                 if (Checkbox(T("ped.elvisEverywhere"), &MenuState::ElvisEverywhere)) {
                     Controllers::Ped::SetElvisEverywhere(MenuState::ElvisEverywhere);

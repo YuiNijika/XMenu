@@ -96,6 +96,7 @@
   "command.title": "命令窗口",
   "command.run": "执行",
   "command.teleported": "已传送",
+  "command.operationFailed": "命令执行失败或当前不可用",
   "command.vehicleSpawned": "载具已生成",
   "command.vehicleSpawnFailed": "载具生成失败",
   "command.healed": "血量已恢复",

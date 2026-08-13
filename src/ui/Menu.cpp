@@ -31,6 +31,7 @@
 #include "controllers/Command.h"
 #include "controllers/Teleport.h"
 #include "controllers/World.h"
+#include "controllers/Ped.h"
 #include "controllers/BulletAssist.h"
 
 extern const bool XMENU_DEBUG_MODE;
@@ -794,8 +795,8 @@ namespace Menu {
 
     void DrawDebugSettings() {
         XBase::UI::Text(T("settings.debug"));
-        XBase::UI::Text(T("settings.d3dHookStatus"), XBase::Hooks::GetStatusText());
-        XBase::UI::TextDisabled(XBase::Hooks::IsInitialized() ? T("settings.d3dHookInitialized") : T("settings.d3dHookFailed"));
+        XBase::UI::Text(T("settings.renderBackendStatus"), XBase::Hooks::GetStatusText());
+        XBase::UI::TextDisabled(XBase::Hooks::IsInitialized() ? T("settings.renderBackendInitialized") : T("settings.renderBackendFailed"));
         if (XBase::UI::Button(T("update.debugShowDialog"), {160.0f, 0.0f})) UpdateChecker::ForceDebugUpdate();
     }
 
@@ -867,9 +868,12 @@ namespace Menu {
     }
 }
 void Menu::Process() {
+    Controllers::World::ProcessHost();
     Pages::Player::Process();
     Pages::Vehicle::Process();
     Pages::Weapon::Process();
+    Pages::Visual::Process();
+    Controllers::Ped::Process();
     Controllers::Teleport::ProcessHost();
     Controllers::Command::Process();
     Controllers::Hotkeys::Process();

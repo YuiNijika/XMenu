@@ -1,7 +1,7 @@
 #include "DataManager.h"
 #include "resources/I18nResources.h"
 #include "utils/Log.h"
-#include <windows.h>
+#include <XBase/Platform.h>
 
 #ifdef GTASA
     #define GAME_DIR "sa"
@@ -23,46 +23,10 @@
     #define PEDS_RESOURCE_ID IDR_DATA_III_PEDS
 #endif
 
-namespace {
-    std::string DirectoryFromModule(HMODULE module) {
-        if (!module) {
-            return "";
-        }
-
-        char path[MAX_PATH] = {};
-        const DWORD size = GetModuleFileNameA(module, path, MAX_PATH);
-        if (size == 0) {
-            return "";
-        }
-
-        std::string directory(path, size);
-        const std::size_t slash = directory.find_last_of("\\/");
-        if (slash != std::string::npos) {
-            return directory.substr(0, slash + 1);
-        }
-        return "";
-    }
-
-    std::string XMenuModuleDirectory() {
-        const std::string asiDirectory = DirectoryFromModule(GetModuleHandleA("XMenu.asi"));
-        if (!asiDirectory.empty()) {
-            return asiDirectory;
-        }
-
-        HMODULE module = nullptr;
-        GetModuleHandleExA(
-            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-            reinterpret_cast<LPCSTR>(&XMenuModuleDirectory),
-            &module
-        );
-        return DirectoryFromModule(module);
-    }
-}
-
 namespace DataManager {
 
 std::string GetDataFilePath(const std::string& filename) {
-    const std::string directory = XMenuModuleDirectory();
+    const std::string directory = XBase::Platform::ModuleDirectory("XMenu.asi");
     if (!directory.empty()) {
         return directory + "XMenu/data/" GAME_DIR "/" + filename;
     }
@@ -72,7 +36,7 @@ std::string GetDataFilePath(const std::string& filename) {
 
 JsonLoader::JsonValue LoadDataJson(const std::string& filename, int resourceId, const char* label) {
     const std::string filepath = GetDataFilePath(filename);
-    if (GetFileAttributesA(filepath.c_str()) != INVALID_FILE_ATTRIBUTES) {
+    if (XBase::Platform::FileExists(filepath)) {
         Log::Info(std::string("尝试加载") + label + "数据: " + filepath);
         JsonLoader::JsonValue data = JsonLoader::LoadFromFile(filepath);
         if (data.type == JsonLoader::JsonValue::OBJECT) {

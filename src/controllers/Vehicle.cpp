@@ -4,11 +4,11 @@
 #include <XBase/VehicleEffects.h>
 #include <XBase/Capabilities.h>
 #include <XBase/Cheats.h>
+#include <XBase/Host.h>
 #include "integration/XBaseBridge.h"
 #include "utils/Log.h"
 #include "resources/ResourceData.h"
 #include "ui/MenuState.h"
-#include "CMessages.h"
 #include <string>
 
 namespace {
@@ -26,7 +26,7 @@ namespace {
             if (event.type == XBase::Vehicle::VehicleEventType::SpawnRejected) {
                 Log::Warn("XBase Vehicle spawn rejected: model " + std::to_string(event.modelId));
                 if (event.reason == XBase::Vehicle::SpawnFailureReason::RateLimited) {
-                    CMessages::AddMessageJumpQ("XBase: Vehicle spawn is too frequent", 1200, 0);
+                    XBase::Host::ShowMessage("XBase: Vehicle spawn is too frequent");
                     MenuState::ShowNotice("载具生成过于频繁，请稍后再试", 2.0);
                 }
             } else if (event.type == XBase::Vehicle::VehicleEventType::PreviousVehicleCleaned) {
@@ -74,7 +74,20 @@ namespace Controllers::Vehicle {
         const bool hasVehicle = static_cast<bool>(GetCurrentVehicleId());
         SyncRuntimeOptions();
 
-        XBase::Vehicle::SetTrafficDensity(MenuState::VehicleTrafficClearRadius / 100.0f);
+        const bool canTrafficDensity =
+            XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleTrafficDensity);
+        if (canTrafficDensity) {
+            XBase::Vehicle::SetTrafficDensity(MenuState::VehicleTrafficClearRadius / 100.0f);
+        } else {
+            MenuState::VehicleTrafficClearRadius = 100.0f;
+        }
+
+        const bool canAutoDrive =
+            XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleAutoDrive);
+        if (!canAutoDrive) {
+            MenuState::VehicleAutoDrive = false;
+        }
+
         if (!hasVehicle) {
             return;
         }
@@ -90,9 +103,11 @@ namespace Controllers::Vehicle {
         neonSettings.blue = MenuState::VehicleNeonColorB;
         XBase::VehicleEffects::ApplyCurrentNeon(neonSettings);
 
-        XBase::Vehicle::SetAutoDriveToWaypoint(MenuState::VehicleAutoDrive);
+        if (canAutoDrive) {
+            XBase::Vehicle::SetAutoDriveToWaypoint(MenuState::VehicleAutoDrive);
+        }
 #else
-        // VC/III auto-drive ABI remains unsupported; the UI capability disables it.
+        (void)canAutoDrive;
 #endif
     }
 
@@ -248,60 +263,60 @@ namespace Controllers::Vehicle {
         XBase::Vehicle::SetVisible(enable);
     }
 
-    bool GetAlwaysSkidMarks() {
-        return XBase::Vehicle::GetAlwaysSkidMarks();
+    bool TryGetAlwaysSkidMarks(bool& value) {
+        return XBase::Vehicle::TryGetAlwaysSkidMarks(value);
     }
 
-    void SetAlwaysSkidMarks(bool enable) {
-        XBase::Vehicle::SetAlwaysSkidMarks(enable);
+    bool SetAlwaysSkidMarks(bool enable) {
+        return XBase::Vehicle::SetAlwaysSkidMarks(enable);
     }
 
-    bool GetDisableParticles() {
-        return XBase::Vehicle::GetDisableParticles();
+    bool TryGetDisableParticles(bool& value) {
+        return XBase::Vehicle::TryGetDisableParticles(value);
     }
 
-    void SetDisableParticles(bool enable) {
-        XBase::Vehicle::SetDisableParticles(enable);
+    bool SetDisableParticles(bool enable) {
+        return XBase::Vehicle::SetDisableParticles(enable);
     }
 
-    bool GetDriverTargetable() {
-        return XBase::Vehicle::GetDriverTargetable();
+    bool TryGetDriverTargetable(bool& value) {
+        return XBase::Vehicle::TryGetDriverTargetable(value);
     }
 
-    void SetDriverTargetable(bool enable) {
-        XBase::Vehicle::SetDriverTargetable(enable);
+    bool SetDriverTargetable(bool enable) {
+        return XBase::Vehicle::SetDriverTargetable(enable);
     }
 
-    bool GetHeatSeekingTargetable() {
-        return XBase::Vehicle::GetHeatSeekingTargetable();
+    bool TryGetHeatSeekingTargetable(bool& value) {
+        return XBase::Vehicle::TryGetHeatSeekingTargetable(value);
     }
 
-    void SetHeatSeekingTargetable(bool enable) {
-        XBase::Vehicle::SetHeatSeekingTargetable(enable);
+    bool SetHeatSeekingTargetable(bool enable) {
+        return XBase::Vehicle::SetHeatSeekingTargetable(enable);
     }
 
-    bool GetPetrolTankWeakPoint() {
-        return XBase::Vehicle::GetPetrolTankWeakPoint();
+    bool TryGetPetrolTankWeakPoint(bool& value) {
+        return XBase::Vehicle::TryGetPetrolTankWeakPoint(value);
     }
 
-    void SetPetrolTankWeakPoint(bool enable) {
-        XBase::Vehicle::SetPetrolTankWeakPoint(enable);
+    bool SetPetrolTankWeakPoint(bool enable) {
+        return XBase::Vehicle::SetPetrolTankWeakPoint(enable);
     }
 
-    bool GetSirenOrAlarm() {
-        return XBase::Vehicle::GetSirenOrAlarm();
+    bool TryGetSirenOrAlarm(bool& value) {
+        return XBase::Vehicle::TryGetSirenOrAlarm(value);
     }
 
-    void SetSirenOrAlarm(bool enable) {
-        XBase::Vehicle::SetSirenOrAlarm(enable);
+    bool SetSirenOrAlarm(bool enable) {
+        return XBase::Vehicle::SetSirenOrAlarm(enable);
     }
 
-    bool GetTakeLessDamage() {
-        return XBase::Vehicle::GetTakeLessDamage();
+    bool TryGetTakeLessDamage(bool& value) {
+        return XBase::Vehicle::TryGetTakeLessDamage(value);
     }
 
-    void SetTakeLessDamage(bool enable) {
-        XBase::Vehicle::SetTakeLessDamage(enable);
+    bool SetTakeLessDamage(bool enable) {
+        return XBase::Vehicle::SetTakeLessDamage(enable);
     }
 
     void BlowUpAll() {

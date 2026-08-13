@@ -221,41 +221,64 @@ namespace Pages::Vehicle {
             }
 
 #if GTASA
-            XBase::UI::Disabled(!XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleSpecialAttributes), [&] {
-            bool skidMarks = Controllers::Vehicle::GetAlwaysSkidMarks();
-            if (UI::Checkbox(T("vehicle.alwaysSkidMarks"), &skidMarks)) {
-                Controllers::Vehicle::SetAlwaysSkidMarks(skidMarks);
-            }
-            UI::SameLine();
-            bool disableParticles = Controllers::Vehicle::GetDisableParticles();
-            if (UI::Checkbox(T("vehicle.disableParticles"), &disableParticles)) {
-                Controllers::Vehicle::SetDisableParticles(disableParticles);
-            }
-            UI::SameLine();
-            bool driverTargetable = Controllers::Vehicle::GetDriverTargetable();
-            if (UI::Checkbox(T("vehicle.driverTargetable"), &driverTargetable)) {
-                Controllers::Vehicle::SetDriverTargetable(driverTargetable);
-            }
+            const auto drawVehicleAttribute = [&](XBase::FeatureCapability capability, auto&& draw) {
+                XBase::UI::Disabled(!XBaseBridge::HasCapability(capability), draw);
+            };
 
-            bool heatSeekingTargetable = Controllers::Vehicle::GetHeatSeekingTargetable();
-            if (UI::Checkbox(T("vehicle.missileTargetable"), &heatSeekingTargetable)) {
-                Controllers::Vehicle::SetHeatSeekingTargetable(heatSeekingTargetable);
-            }
+            drawVehicleAttribute(XBase::FeatureCapability::VehicleAlwaysSkidMarks, [&] {
+                bool value = false;
+                Controllers::Vehicle::TryGetAlwaysSkidMarks(value);
+                if (UI::Checkbox(T("vehicle.alwaysSkidMarks"), &value)) {
+                    Controllers::Vehicle::SetAlwaysSkidMarks(value);
+                }
+            });
             UI::SameLine();
-            bool petrolTankWeakPoint = Controllers::Vehicle::GetPetrolTankWeakPoint();
-            if (UI::Checkbox(T("vehicle.petrolTankWeakness"), &petrolTankWeakPoint)) {
-                Controllers::Vehicle::SetPetrolTankWeakPoint(petrolTankWeakPoint);
-            }
+            drawVehicleAttribute(XBase::FeatureCapability::VehicleDisableParticles, [&] {
+                bool value = false;
+                Controllers::Vehicle::TryGetDisableParticles(value);
+                if (UI::Checkbox(T("vehicle.disableParticles"), &value)) {
+                    Controllers::Vehicle::SetDisableParticles(value);
+                }
+            });
             UI::SameLine();
-            bool sirenOrAlarm = Controllers::Vehicle::GetSirenOrAlarm();
-            if (UI::Checkbox(T("vehicle.sirenAlarm"), &sirenOrAlarm)) {
-                Controllers::Vehicle::SetSirenOrAlarm(sirenOrAlarm);
-            }
+            drawVehicleAttribute(XBase::FeatureCapability::VehicleDriverTargetable, [&] {
+                bool value = false;
+                Controllers::Vehicle::TryGetDriverTargetable(value);
+                if (UI::Checkbox(T("vehicle.driverTargetable"), &value)) {
+                    Controllers::Vehicle::SetDriverTargetable(value);
+                }
+            });
+
+            drawVehicleAttribute(XBase::FeatureCapability::VehicleHeatSeekingTargetable, [&] {
+                bool value = false;
+                Controllers::Vehicle::TryGetHeatSeekingTargetable(value);
+                if (UI::Checkbox(T("vehicle.missileTargetable"), &value)) {
+                    Controllers::Vehicle::SetHeatSeekingTargetable(value);
+                }
+            });
             UI::SameLine();
-            bool takeLessDamage = Controllers::Vehicle::GetTakeLessDamage();
-            if (UI::Checkbox(T("vehicle.takeLessDamage"), &takeLessDamage)) {
-                Controllers::Vehicle::SetTakeLessDamage(takeLessDamage);
-            }
+            drawVehicleAttribute(XBase::FeatureCapability::VehiclePetrolTankWeakPoint, [&] {
+                bool value = false;
+                Controllers::Vehicle::TryGetPetrolTankWeakPoint(value);
+                if (UI::Checkbox(T("vehicle.petrolTankWeakness"), &value)) {
+                    Controllers::Vehicle::SetPetrolTankWeakPoint(value);
+                }
+            });
+            UI::SameLine();
+            drawVehicleAttribute(XBase::FeatureCapability::VehicleSirenOrAlarm, [&] {
+                bool value = false;
+                Controllers::Vehicle::TryGetSirenOrAlarm(value);
+                if (UI::Checkbox(T("vehicle.sirenAlarm"), &value)) {
+                    Controllers::Vehicle::SetSirenOrAlarm(value);
+                }
+            });
+            UI::SameLine();
+            drawVehicleAttribute(XBase::FeatureCapability::VehicleTakeLessDamage, [&] {
+                bool value = false;
+                Controllers::Vehicle::TryGetTakeLessDamage(value);
+                if (UI::Checkbox(T("vehicle.takeLessDamage"), &value)) {
+                    Controllers::Vehicle::SetTakeLessDamage(value);
+                }
             });
 #endif
 
@@ -323,11 +346,15 @@ namespace Pages::Vehicle {
                     UI::PopItemWidth();
                 }
 
-                if (UI::Checkbox(T("vehicle.autoDrive"), &MenuState::VehicleAutoDrive)) {
-                    if (!MenuState::VehicleAutoDrive) {
-                        Controllers::Vehicle::WarpToSeat();
-                    }
-                }
+                XBase::UI::Disabled(
+                    !XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleAutoDrive),
+                    [&] {
+                        if (UI::Checkbox(T("vehicle.autoDrive"), &MenuState::VehicleAutoDrive)) {
+                            if (!MenuState::VehicleAutoDrive) {
+                                Controllers::Vehicle::WarpToSeat();
+                            }
+                        }
+                    });
 #endif
 
                 if (UI::Checkbox(T("vehicle.lockSpeed"), &MenuState::VehicleSpeedLock)) {

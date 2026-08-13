@@ -1,5 +1,6 @@
 {
   "weapon.playerNotReady": "玩家还没准备好，稍等进档后再用。",
+  "weapon.unavailable": "当前游戏后端不支持武器功能。",
   "weapon.getAll": "获取所有武器",
   "weapon.dropWeapon": "丢出当前武器",
   "weapon.clearWeapons": "清空武器",
@@ -52,6 +53,7 @@
   "weapon.cyclerGive": "刷出",
   "weapon.safeMode": "安全模式",
   "weapon.invalidId": "无效武器 ID",
+  "weapon.operationFailed": "武器操作失败或当前不可用",
   "weapon.cyclerEnable": "启用滚轮刷出",
   "weapon.weaponGiven": "已获取武器",
   "weapon.allGiven": "已获取全部武器",

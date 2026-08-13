@@ -1,23 +1,6 @@
 -- Premake Project Generator for XMenu
 
-PSDK_DIR = os.getenv("PLUGIN_SDK_DIR")
-XBASE_DIR = "../XBase"
-XBASE_LIB_DIR = path.join(XBASE_DIR, "build/bin")
-
-if (PSDK_DIR == nil or PSDK_DIR == "") then
-    print("WARNING: PLUGIN_SDK_DIR environment variable not set in system.")
-    print("Falling back to local path relative check...")
-
-    if os.isdir("../plugin-sdk") then
-        PSDK_DIR = "../plugin-sdk"
-    elseif os.isdir("../../plugin-sdk") then
-        PSDK_DIR = "../../plugin-sdk"
-    else
-        error("PLUGIN_SDK_DIR environment variable not set, and couldn't find plugin-sdk in parent directories. Please set it in Setup.bat or System Environment Variables.")
-    end
-end
-
-print("Using Plugin-SDK directory: " .. PSDK_DIR)
+local XBASE_LIB_DIR = "lib"
 
 workspace "XMenu"
     configurations { "Debug", "Release" }
@@ -33,31 +16,27 @@ workspace "XMenu"
     toolset "msc"
     buildoptions { "/utf-8", "/FS" }
 
-    links {
-        "d3d9",
-        "Pdh",
-        "urlmon"
-    }
-
     defines {
         "IS_PLATFORM_WIN",
         "_CRT_SECURE_NO_WARNINGS",
-        "_CRT_NON_CONFORMING_SWPRINTFS",
-        "_GTA_",
-        "RW"
+        "_CRT_NON_CONFORMING_SWPRINTFS"
     }
 
-    includedirs {
-        "include/",
-        "src/",
-    }
+function configureBuildMode()
+    filter "configurations:Debug"
+        symbols "On"
+        defines { "DEBUG" }
+
+    filter "configurations:Release"
+        optimize "On"
+        defines { "NDEBUG" }
+
+    filter {}
+end
 
 function createPayloadProject(projectID)
-    upperID = string.upper(projectID)
-    pathExt = ""
-    if (projectID ~= "sa") then
-        pathExt = "_" .. projectID
-    end
+    local upperID = string.upper(projectID)
+    local gameDefine = upperID == "III" and "GTA3" or "GTA" .. upperID
 
     project ("XMenuPayload" .. upperID)
         kind "SharedLib"
@@ -66,39 +45,8 @@ function createPayloadProject(projectID)
         targetdir "build/bin/XMenu"
 
         includedirs {
-            PSDK_DIR .. "/plugin_" .. projectID .. "/",
-            PSDK_DIR .. "/plugin_" .. projectID .. "/game_" .. projectID .. "/",
-            PSDK_DIR .. "/plugin_" .. projectID .. "/game_" .. projectID .. "/enums/",
-            PSDK_DIR .. "/plugin_" .. projectID .. "/game_" .. projectID .. "/rw/",
-            PSDK_DIR .. "/shared/",
-            PSDK_DIR .. "/shared/game/",
-            XBASE_DIR .. "/include",
-            XBASE_DIR .. "/include/imgui"
-        }
-
-        if projectID == "sa" then
-            includedirs {
-                XBASE_DIR .. "/include"
-            }
-            libdirs {
-                path.join(XBASE_LIB_DIR, "%{cfg.buildcfg}")
-            }
-            links {
-                "XBaseSA"
-            }
-        elseif projectID == "vc" then
-            includedirs { XBASE_DIR .. "/include" }
-            libdirs { path.join(XBASE_LIB_DIR, "%{cfg.buildcfg}") }
-            links { "XBaseVC" }
-        elseif projectID == "iii" then
-            includedirs { XBASE_DIR .. "/include" }
-            libdirs { path.join(XBASE_LIB_DIR, "%{cfg.buildcfg}") }
-            links { "XBaseIII" }
-        end
-
-        libdirs {
-            PSDK_DIR .. "/output/lib",
-            PSDK_DIR .. "/shared/dxsdk",
+            "include",
+            "src"
         }
 
         files {
@@ -106,112 +54,48 @@ function createPayloadProject(projectID)
             "src/**.hpp",
             "src/**.c",
             "src/**.cpp",
-            "include/**.h",
-            "include/**.cpp",
-            "include/**.c",
-            path.join(XBASE_DIR, "src/PayloadEntry.cpp")
+            "src/**.rc",
+            "include/XBase/**.h"
         }
 
-        files {
-            "src/data/sa/maps.json",
-            "src/data/sa/weapons.json",
-            "src/data/sa/vehicles.json",
-            "src/data/sa/peds.json",
-            "src/data/vc/maps.json",
-            "src/data/vc/weapons.json",
-            "src/data/vc/vehicles.json",
-            "src/data/vc/peds.json",
-            "src/data/iii/maps.json",
-            "src/data/iii/weapons.json",
-            "src/data/iii/vehicles.json",
-            "src/data/iii/peds.json"
-        }
-
-        removefiles {
-            "src/core/**.h",
-            "src/core/**.cpp",
-            "src/utils/d3dhook.cpp",
-            "include/imgui/**.cpp",
-            "include/kiero/**.cpp",
-            "include/kiero/**.c"
-        }
-
-        if (upperID ~= "SA") then
-            removefiles {
-                "src/**_sa.c",
-                "src/**_sa.hpp",
-                "src/**_sa.cpp"
-            }
+        if upperID ~= "SA" then
+            removefiles { "src/**_sa.c", "src/**_sa.hpp", "src/**_sa.cpp" }
         end
-        if (upperID ~= "VC") then
-            removefiles {
-                "src/**_vc.c",
-                "src/**_vc.hpp",
-                "src/**_vc.cpp"
-            }
+        if upperID ~= "VC" then
+            removefiles { "src/**_vc.c", "src/**_vc.hpp", "src/**_vc.cpp" }
         end
-        if (upperID ~= "III") then
-            removefiles {
-                "src/**_iii.c",
-                "src/**_iii.hpp",
-                "src/**_iii.cpp"
-            }
+        if upperID ~= "III" then
+            removefiles { "src/**_iii.c", "src/**_iii.hpp", "src/**_iii.cpp" }
         end
 
-        if upperID == "III" then
-            upperID = "3"
+        defines { gameDefine }
+        libdirs { XBASE_LIB_DIR }
+
+        if projectID == "sa" then
+            links { "XBaseSA" }
+        elseif projectID == "vc" then
+            links { "XBaseVC" }
+        else
+            links { "XBaseIII" }
         end
-        defines {
-            "GTA" .. upperID,
-        }
 
-        filter "configurations:Debug"
-            symbols "On"
-            defines { "DEBUG" }
-            links {
-                "plugin" .. pathExt .. "_d.lib"
-            }
+        links { "XBasePayloadEntry" }
+        linkoptions { "/WHOLEARCHIVE:XBasePayloadEntry.lib" }
 
-        filter "configurations:Release"
-            optimize "On"
-            defines { "NDEBUG" }
-            links {
-                "plugin" .. pathExt .. ".lib"
-            }
+        configureBuildMode()
 end
 
-function createUnifiedProject()
+function createLoaderProject()
     project "XMenu"
         kind "SharedLib"
         targetname "XMenu"
         targetextension ".asi"
 
-        files {
-            path.join(XBASE_DIR, "src/BootstrapEntry.cpp")
-        }
+        libdirs { XBASE_LIB_DIR }
+        links { "XBaseBootstrap" }
+        linkoptions { "/WHOLEARCHIVE:XBaseBootstrap.lib" }
 
-        includedirs {
-            path.join(XBASE_DIR, "src")
-        }
-        libdirs {
-            path.join(XBASE_LIB_DIR, "%{cfg.buildcfg}")
-        }
-        links {
-            "XBaseBootstrap"
-        }
-        removelinks {
-            "d3d9",
-            "Pdh",
-            "urlmon"
-        }
-
-        filter "configurations:Debug"
-            symbols "On"
-            defines { "DEBUG" }
-
-        filter "configurations:Release"
-            optimize "On"
-            defines { "NDEBUG" }
+        configureBuildMode()
 end
 
 function createInstallerProject()
@@ -226,10 +110,8 @@ function createInstallerProject()
             "installer/**.rc"
         }
 
-        -- 仅由 main.cpp #include，禁止作为独立 TU 编译
-        removefiles {
-            "installer/_ui_rewrite_tail.cpp"
-        }
+        -- 仅由 main.cpp #include，禁止作为独立 TU 编译。
+        removefiles { "installer/_ui_rewrite_tail.cpp" }
 
         links {
             "urlmon",
@@ -237,17 +119,11 @@ function createInstallerProject()
             "ole32"
         }
 
-        filter "configurations:Debug"
-            symbols "On"
-            defines { "DEBUG" }
-
-        filter "configurations:Release"
-            optimize "On"
-            defines { "NDEBUG" }
+        configureBuildMode()
 end
 
 createPayloadProject("sa")
 createPayloadProject("vc")
 createPayloadProject("iii")
-createUnifiedProject()
+createLoaderProject()
 createInstallerProject()

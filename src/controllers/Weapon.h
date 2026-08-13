@@ -3,16 +3,16 @@
 namespace Controllers::Weapon {
     void Process();
     bool HasPlayer();
-    void GiveAll();
-    void ClearAll();
-    void DropWeapon();
-    void DropCurrent();
-    void RemovePickups();
-    void Give(unsigned int weaponType, unsigned int ammo);
-    void GiveModel(unsigned int weaponModel, unsigned int ammo);
-    void GiveSilent(unsigned int weaponType, unsigned int ammo);
-    void GiveModelSilent(unsigned int weaponModel, unsigned int ammo);
+    bool GiveAll();
+    bool ClearAll();
+    bool DropWeapon();
+    bool DropCurrent();
+    int RemovePickups();
+    bool Give(unsigned int weaponType, unsigned int ammo);
+    bool GiveModel(unsigned int weaponModel, unsigned int ammo);
+    bool GiveSilent(unsigned int weaponType, unsigned int ammo);
+    bool GiveModelSilent(unsigned int weaponModel, unsigned int ammo);
     bool IsValidWeaponTypeId(unsigned int weaponType);
     bool IsValidWeaponModelId(unsigned int weaponModel);
-    void ResetStats();
+    bool ResetStats();
 }

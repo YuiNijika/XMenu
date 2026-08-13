@@ -1,5 +1,6 @@
 #include "Weapon.h"
 #include "controllers/Weapon.h"
+#include "integration/XBaseBridge.h"
 #include <XBase/Runtime.h>
 #include "ui/MenuState.h"
 #include "resources/ResourceData.h"
@@ -110,6 +111,10 @@ namespace Pages::Weapon {
     }
 
     void Draw() {
+        if (!XBaseBridge::HasCapability(XBase::FeatureCapability::WeaponBasic)) {
+            XBase::UI::TextDisabled(T("weapon.unavailable"));
+            return;
+        }
         if (!Controllers::Weapon::HasPlayer()) {
             XBase::UI::Text(T("weapon.playerNotReady"));
             return;
@@ -131,53 +136,84 @@ namespace Pages::Weapon {
 
         XBase::UI::Tabs("WeaponTabs", [&] {
             XBase::UI::Tab("weapon.toggles", T("common.toggles"), [&] {
+                const bool hasRuntimeEffects = XBaseBridge::HasCapability(XBase::FeatureCapability::WeaponRuntimeEffects);
+                const bool hasStatOverrides = XBaseBridge::HasCapability(XBase::FeatureCapability::WeaponStatOverrides);
                 bool weaponStatsChanged = false;
 
                 XBase::UI::Columns(3, nullptr, false);
-                weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.highDamage"), MenuState::HugeWeaponDamage);
+                XBase::UI::Disabled(!hasStatOverrides, [&] {
+                    weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.highDamage"), MenuState::HugeWeaponDamage);
+                });
                 XBase::UI::NextColumn();
-                if (XBase::UI::Checkbox(T("weapon.fastReload"), MenuState::FastReload)) {
-                    Controllers::Weapon::ResetStats();
-                }
+                XBase::UI::Disabled(!hasRuntimeEffects, [&] {
+                    if (XBase::UI::Checkbox(T("weapon.fastReload"), MenuState::FastReload)) {
+                        Controllers::Weapon::ResetStats();
+                    }
+                });
                 XBase::UI::NextColumn();
-                XBase::UI::Checkbox(T("weapon.infiniteAmmo"), MenuState::InfiniteAmmo);
+                XBase::UI::Disabled(!hasRuntimeEffects, [&] {
+                    XBase::UI::Checkbox(T("weapon.infiniteAmmo"), MenuState::InfiniteAmmo);
+                });
                 XBase::UI::NextColumn();
-                weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.longRange"), MenuState::LongWeaponRange);
+                XBase::UI::Disabled(!hasStatOverrides, [&] {
+                    weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.longRange"), MenuState::LongWeaponRange);
+                });
 #ifdef GTASA
-                XBase::UI::NextColumn();
-                XBase::UI::Checkbox(T("weapon.autoAim"), MenuState::WeaponAutoAim);
-                XBase::UI::NextColumn();
-                weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.moveWhileAiming"), MenuState::MoveAim);
-                XBase::UI::NextColumn();
-                weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.moveWhileFiring"), MenuState::MoveFire);
-                XBase::UI::NextColumn();
-                weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.noSpread"), MenuState::NoSpread);
-                XBase::UI::NextColumn();
-                weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.rapidFire"), MenuState::RapidFire);
-                XBase::UI::NextColumn();
-                weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.dualWield"), MenuState::DualWield);
+                XBase::UI::Disabled(!hasStatOverrides, [&] {
+                    XBase::UI::NextColumn();
+                    XBase::UI::Checkbox(T("weapon.autoAim"), MenuState::WeaponAutoAim);
+                    XBase::UI::NextColumn();
+                    weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.moveWhileAiming"), MenuState::MoveAim);
+                    XBase::UI::NextColumn();
+                    weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.moveWhileFiring"), MenuState::MoveFire);
+                    XBase::UI::NextColumn();
+                    weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.noSpread"), MenuState::NoSpread);
+                    XBase::UI::NextColumn();
+                    weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.rapidFire"), MenuState::RapidFire);
+                    XBase::UI::NextColumn();
+                    weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.dualWield"), MenuState::DualWield);
+                });
 #else
                 XBase::UI::NextColumn();
-                weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.noSpread"), MenuState::NoSpread);
+                XBase::UI::Disabled(!hasStatOverrides, [&] {
+                    weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.noSpread"), MenuState::NoSpread);
+                });
 #endif
                 XBase::UI::NextColumn();
-                weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.fireRate"), MenuState::WeaponFireRateEnabled);
-#if defined(GTAVC) || defined(GTASA)
+                XBase::UI::Disabled(!hasStatOverrides, [&] {
+                    weaponStatsChanged |= XBase::UI::Checkbox(T("weapon.fireRate"), MenuState::WeaponFireRateEnabled);
+                });
+                const auto hasBulletAssist = [](XBase::FeatureCapability capability) {
+                    return XBaseBridge::HasCapability(capability);
+                };
                 XBase::UI::NextColumn();
-                XBase::UI::Checkbox(T("weapon.pedEsp"), MenuState::WeaponPedEsp);
+                XBase::UI::Disabled(!hasBulletAssist(XBase::FeatureCapability::BulletAssistPedBounds), [&] {
+                    XBase::UI::Checkbox(T("weapon.pedEsp"), MenuState::WeaponPedEsp);
+                });
                 XBase::UI::NextColumn();
-                XBase::UI::Checkbox(T("weapon.pedColEsp"), MenuState::WeaponPedColEsp);
+                XBase::UI::Disabled(!hasBulletAssist(XBase::FeatureCapability::BulletAssistPedCollision), [&] {
+                    XBase::UI::Checkbox(T("weapon.pedColEsp"), MenuState::WeaponPedColEsp);
+                });
                 XBase::UI::NextColumn();
-                XBase::UI::Checkbox(T("weapon.pedSkeleton"), MenuState::WeaponPedSkeleton);
+                XBase::UI::Disabled(!hasBulletAssist(XBase::FeatureCapability::BulletAssistPedSkeleton), [&] {
+                    XBase::UI::Checkbox(T("weapon.pedSkeleton"), MenuState::WeaponPedSkeleton);
+                });
                 XBase::UI::NextColumn();
-                XBase::UI::Checkbox(T("weapon.vehicleEsp"), MenuState::WeaponVehicleEsp);
+                XBase::UI::Disabled(!hasBulletAssist(XBase::FeatureCapability::BulletAssistVehicleBounds), [&] {
+                    XBase::UI::Checkbox(T("weapon.vehicleEsp"), MenuState::WeaponVehicleEsp);
+                });
                 XBase::UI::NextColumn();
-                XBase::UI::Checkbox(T("weapon.vehicleColEsp"), MenuState::WeaponVehicleColEsp);
+                XBase::UI::Disabled(!hasBulletAssist(XBase::FeatureCapability::BulletAssistVehicleCollision), [&] {
+                    XBase::UI::Checkbox(T("weapon.vehicleColEsp"), MenuState::WeaponVehicleColEsp);
+                });
                 XBase::UI::NextColumn();
-                XBase::UI::Checkbox(T("weapon.bulletTrack"), MenuState::WeaponBulletTrack);
+                XBase::UI::Disabled(!hasBulletAssist(XBase::FeatureCapability::BulletAssistTracking), [&] {
+                    XBase::UI::Checkbox(T("weapon.bulletTrack"), MenuState::WeaponBulletTrack);
+                });
                 XBase::UI::NextColumn();
-                XBase::UI::Checkbox(T("weapon.bulletThroughWalls"), MenuState::WeaponBulletThroughWalls);
-#endif
+                XBase::UI::Disabled(!hasBulletAssist(XBase::FeatureCapability::BulletAssistThroughWalls), [&] {
+                    XBase::UI::Checkbox(T("weapon.bulletThroughWalls"), MenuState::WeaponBulletThroughWalls);
+                });
                 XBase::UI::Columns(1);
 
                 if (MenuState::WeaponFireRateEnabled) {
@@ -195,8 +231,8 @@ namespace Pages::Weapon {
                     }
                 }
 
-#if defined(GTAVC) || defined(GTASA)
-                if (MenuState::WeaponBulletTrack) {
+                if (hasBulletAssist(XBase::FeatureCapability::BulletAssistTracking)
+                    && MenuState::WeaponBulletTrack) {
                     XBase::UI::Spacing();
                     XBase::UI::Text(T("weapon.trackFilter"));
                     XBase::UI::Columns(5, nullptr, false);
@@ -208,7 +244,9 @@ namespace Pages::Weapon {
                     XBase::UI::NextColumn();
                     XBase::UI::Checkbox(T("weapon.trackNeutral"), MenuState::WeaponTrackNeutral);
                     XBase::UI::NextColumn();
-                    XBase::UI::Checkbox(T("weapon.bulletHardLock"), MenuState::WeaponBulletHardLock);
+                    XBase::UI::Disabled(!hasBulletAssist(XBase::FeatureCapability::BulletAssistHardLock), [&] {
+                        XBase::UI::Checkbox(T("weapon.bulletHardLock"), MenuState::WeaponBulletHardLock);
+                    });
                     XBase::UI::Columns(1);
 
                     XBase::UI::Spacing();
@@ -247,7 +285,6 @@ namespace Pages::Weapon {
                         MenuState::WeaponBulletMaxTargets = 16;
                     }
                 }
-#endif
 
                 if (weaponStatsChanged) {
                     Controllers::Weapon::ResetStats();

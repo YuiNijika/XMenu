@@ -26,7 +26,7 @@ namespace Controllers::Player {
     void MoveUp(float distance);
     void MoveDown(float distance);
     void SetInfiniteSprint(bool enable);
-    void SetKeepStuff(bool enable);
+    bool SetKeepStuff(bool enable);
     bool GetFreeHealthcare();
     void SetFreeHealthcare(bool enable);
     bool GetFreeJail();
@@ -36,6 +36,6 @@ namespace Controllers::Player {
     bool ApplyClothes(int textureId, int modelId, int bodyPart);
     bool SetStat(int statId, float value);
     void MaxWeaponSkills();
-    void MaxVehicleSkills();
-    void ApplyAimSkinChanger();
+    bool MaxVehicleSkills();
+    bool ApplyAimSkinChanger();
 }

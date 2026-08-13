@@ -96,6 +96,7 @@
   "command.title": "コマンドウィンドウ",
   "command.run": "実行",
   "command.teleported": "テレポートしました",
+  "command.operationFailed": "コマンドに失敗したか、現在利用できません",
   "command.vehicleSpawned": "車両を生成しました",
   "command.vehicleSpawnFailed": "車両生成に失敗しました",
   "command.healed": "回復しました",
