@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "ValueTypes.h"
 
 namespace XBase::Theme {
@@ -68,5 +70,8 @@ ColorSet GetColors();
 
 FontId LoadFont(const char* path, float size);
 bool SetDefaultFont(FontId font);
+
+void SavePreset(const std::string& name);
+bool LoadPreset(const std::string& name);
 
 } // namespace XBase::Theme

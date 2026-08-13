@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <list>
 #include <string>
 
 #include "ValueTypes.h"
@@ -127,7 +128,11 @@ void CenterText(const char* text);
 void Separator();
 void SeparatorText(const char* label);
 void Tooltip(const char* text);
+void HelpMarker(const char* desc, bool* hold = nullptr);
 bool Button(const char* label, Vec2 size = {});
+bool StyledButton(const char* label, Vec2 size = {});
+void BeginGroupBox(const char* label, Vec2 size = {});
+void EndGroupBox();
 bool Checkbox(const char* label, bool& value);
 bool Choice(const char* label, int& selectedValue, int value);
 bool Slider(const char* label, float& value, float minValue, float maxValue, const char* format = "%.1f");
@@ -156,8 +161,19 @@ void RectFilled(Vec2 min, Vec2 max, Color color);
 void Circle(Vec2 center, float radius, Color color, float thickness = 1.0f);
 void CircleFilled(Vec2 center, float radius, Color color);
 void Text(Vec2 position, Color color, const char* text);
+
+void Arc(Vec2 center, float radius, float startAngle, float endAngle, Color color, float thickness = 1.0f);
+void Polyline(const Vec2* points, std::size_t count, Color color, float thickness = 1.0f);
 }
 
+struct NotificationSpec {
+    const char* message = "";
+    float duration = 3.0f;
+    Color color = {};
+};
+
+void Notify(NotificationSpec spec);
+void RenderNotifications(Vec2 screenPosition = {});
 void SameLine();
 void Columns(int count, const char* id = nullptr, bool border = false);
 void NextColumn();
