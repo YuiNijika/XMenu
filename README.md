@@ -65,6 +65,24 @@ XMenu 是一个面向 GTA III、GTA Vice City、GTA San Andreas 的 ASI 菜单�
 
 部分能力主要面向 SA，例如载具霓虹、自由相机、俯视相机、随机作弊、场景粒子与过场。III / VC 以各端实际可用功能为准。
 
+#### 三端能力差异
+
+| 能力 | SA | VC | III |
+| --- | :-: | :-: | :-: |
+| 玩家基础（血量 / 护甲 / 金钱 / 无敌 / 奔跑等） | ✅ | ✅ | ✅ |
+| 武器（获取 / 丢弃 / 射速 / 属性覆盖） | ✅ | ✅ | ✅ |
+| 世界（时间 / 天气 / 重力 / 游戏速度 / FPS / 冻结时间 / 快时钟 / 禁用回放与作弊） | ✅ | ✅ | ✅ |
+| 传送 | ✅ | ✅ | ✅ |
+| 视觉（HUD / 雷达 / 天气滤镜） | ✅ | ✅ | ✅ |
+| 行人（生成 / 属性 / 大头） | ✅ | ✅ | ✅ |
+| 子弹追踪 / 穿墙 | ✅ | ✅ | ✖ |
+| 行人 / 车辆碰撞线框与骨骼绘制 | ◐ | ◐ | ✖ |
+| 世界拾取（生成拾取物） | ◐ | ◐ | ◐ |
+| 玩家运行时效果 / 载具基础与配色 | ✅ | ◐ | ◐ |
+| 载具霓虹、自由 / 俯视相机、随机作弊、场景粒子与过场 | ✅ | ✖ | ✖ |
+
+> GTA III 的子弹追踪为占位；VC / III 中标记 ◐ 的能力页面可用但部分动作受限。
+
 ### 支持游戏
 
 | 游戏 | 渲染链路 | 说明 |
@@ -298,6 +316,24 @@ Author: **鼠子(YuiNijika)**
 #### San Andreas
 
 Neon, freecam, top-down camera, random cheats, and many scene tools are SA-oriented. III / VC expose what each build implements.
+
+#### Per-game capability differences
+
+| Capability | SA | VC | III |
+| --- | :-: | :-: | :-: |
+| Player basics (health / armor / money / god mode / sprint, etc.) | ✅ | ✅ | ✅ |
+| Weapon (grant / drop / fire rate / stat overrides) | ✅ | ✅ | ✅ |
+| World (time / weather / gravity / game speed / FPS / freeze time / faster clock / disable replay & cheats) | ✅ | ✅ | ✅ |
+| Teleport | ✅ | ✅ | ✅ |
+| Visual (HUD / radar / weather filter) | ✅ | ✅ | ✅ |
+| Ped (spawn / attributes / big head) | ✅ | ✅ | ✅ |
+| Bullet tracking / wallhack | ✅ | ✅ | ✖ |
+| Ped / vehicle collision wireframe & skeleton drawing | ◐ | ◐ | ✖ |
+| World pickups (spawn pickup) | ◐ | ◐ | ◐ |
+| Player runtime effects / vehicle basics & colors | ✅ | ◐ | ◐ |
+| Vehicle neon, freecam / top-down camera, random cheats, scene particles & cutscenes | ✅ | ✖ | ✖ |
+
+> GTA III bullet tracking is a stub; on VC / III, ◐ means the page is available but some actions are limited.
 
 ### Supported games
 

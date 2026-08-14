@@ -29,6 +29,8 @@
   "scene.particleListHint": "リスト項目をクリックすると、パーティクル名を入力してプレイヤー付近に即時生成します。",
   "scene.cutsceneListHint": "リスト項目をクリックすると、カットシーン名を入力して即時開始します。",
   "scene.missions": "ミッション",
+  "scene.missionIndex": "ミッション ID",
+  "scene.startMission": "ミッション開始",
   "scene.noMissions": "現在実行中のミッションはありません。",
   "scene.failMission": "現在のミッションを失敗させる"
 }

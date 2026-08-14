@@ -65,6 +65,12 @@ namespace Controllers::Scene {
         return XBase::Scene::GetMissionStatus();
     }
 
+    bool StartMission(int missionId) {
+        const bool ok = XBase::Scene::StartMission(missionId);
+        MenuState::ShowNotice(ok ? "Mission started" : "Mission unavailable", 1.8);
+        return ok;
+    }
+
     void FailMission() {
         XBase::Scene::FailMission();
     }

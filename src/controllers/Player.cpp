@@ -70,6 +70,7 @@ namespace {
     }
 }
 
+namespace Controllers::Player {
     bool GetPlayerAvailable() {
         return XBase::Player::IsAvailable();
     }

@@ -67,6 +67,21 @@ namespace Controllers::Weapon {
             XBase::Weapon::SetInfiniteAmmo(MenuState::InfiniteAmmo);
             XBase::Weapon::SetFastReload(MenuState::FastReload);
         }
+
+        if (hasStatOverrides) {
+            XBase::Weapon::StatOverrides overrides;
+            overrides.hugeDamage = MenuState::HugeWeaponDamage;
+            overrides.longRange = MenuState::LongWeaponRange;
+            overrides.rapidFire = MenuState::RapidFire;
+            overrides.dualWield = MenuState::DualWield;
+            overrides.moveAim = MenuState::MoveAim;
+            overrides.moveFire = MenuState::MoveFire;
+            overrides.noSpread = MenuState::NoSpread;
+            overrides.customFireRate = MenuState::WeaponFireRateEnabled;
+            overrides.fireRate = MenuState::WeaponFireRate;
+            overrides.autoAim = MenuState::WeaponAutoAim;
+            XBase::Weapon::SetStatOverrides(overrides);
+        }
     }
 
     bool GiveAll() {

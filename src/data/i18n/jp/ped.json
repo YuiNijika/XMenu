@@ -53,6 +53,7 @@
   "ped.gangWeaponType": "ギャング武器",
   "ped.applyGangWeapons": "ギャング武器を適用",
   "ped.pedsNoFire": "行人非射撃",
+  "ped.spawnLimits": "出現制限",
   "ped.pedsNoFireCivilians": "市民",
   "ped.pedsNoFireGangs": "ギャング",
   "ped.pedsNoFirePolice": "警察",

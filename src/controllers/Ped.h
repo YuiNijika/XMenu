@@ -19,6 +19,7 @@ namespace Controllers::Ped {
     void SetPedsAtkRocket(bool enable);
     void SetPedsRiot(bool enable);
     void SetPedsNoFire(bool enable);
+    void SetSpawnLimits(bool limitPolice, bool limitGangs, int maxPolice, int maxGangs);
     void SetSlutMagnet(bool enable);
     void SetGangsControl(bool enable);
     void SetGangsEverywhere(bool enable);

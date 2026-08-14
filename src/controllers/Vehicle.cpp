@@ -88,6 +88,36 @@ namespace Controllers::Vehicle {
             MenuState::VehicleAutoDrive = false;
         }
 
+        const bool canCheats =
+            XBaseBridge::HasCapability(XBase::Capability::Cheats);
+        if (canCheats) {
+            XBase::Cheats::FlyingCars(MenuState::VehicleFlyingCars);
+            XBase::Cheats::PerfectHandling(MenuState::VehiclePerfectHandling);
+            XBase::Cheats::GreenLights(MenuState::VehicleGreenLights);
+            XBase::Cheats::AllCarsHaveNitro(MenuState::VehicleInfNitro);
+            XBase::Cheats::BoatFly(MenuState::VehicleBoatFly);
+            XBase::Cheats::BikeFly(MenuState::VehicleBikeFly);
+            XBase::Cheats::StayOnBike(MenuState::VehicleStayOnBike);
+            XBase::Cheats::DriveWater(MenuState::VehicleDriveWater);
+            XBase::Cheats::TankMode(MenuState::VehicleTankMode);
+            XBase::Cheats::AimDrive(MenuState::VehicleAimDrive);
+            XBase::Cheats::NoDerail(MenuState::VehicleNoDerail);
+            XBase::Cheats::FlipNoBurn(MenuState::VehicleFlipNoBurn);
+        } else {
+            MenuState::VehicleFlyingCars = false;
+            MenuState::VehiclePerfectHandling = false;
+            MenuState::VehicleGreenLights = false;
+            MenuState::VehicleInfNitro = false;
+            MenuState::VehicleBoatFly = false;
+            MenuState::VehicleBikeFly = false;
+            MenuState::VehicleStayOnBike = false;
+            MenuState::VehicleDriveWater = false;
+            MenuState::VehicleTankMode = false;
+            MenuState::VehicleAimDrive = false;
+            MenuState::VehicleNoDerail = false;
+            MenuState::VehicleFlipNoBurn = false;
+        }
+
         if (!hasVehicle) {
             return;
         }

@@ -160,6 +160,29 @@ namespace Pages::Ped {
                     });
                 }
 
+                // Spawn limits
+                XBase::UI::SeparatorText(T("ped.spawnLimits"));
+                if (Checkbox(T("ped.pedsLimitPolice"), &MenuState::PedsLimitPolice)) {
+                    Controllers::Ped::SetSpawnLimits(
+                        MenuState::PedsLimitPolice,
+                        MenuState::PedsLimitGangs,
+                        MenuState::PedsMaxNearbyPolice,
+                        MenuState::PedsMaxNearbyGangs);
+                }
+                if (Checkbox(T("ped.pedsLimitGangs"), &MenuState::PedsLimitGangs)) {
+                    Controllers::Ped::SetSpawnLimits(
+                        MenuState::PedsLimitPolice,
+                        MenuState::PedsLimitGangs,
+                        MenuState::PedsMaxNearbyPolice,
+                        MenuState::PedsMaxNearbyGangs);
+                }
+                if (MenuState::PedsLimitPolice || MenuState::PedsLimitGangs) {
+                    XBase::UI::Indented([&] {
+                        InputInt(T("ped.pedsMaxNearbyPolice"), &MenuState::PedsMaxNearbyPolice);
+                        InputInt(T("ped.pedsMaxNearbyGangs"), &MenuState::PedsMaxNearbyGangs);
+                    });
+                }
+
                 });
 
             XBase::UI::Tab("ped.spawnPed", T("ped.spawnPed"), [&] {

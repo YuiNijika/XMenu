@@ -116,6 +116,17 @@ namespace Pages::Visual {
             MenuState::VisualHideVehicleNames = false;
             MenuState::VisualNightVision = false;
             MenuState::VisualInfrared = false;
+        } else {
+            XBase::Visual::RadarOptions radarOptions;
+            radarOptions.square = MenuState::VisualSquareRadar;
+            radarOptions.noRadarRot = MenuState::VisualNoRadarRot;
+            radarOptions.fullscreenMap = MenuState::VisualFullscreenMap;
+            radarOptions.unfogMap = MenuState::VisualUnfogMap;
+            radarOptions.hideAreaNames = MenuState::VisualHideAreaNames;
+            radarOptions.hideVehicleNames = MenuState::VisualHideVehicleNames;
+            radarOptions.nightVision = MenuState::VisualNightVision;
+            radarOptions.infrared = MenuState::VisualInfrared;
+            XBase::Visual::SetRadarOptions(radarOptions);
         }
     }
 

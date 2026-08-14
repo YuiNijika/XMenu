@@ -119,6 +119,7 @@ void TextWrapped(const char* format, const char* value);
 void TextWrapped(const char* format, const char* first, const char* second);
 void TextDisabled(const char* text);
 void TextDisabled(const char* format, int value);
+void TextDisabled(const char* format, int first, int second);
 void TextDisabled(const char* format, const char* value);
 void TextDisabled(const char* format, const char* first, const char* second);
 void TextDisabled(const char* format, int first, int second, int third);

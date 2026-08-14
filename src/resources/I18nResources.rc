@@ -1,10 +1,5 @@
 #include "I18nResources.h"
 
-IDR_I18N_ZH RCDATA "../data/i18n/zh.json"
-IDR_I18N_EN RCDATA "../data/i18n/en.json"
-IDR_I18N_JP RCDATA "../data/i18n/jp.json"
-IDR_I18N_RU RCDATA "../data/i18n/ru.json"
-
 IDR_DATA_SA_MAPS RCDATA "../data/sa/maps.json"
 IDR_DATA_SA_WEAPONS RCDATA "../data/sa/weapons.json"
 IDR_DATA_SA_VEHICLES RCDATA "../data/sa/vehicles.json"

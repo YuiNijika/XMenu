@@ -29,6 +29,8 @@
   "scene.particleListHint": "Нажмите элемент списка, чтобы заполнить имя частиц и сразу создать рядом с игроком.",
   "scene.cutsceneListHint": "Нажмите элемент списка, чтобы заполнить имя кат-сцены и сразу запустить.",
   "scene.missions": "Миссии",
+  "scene.missionIndex": "ID миссии",
+  "scene.startMission": "Начать миссию",
   "scene.noMissions": "Сейчас нет активной миссии.",
   "scene.failMission": "Провалить текущую миссию"
 }

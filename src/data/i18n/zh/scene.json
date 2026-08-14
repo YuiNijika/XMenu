@@ -29,6 +29,8 @@
   "scene.particleListHint": "点击列表项会填入粒子名称，并立即在玩家身边生成。",
   "scene.cutsceneListHint": "点击列表项会填入过场名称，并立即启动。",
   "scene.missions": "任务",
+  "scene.missionIndex": "任务 ID",
+  "scene.startMission": "开始任务",
   "scene.noMissions": "没有正在运行的任务。",
   "scene.failMission": "失败当前任务"
 }

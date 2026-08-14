@@ -52,6 +52,10 @@ namespace Controllers::World {
         clip(XBase::FeatureCapability::WorldForbiddenAreaWanted, MenuState::ForbiddenAreaWanted);
         clip(XBase::FeatureCapability::WorldFreePayNSpray, MenuState::FreePayNSpray);
         clip(XBase::FeatureCapability::WorldNoWaterPhysics, MenuState::NoWaterPhysics);
+        clip(XBase::FeatureCapability::WorldSolidWater, MenuState::SolidWater);
+        if (XBase::HasCapability(XBase::FeatureCapability::WorldSolidWater)) {
+            XBase::World::SetSolidWater(MenuState::SolidWater);
+        }
     }
 
     void SetWeather(int id, bool lock) {

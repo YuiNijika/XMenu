@@ -14,6 +14,7 @@ namespace {
         options.armour = MenuState::PedArmour;
         options.freeze = MenuState::PedFreeze;
         options.hostile = MenuState::PedHostile;
+        options.modelId = static_cast<unsigned int>(MenuState::PedSpawnModel < 0 ? 0 : MenuState::PedSpawnModel);
         options.weaponModel = static_cast<unsigned int>(MenuState::PedWeaponModel < 0 ? 0 : MenuState::PedWeaponModel);
         return options;
     }
@@ -55,6 +56,8 @@ namespace Controllers::Ped {
     void Process() {
         XBase::Ped::SetBigHead(MenuState::BigHeadMode);
         XBase::Ped::SetThinBody(MenuState::ThinBodyMode);
+        XBase::Ped::SetSmokingEffect(MenuState::SmokingEffect);
+        XBase::Ped::SetFliesEffect(MenuState::FliesEffect);
     }
 
     void SetElvisEverywhere(bool enable) { XBase::Ped::SetElvisEverywhere(enable); }
@@ -63,6 +66,9 @@ namespace Controllers::Ped {
     void SetPedsAtkRocket(bool enable) { XBase::Ped::SetPedsAtkRocket(enable); }
     void SetPedsRiot(bool enable) { XBase::Ped::SetPedsRiot(enable); }
     void SetPedsNoFire(bool enable) { XBase::Ped::SetNoFire(enable); }
+    void SetSpawnLimits(bool limitPolice, bool limitGangs, int maxPolice, int maxGangs) {
+        XBase::Ped::SetSpawnLimits(limitPolice, limitGangs, maxPolice, maxGangs);
+    }
     void SetSlutMagnet(bool enable) { XBase::Ped::SetSlutMagnet(enable); }
     void SetGangsControl(bool enable) { XBase::Ped::SetGangsControl(enable); }
     void SetGangsEverywhere(bool enable) { XBase::Ped::SetGangsEverywhere(enable); }

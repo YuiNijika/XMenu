@@ -25,6 +25,8 @@ void Shutdown();
 void SetNoFire(bool enable);
 bool GetNoFire();
 void SetSpawnLimits(bool limitPolice, bool limitGangs, int maxPolice, int maxGangs);
+void SetSmokingEffect(bool enable);
+void SetFliesEffect(bool enable);
 
 PedId GetLastSpawnedId();
 PedSnapshot GetLastSpawnedSnapshot();
@@ -40,6 +42,8 @@ void SetPedsMayhem(bool enable);
 bool IsPedsMayhem();
 void SetPedsAtkRocket(bool enable);
 bool IsPedsAtkRocket();
+void SetPedsRiot(bool enable);
+bool IsPedsRiot();
 void SetSlutMagnet(bool enable);
 bool IsSlutMagnet();
 void SetBigHead(bool enable);

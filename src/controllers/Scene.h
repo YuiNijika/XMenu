@@ -10,6 +10,7 @@ namespace Controllers::Scene {
     const char* GetMissionStatus();
     void RemoveAllParticles();
     void RemoveLatestParticle();
+    bool StartMission(int missionId);
     void FailMission();
     void SetFightingStyle(int styleIndex);
     void SetWalkingStyle(int styleIndex);

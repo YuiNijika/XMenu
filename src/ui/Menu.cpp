@@ -232,7 +232,7 @@ namespace Menu {
         }
 
         XBase::UI::Separator();
-        XBase::UI::TextDisabled(T("status.language"), I18n::GetLanguageName(I18n::GetLanguage()).c_str());
+        XBase::UI::TextDisabled(T("status.language"), I18n::GetLanguageName(I18n::GetLanguage()));
     }
 
     void DrawActivePage() {

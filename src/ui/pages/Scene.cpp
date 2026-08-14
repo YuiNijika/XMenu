@@ -291,6 +291,14 @@ namespace Pages::Scene {
                     !XBaseBridge::HasCapability(XBase::FeatureCapability::SceneMission), [&] {
                 XBase::UI::TextWrapped(Controllers::Scene::GetMissionStatus());
                 XBase::UI::Spacing();
+
+                UI::PushItemWidth(120);
+                UI::InputInt(T("scene.missionIndex"), &MenuState::SceneMissionIndex, 1, 1);
+                UI::PopItemWidth();
+                XBase::UI::SameLine();
+                if (UI::Button(T("scene.startMission"), 1)) {
+                    Controllers::Scene::StartMission(MenuState::SceneMissionIndex);
+                }
                 
                 if (UI::Button(T("scene.failMission"), 1)) {
                     Controllers::Scene::FailMission();

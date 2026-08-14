@@ -36,4 +36,28 @@ bool IsGreenLights();
 void Riot(bool enable);
 bool IsRiot();
 
+void BoatFly(bool enable);
+bool IsBoatFly();
+
+void DriveWater(bool enable);
+bool IsDriveWater();
+
+void TankMode(bool enable);
+bool IsTankMode();
+
+void AimDrive(bool enable);
+bool IsAimDrive();
+
+void NoDerail(bool enable);
+bool IsNoDerail();
+
+void FlipNoBurn(bool enable);
+bool IsFlipNoBurn();
+
+void StayOnBike(bool enable);
+bool IsStayOnBike();
+
+void BikeFly(bool enable);
+bool IsBikeFly();
+
 } // namespace XBase::Cheats

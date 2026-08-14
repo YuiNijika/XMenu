@@ -53,6 +53,7 @@
   "ped.gangWeaponType": "帮派武器类型",
   "ped.applyGangWeapons": "应用帮派武器",
   "ped.pedsNoFire": "行人不开枪",
+  "ped.spawnLimits": "刷新限制",
   "ped.pedsNoFireCivilians": "平民",
   "ped.pedsNoFireGangs": "帮派",
   "ped.pedsNoFirePolice": "警察",

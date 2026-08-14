@@ -29,6 +29,8 @@
   "scene.particleListHint": "Click a list entry to fill the particle name and spawn it near the player immediately.",
   "scene.cutsceneListHint": "Click a list entry to fill the cutscene name and start it immediately.",
   "scene.missions": "Missions",
+  "scene.missionIndex": "Mission ID",
+  "scene.startMission": "Start mission",
   "scene.noMissions": "No mission is currently running.",
   "scene.failMission": "Fail current mission"
 }

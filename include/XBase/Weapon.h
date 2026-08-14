@@ -2,6 +2,19 @@
 
 namespace XBase::Weapon {
 
+struct StatOverrides {
+    bool hugeDamage = false;
+    bool longRange = false;
+    bool rapidFire = false;
+    bool dualWield = false;
+    bool moveAim = false;
+    bool moveFire = false;
+    bool noSpread = false;
+    bool customFireRate = false;
+    float fireRate = 1.0f;
+    bool autoAim = false;
+};
+
 void NotifyGameInit();
 void Shutdown();
 void Process();
@@ -16,5 +29,6 @@ bool MaxWeaponSkills();
 bool SetInfiniteAmmo(bool enable);
 bool SetFastReload(bool enable);
 bool ResetStats();
+void SetStatOverrides(const StatOverrides& overrides);
 
 } // namespace XBase::Weapon

@@ -55,6 +55,7 @@ void SetFreePayNSpray(bool enable);
 bool IsFreePayNSpray();
 void SetNoWaterPhysics(bool enable);
 bool IsNoWaterPhysics();
+void SetSolidWater(bool enable);
 
 int GetDaysPassed();
 void SetDaysPassed(int days);
