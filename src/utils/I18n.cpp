@@ -3,11 +3,27 @@
 #include "utils/Log.h"
 #include <XBase/Platform.h>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
 namespace {
-    using Dictionary = std::unordered_map<std::string, std::string>;
+    // 透明哈希：让 find(key) 直接用 const char* / string_view 查找，
+    // 避免每帧构造临时 std::string（菜单绘制每帧调用大量 T()）。
+    struct TransparentStringHash {
+        using is_transparent = void;
+        std::size_t operator()(std::string_view view) const {
+            return std::hash<std::string_view>{}(view);
+        }
+        std::size_t operator()(const std::string& value) const {
+            return std::hash<std::string_view>{}(value);
+        }
+        std::size_t operator()(const char* text) const {
+            return std::hash<std::string_view>{}(text);
+        }
+    };
+
+    using Dictionary = std::unordered_map<std::string, std::string, TransparentStringHash, std::equal_to<>>;
 
     std::string currentLanguageCode = "zh";
     std::string fallbackLanguageCode = "zh";

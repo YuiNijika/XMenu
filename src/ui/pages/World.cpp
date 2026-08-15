@@ -59,7 +59,7 @@ void Draw() {
             MenuState::LockedWeatherType = weatherId;
         }
         UI::SameLine();
-        if (UI::Button(T("Apply"))) {
+        if (UI::Button(T("settings.apply"))) {
             Controllers::World::ForceWeatherNow(MenuState::LockedWeatherType);
             MenuState::LockWeather = true;
         }

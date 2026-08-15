@@ -6,6 +6,11 @@
 
 namespace XBase::Platform {
 
+// Converts between UTF-8 (internal strings) and UTF-16 (Win32 wide APIs).
+// Paths stored and logged internally are always UTF-8; convert only at Win32 boundaries.
+std::wstring Utf8ToWide(const std::string& value);
+std::string WideToUtf8(const std::wstring& value);
+
 // Shows a blocking platform error dialog.
 bool ShowError(const char* title, const char* message);
 

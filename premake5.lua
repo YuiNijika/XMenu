@@ -72,7 +72,7 @@ function createPayloadProject(projectID)
         libdirs { XBASE_LIB_DIR }
 
         if projectID == "sa" then
-            links { "XBaseSA", "Plugin" }
+            links { "XBaseSA", "PluginSA" }
         elseif projectID == "vc" then
             links { "XBaseVC", "PluginVC" }
         else
