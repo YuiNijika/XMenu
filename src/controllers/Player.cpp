@@ -81,7 +81,9 @@ namespace Controllers::Player {
 
         XBase::Player::RuntimeOptions options;
         options.godMode = MenuState::GodMode;
+#ifdef GTASA
         options.invisible = MenuState::InvisiblePlayer;
+#endif
         options.hardMode = MenuState::HardMode;
         options.autoHeal = MenuState::AutoHeal;
         options.respawnAtDeathPosition = MenuState::RespawnAtDeathPosition;

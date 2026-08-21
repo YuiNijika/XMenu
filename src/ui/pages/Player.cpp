@@ -107,10 +107,12 @@ namespace Pages::Player {
                 drawPlayerToggle(XBase::FeatureCapability::PlayerAimSkinChanger,
                     T("player.aimSkinChanger"), MenuState::AimSkinChanger);
 
+                #ifdef GTASA
                 XBase::UI::Disabled(!XBaseBridge::HasCapability(XBase::FeatureCapability::PlayerRuntimeEffects), [&] {
                     UI::Checkbox(T("player.invisible"), &MenuState::InvisiblePlayer);
                 });
                 UI::NextColumn();
+#endif
 
                 bool freeHealth = Controllers::Player::GetFreeHealthcare();
                 if (UI::Checkbox(T("player.freeHospital"), &freeHealth)) {

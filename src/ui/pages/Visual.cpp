@@ -5,10 +5,10 @@
 #include "utils/I18n.h"
 #include "utils/JsonLoader.h"
 #include "integration/XBaseBridge.h"
+#include <XBase/Platform.h>
 #include <XBase/UI.h>
 #include <XBase/Visual.h>
 #include <cstdio>
-#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -21,7 +21,6 @@ namespace {
 
     struct VisualList {
         std::vector<VisualEntry> entries;
-        std::filesystem::file_time_type lastWrite{};
         bool loaded = false;
     };
 
@@ -30,22 +29,23 @@ namespace {
     }
 
     void LoadVisuals(VisualList& list) {
-        const std::string path = DataManager::GetDataFilePath("visuals.json");
-        std::error_code ec;
-        const auto currentWrite = std::filesystem::exists(path, ec) ? std::filesystem::last_write_time(path, ec) : std::filesystem::file_time_type{};
-        if (list.loaded && !ec && currentWrite == list.lastWrite) {
+        if (list.loaded) {
             return;
         }
 
         list.loaded = true;
-        list.lastWrite = currentWrite;
         list.entries.clear();
+        const std::string path = DataManager::GetDataFilePath("visuals.json");
+        if (!XBase::Platform::FileExists(path)) {
+            return;
+        }
         const JsonLoader::JsonValue data = JsonLoader::LoadFromFile(path);
         if (data.type != JsonLoader::JsonValue::OBJECT) {
             return;
         }
 
-        for (const auto& category : JsonLoader::GetArray(data, "visuals")) {
+        const auto& categories = JsonLoader::GetArray(data, "visuals");
+        for (const auto& category : categories) {
             if (category.type != JsonLoader::JsonValue::OBJECT) {
                 continue;
             }
@@ -134,7 +134,6 @@ namespace Pages::Visual {
         const bool hasHudRadar = XBaseBridge::HasCapability(XBase::FeatureCapability::VisualHudRadar);
         const bool hasFilter = XBaseBridge::HasCapability(XBase::FeatureCapability::VisualFilter);
         const bool hasRadarOptions = XBaseBridge::HasCapability(XBase::FeatureCapability::VisualRadarOptions);
-
         XBase::UI::Disabled(!hasHudRadar, [&] {
             if (XBase::UI::Checkbox(T("visual.hud"), MenuState::VisualHud)) {
                 XBase::Visual::DisplayHud(MenuState::VisualHud);
