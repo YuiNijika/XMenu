@@ -53,6 +53,8 @@ void SetNextWindowBackgroundAlpha(float alpha);
 
 void Window(const char* id, const char* title, const DrawFn& drawFn, bool* open = nullptr, WindowFlags flags = 0);
 void Child(const char* id, const DrawFn& drawFn, Vec2 size = {}, bool border = false);
+// 不响应滚轮与滚动条的固定分区，用于侧边栏这类头尾固定的布局
+void ChildNoScroll(const char* id, const DrawFn& drawFn, Vec2 size = {}, bool border = false);
 void Disabled(bool disabled, const DrawFn& drawFn);
 void Indented(const DrawFn& drawFn, float width = 0.0f);
 void Group(const char* label, const DrawFn& drawFn, Vec2 size = {});
@@ -144,6 +146,7 @@ bool InputText(const char* label, char* value, std::size_t capacity, const char*
 bool InputTextMultiline(const char* label, char* value, std::size_t capacity, Vec2 size = {}, bool readOnly = false);
 void SetClipboardText(const char* text);
 bool Selectable(const char* label, bool selected = false, Vec2 size = {});
+bool SelectableCentered(const char* label, bool selected = false, Vec2 size = {});
 void Combo(const char* label, const char* preview, const DrawFn& drawFn);
 void FocusLastItemByDefault();
 bool MenuItem(const char* label, bool selected = false, bool enabled = true);
@@ -153,6 +156,7 @@ bool IsLastItemHovered();
 bool IsMouseDown(MouseButton button);
 Vec2 GetMousePosition();
 Vec2 GetCursorScreenPosition();
+void SetCursorScreenPos(Vec2 position);
 Vec2 GetContentAvailable();
 Vec2 GetDisplaySize();
 Rect GetCurrentWindowRect();

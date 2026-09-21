@@ -10,6 +10,8 @@
 #include "utils/Log.h"
 #include <XBase/Hooks.h>
 #include <XBase/Host.h>
+#include <XBase/Capabilities.h>
+#include "integration/XBaseBridge.h"
 #include <XBase/Input.h>
 #include <XBase/Platform.h>
 #include <XBase/UI.h>
@@ -124,9 +126,9 @@ namespace Menu {
         {Page::Scene, "tab.scene", "scene"},
         {Page::Visual, "tab.visual", "visual"},
         {Page::Teleport, "tab.teleport", "teleport"},
-        {Page::Web, "tab.web", "web"},
         {Page::Settings, "tab.settings", "settings"},
-        {Page::About, "tab.about", "about"}
+        {Page::About, "tab.about", "about"},
+        {Page::Web, "tab.web", "web"}
     };
 
     bool IsSaRuntime() {
@@ -166,7 +168,7 @@ namespace Menu {
     void DrawDebugSettings();
     void DrawAbout();
     void DrawUpdateDialog();
-    void DrawVersionBadge();
+    void DrawSidebarFooter(float footerHeight);
 
     void DrawPageHeader(const char* titleKey) {
         XBase::UI::Text(T(titleKey));
@@ -185,14 +187,54 @@ namespace Menu {
         }
     }
 
-    void DrawVersionBadge() {
+
+    // 侧边栏分三段，头尾固定，中间导航单独滚动
+    void DrawNavigation() {
+        XBase::UI::Text("XMenu");
+        XBase::UI::Spacing();
+        XBase::UI::Separator();
+        XBase::UI::Spacing();
+
+        const float footerHeight = 56.0f;
+        // 留一点余量，避免导航子区域的高度把底部信息挤出可视范围
+        const float navHeight = XBase::UI::GetContentAvailable().y - footerHeight - 8.0f;
+
+        const auto drawNavItems = [&] {
+            EnsureActivePageAvailable();
+            for (const NavItem& item : navItems) {
+                if (!IsPageAvailable(item.page)) continue;
+                char label[96] = {};
+                LabelWithStableId(label, sizeof(label), item.textKey, item.id);
+                if (XBase::UI::SelectableCentered(label, activePage == item.page, {0.0f, 34.0f})) {
+                    activePage = item.page;
+                }
+            }
+        };
+
+        if (navHeight > 96.0f) {
+            XBase::UI::Child("XMenuNav", drawNavItems, {0.0f, navHeight}, false);
+        } else {
+            drawNavItems();
+        }
+
+        DrawSidebarFooter(footerHeight);
+    }
+
+    // 语言与版本固定在侧边栏底部，更新状态放进悬浮提示
+    void DrawSidebarFooter(float footerHeight) {
+        const XBase::Rect windowRect = XBase::UI::GetCurrentWindowRect();
+        const float footerTop = windowRect.bottom - footerHeight;
+        const XBase::Vec2 cursor = XBase::UI::GetCursorScreenPosition();
+        if (footerTop > cursor.y) {
+            XBase::UI::SetCursorScreenPos({cursor.x, footerTop});
+        }
+
+        XBase::UI::Separator();
+        XBase::UI::TextDisabled(T("status.language"), I18n::GetLanguageName(I18n::GetLanguage()));
+
         const UpdateChecker::UpdateInfo info = UpdateChecker::GetUpdateInfo();
         const char* remoteVersion = info.latestVersion.empty() ? T("status.remoteUnknown") : info.latestVersion.c_str();
         const char* statusText = T("status.remoteUnknown");
-        const char* sourceText = info.sourceName.empty()
-            ? UpdateChecker::SourceDisplayName(info.source)
-            : info.sourceName.c_str();
-
         if (UpdateChecker::IsChecking()) {
             statusText = T("status.checking");
         } else if (info.status == UpdateChecker::VersionStatus::Equal) {
@@ -212,46 +254,13 @@ namespace Menu {
         tooltip += T("status.remoteVersion");
         tooltip += ": ";
         tooltip += remoteVersion;
-        tooltip += "\n";
-        tooltip += T("update.source");
-        tooltip += ": ";
-        tooltip += sourceText;
-        tooltip += "\n\n";
-        tooltip += T("update.badgeHint");
 
-        XBase::UI::SameLine();
         if (info.available) {
             XBase::UI::Text(XMENU_VERSION);
         } else {
             XBase::UI::TextDisabled(XMENU_VERSION);
         }
-        XBase::UI::SameLine();
-        if (XBase::UI::Button("?##VersionInfo", {20.0f, 0.0f})) {
-            UpdateChecker::Prompt();
-        }
         XBase::UI::Tooltip(tooltip.c_str());
-    }
-
-    void DrawNavigation() {
-        XBase::UI::Text("XMenu");
-        DrawVersionBadge();
-        XBase::UI::Spacing();
-        XBase::UI::Separator();
-        XBase::UI::Spacing();
-
-        EnsureActivePageAvailable();
-
-        for (const NavItem& item : navItems) {
-            if (!IsPageAvailable(item.page)) continue;
-            char label[96] = {};
-            LabelWithStableId(label, sizeof(label), item.textKey, item.id);
-            if (XBase::UI::Selectable(label, activePage == item.page, {0.0f, 34.0f})) {
-                activePage = item.page;
-            }
-        }
-
-        XBase::UI::Separator();
-        XBase::UI::TextDisabled(T("status.language"), I18n::GetLanguageName(I18n::GetLanguage()));
     }
 
     void DrawActivePage() {
@@ -399,6 +408,17 @@ namespace Menu {
         BaseUI::TextDisabled(T("settings.displayModeBorderlessHint"));
         if (AppConfig::GetWindowModeSetting() != static_cast<int>(XBase::Hooks::GetWindowMode())) {
             UI::TextWarning(T("settings.displayModePending"));
+        }
+
+        if (XBaseBridge::HasCapability(XBase::Capability::WebView)) {
+            BaseUI::Spacing();
+            BaseUI::Text(T("settings.webSection"));
+            BaseUI::PushItemWidth(220.0f);
+            if (BaseUI::Slider(T("web.zoom"), MenuState::WebViewZoom, 0.5f, 2.0f, "%.2fx")) {
+                XBase::WebView::SetZoom(MenuState::WebViewZoom);
+            }
+            BaseUI::PopItemWidth();
+            BaseUI::TextDisabled(T("settings.webZoomHint"));
         }
     }
 
@@ -1057,7 +1077,7 @@ void Menu::Draw() {
             XBase::UI::SetNextWindowSize({780.0f, 520.0f}, true);
             bool windowOpen = true;
             XBase::UI::Window("XMenuMainWindow", windowTitle, [&] {
-                XBase::UI::Child("XMenuSidebar", [&] { DrawNavigation(); }, {170.0f, 0.0f}, true);
+                XBase::UI::ChildNoScroll("XMenuSidebar", [&] { DrawNavigation(); }, {170.0f, 0.0f}, true);
                 XBase::UI::SameLine();
                 XBase::UI::Child("XMenuContent", [&] { DrawActivePage(); }, {0.0f, 0.0f}, true);
                 DrawUpdateDialog();

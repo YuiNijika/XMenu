@@ -66,7 +66,7 @@ namespace MenuState {
     inline int WeaponCyclerInputId = 0;
     inline bool WeaponSafeMode = true;
 
-    inline char WebViewUrl[512] = "https://gtamodx.com/mods/xmenu";
+    inline char WebViewUrl[512] = "https://gtamodx.com/";
     inline bool WebViewVisible = false;
     inline float WebViewZoom = 1.0f;
     inline bool WebTabActive = false;   // 当前是否停在网页页
