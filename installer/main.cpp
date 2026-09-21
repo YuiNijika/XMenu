@@ -1,8 +1,11 @@
 #include <windows.h>
+#include <dwmapi.h>
 #include <shlobj.h>
 #include <shellapi.h>
 #include <urlmon.h>
 #include <commctrl.h>
+#include <uxtheme.h>
+#include <atomic>
 #include <cctype>
 #include <cstdio>
 #include <cstdint>
@@ -10,6 +13,8 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <thread>
+#include <unordered_map>
 #include <vector>
 #include <ctime>
 #include <stdexcept>
@@ -18,6 +23,8 @@
 #pragma comment(lib, "shell32.lib")
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "comctl32.lib")
+#pragma comment(lib, "dwmapi.lib")
+#pragma comment(lib, "uxtheme.lib")
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
@@ -387,7 +394,7 @@ namespace {
 
     class DownloadProgressCallback final : public IBindStatusCallback {
     public:
-        using ProgressHandler = void (*)(ULONG current, ULONG total);
+        using ProgressHandler = bool (*)(ULONG current, ULONG total);
 
         explicit DownloadProgressCallback(ProgressHandler handler) : handler_(handler) {}
 
@@ -418,7 +425,9 @@ namespace {
 
         HRESULT STDMETHODCALLTYPE OnProgress(ULONG progress, ULONG progressMax, ULONG statusCode, LPCWSTR) override {
             if (handler_ && (statusCode == BINDSTATUS_DOWNLOADINGDATA || statusCode == BINDSTATUS_ENDDOWNLOADDATA)) {
-                handler_(progress, progressMax);
+                if (!handler_(progress, progressMax)) {
+                    return E_ABORT;
+                }
             }
             return S_OK;
         }
@@ -665,9 +674,11 @@ namespace {
         return file.empty() ? "" : ParentDirectory(file);
     }
 
+    int AskInstallerDialog(const wchar_t* title, const wchar_t* text, unsigned int flags);
+
     int AskOverwriteDependency(const std::string& fileName, const std::string& target) {
         const std::wstring message = L"检测到游戏根目录已有依赖：\n\n" + WideFromAnsi(target) + L"\n\n选择“是”覆盖，选择“否”跳过。";
-        return MessageBoxW(HWND_DESKTOP, message.c_str(), WideFromAnsi(fileName).c_str(), MB_ICONQUESTION | MB_YESNO | MB_DEFBUTTON2);
+        return AskInstallerDialog(WideFromAnsi(fileName).c_str(), message.c_str(), MB_ICONQUESTION | MB_YESNO | MB_DEFBUTTON2);
     }
 
     GameType DetectGameType(const std::string& gameRoot) {
@@ -958,7 +969,7 @@ namespace {
         const std::string asi = FindFirstFileByName(extractedRoot, "XMenu.asi");
         if (asi.empty() || !CopyFileEnsureDirectory(asi, JoinPath(pluginsDir, "XMenu.asi"), true)) {
             AppendInstallLog(gameRoot, "ERROR missing or failed to copy plugins\\XMenu.asi");
-            MessageBoxW(HWND_DESKTOP, L"安装失败：发布包中缺少 XMenu.asi。", InstallerTitle, MB_ICONERROR);
+            AskInstallerDialog(InstallerTitle, L"安装失败：发布包中缺少 XMenu.asi。", MB_ICONERROR | MB_OK);
             return false;
         }
         AddManifestRecord(manifestFiles, gameRoot, "plugins\\XMenu.asi");
@@ -985,6 +996,15 @@ namespace {
             } else {
                 AppendInstallLog(gameRoot, std::string("Selected payload missing in release asset: ") + payload.fileName);
             }
+        }
+
+        const std::string webViewLoader = FindFirstFileByName(extractedRoot, "WebView2Loader.dll");
+        if (!webViewLoader.empty()) {
+            CopyFileEnsureDirectory(webViewLoader, JoinPath(xmenuDir, "WebView2Loader.dll"), true);
+            AddManifestRecord(manifestFiles, gameRoot, "plugins\\XMenu\\WebView2Loader.dll");
+            AppendInstallLog(gameRoot, "Installed plugins\\XMenu\\WebView2Loader.dll");
+        } else {
+            AppendInstallLog(gameRoot, "WebView2Loader.dll not found in release asset");
         }
 
         const std::string dataDir = FindDirectoryContaining(extractedRoot, "maps.json");
@@ -1053,4 +1073,4 @@ namespace {
 
 // UI 实现：仅由 main.cpp #include，勿作为独立编译单元加入 vcxproj
 #define XMENU_INSTALLER_MAIN_CPP
-#include "_ui_rewrite_tail.cpp"
+#include "Ui.cpp"

@@ -86,6 +86,11 @@ namespace {
             return true;
         }
 
+        if (actionId == "window.toggleMode") {
+            AppConfig::CycleWindowModeSetting();
+            return true;
+        }
+
         if (actionId == "player.heal") {
             Controllers::Player::Heal();
             return true;

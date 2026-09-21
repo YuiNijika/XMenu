@@ -15,5 +15,6 @@
   "action.vehicle.unflip": "Unflip vehicle",
   "action.vehicle.stop": "Stop vehicle",
   "action.weapon.giveAll": "Give all weapons",
+  "action.window.toggleMode": "Toggle window mode",
   "action.world.toggleFreezeTime": "Freeze/resume time"
 }

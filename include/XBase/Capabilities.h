@@ -24,6 +24,7 @@ enum class Capability {
     VehicleEffects,
     Hooks,
     Ui,
+    WebView,
 };
 
 enum class FeatureCapability {

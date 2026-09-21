@@ -36,7 +36,7 @@ namespace {
                 currentCategoryKey = vehicle.category;
                 index = 0;
             }
-            
+
             bool isOpen = categoryOpen[currentCategoryKey];
             if (i == 0 || currentCategoryKey != table.entries->at(i - 1).category) {
                 if (MenuState::UseNativeMenu) {
@@ -44,7 +44,7 @@ namespace {
                 } else {
                     XBase::UI::Spacing();
                     XBase::UI::SeparatorText(translatedCategory);
-                    categoryOpen[currentCategoryKey] = true; // Always show in native panel mode
+                    categoryOpen[currentCategoryKey] = true;
                 }
             }
             isOpen = categoryOpen[currentCategoryKey];
@@ -59,77 +59,13 @@ namespace {
                 UI::SameLine();
             }
         }
+    }
 
-#ifdef GTASA
-        if (XBase::UI::CollapsingHeader(T("vehicle.paint"), true)) {
-            const bool hasVehicle = static_cast<bool>(Controllers::Vehicle::GetCurrentVehicleId());
-            if (!hasVehicle) {
-                XBase::UI::TextDisabled(T("vehicle.notInVehicle"));
-            } else {
-                bool applyCarcols = false;
-                XBase::UI::PushItemWidth(120);
-                if (XBase::UI::Input(T("vehicle.color1"), MenuState::VehicleColorPrimary)) {
-                    applyCarcols = true;
-                }
-                XBase::UI::SameLine();
-                if (XBase::UI::Input(T("vehicle.color2"), MenuState::VehicleColorSecondary)) {
-                    applyCarcols = true;
-                }
-                if (XBase::UI::Input(T("vehicle.color3"), MenuState::VehicleColorTertiary)) {
-                    applyCarcols = true;
-                }
-                XBase::UI::SameLine();
-                if (XBase::UI::Input(T("vehicle.color4"), MenuState::VehicleColorQuaternary)) {
-                    applyCarcols = true;
-                }
-                const bool canPaintjob = XBaseBridge::HasCapability(XBase::FeatureCapability::VehiclePaintjob);
-                const bool canUpgrades = XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleUpgrades);
-                XBase::UI::Disabled(!canPaintjob, [&] {
-                    XBase::UI::Input(T("vehicle.paintjob"), MenuState::VehiclePaintjob);
-                });
-                XBase::UI::SameLine();
-                XBase::UI::Disabled(!canUpgrades, [&] {
-                    XBase::UI::Input(T("vehicle.modId"), MenuState::VehicleModId);
-                });
-                XBase::UI::PopItemWidth();
-
-                if (applyCarcols) {
-                    Controllers::Vehicle::ApplyCarcols();
-                }
-                XBase::UI::Disabled(!canPaintjob && !canUpgrades, [&] {
-                    if (UI::Button(T("vehicle.applyPaintjobMod"), 2)) {
-                        Controllers::Vehicle::ApplyAppearance();
-                    }
-                });
-                XBase::UI::SameLine();
-                if (UI::Button(T("vehicle.resetColors"))) {
-                    Controllers::Vehicle::ResetColors();
-                }
-
-                UI::SpacingSeparator();
-                XBase::UI::PushItemWidth(120);
-                XBase::UI::Input(T("vehicle.doorIndex"), MenuState::VehicleDoorIndex);
-                XBase::UI::SameLine();
-                XBase::UI::Input(T("vehicle.seatIndex"), MenuState::VehicleSeatIndex);
-                XBase::UI::PopItemWidth();
-                if (UI::Button(T("vehicle.openDoor"), 3)) {
-                    Controllers::Vehicle::OpenDoor();
-                }
-                XBase::UI::SameLine();
-                const bool canPopDoors = XBaseBridge::HasCapability(XBase::FeatureCapability::VehiclePopDoors);
-                if (canPopDoors && UI::Button(T("vehicle.popDoor"), 3)) {
-                    Controllers::Vehicle::PopDoor();
-                }
-                if (!canPopDoors) {
-                    XBase::UI::TextDisabled("当前版本不支持弹门");
-                }
-                XBase::UI::SameLine();
-                if (UI::Button(T("vehicle.warpToSeat"), 3)) {
-                    Controllers::Vehicle::WarpToSeat();
-                }
-            }
+    void DrawSectionTitle(const char* key) {
+        XBase::UI::Spacing();
+        if (!MenuState::UseNativeMenu) {
+            XBase::UI::Text(T(key));
         }
-#endif
     }
 }
 
@@ -152,191 +88,219 @@ namespace Pages::Vehicle {
             Controllers::Vehicle::BlowUpAll();
         }
 
-        XBase::UI::Spacing();
-
-        if (!hasVehicle) {
-            XBase::UI::Text(T("vehicle.notInVehicle"));
-            XBase::UI::Spacing();
-        } else {
-            if (UI::Button(T("vehicle.repair"), 6)) {
-                Controllers::Vehicle::Repair();
-            }
-            XBase::UI::SameLine();
-            if (UI::Button(T("vehicle.stop"), 6)) {
-                Controllers::Vehicle::Stop();
-            }
-            XBase::UI::SameLine();
-            if (UI::Button(T("vehicle.unflip"), 6)) {
-                Controllers::Vehicle::Unflip();
-            }
-            XBase::UI::SameLine();
-            if (UI::Button(T("vehicle.start"), 6)) {
-                Controllers::Vehicle::Start();
-            }
-            XBase::UI::SameLine();
-            if (UI::Button(T("vehicle.engineOn"), 6)) {
-                Controllers::Vehicle::SetEngine(true);
-            }
-            XBase::UI::SameLine();
-            if (UI::Button(T("vehicle.engineOff"), 6)) {
-                Controllers::Vehicle::SetEngine(false);
-            }
-
-            UI::SpacingSeparator();
-            bool lights = Controllers::Vehicle::GetLights();
-            if (UI::Checkbox(T("vehicle.lights"), &lights)) {
-                Controllers::Vehicle::SetLights(lights);
-            }
-            UI::SameLine();
-            bool locked = Controllers::Vehicle::GetLocked();
-            if (UI::Checkbox(T("vehicle.lockDoors"), &locked)) {
-                Controllers::Vehicle::SetLocked(locked);
-            }
-            UI::SameLine();
-            bool visible = Controllers::Vehicle::GetVisible();
-            bool invisible = !visible;
-            if (UI::Checkbox(T("vehicle.invisible"), &invisible)) {
-                Controllers::Vehicle::SetVisible(!invisible);
-            }
-
-            XBase::Types::ProofState proofs = Controllers::Vehicle::GetProofState();
-            if (UI::Checkbox(T("proof.bullet"), &proofs.bullet)) {
-                Controllers::Vehicle::SetProofState(proofs);
-            }
-            UI::SameLine();
-            if (UI::Checkbox(T("proof.collision"), &proofs.collision)) {
-                Controllers::Vehicle::SetProofState(proofs);
-            }
-            UI::SameLine();
-            if (UI::Checkbox(T("proof.explosion"), &proofs.explosion)) {
-                Controllers::Vehicle::SetProofState(proofs);
-            }
-            UI::SameLine();
-            if (UI::Checkbox(T("proof.fire"), &proofs.fire)) {
-                Controllers::Vehicle::SetProofState(proofs);
-            }
-            UI::SameLine();
-            if (UI::Checkbox(T("proof.melee"), &proofs.melee)) {
-                Controllers::Vehicle::SetProofState(proofs);
-            }
-
-#if GTASA
-            const auto drawVehicleAttribute = [&](XBase::FeatureCapability capability, auto&& draw) {
-                XBase::UI::Disabled(!XBaseBridge::HasCapability(capability), draw);
-            };
-
-            drawVehicleAttribute(XBase::FeatureCapability::VehicleAlwaysSkidMarks, [&] {
-                bool value = false;
-                Controllers::Vehicle::TryGetAlwaysSkidMarks(value);
-                if (UI::Checkbox(T("vehicle.alwaysSkidMarks"), &value)) {
-                    Controllers::Vehicle::SetAlwaysSkidMarks(value);
-                }
-            });
-            UI::SameLine();
-            drawVehicleAttribute(XBase::FeatureCapability::VehicleDisableParticles, [&] {
-                bool value = false;
-                Controllers::Vehicle::TryGetDisableParticles(value);
-                if (UI::Checkbox(T("vehicle.disableParticles"), &value)) {
-                    Controllers::Vehicle::SetDisableParticles(value);
-                }
-            });
-            UI::SameLine();
-            drawVehicleAttribute(XBase::FeatureCapability::VehicleDriverTargetable, [&] {
-                bool value = false;
-                Controllers::Vehicle::TryGetDriverTargetable(value);
-                if (UI::Checkbox(T("vehicle.driverTargetable"), &value)) {
-                    Controllers::Vehicle::SetDriverTargetable(value);
-                }
-            });
-
-            drawVehicleAttribute(XBase::FeatureCapability::VehicleHeatSeekingTargetable, [&] {
-                bool value = false;
-                Controllers::Vehicle::TryGetHeatSeekingTargetable(value);
-                if (UI::Checkbox(T("vehicle.missileTargetable"), &value)) {
-                    Controllers::Vehicle::SetHeatSeekingTargetable(value);
-                }
-            });
-            UI::SameLine();
-            drawVehicleAttribute(XBase::FeatureCapability::VehiclePetrolTankWeakPoint, [&] {
-                bool value = false;
-                Controllers::Vehicle::TryGetPetrolTankWeakPoint(value);
-                if (UI::Checkbox(T("vehicle.petrolTankWeakness"), &value)) {
-                    Controllers::Vehicle::SetPetrolTankWeakPoint(value);
-                }
-            });
-            UI::SameLine();
-            drawVehicleAttribute(XBase::FeatureCapability::VehicleSirenOrAlarm, [&] {
-                bool value = false;
-                Controllers::Vehicle::TryGetSirenOrAlarm(value);
-                if (UI::Checkbox(T("vehicle.sirenAlarm"), &value)) {
-                    Controllers::Vehicle::SetSirenOrAlarm(value);
-                }
-            });
-            UI::SameLine();
-            drawVehicleAttribute(XBase::FeatureCapability::VehicleTakeLessDamage, [&] {
-                bool value = false;
-                Controllers::Vehicle::TryGetTakeLessDamage(value);
-                if (UI::Checkbox(T("vehicle.takeLessDamage"), &value)) {
-                    Controllers::Vehicle::SetTakeLessDamage(value);
-                }
-            });
-#endif
-
-            XBase::UI::PushItemWidth(160);
-            XBase::UI::Slider(T("vehicle.health"), vehicleHealth, 0.0f, 1000.0f, "%.0f");
-            XBase::UI::PopItemWidth();
-            UI::SameLine();
-            if (UI::Button(T("vehicle.setHealth"))) {
-                Controllers::Vehicle::SetHealth(vehicleHealth);
-            }
-            UI::SameLine();
-            if (UI::Button(T("vehicle.readHealth"))) {
-                vehicleHealth = Controllers::Vehicle::GetHealth();
-            }
+        if (UI::Button(T("vehicle.repair"), 6)) {
+            Controllers::Vehicle::Repair();
+        }
+        UI::SameLine();
+        if (UI::Button(T("vehicle.stop"), 6)) {
+            Controllers::Vehicle::Stop();
+        }
+        UI::SameLine();
+        if (UI::Button(T("vehicle.unflip"), 6)) {
+            Controllers::Vehicle::Unflip();
+        }
+        UI::SameLine();
+        if (UI::Button(T("vehicle.start"), 6)) {
+            Controllers::Vehicle::Start();
+        }
+        UI::SameLine();
+        if (UI::Button(T("vehicle.engineOn"), 6)) {
+            Controllers::Vehicle::SetEngine(true);
+        }
+        UI::SameLine();
+        if (UI::Button(T("vehicle.engineOff"), 6)) {
+            Controllers::Vehicle::SetEngine(false);
         }
 
-        XBase::UI::Spacing();
+        if (!hasVehicle) {
+            XBase::UI::Spacing();
+            XBase::UI::TextDisabled(T("vehicle.notInVehicle"));
+        }
 
-            XBase::UI::Tabs("VehicleTabs", [&] {
-                XBase::UI::Tab("VehicleToggles", T("common.toggles"), [&] {
+        UI::SpacingSeparator();
+
+        XBase::UI::Tabs("VehicleTabs", [&] {
+            XBase::UI::Tab("VehicleToggles", T("common.toggles"), [&] {
+                DrawSectionTitle("vehicle.sectionRuntime");
+                UI::Columns(4, nullptr, false);
                 UI::Checkbox(T("vehicle.noDamage"), &MenuState::VehicleNoDamage);
-                UI::SameLine();
+                UI::NextColumn();
                 UI::Checkbox(T("vehicle.autoUnflip"), &MenuState::VehicleAutoUnflip);
-                UI::SameLine();
+                UI::NextColumn();
                 UI::Checkbox(T("vehicle.heavy"), &MenuState::VehicleHeavy);
-                UI::SameLine();
+                UI::NextColumn();
                 UI::Checkbox(T("vehicle.watertight"), &MenuState::VehicleWatertight);
-                UI::SameLine();
+                UI::Columns(1);
+
+                if (hasVehicle) {
+                    DrawSectionTitle("vehicle.sectionStatus");
+                    UI::Columns(3, nullptr, false);
+                    bool lights = Controllers::Vehicle::GetLights();
+                    if (UI::Checkbox(T("vehicle.lights"), &lights)) {
+                        Controllers::Vehicle::SetLights(lights);
+                    }
+                    UI::NextColumn();
+                    bool locked = Controllers::Vehicle::GetLocked();
+                    if (UI::Checkbox(T("vehicle.lockDoors"), &locked)) {
+                        Controllers::Vehicle::SetLocked(locked);
+                    }
+                    UI::NextColumn();
+                    bool visible = Controllers::Vehicle::GetVisible();
+                    bool invisible = !visible;
+                    if (UI::Checkbox(T("vehicle.invisible"), &invisible)) {
+                        Controllers::Vehicle::SetVisible(!invisible);
+                    }
+                    UI::Columns(1);
+
+                    DrawSectionTitle("vehicle.sectionProof");
+                    XBase::Types::ProofState proofs = Controllers::Vehicle::GetProofState();
+                    UI::Columns(5, nullptr, false);
+                    if (UI::Checkbox(T("proof.bullet"), &proofs.bullet)) {
+                        Controllers::Vehicle::SetProofState(proofs);
+                    }
+                    UI::NextColumn();
+                    if (UI::Checkbox(T("proof.collision"), &proofs.collision)) {
+                        Controllers::Vehicle::SetProofState(proofs);
+                    }
+                    UI::NextColumn();
+                    if (UI::Checkbox(T("proof.explosion"), &proofs.explosion)) {
+                        Controllers::Vehicle::SetProofState(proofs);
+                    }
+                    UI::NextColumn();
+                    if (UI::Checkbox(T("proof.fire"), &proofs.fire)) {
+                        Controllers::Vehicle::SetProofState(proofs);
+                    }
+                    UI::NextColumn();
+                    if (UI::Checkbox(T("proof.melee"), &proofs.melee)) {
+                        Controllers::Vehicle::SetProofState(proofs);
+                    }
+                    UI::Columns(1);
+
+                    DrawSectionTitle("vehicle.sectionHealth");
+                    UI::PushItemWidth(200);
+                    UI::SliderFloat(T("vehicle.health"), &vehicleHealth, 0.0f, 1000.0f, "%.0f");
+                    UI::PopItemWidth();
+                    UI::SameLine();
+                    if (UI::Button(T("vehicle.setHealth"))) {
+                        Controllers::Vehicle::SetHealth(vehicleHealth);
+                    }
+                    UI::SameLine();
+                    if (UI::Button(T("vehicle.readHealth"))) {
+                        vehicleHealth = Controllers::Vehicle::GetHealth();
+                    }
+
+                    XBase::UI::Disabled(
+                        !XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleAlwaysSkidMarks)
+                            && !XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleDisableParticles)
+                            && !XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleDriverTargetable)
+                            && !XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleHeatSeekingTargetable)
+                            && !XBaseBridge::HasCapability(XBase::FeatureCapability::VehiclePetrolTankWeakPoint)
+                            && !XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleSirenOrAlarm)
+                            && !XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleTakeLessDamage),
+                        [&] {
+                    DrawSectionTitle("vehicle.sectionSpecial");
+                    const auto drawVehicleAttribute = [&](XBase::FeatureCapability capability, auto&& draw) {
+                        XBase::UI::Disabled(!XBaseBridge::HasCapability(capability), draw);
+                    };
+                    UI::Columns(4, nullptr, false);
+                    drawVehicleAttribute(XBase::FeatureCapability::VehicleAlwaysSkidMarks, [&] {
+                        bool value = false;
+                        Controllers::Vehicle::TryGetAlwaysSkidMarks(value);
+                        if (UI::Checkbox(T("vehicle.alwaysSkidMarks"), &value)) {
+                            Controllers::Vehicle::SetAlwaysSkidMarks(value);
+                        }
+                    });
+                    UI::NextColumn();
+                    drawVehicleAttribute(XBase::FeatureCapability::VehicleDisableParticles, [&] {
+                        bool value = false;
+                        Controllers::Vehicle::TryGetDisableParticles(value);
+                        if (UI::Checkbox(T("vehicle.disableParticles"), &value)) {
+                            Controllers::Vehicle::SetDisableParticles(value);
+                        }
+                    });
+                    UI::NextColumn();
+                    drawVehicleAttribute(XBase::FeatureCapability::VehicleDriverTargetable, [&] {
+                        bool value = false;
+                        Controllers::Vehicle::TryGetDriverTargetable(value);
+                        if (UI::Checkbox(T("vehicle.driverTargetable"), &value)) {
+                            Controllers::Vehicle::SetDriverTargetable(value);
+                        }
+                    });
+                    UI::NextColumn();
+                    drawVehicleAttribute(XBase::FeatureCapability::VehicleHeatSeekingTargetable, [&] {
+                        bool value = false;
+                        Controllers::Vehicle::TryGetHeatSeekingTargetable(value);
+                        if (UI::Checkbox(T("vehicle.missileTargetable"), &value)) {
+                            Controllers::Vehicle::SetHeatSeekingTargetable(value);
+                        }
+                    });
+                    UI::NextColumn();
+                    drawVehicleAttribute(XBase::FeatureCapability::VehiclePetrolTankWeakPoint, [&] {
+                        bool value = false;
+                        Controllers::Vehicle::TryGetPetrolTankWeakPoint(value);
+                        if (UI::Checkbox(T("vehicle.petrolTankWeakness"), &value)) {
+                            Controllers::Vehicle::SetPetrolTankWeakPoint(value);
+                        }
+                    });
+                    UI::NextColumn();
+                    drawVehicleAttribute(XBase::FeatureCapability::VehicleSirenOrAlarm, [&] {
+                        bool value = false;
+                        Controllers::Vehicle::TryGetSirenOrAlarm(value);
+                        if (UI::Checkbox(T("vehicle.sirenAlarm"), &value)) {
+                            Controllers::Vehicle::SetSirenOrAlarm(value);
+                        }
+                    });
+                    UI::NextColumn();
+                    drawVehicleAttribute(XBase::FeatureCapability::VehicleTakeLessDamage, [&] {
+                        bool value = false;
+                        Controllers::Vehicle::TryGetTakeLessDamage(value);
+                        if (UI::Checkbox(T("vehicle.takeLessDamage"), &value)) {
+                            Controllers::Vehicle::SetTakeLessDamage(value);
+                        }
+                    });
+                    UI::Columns(1);
+                    });
+                }
+
+                DrawSectionTitle("vehicle.sectionCheat");
+                XBase::UI::Disabled(
+                    !XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleCheats), [&] {
+                UI::Columns(4, nullptr, false);
                 UI::Checkbox(T("vehicle.flyingCars"), &MenuState::VehicleFlyingCars);
+                UI::NextColumn();
 #if defined(GTASA) || defined(GTAVC)
-                UI::SameLine();
                 UI::Checkbox(T("vehicle.boatFly"), &MenuState::VehicleBoatFly);
-#endif
-#if defined(GTASA) || defined(GTAVC)
-                UI::SameLine();
+                UI::NextColumn();
                 UI::Checkbox(T("vehicle.driveWater"), &MenuState::VehicleDriveWater);
-                UI::SameLine();
+                UI::NextColumn();
                 UI::Checkbox(T("vehicle.greenLights"), &MenuState::VehicleGreenLights);
+                UI::NextColumn();
 #endif
 #if defined(GTASA) || defined(GTA3)
-                UI::SameLine();
                 UI::Checkbox(T("vehicle.perfectHandling"), &MenuState::VehiclePerfectHandling);
+                UI::NextColumn();
 #endif
 #ifdef GTASA
-                UI::SameLine();
                 UI::Checkbox(T("vehicle.bikeFly"), &MenuState::VehicleBikeFly);
-                UI::SameLine();
+                UI::NextColumn();
                 UI::Checkbox(T("vehicle.stayOnBike"), &MenuState::VehicleStayOnBike);
-                UI::SameLine();
+                UI::NextColumn();
                 UI::Checkbox(T("vehicle.tankMode"), &MenuState::VehicleTankMode);
-                UI::SameLine();
+                UI::NextColumn();
                 UI::Checkbox(T("vehicle.aimDrive"), &MenuState::VehicleAimDrive);
-                UI::SameLine();
+                UI::NextColumn();
                 UI::Checkbox(T("vehicle.noDerail"), &MenuState::VehicleNoDerail);
-                UI::SameLine();
+                UI::NextColumn();
                 UI::Checkbox(T("vehicle.flipNoBurn"), &MenuState::VehicleFlipNoBurn);
-                UI::SameLine();
+                UI::NextColumn();
                 UI::Checkbox(T("vehicle.infNitro"), &MenuState::VehicleInfNitro);
+                UI::NextColumn();
+#endif
+                UI::Columns(1);
+                });
+
+#ifdef GTASA
+                DrawSectionTitle("vehicle.sectionEffect");
                 UI::Checkbox(T("vehicle.neon"), &MenuState::VehicleNeon);
                 if (MenuState::VehicleNeon) {
                     UI::PushItemWidth(200);
@@ -345,7 +309,6 @@ namespace Pages::Vehicle {
                     UI::SliderInt(T("vehicle.neonB"), &MenuState::VehicleNeonColorB, 0, 255);
                     UI::PopItemWidth();
                 }
-
                 XBase::UI::Disabled(
                     !XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleAutoDrive),
                     [&] {
@@ -357,10 +320,11 @@ namespace Pages::Vehicle {
                     });
 #endif
 
+                DrawSectionTitle("vehicle.sectionSpeed");
                 if (UI::Checkbox(T("vehicle.lockSpeed"), &MenuState::VehicleSpeedLock)) {
                     Controllers::Vehicle::ApplySpeedLock();
                 }
-                UI::PushItemWidth(150);
+                UI::PushItemWidth(200);
                 if (UI::SliderFloat(T("vehicle.targetSpeed"), &MenuState::VehicleSpeed, 5.0f, 300.0f, "%.0f")) {
                     Controllers::Vehicle::ApplySpeedLock();
                 }
@@ -376,13 +340,14 @@ namespace Pages::Vehicle {
                 });
 
             XBase::UI::Tab("VehicleSpawn", T("vehicle.spawnVehicle"), [&] {
+                UI::Columns(3, nullptr, false);
                 UI::Checkbox(T("vehicle.spawnAsDriver"), &MenuState::VehicleSpawnAsDriver);
-                UI::SameLine();
+                UI::NextColumn();
                 UI::Checkbox(T("vehicle.spawnAircraftInAir"), &MenuState::VehicleSpawnAircraftInAir);
-                UI::SameLine();
+                UI::NextColumn();
                 UI::Checkbox(T("vehicle.cleanupAfterSpawn"), &MenuState::VehicleCleanupAfterSpawn);
+                UI::Columns(1);
 
-                UI::TextCentered(T("vehicle.spawnIdTip"));
                 UI::PushItemWidth(160);
                 UI::InputInt(T("vehicle.modelId"), &MenuState::VehicleSpawnModel);
                 UI::PopItemWidth();
@@ -392,11 +357,97 @@ namespace Pages::Vehicle {
                         Controllers::Vehicle::Spawn(static_cast<unsigned int>(MenuState::VehicleSpawnModel));
                     }
                 }
+                UI::SameLine();
+                XBase::UI::TextDisabled(T("vehicle.spawnIdTip"));
 
                 UI::SpacingSeparator();
                 DrawVehicleList();
                 });
 
-            });
+            XBase::UI::Tab("VehiclePaint", T("vehicle.paint"), [&] {
+                if (!hasVehicle) {
+                    XBase::UI::TextDisabled(T("vehicle.notInVehicle"));
+                    return;
+                }
+
+                const bool canColors = XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleColors);
+                const bool canPaintjob = XBaseBridge::HasCapability(XBase::FeatureCapability::VehiclePaintjob);
+                const bool canUpgrades = XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleUpgrades);
+
+                DrawSectionTitle("vehicle.sectionPaint");
+                XBase::UI::Disabled(!canColors, [&] {
+                    bool applyCarcols = false;
+                    UI::Columns(2, nullptr, false);
+                    UI::PushItemWidth(160);
+                    if (XBase::UI::Input(T("vehicle.color1"), MenuState::VehicleColorPrimary)) {
+                        applyCarcols = true;
+                    }
+                    UI::NextColumn();
+                    if (XBase::UI::Input(T("vehicle.color2"), MenuState::VehicleColorSecondary)) {
+                        applyCarcols = true;
+                    }
+                    UI::NextColumn();
+                    if (XBase::UI::Input(T("vehicle.color3"), MenuState::VehicleColorTertiary)) {
+                        applyCarcols = true;
+                    }
+                    UI::NextColumn();
+                    if (XBase::UI::Input(T("vehicle.color4"), MenuState::VehicleColorQuaternary)) {
+                        applyCarcols = true;
+                    }
+                    UI::NextColumn();
+                    UI::PopItemWidth();
+                    UI::Columns(1);
+                    if (applyCarcols) {
+                        Controllers::Vehicle::ApplyCarcols();
+                    }
+                });
+
+                UI::PushItemWidth(160);
+                XBase::UI::Disabled(!canPaintjob, [&] {
+                    XBase::UI::Input(T("vehicle.paintjob"), MenuState::VehiclePaintjob);
+                });
+                UI::SameLine();
+                XBase::UI::Disabled(!canUpgrades, [&] {
+                    XBase::UI::Input(T("vehicle.modId"), MenuState::VehicleModId);
+                });
+                UI::PopItemWidth();
+
+                XBase::UI::Disabled(!canPaintjob && !canUpgrades, [&] {
+                    if (UI::Button(T("vehicle.applyPaintjobMod"), 2)) {
+                        Controllers::Vehicle::ApplyAppearance();
+                    }
+                });
+                UI::SameLine();
+                XBase::UI::Disabled(!canColors, [&] {
+                    if (UI::Button(T("vehicle.resetColors"))) {
+                        Controllers::Vehicle::ResetColors();
+                    }
+                });
+
+                DrawSectionTitle("vehicle.sectionDoors");
+                UI::PushItemWidth(160);
+                UI::InputInt(T("vehicle.doorIndex"), &MenuState::VehicleDoorIndex);
+                UI::SameLine();
+                UI::InputInt(T("vehicle.seatIndex"), &MenuState::VehicleSeatIndex);
+                UI::PopItemWidth();
+                const bool canOpenDoors = XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleDoors);
+                XBase::UI::Disabled(!canOpenDoors, [&] {
+                    if (UI::Button(T("vehicle.openDoor"), 3)) {
+                        Controllers::Vehicle::OpenDoor();
+                    }
+                });
+                UI::SameLine();
+                const bool canPopDoors = XBaseBridge::HasCapability(XBase::FeatureCapability::VehiclePopDoors);
+                XBase::UI::Disabled(!canPopDoors, [&] {
+                    if (UI::Button(T("vehicle.popDoor"), 3)) {
+                        Controllers::Vehicle::PopDoor();
+                    }
+                });
+                UI::SameLine();
+                if (UI::Button(T("vehicle.warpToSeat"), 3)) {
+                    Controllers::Vehicle::WarpToSeat();
+                }
+                });
+        });
     }
 }

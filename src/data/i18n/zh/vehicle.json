@@ -30,7 +30,7 @@
   "vehicle.neonR": "霓虹灯 R",
   "vehicle.neonG": "霓虹灯 G",
   "vehicle.neonB": "霓虹灯 B",
-  "vehicle.paint": "涂装与材质 (仅限 SA)",
+  "vehicle.paint": "涂装与材质",
   "vehicle.color1": "主色 1",
   "vehicle.color2": "副色 2",
   "vehicle.color3": "第三色",
@@ -324,5 +324,15 @@
   "vehicle.intruder": "Intruder",
   "vehicle.monsterb": "Monster B",
   "vehicle.primo": "Primo",
-  "vehicle.solair": "Solair"
+  "vehicle.solair": "Solair",
+  "vehicle.sectionRuntime": "运行时选项",
+  "vehicle.sectionStatus": "载具状态",
+  "vehicle.sectionProof": "防护",
+  "vehicle.sectionHealth": "生命",
+  "vehicle.sectionSpecial": "特殊属性",
+  "vehicle.sectionCheat": "载具作弊",
+  "vehicle.sectionEffect": "特效与自动化",
+  "vehicle.sectionSpeed": "速度",
+  "vehicle.sectionPaint": "颜色与涂装",
+  "vehicle.sectionDoors": "车门与座位"
 }

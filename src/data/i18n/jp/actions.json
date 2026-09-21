@@ -15,5 +15,6 @@
   "action.vehicle.unflip": "車両を起こす",
   "action.vehicle.stop": "車両停止",
   "action.weapon.giveAll": "全武器取得",
+  "action.window.toggleMode": "ウィンドウモード切替",
   "action.world.toggleFreezeTime": "時間停止/再開"
 }

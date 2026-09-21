@@ -8,5 +8,17 @@
   "update.refresh": "刷新检测",
   "update.source": "检测源：%s",
   "update.sourceHint": "优先 GTAMODX，失败时回退 GitHub",
-  "update.debugShowDialog": "测试更新弹窗"
+  "update.debugShowDialog": "测试更新弹窗",
+  "update.badgeHint": "点击查看更新详情",
+  "update.laterTitle": "稍后提醒",
+  "update.later1d": "1 天后",
+  "update.later3d": "3 天后",
+  "update.later7d": "7 天后",
+  "update.skipVersion": "跳过此版本",
+  "update.disableReminder": "不再提示",
+  "update.restoreReminder": "恢复更新提醒",
+  "update.remindAuto": "更新提醒：发现新版本时提示",
+  "update.remindSnoozed": "更新提醒：已稍后提醒，剩余 %d 小时",
+  "update.remindSkipped": "更新提醒：已跳过版本 %s",
+  "update.remindDisabled": "更新提醒：已关闭，可在设置中手动检查"
 }

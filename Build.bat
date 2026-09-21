@@ -86,9 +86,10 @@ if /i not "%CONFIG%"=="Release" (
     echo [Error] Build XBase Debug and stage it separately before using Debug.
     goto fail
 )
-for %%T in (XBaseBootstrap XBasePayloadEntry XBaseSA XBaseVC XBaseIII) do (
+for %%T in (XBaseBootstrap XBasePayloadEntry XBaseSA XBaseVC XBaseIII PluginSA PluginVC PluginIII) do (
     if not exist "lib\%%T.lib" (
-        echo [Error] Missing local XBase SDK library: lib\%%T.lib
+        echo [Error] Missing staged library: lib\%%T.lib
+        echo [Error] Run XBase Build.bat Release to rebuild the XBase SDK and stage plugin-sdk libraries.
         goto fail
     )
 )
@@ -495,6 +496,16 @@ for %%L in (zh en jp ru) do (
         echo [Error] Failed to stage data language pack: %%L
         exit /b 1
     )
+)
+
+if exist "lib\WebView2Loader.dll" (
+    copy /Y "lib\WebView2Loader.dll" "build\bin\XMenu\WebView2Loader.dll" >nul
+    if errorlevel 1 (
+        echo [Error] Failed to stage WebView2Loader.dll.
+        exit /b 1
+    )
+) else (
+    echo [Warning] lib\WebView2Loader.dll not found; WebView feature will be unavailable.
 )
 exit /b 0
 

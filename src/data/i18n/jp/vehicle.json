@@ -30,7 +30,7 @@
   "vehicle.neonR": "ネオン R",
   "vehicle.neonG": "ネオン G",
   "vehicle.neonB": "ネオン B",
-  "vehicle.paint": "塗装とテクスチャ (SA のみ)",
+  "vehicle.paint": "塗装とテクスチャ",
   "vehicle.color1": "カラー 1",
   "vehicle.color2": "カラー 2",
   "vehicle.color3": "カラー 3",
@@ -324,5 +324,15 @@
   "vehicle.intruder": "Intruder",
   "vehicle.monsterb": "Monster B",
   "vehicle.primo": "Primo",
-  "vehicle.solair": "Solair"
+  "vehicle.solair": "Solair",
+  "vehicle.sectionRuntime": "実行時オプション",
+  "vehicle.sectionStatus": "車両の状態",
+  "vehicle.sectionProof": "耐性",
+  "vehicle.sectionHealth": "体力",
+  "vehicle.sectionSpecial": "特殊属性",
+  "vehicle.sectionCheat": "車両チート",
+  "vehicle.sectionEffect": "エフェクトと自動化",
+  "vehicle.sectionSpeed": "速度",
+  "vehicle.sectionPaint": "カラーと塗装",
+  "vehicle.sectionDoors": "ドアとシート"
 }

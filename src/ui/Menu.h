@@ -2,7 +2,7 @@
 
 namespace Menu {
     enum class Page {
-        Player, Vehicle, Weapon, World, Scene, Visual, Teleport, Settings, About, Ped
+        Player, Vehicle, Weapon, World, Scene, Visual, Teleport, Web, Settings, About, Ped
     };
 
     void Draw();

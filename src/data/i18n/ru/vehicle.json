@@ -30,7 +30,7 @@
   "vehicle.neonR": "Неон R",
   "vehicle.neonG": "Неон G",
   "vehicle.neonB": "Неон B",
-  "vehicle.paint": "Покраска и текстуры (только SA)",
+  "vehicle.paint": "Покраска и текстуры",
   "vehicle.color1": "Цвет 1",
   "vehicle.color2": "Цвет 2",
   "vehicle.color3": "Цвет 3",
@@ -324,5 +324,15 @@
   "vehicle.intruder": "Intruder",
   "vehicle.monsterb": "Monster B",
   "vehicle.primo": "Primo",
-  "vehicle.solair": "Solair"
+  "vehicle.solair": "Solair",
+  "vehicle.sectionRuntime": "Рабочие опции",
+  "vehicle.sectionStatus": "Состояние машины",
+  "vehicle.sectionProof": "Иммунитет",
+  "vehicle.sectionHealth": "Прочность",
+  "vehicle.sectionSpecial": "Особые свойства",
+  "vehicle.sectionCheat": "Читы машины",
+  "vehicle.sectionEffect": "Эффекты и автоматизация",
+  "vehicle.sectionSpeed": "Скорость",
+  "vehicle.sectionPaint": "Цвет и покраска",
+  "vehicle.sectionDoors": "Двери и места"
 }

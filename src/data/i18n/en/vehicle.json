@@ -30,7 +30,7 @@
   "vehicle.neonR": "Neon R",
   "vehicle.neonG": "Neon G",
   "vehicle.neonB": "Neon B",
-  "vehicle.paint": "Paint & Textures (SA Only)",
+  "vehicle.paint": "Paint & Textures",
   "vehicle.color1": "Color 1",
   "vehicle.color2": "Color 2",
   "vehicle.color3": "Color 3",
@@ -324,5 +324,15 @@
   "vehicle.intruder": "Intruder",
   "vehicle.monsterb": "Monster B",
   "vehicle.primo": "Primo",
-  "vehicle.solair": "Solair"
+  "vehicle.solair": "Solair",
+  "vehicle.sectionRuntime": "Runtime options",
+  "vehicle.sectionStatus": "Vehicle state",
+  "vehicle.sectionProof": "Proofs",
+  "vehicle.sectionHealth": "Health",
+  "vehicle.sectionSpecial": "Special attributes",
+  "vehicle.sectionCheat": "Vehicle cheats",
+  "vehicle.sectionEffect": "Effects and automation",
+  "vehicle.sectionSpeed": "Speed",
+  "vehicle.sectionPaint": "Colors and paint",
+  "vehicle.sectionDoors": "Doors and seats"
 }

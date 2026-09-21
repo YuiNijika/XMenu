@@ -12,6 +12,11 @@ struct Callbacks {
 bool Install(const Callbacks& callbacks);
 void Shutdown();
 bool IsInstalled();
+
+// Shows a message through the game's own help text. Only safe from game logic
+// callbacks; from UI or render code use QueueMessage, which defers the call to
+// the next script event and keeps the render callback free of game state access.
 bool ShowMessage(const char* message);
+bool QueueMessage(const char* message);
 
 } // namespace XBase::Host

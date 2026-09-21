@@ -2,15 +2,18 @@
 #include <array>
 #include <cstdio>
 #include <cstring>
+#include <ctime>
 #include <string>
 #include <unordered_map>
 #include <vector>
 #include <XBase/Runtime.h>
 #include "utils/Log.h"
 #include <XBase/Hooks.h>
+#include <XBase/Host.h>
 #include <XBase/Input.h>
 #include <XBase/Platform.h>
 #include <XBase/UI.h>
+#include <XBase/WebView.h>
 #include "utils/I18n.h"
 #include "utils/UpdateChecker.h"
 #include "utils/AppConfig.h"
@@ -26,6 +29,7 @@
 #include "ui/pages/Ped.h"
 #include "ui/pages/Scene.h"
 #include "ui/pages/Visual.h"
+#include "ui/pages/Web.h"
 #include "controllers/Hotkeys.h"
 #include "controllers/Overlay.h"
 #include "controllers/Command.h"
@@ -58,6 +62,7 @@ namespace {
         Scene,
         Visual,
         Teleport,
+        Web,
         Settings,
         About
     };
@@ -119,6 +124,7 @@ namespace Menu {
         {Page::Scene, "tab.scene", "scene"},
         {Page::Visual, "tab.visual", "visual"},
         {Page::Teleport, "tab.teleport", "teleport"},
+        {Page::Web, "tab.web", "web"},
         {Page::Settings, "tab.settings", "settings"},
         {Page::About, "tab.about", "about"}
     };
@@ -145,6 +151,7 @@ namespace Menu {
     }
 
     void DrawSettings();
+    void DrawDisplaySettings();
     void DrawGuiSettings();
     void DrawRuntimeSettings();
     void DrawOverlaySettings();
@@ -167,7 +174,11 @@ namespace Menu {
         XBase::UI::Spacing();
 
         if (MenuState::HasNotice()) {
+            const XBase::Vec2 noticePosition = XBase::UI::GetCursorScreenPosition();
             XBase::UI::TextWrapped(MenuState::NoticeText);
+            if (MenuState::NoticeWarning) {
+                XBase::UI::Canvas::Text(noticePosition, XBase::Color{242, 90, 90, 255}, MenuState::NoticeText);
+            }
             XBase::UI::Spacing();
             XBase::UI::Separator();
             XBase::UI::Spacing();
@@ -205,11 +216,19 @@ namespace Menu {
         tooltip += T("update.source");
         tooltip += ": ";
         tooltip += sourceText;
+        tooltip += "\n\n";
+        tooltip += T("update.badgeHint");
 
         XBase::UI::SameLine();
-        XBase::UI::TextDisabled(XMENU_VERSION);
+        if (info.available) {
+            XBase::UI::Text(XMENU_VERSION);
+        } else {
+            XBase::UI::TextDisabled(XMENU_VERSION);
+        }
         XBase::UI::SameLine();
-        XBase::UI::Button("?##VersionInfo", {20.0f, 0.0f});
+        if (XBase::UI::Button("?##VersionInfo", {20.0f, 0.0f})) {
+            UpdateChecker::Prompt();
+        }
         XBase::UI::Tooltip(tooltip.c_str());
     }
 
@@ -236,6 +255,12 @@ namespace Menu {
     }
 
     void DrawActivePage() {
+        // 离开网页页时隐藏网页面板，避免覆盖其他页面内容
+        if (activePage != Page::Web && MenuState::WebViewVisible) {
+            XBase::WebView::SetVisible(false);
+            MenuState::WebViewVisible = false;
+        }
+
         const char* titleKey = "tab.player";
         switch (activePage) {
             case Page::Player: titleKey = "tab.player"; break;
@@ -246,6 +271,7 @@ namespace Menu {
             case Page::Scene: titleKey = "tab.scene"; break;
             case Page::Visual: titleKey = "tab.visual"; break;
             case Page::Teleport: titleKey = "tab.teleport"; break;
+            case Page::Web: titleKey = "tab.web"; break;
             case Page::Settings: titleKey = "tab.settings"; break;
             case Page::About: titleKey = "tab.about"; break;
         }
@@ -263,6 +289,7 @@ namespace Menu {
             case Page::Scene: Pages::Scene::Draw(); break;
             case Page::Visual: Pages::Visual::Draw(); break;
             case Page::Teleport: Pages::Teleport::Draw(); break;
+            case Page::Web: Pages::Web::Draw(); break;
             case Page::Settings: DrawSettings(); break;
             case Page::About: DrawAbout(); break;
         }
@@ -316,6 +343,9 @@ namespace Menu {
         BaseUI::TextDisabled(T("settings.currentHotkey"), AppConfig::GetMenuKeyName().c_str());
 
         UI::SpacingSeparator();
+        DrawDisplaySettings();
+
+        UI::SpacingSeparator();
         DrawGuiSettings();
 
         UI::SpacingSeparator();
@@ -341,6 +371,35 @@ namespace Menu {
         }
         UI::SpacingSeparator();
         DrawLogViewer();
+    }
+
+    void DrawDisplaySettings() {
+        namespace BaseUI = XBase::UI;
+        BaseUI::Text(T("settings.displayMode"));
+        BaseUI::TextDisabled(T("settings.displayModeHint"));
+
+        static const char* const modeLabels[3] = {
+            "settings.displayMode.fullscreen", "settings.displayMode.windowed", "settings.displayMode.borderless"};
+        const int current = AppConfig::GetWindowModeSetting();
+        BaseUI::Combo("##DisplayMode", T(modeLabels[current]), [&] {
+            for (int index = 0; index < 3; ++index) {
+                const bool selected = index == current;
+                if (BaseUI::Selectable(T(modeLabels[index]), selected)) {
+                    if (AppConfig::SetWindowModeSetting(index)) {
+                        MenuState::ShowNotice(T("settings.displayModeRestartNotice"), 3.0, true);
+                        XBase::Host::QueueMessage(T("settings.displayModeRestartMessage"));
+                    }
+                }
+                if (selected) BaseUI::FocusLastItemByDefault();
+            }
+        });
+        BaseUI::SameLine();
+        BaseUI::TextDisabled(T("settings.displayModeToggleHint"));
+        BaseUI::TextDisabled(T("settings.displayModeCurrent"), T(modeLabels[static_cast<int>(XBase::Hooks::GetWindowMode())]));
+        BaseUI::TextDisabled(T("settings.displayModeBorderlessHint"));
+        if (AppConfig::GetWindowModeSetting() != static_cast<int>(XBase::Hooks::GetWindowMode())) {
+            UI::TextWarning(T("settings.displayModePending"));
+        }
     }
 
     void DrawGuiSettings() {
@@ -791,6 +850,27 @@ namespace Menu {
         if (XBase::UI::Button(T("update.openGTAMODX"), {130.0f, 0.0f})) XBase::Platform::OpenExternal(XMENU_URL);
         XBase::UI::SameLine();
         if (XBase::UI::Button(T("update.openGitHub"), {130.0f, 0.0f})) XBase::Platform::OpenExternal(releaseUrl);
+
+        XBase::UI::Spacing();
+        const UpdateChecker::PromptPolicy policy = UpdateChecker::GetPromptPolicy();
+        const std::time_t now = std::time(nullptr);
+        const bool snoozed = policy.remindAfter > 0 && now > 0 && now < policy.remindAfter;
+        if (policy.remindersDisabled) {
+            XBase::UI::TextDisabled(T("update.remindDisabled"));
+        } else if (!policy.skippedVersion.empty()) {
+            XBase::UI::TextDisabled(T("update.remindSkipped"), policy.skippedVersion.c_str());
+        } else if (snoozed) {
+            const long long remainingSeconds = policy.remindAfter - static_cast<long long>(now);
+            const int remainingHours = static_cast<int>((remainingSeconds + 3599) / 3600);
+            XBase::UI::TextDisabled(T("update.remindSnoozed"), remainingHours);
+        } else {
+            XBase::UI::TextDisabled(T("update.remindAuto"));
+        }
+        if (policy.remindersDisabled || !policy.skippedVersion.empty() || snoozed) {
+            if (XBase::UI::Button(T("update.restoreReminder"), {170.0f, 0.0f})) {
+                UpdateChecker::RestoreReminders();
+            }
+        }
     }
 
     void DrawDebugSettings() {
@@ -833,7 +913,7 @@ namespace Menu {
     }
 
     void DrawUpdateDialog() {
-        if (UpdateChecker::HasUpdate()) {
+        if (UpdateChecker::ShouldPrompt()) {
             XBase::UI::OpenModal("XMenuUpdateDialog");
         }
 
@@ -859,6 +939,34 @@ namespace Menu {
                 UpdateChecker::Dismiss();
                 XBase::UI::CloseModal();
             }
+
+            XBase::UI::Spacing();
+            XBase::UI::SeparatorText(T("update.laterTitle"));
+            if (XBase::UI::Button(T("update.later1d"), {110.0f, 0.0f})) {
+                UpdateChecker::SnoozeHours(24);
+                XBase::UI::CloseModal();
+            }
+            XBase::UI::SameLine();
+            if (XBase::UI::Button(T("update.later3d"), {110.0f, 0.0f})) {
+                UpdateChecker::SnoozeHours(72);
+                XBase::UI::CloseModal();
+            }
+            XBase::UI::SameLine();
+            if (XBase::UI::Button(T("update.later7d"), {110.0f, 0.0f})) {
+                UpdateChecker::SnoozeHours(168);
+                XBase::UI::CloseModal();
+            }
+
+            XBase::UI::Spacing();
+            if (XBase::UI::Button(T("update.skipVersion"), {150.0f, 0.0f})) {
+                UpdateChecker::SkipCurrentVersion();
+                XBase::UI::CloseModal();
+            }
+            XBase::UI::SameLine();
+            if (XBase::UI::Button(T("update.disableReminder"), {150.0f, 0.0f})) {
+                UpdateChecker::DisableReminders();
+                XBase::UI::CloseModal();
+            }
             XBase::UI::SameLine();
             if (XBase::UI::Button(T("update.close"), {120.0f, 0.0f})) {
                 UpdateChecker::Dismiss();
@@ -873,6 +981,9 @@ void Menu::Process() {
     Pages::Vehicle::Process();
     Pages::Weapon::Process();
     Pages::Visual::Process();
+    MenuState::WebTabEntered = activePage == Page::Web && !MenuState::WebTabActive;
+    MenuState::WebTabActive = activePage == Page::Web;
+    Pages::Web::Process();
     Controllers::Ped::Process();
     Controllers::Teleport::ProcessHost();
     Controllers::Command::Process();

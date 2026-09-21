@@ -26,10 +26,14 @@ namespace Controllers::Scene {
     }
 
     bool PlayPlayerAnimation() {
+        XBase::Scene::AnimationOptions options;
+        options.loop = MenuState::SceneAnimLoop;
+        options.secondary = MenuState::SceneAnimSecondary;
+        options.onTargetPed = MenuState::SceneAnimOnPed;
         const bool ok = XBase::Scene::PlayAnimation(
             MenuState::SceneAnimGroup,
             MenuState::SceneAnimName,
-            MenuState::SceneAnimLoop);
+            options);
         MenuState::ShowNotice(ok ? "Animation started" : "Animation unavailable", 1.8);
         return ok;
     }

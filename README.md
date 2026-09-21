@@ -221,6 +221,8 @@ Build.bat Release --no-pause
 可选：`Debug` / `Release`、`--toolset v143|v145`、`--no-pause`。  
 首次可先运行 `Setup.bat`。
 
+批处理文件必须保持 CRLF 行尾，`cmd` 在 LF 行尾下会找不到 `call :label` 标签。仓库通过 `.gitattributes` 固定 `*.bat` 为 CRLF；若本地被改成 LF，重新检出或转换行尾后再构建。
+
 构建产物：
 
 ```text

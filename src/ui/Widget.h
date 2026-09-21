@@ -5,6 +5,7 @@ namespace UI {
 void SameLineEvery(int index, int columns);
 void SpacingSeparator();
 void TextCentered(const char* text);
+void TextWarning(const char* text);
 
 bool CollapsingHeader(const char* label, bool& isOpen);
 bool Checkbox(const char* label, bool* value);

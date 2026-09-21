@@ -202,9 +202,12 @@ namespace Pages::Ped {
                 XBase::UI::SameLine();
                 Checkbox(T("ped.hostile"), &MenuState::PedHostile);
 
+                XBase::UI::Disabled(
+                    !XBaseBridge::HasCapability(XBase::FeatureCapability::PedSmokeFlies), [&] {
                 Checkbox(T("ped.smoking"), &MenuState::SmokingEffect);
                 XBase::UI::SameLine();
                 Checkbox(T("ped.flies"), &MenuState::FliesEffect);
+                });
 
                 UI::SpacingSeparator();
                 if (UI::Button(T("ped.spawnNear"), 3)) {

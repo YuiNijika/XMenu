@@ -23,6 +23,12 @@ namespace AppConfig {
         std::string source; // GTAMODX | GitHub
     };
 
+    struct UpdatePromptState {
+        long long remindAfter = 0;   // unix 秒；0 表示未设置稍后提醒
+        std::string skippedVersion;  // 用户选择跳过的版本，出现更新版本时恢复提醒
+        bool remindersDisabled = false;
+    };
+
     struct PersistentFeatureState {
         std::string id;
         std::string name;
@@ -47,6 +53,8 @@ namespace AppConfig {
 
     bool LoadUpdateCache(UpdateCache& cache);
     void SaveUpdateCache(const UpdateCache& cache);
+    bool LoadUpdatePromptState(UpdatePromptState& state);
+    void SaveUpdatePromptState(const UpdatePromptState& state);
 
     std::vector<PersistentFeatureState> GetPersistentFeatureStates();
     std::size_t GetPersistentRestoreCount();
@@ -77,4 +85,8 @@ namespace AppConfig {
     void SetGuiThemeIndex(int index);
     int GetInteractionMode();
     void SetInteractionMode(int mode);
+    int GetWindowModeSetting();
+    int PeekStoredWindowMode();
+    bool SetWindowModeSetting(int mode);
+    void CycleWindowModeSetting();
 }

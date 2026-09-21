@@ -15,5 +15,6 @@
   "action.vehicle.unflip": "Перевернуть транспорт",
   "action.vehicle.stop": "Остановить транспорт",
   "action.weapon.giveAll": "Выдать всё оружие",
+  "action.window.toggleMode": "Переключить режим окна",
   "action.world.toggleFreezeTime": "Заморозить/возобновить время"
 }

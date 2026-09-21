@@ -61,10 +61,17 @@ namespace MenuState {
     inline int WeaponBulletMaxTargets = 4;         // 同时锁定目标数（1=单目标，>1 可分配到多个目标）
     inline int WeaponAmmo = 9999;
     inline int WeaponSpawnId = 0;
-    inline int WeaponCyclerId = 1;
+    inline int WeaponCyclerId = -1;                // 滚轮刷出游标：上一次刷出的槽位，-1 表示尚未刷出
     inline bool WeaponCyclerEnabled = false;
     inline int WeaponCyclerInputId = 0;
     inline bool WeaponSafeMode = true;
+
+    inline char WebViewUrl[512] = "https://gtamodx.com/mods/xmenu";
+    inline bool WebViewVisible = false;
+    inline float WebViewZoom = 1.0f;
+    inline bool WebTabActive = false;   // 当前是否停在网页页
+    inline bool WebTabEntered = false;  // 本帧刚切到网页页
+    inline int WindowMode = 0; // 0 独占全屏 1 窗口 2 无边框
     inline int GuiThemeIndex = 0;
     inline int GuiInteractionMode = 0;
     inline bool VehicleNoDamage = false;
@@ -215,12 +222,14 @@ namespace MenuState {
     inline bool PickupEmpty = false;
     inline char NoticeText[256] = "";
     inline double NoticeExpireTime = 0.0;
+    inline bool NoticeWarning = false;
 
     inline bool UseNativeMenu = false;
     inline bool ListMenuMouseInput = true; // 列表模式默认允许鼠标（GTA5 PC 交互）
 
-    inline void ShowNotice(const char* text, double durationSeconds = 2.0) {
+    inline void ShowNotice(const char* text, double durationSeconds = 2.0, bool warning = false) {
         std::snprintf(NoticeText, sizeof(NoticeText), "%s", text ? text : "");
+        NoticeWarning = warning;
         const auto now = std::chrono::steady_clock::now().time_since_epoch();
         const double nowSeconds = std::chrono::duration<double>(now).count();
         NoticeExpireTime = nowSeconds + (durationSeconds > 0.0 ? durationSeconds : 0.0);
@@ -229,6 +238,7 @@ namespace MenuState {
     inline void ClearNotice() {
         NoticeText[0] = '\0';
         NoticeExpireTime = 0.0;
+        NoticeWarning = false;
     }
 
     inline bool HasNotice() {

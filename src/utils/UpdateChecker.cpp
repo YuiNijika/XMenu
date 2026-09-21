@@ -36,6 +36,24 @@ namespace {
     std::atomic<bool> debugUpdateDialog{ false };
     std::string configuredCurrentVersion;
     UpdateChecker::UpdateInfo updateInfo;
+    UpdateChecker::PromptPolicy promptPolicy;
+    bool forcePrompt = false;
+
+    void LoadPromptPolicy() {
+        AppConfig::UpdatePromptState state;
+        AppConfig::LoadUpdatePromptState(state);
+        promptPolicy.remindAfter = state.remindAfter;
+        promptPolicy.skippedVersion = state.skippedVersion;
+        promptPolicy.remindersDisabled = state.remindersDisabled;
+    }
+
+    void SavePromptPolicy() {
+        AppConfig::UpdatePromptState state;
+        state.remindAfter = promptPolicy.remindAfter;
+        state.skippedVersion = promptPolicy.skippedVersion;
+        state.remindersDisabled = promptPolicy.remindersDisabled;
+        AppConfig::SaveUpdatePromptState(state);
+    }
 
     std::string Trim(const std::string& value) {
         std::size_t begin = 0;
@@ -175,9 +193,6 @@ namespace {
         updateInfo.sourceName = SourceNameOf(source);
         updateInfo.status = BuildStatus(currentVersion, latestVersion);
         updateInfo.available = updateInfo.status == UpdateChecker::VersionStatus::RemoteNewer;
-        if (updateInfo.available) {
-            dismissed = false;
-        }
     }
 
     std::string DecodeJsonString(const std::string& value) {
@@ -385,6 +400,10 @@ namespace UpdateChecker {
             return;
         }
 
+        {
+            std::lock_guard<std::mutex> lock(updateMutex);
+            LoadPromptPolicy();
+        }
         ApplyVersionInfo(currentVersion, "", "", UpdateSource::Unknown);
         configuredCurrentVersion = currentVersion;
         std::thread(CheckLatestRelease, std::string(currentVersion), true).detach();
@@ -401,6 +420,7 @@ namespace UpdateChecker {
             return;
         }
 
+        Prompt();
         std::thread(CheckLatestRelease, configuredCurrentVersion, false).detach();
     }
 
@@ -429,6 +449,92 @@ namespace UpdateChecker {
     UpdateInfo GetUpdateInfo() {
         std::lock_guard<std::mutex> lock(updateMutex);
         return updateInfo;
+    }
+
+    void Prompt() {
+        forcePrompt = true;
+        dismissed = false;
+    }
+
+    bool ShouldPrompt() {
+        if (debugUpdateDialog) {
+            return true;
+        }
+        if (checking || dismissed) {
+            return false;
+        }
+
+        std::lock_guard<std::mutex> lock(updateMutex);
+        if (!updateInfo.available) {
+            return false;
+        }
+        if (forcePrompt) {
+            return true;
+        }
+        if (promptPolicy.remindersDisabled) {
+            return false;
+        }
+        if (!promptPolicy.skippedVersion.empty() && promptPolicy.skippedVersion == updateInfo.latestVersion) {
+            return false;
+        }
+        const std::time_t now = std::time(nullptr);
+        if (promptPolicy.remindAfter > 0 && now > 0 && now < promptPolicy.remindAfter) {
+            return false;
+        }
+        return true;
+    }
+
+    PromptPolicy GetPromptPolicy() {
+        std::lock_guard<std::mutex> lock(updateMutex);
+        return promptPolicy;
+    }
+
+    void SnoozeHours(int hours) {
+        if (hours <= 0) {
+            return;
+        }
+        {
+            std::lock_guard<std::mutex> lock(updateMutex);
+            const std::time_t now = std::time(nullptr);
+            promptPolicy.remindAfter = static_cast<long long>(now) + static_cast<long long>(hours) * 3600;
+            SavePromptPolicy();
+        }
+        forcePrompt = false;
+        dismissed = true;
+        DebugUpdate("已设置稍后提醒：" + std::to_string(hours) + " 小时");
+    }
+
+    void SkipCurrentVersion() {
+        {
+            std::lock_guard<std::mutex> lock(updateMutex);
+            promptPolicy.skippedVersion = updateInfo.latestVersion;
+            SavePromptPolicy();
+        }
+        forcePrompt = false;
+        dismissed = true;
+        DebugUpdate("已跳过版本：" + updateInfo.latestVersion);
+    }
+
+    void DisableReminders() {
+        {
+            std::lock_guard<std::mutex> lock(updateMutex);
+            promptPolicy.remindersDisabled = true;
+            SavePromptPolicy();
+        }
+        forcePrompt = false;
+        dismissed = true;
+        DebugUpdate("已关闭自动更新提醒");
+    }
+
+    void RestoreReminders() {
+        {
+            std::lock_guard<std::mutex> lock(updateMutex);
+            promptPolicy = PromptPolicy{};
+            SavePromptPolicy();
+        }
+        forcePrompt = false;
+        dismissed = false;
+        DebugUpdate("已恢复自动更新提醒");
     }
 
     void ForceDebugUpdate() {

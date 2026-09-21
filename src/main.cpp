@@ -145,10 +145,23 @@ bool InitXMenu() {
 extern "C" void XMenuPayloadAttach() {
     Log::Init();
     Log::Info("DLL 已加载，开始启动校验");
-    if (Startup::Validate() && InitXMenu()) {
+    if (!Startup::Validate()) {
+        Log::Error("启动校验失败，XMenu 已停止初始化");
+        return;
+    }
+
+    // 显示模式必须在游戏创建设备之前决定，窗口期交换链只能在这一刻建立
+    const int startupWindowMode = AppConfig::PeekStoredWindowMode();
+    if (startupWindowMode == 1) {
+        XBase::Hooks::PrepareStartupWindowMode(XBase::Hooks::WindowMode::Windowed);
+    } else if (startupWindowMode == 2) {
+        XBase::Hooks::PrepareStartupWindowMode(XBase::Hooks::WindowMode::Borderless);
+    }
+
+    if (InitXMenu()) {
         Log::Info("启动校验与 Host 注册通过");
     } else {
-        Log::Error("启动校验或 Host 注册失败，XMenu 已停止初始化");
+        Log::Error("Host 注册失败，XMenu 已停止初始化");
     }
 }
 

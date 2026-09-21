@@ -1,6 +1,7 @@
 #include "AppConfig.h"
 #include <XBase/Input.h>
 #include <XBase/Capabilities.h>
+#include <XBase/Hooks.h>
 #include <XBase/Platform.h>
 #include <XBase/Runtime.h>
 #include "ui/GuiTheme.h"
@@ -30,6 +31,7 @@ namespace {
     std::string fallbackLanguageCode = "zh";
     AppConfig::Hotkey menuHotkey;
     AppConfig::UpdateCache updateCache;
+    AppConfig::UpdatePromptState updatePromptState;
     std::vector<DataManager::LocationData> customLocations;
     std::vector<AppConfig::ActionHotkey> actionHotkeys;
     std::unordered_map<std::string, bool> persistentEnabled;
@@ -250,6 +252,9 @@ namespace {
         if (action == "player.aimSkinChanger" || action == "player.neverWanted.toggle") {
             return IsSaRuntime();
         }
+        if (action == "window.toggleMode") {
+            return XBase::Hooks::IsWindowModeSupported();
+        }
 
         return true;
     }
@@ -450,6 +455,10 @@ namespace {
         
         MenuState::UseNativeMenu = JsonLoader::GetBool(menu, "UseNativeMenu", MenuState::UseNativeMenu);
         MenuState::ListMenuMouseInput = JsonLoader::GetBool(menu, "ListMenuMouseInput", MenuState::ListMenuMouseInput);
+        MenuState::WindowMode = static_cast<int>(JsonLoader::GetNumber(menu, "windowMode", MenuState::WindowMode));
+        if (MenuState::WindowMode < 0 || MenuState::WindowMode > 2) {
+            MenuState::WindowMode = 0;
+        }
     }
 
     struct DefaultActionHotkey {
@@ -476,7 +485,8 @@ namespace {
             {"vehicle.unflip", "action.vehicle.unflip", "Shift+F6"},
             {"vehicle.stop", "action.vehicle.stop", "Ctrl+F6"},
             {"weapon.giveAll", "action.weapon.giveAll", "F9"},
-            {"world.toggleFreezeTime", "action.world.toggleFreezeTime", "Ctrl+F9"}
+            {"world.toggleFreezeTime", "action.world.toggleFreezeTime", "Ctrl+F9"},
+            {"window.toggleMode", "action.window.toggleMode", "Alt+ENTER"}
         };
         count = sizeof(actions) / sizeof(actions[0]);
         return actions;
@@ -809,6 +819,8 @@ namespace {
         file << indent << "  \"interaction\": " << MenuState::GuiInteractionMode << ",\n";
         file << indent << "  \"UseNativeMenu\": " << (MenuState::UseNativeMenu ? "true" : "false") << ",\n";
         file << indent << "  \"ListMenuMouseInput\": " << (MenuState::ListMenuMouseInput ? "true" : "false") << ",\n";
+        file << indent << "  \"borderlessWindow\": " << (MenuState::WindowMode > 0 ? "true" : "false") << ",\n";
+        file << indent << "  \"windowMode\": " << MenuState::WindowMode << ",\n";
         file << indent << "  \"hotkey\": \"" << EscapeJson(CanonicalHotkeyName(menuHotkey)) << "\"\n";
         file << indent << "}" << (trailingComma ? "," : "") << "\n";
     }
@@ -938,8 +950,24 @@ namespace {
         file << "  }" << (trailingComma ? "," : "") << "\n";
     }
 
+    void LoadUpdatePromptStateData(const JsonLoader::JsonValue& root) {
+        const JsonLoader::JsonValue& prompt = ObjectOrNull(root, "updatePrompt");
+        updatePromptState.remindAfter = static_cast<long long>(JsonLoader::GetNumber(prompt, "remindAfter", 0.0));
+        updatePromptState.skippedVersion = JsonLoader::GetString(prompt, "skippedVersion", "");
+        updatePromptState.remindersDisabled = JsonLoader::GetBool(prompt, "remindersDisabled", false);
+    }
+
+    void WriteUpdatePromptState(std::ostream& file, bool trailingComma) {
+        file << "  \"updatePrompt\": {\n";
+        file << "    \"remindAfter\": " << updatePromptState.remindAfter << ",\n";
+        file << "    \"skippedVersion\": \"" << EscapeJson(updatePromptState.skippedVersion) << "\",\n";
+        file << "    \"remindersDisabled\": " << (updatePromptState.remindersDisabled ? "true" : "false") << "\n";
+        file << "  }" << (trailingComma ? "," : "") << "\n";
+    }
+
     void LoadConfigData(const JsonLoader::JsonValue& root) {
         LoadUpdateCacheData(root);
+        LoadUpdatePromptStateData(root);
 
         const JsonLoader::JsonValue& gameConfig = CurrentGameConfigOrLegacyRoot(root);
         LoadActionHotkeys(gameConfig);
@@ -1002,6 +1030,7 @@ namespace {
         file << "    \"XMENU_GITHUB\": \"" << EscapeJson(XMENU_GITHUB) << "\"\n";
         file << "  },\n";
         WriteUpdateCache(file, true);
+        WriteUpdatePromptState(file, true);
         file << "  \"games\": {\n";
 
         const char* games[] = {"iii", "vc", "sa"};
@@ -1116,6 +1145,22 @@ namespace AppConfig {
 
     void SaveUpdateCache(const UpdateCache& cache) {
         updateCache = cache;
+        SaveToPath(ConfigPath());
+    }
+
+    bool LoadUpdatePromptState(UpdatePromptState& state) {
+        const JsonLoader::JsonValue root = JsonLoader::LoadFromFile(ReadConfigPath());
+        if (root.type != JsonLoader::JsonValue::OBJECT) {
+            return false;
+        }
+
+        LoadUpdatePromptStateData(root);
+        state = updatePromptState;
+        return state.remindAfter > 0 || !state.skippedVersion.empty() || state.remindersDisabled;
+    }
+
+    void SaveUpdatePromptState(const UpdatePromptState& state) {
+        updatePromptState = state;
         SaveToPath(ConfigPath());
     }
 
@@ -1394,5 +1439,48 @@ namespace AppConfig {
             GuiTheme::ApplyInteraction();
             Save();
         }
+    }
+
+    namespace {
+        XBase::Hooks::WindowMode ToEngineWindowMode(int mode) {
+            switch (mode) {
+            case 1: return XBase::Hooks::WindowMode::Windowed;
+            case 2: return XBase::Hooks::WindowMode::Borderless;
+            default: return XBase::Hooks::WindowMode::Fullscreen;
+            }
+        }
+    }
+
+    int GetWindowModeSetting() {
+        return MenuState::WindowMode;
+    }
+
+    int PeekStoredWindowMode() {
+        const JsonLoader::JsonValue root = JsonLoader::LoadFromFile(ReadConfigPath());
+        if (root.type != JsonLoader::JsonValue::OBJECT) {
+            return 0;
+        }
+        const JsonLoader::JsonValue& gameConfig = CurrentGameConfigOrLegacyRoot(root);
+        const JsonLoader::JsonValue& menu = ObjectOrNull(gameConfig, "menu");
+        if (menu.type != JsonLoader::JsonValue::OBJECT) {
+            return 0;
+        }
+        const int value = static_cast<int>(JsonLoader::GetNumber(menu, "windowMode", 0.0));
+        return (value >= 0 && value <= 2) ? value : 0;
+    }
+
+    bool SetWindowModeSetting(int mode) {
+        if (mode < 0 || mode > 2) return false;
+        MenuState::WindowMode = mode;
+        Save();
+        // 运行中只记录请求，窗口期交换链在游戏启动时建立
+        XBase::Hooks::SetWindowMode(ToEngineWindowMode(mode));
+        return true;
+    }
+
+    void CycleWindowModeSetting() {
+        // 无边框与窗口互相切换，全屏进入无边框
+        const int next = MenuState::WindowMode == 2 ? 1 : 2;
+        SetWindowModeSetting(next);
     }
 }

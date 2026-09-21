@@ -15,5 +15,6 @@
   "action.vehicle.unflip": "扶正载具",
   "action.vehicle.stop": "停止载具",
   "action.weapon.giveAll": "获取全部武器",
+  "action.window.toggleMode": "切换窗口模式",
   "action.world.toggleFreezeTime": "冻结/恢复时间"
 }

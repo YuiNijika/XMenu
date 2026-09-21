@@ -66,8 +66,11 @@ namespace Pages::Weapon {
     void Process() {
         Controllers::Weapon::Process();
 
-        // Weapon cycler auto-give when menu is closed
-        if (!MenuState::WeaponCyclerEnabled || XBase::Hooks::IsMenuVisible()) {
+        // Wheel cycling runs only with the menu closed. While it is armed the
+        // game's own wheel weapon switch is blocked so the list order wins.
+        const bool cyclerActive = MenuState::WeaponCyclerEnabled && !XBase::Hooks::IsMenuVisible();
+        XBase::Hooks::SetWheelInputSuppressed(cyclerActive);
+        if (!cyclerActive) {
             return;
         }
 
@@ -87,25 +90,26 @@ namespace Pages::Weapon {
         const float wheel = XBase::Hooks::ConsumeWheelDelta();
         if (wheel > -0.1f && wheel < 0.1f) return;
 
-        const int maxIdx = static_cast<int>(s_cyclerWeapons.size()) - 1;
+        const int lastIdx = static_cast<int>(s_cyclerWeapons.size()) - 1;
         int& cyclerIdx = MenuState::WeaponCyclerId;
-        if (cyclerIdx < 0 || cyclerIdx > maxIdx) cyclerIdx = 0;
-
+        const int direction = wheel > 0.0f ? 1 : -1;
+        float remaining = wheel > 0.0f ? wheel : -wheel;
         const unsigned int ammo = static_cast<unsigned int>(MenuState::WeaponAmmo);
-        const int direction = (wheel > 0.1f) ? 1 : -1;
-        float remaining = (wheel > 0) ? wheel : -wheel;
-        while (remaining > 0.1f) {
-            const auto& entry = s_cyclerWeapons[cyclerIdx];
 
+        while (remaining > 0.1f) {
+            if (cyclerIdx < 0 || cyclerIdx > lastIdx) {
+                cyclerIdx = direction > 0 ? -1 : 0;
+            }
+            cyclerIdx += direction;
+            if (cyclerIdx > lastIdx) cyclerIdx = 0;
+            if (cyclerIdx < 0) cyclerIdx = lastIdx;
+
+            const Resources::WeaponEntry& entry = s_cyclerWeapons[cyclerIdx];
             if (entry.isModel) {
                 Controllers::Weapon::GiveModelSilent(static_cast<unsigned int>(entry.modelId), ammo);
             } else {
                 Controllers::Weapon::GiveSilent(static_cast<unsigned int>(entry.id), ammo);
             }
-
-            cyclerIdx += direction;
-            if (cyclerIdx > maxIdx) cyclerIdx = 0;
-            if (cyclerIdx < 0) cyclerIdx = maxIdx;
             remaining -= 1.0f;
         }
     }
@@ -343,22 +347,6 @@ namespace Pages::Weapon {
 #else
                         Controllers::Weapon::GiveModel(static_cast<unsigned int>(MenuState::WeaponCyclerInputId), ammo);
 #endif
-                    }
-
-                    if (MenuState::WeaponCyclerEnabled) {
-                        const float wheel = XBase::Hooks::ConsumeWheelDelta();
-                        if (wheel > 0.1f || wheel < -0.1f) {
-                            const unsigned int ammo = static_cast<unsigned int>(MenuState::WeaponAmmo);
-                            const unsigned int spawnId = static_cast<unsigned int>(MenuState::WeaponCyclerInputId);
-                            const int steps = static_cast<int>((wheel > 0 ? wheel : -wheel) + 0.5f);
-                            for (int i = 0; i < steps; ++i) {
-#ifdef GTASA
-                                Controllers::Weapon::GiveSilent(spawnId, ammo);
-#else
-                                Controllers::Weapon::GiveModelSilent(spawnId, ammo);
-#endif
-                            }
-                        }
                     }
                 }
 

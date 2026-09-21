@@ -8,5 +8,17 @@
   "update.refresh": "再確認",
   "update.source": "検出元：%s",
   "update.sourceHint": "GTAMODX 優先、失敗時は GitHub",
-  "update.debugShowDialog": "更新ダイアログをテスト"
+  "update.debugShowDialog": "更新ダイアログをテスト",
+  "update.badgeHint": "クリックで更新詳細を表示",
+  "update.laterTitle": "後で通知",
+  "update.later1d": "1 日後",
+  "update.later3d": "3 日後",
+  "update.later7d": "7 日後",
+  "update.skipVersion": "このバージョンをスキップ",
+  "update.disableReminder": "通知しない",
+  "update.restoreReminder": "更新通知を再開",
+  "update.remindAuto": "通知：新しいバージョンがあると表示",
+  "update.remindSnoozed": "通知：後で通知、残り %d 時間",
+  "update.remindSkipped": "通知：バージョン %s をスキップ",
+  "update.remindDisabled": "通知：オフ、設定で手動確認できます"
 }

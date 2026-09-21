@@ -8,5 +8,17 @@
   "update.refresh": "Refresh",
   "update.source": "Source: %s",
   "update.sourceHint": "Prefer GTAMODX, fallback to GitHub",
-  "update.debugShowDialog": "Test update dialog"
+  "update.debugShowDialog": "Test update dialog",
+  "update.badgeHint": "Click to open update details",
+  "update.laterTitle": "Remind me later",
+  "update.later1d": "In 1 day",
+  "update.later3d": "In 3 days",
+  "update.later7d": "In 7 days",
+  "update.skipVersion": "Skip this version",
+  "update.disableReminder": "Don't remind me",
+  "update.restoreReminder": "Restore update reminders",
+  "update.remindAuto": "Reminders: prompt when a new version is available",
+  "update.remindSnoozed": "Reminders: snoozed, %d hours left",
+  "update.remindSkipped": "Reminders: skipped version %s",
+  "update.remindDisabled": "Reminders: off, use Refresh to check manually"
 }

@@ -154,6 +154,8 @@ bool IsMouseDown(MouseButton button);
 Vec2 GetMousePosition();
 Vec2 GetCursorScreenPosition();
 Vec2 GetContentAvailable();
+Vec2 GetDisplaySize();
+Rect GetCurrentWindowRect();
 
 namespace Canvas {
 void Line(Vec2 from, Vec2 to, Color color, float thickness = 1.0f);

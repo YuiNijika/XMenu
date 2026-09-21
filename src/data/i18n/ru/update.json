@@ -8,5 +8,17 @@
   "update.refresh": "Обновить",
   "update.source": "Источник: %s",
   "update.sourceHint": "Сначала GTAMODX, затем GitHub",
-  "update.debugShowDialog": "Тест окна обновления"
+  "update.debugShowDialog": "Тест окна обновления",
+  "update.badgeHint": "Нажмите, чтобы открыть сведения об обновлении",
+  "update.laterTitle": "Напомнить позже",
+  "update.later1d": "Через 1 день",
+  "update.later3d": "Через 3 дня",
+  "update.later7d": "Через 7 дней",
+  "update.skipVersion": "Пропустить эту версию",
+  "update.disableReminder": "Больше не напоминать",
+  "update.restoreReminder": "Возобновить напоминания",
+  "update.remindAuto": "Напоминания: показывать при новой версии",
+  "update.remindSnoozed": "Напоминания: отложено, осталось %d ч.",
+  "update.remindSkipped": "Напоминания: версия %s пропущена",
+  "update.remindDisabled": "Напоминания: отключены, проверяйте вручную"
 }

@@ -91,6 +91,11 @@ function createLoaderProject()
         targetname "XMenu"
         targetextension ".asi"
 
+        files {
+            "loader/**.h",
+            "loader/**.cpp"
+        }
+
         libdirs { XBASE_LIB_DIR }
         links { "XBaseBootstrap" }
         linkoptions { "/WHOLEARCHIVE:XBaseBootstrap.lib" }
@@ -108,6 +113,9 @@ function createInstallerProject()
             "installer/**.h",
             "installer/**.cpp",
             "installer/**.rc"
+        }
+        removefiles {
+            "installer/Ui.cpp"
         }
 
         -- 仅由 main.cpp #include，禁止作为独立 TU 编译。

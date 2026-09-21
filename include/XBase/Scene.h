@@ -2,10 +2,17 @@
 
 namespace XBase::Scene {
 
+struct AnimationOptions {
+    bool loop = false;
+    bool secondary = false;
+    bool onTargetPed = false;
+};
+
 void Process();
 void NotifyGameInit();
 void Shutdown();
 bool PlayAnimation(const char* group, const char* name, bool loop);
+bool PlayAnimation(const char* group, const char* name, const AnimationOptions& options);
 bool StopAnimation();
 bool PlayParticle(const char* name);
 bool RemoveAllParticles();
