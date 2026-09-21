@@ -110,6 +110,11 @@ bool IsModifierDown(Modifier modifier);
 bool WasPressed(Key key);
 bool IsDown(const Hotkey& hotkey);
 bool WasPressed(const Hotkey& hotkey);
+
+// 宿主在游戏循环停摆时仍需要热键的场景调用它，例如网页面板占住焦点后
+// 游戏进入暂停，按键消息不再经过游戏窗口，此时用系统键态补齐按下与松开
+void PollSystemKeys();
+
 bool CapturePressedHotkey(Hotkey& hotkey, bool allowClear = true);
 const char* GetKeyName(Key key);
 std::string FormatHotkey(const Hotkey& hotkey);
