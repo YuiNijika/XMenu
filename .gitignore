@@ -2,4 +2,4 @@ archives/
 build/
 tools/pack/
 archive/
-lib/
+lib/Plugin*.lib

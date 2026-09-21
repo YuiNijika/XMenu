@@ -142,7 +142,7 @@ bool InitXMenu() {
 
 } // namespace
 
-extern "C" void XMenuPayloadAttach() {
+extern "C" void XBasePayloadAttach() {
     Log::Init();
     Log::Info("DLL 已加载，开始启动校验");
     if (!Startup::Validate()) {
@@ -165,7 +165,7 @@ extern "C" void XMenuPayloadAttach() {
     }
 }
 
-extern "C" void XMenuPayloadDetach() {
+extern "C" void XBasePayloadDetach() {
     Controllers::BulletAssist::Shutdown();
     XBase::Host::Shutdown();
     XBaseBridge::Shutdown();
