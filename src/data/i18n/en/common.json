@@ -23,7 +23,6 @@
   "overlay.lockTime": "Lock time",
   "command.enabled": "Command window",
   "common.toggles": "Toggles",
-  "status.language": "Language: %s",
   "status.localVersion": "Local: %s",
   "status.remoteVersion": "Remote: %s",
   "status.remoteUnknown": "Unknown",

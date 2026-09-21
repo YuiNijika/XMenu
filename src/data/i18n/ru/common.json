@@ -23,7 +23,6 @@
   "overlay.lockTime": "Зафиксировать время",
   "command.enabled": "Командное окно",
   "common.toggles": "Переключатели",
-  "status.language": "Язык: %s",
   "status.localVersion": "Локальная: %s",
   "status.remoteVersion": "Удаленная: %s",
   "status.remoteUnknown": "Неизвестно",

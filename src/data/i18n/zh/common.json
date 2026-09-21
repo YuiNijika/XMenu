@@ -23,7 +23,6 @@
   "overlay.lockTime": "锁定时间",
   "command.enabled": "命令窗口",
   "common.toggles": "功能开关",
-  "status.language": "语言：%s",
   "status.localVersion": "本地：%s",
   "status.remoteVersion": "云端：%s",
   "status.remoteUnknown": "未知",

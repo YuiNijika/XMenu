@@ -190,7 +190,7 @@ namespace Menu {
 
     // 侧边栏分三段，头尾固定，中间导航单独滚动
     void DrawNavigation() {
-        XBase::UI::Text("XMenu");
+        XBase::UI::CenterText("XMenu");
         XBase::UI::Spacing();
         XBase::UI::Separator();
         XBase::UI::Spacing();
@@ -230,7 +230,7 @@ namespace Menu {
         }
 
         XBase::UI::Separator();
-        XBase::UI::TextDisabled(T("status.language"), I18n::GetLanguageName(I18n::GetLanguage()));
+        XBase::UI::CenterText(I18n::GetLanguageName(I18n::GetLanguage()));
 
         const UpdateChecker::UpdateInfo info = UpdateChecker::GetUpdateInfo();
         const char* remoteVersion = info.latestVersion.empty() ? T("status.remoteUnknown") : info.latestVersion.c_str();
@@ -255,11 +255,8 @@ namespace Menu {
         tooltip += ": ";
         tooltip += remoteVersion;
 
-        if (info.available) {
-            XBase::UI::Text(XMENU_VERSION);
-        } else {
-            XBase::UI::TextDisabled(XMENU_VERSION);
-        }
+        // 居中的一行版本号，更新状态与远端版本放在悬浮提示里
+        XBase::UI::CenterText(XMENU_VERSION);
         XBase::UI::Tooltip(tooltip.c_str());
     }
 
