@@ -20,6 +20,7 @@
 #include "Log.h"
 #include "Overlay.h"
 #include "Json.h"
+#include "WebBridge.h"
 #include "Config.h"
 #include "I18n.h"
 #include "Hooks.h"

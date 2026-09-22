@@ -1025,6 +1025,25 @@ namespace {
             AppendInstallLog(gameRoot, "Installed plugins\\XMenu\\data");
         }
 
+        // React 界面的入口页放在载荷目录旁的 ui.html，脚本与样式随 data 目录一起安装
+        std::string payloadDir = FindDirectoryContaining(extractedRoot, "XMenuSA.dll");
+        if (payloadDir.empty()) {
+            payloadDir = FindDirectoryContaining(extractedRoot, "XMenuVC.dll");
+        }
+        if (payloadDir.empty()) {
+            payloadDir = FindDirectoryContaining(extractedRoot, "XMenuIII.dll");
+        }
+        if (!payloadDir.empty()) {
+            const std::string uiPage = JoinPath(payloadDir, "ui.html");
+            if (PathExists(uiPage) && CopyFileEnsureDirectory(uiPage, JoinPath(xmenuDir, "ui.html"), true)) {
+                AddManifestRecord(manifestFiles, gameRoot, "plugins\\XMenu\\ui.html");
+                AppendInstallLog(gameRoot, "Installed plugins\\XMenu\\ui.html");
+            } else {
+                AppendInstallLog(gameRoot, "React UI page not found in release asset");
+            }
+        }
+
+
         const std::vector<std::string> silentPatchFiles = CollectInstallableSilentPatchFiles(extractedRoot);
         if (silentPatchFiles.empty()) {
             AppendInstallLog(gameRoot, "SilentPatch files not found after scanning release asset");

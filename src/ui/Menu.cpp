@@ -20,6 +20,7 @@
 #include "utils/UpdateChecker.h"
 #include "utils/AppConfig.h"
 #include "resources/ResourceData.h"
+#include "controllers/ReactUi.h"
 #include "ui/Widget.h"
 #include "ui/MenuState.h"
 #include "ui/GuiTheme.h"
@@ -405,6 +406,34 @@ namespace Menu {
         BaseUI::TextDisabled(T("settings.displayModeBorderlessHint"));
         if (AppConfig::GetWindowModeSetting() != static_cast<int>(XBase::Hooks::GetWindowMode())) {
             UI::TextWarning(T("settings.displayModePending"));
+        }
+
+        BaseUI::Spacing();
+        BaseUI::Separator();
+        BaseUI::Spacing();
+        BaseUI::Text(T("settings.uiMode"));
+        if (BaseUI::Button(T("settings.uiMode.imgui"), {140.0f, 0.0f})) {
+            if (Controllers::ReactUi::Enable(false)) {
+                AppConfig::SetUiMode("imgui");
+            }
+        }
+        BaseUI::SameLine();
+        if (BaseUI::Button(T("settings.uiMode.web"), {140.0f, 0.0f})) {
+            if (Controllers::ReactUi::Enable(true)) {
+                AppConfig::SetUiMode("react");
+            } else {
+                AppConfig::SetUiMode("imgui");
+                const std::string fallbackNotice =
+                    std::string(T("settings.uiMode.fallback")) + " " + MenuState::ReactUiFallbackReason;
+                MenuState::ShowNotice(fallbackNotice.c_str(), 4.0, true);
+            }
+        }
+        BaseUI::SameLine();
+        BaseUI::TextDisabled(T("settings.uiMode.hint"));
+        if (!Controllers::ReactUi::IsActive() && !MenuState::ReactUiFallbackReason.empty()) {
+            const std::string fallbackText =
+                std::string(T("settings.uiMode.fallback")) + " " + MenuState::ReactUiFallbackReason;
+            UI::TextWarning(fallbackText.c_str());
         }
 
         if (XBaseBridge::HasCapability(XBase::Capability::WebView)) {
@@ -1020,6 +1049,16 @@ void Menu::Process() {
 
 void Menu::Draw() {
     menuVisible = XBase::Hooks::IsMenuVisible();
+
+    // React 界面接管时不再画 ImGui 窗口，只保留叠加层与命令窗
+    if (MenuState::ReactUi) {
+        Controllers::Overlay::Draw();
+        Controllers::Command::Draw();
+        Controllers::Teleport::DrawQuickMap();
+        Controllers::BulletAssist::Draw();
+        return;
+    }
+
     char windowTitle[160] = {};
 
     char visibleTitle[128] = {};
@@ -1071,7 +1110,7 @@ void Menu::Draw() {
                 listSurfaceResetPending = false;
             }
         } else {
-            XBase::UI::SetNextWindowSize({780.0f, 520.0f}, true);
+            XBase::UI::SetNextWindowSize({720.0f, 470.0f}, true);
             bool windowOpen = true;
             XBase::UI::Window("XMenuMainWindow", windowTitle, [&] {
                 XBase::UI::ChildNoScroll("XMenuSidebar", [&] { DrawNavigation(); }, {170.0f, 0.0f}, true);

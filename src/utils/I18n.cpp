@@ -1,4 +1,7 @@
 #include "I18n.h"
+
+#include <XBase/Json.h>
+#include <XBase/WebBridge.h>
 #include "utils/JsonLoader.h"
 #include "utils/Log.h"
 #include <XBase/Platform.h>
@@ -292,12 +295,22 @@ namespace I18n {
         SetLanguage(CodeForLanguage(language));
     }
 
+    std::unordered_map<std::string, std::string> GetDictionary() {
+        const Dictionary& source = dictionaries[currentLanguageCode];
+        return std::unordered_map<std::string, std::string>(source.begin(), source.end());
+    }
+
     void SetLanguage(const std::string& code) {
         if (!FindLanguageInfo(code)) {
             Log::Warn(std::string("语言不存在: ") + code);
             return;
         }
         currentLanguageCode = code;
+        if (XBase::WebBridge::IsInstalled()) {
+            XBase::Json::Value payload;
+            payload.Set("lang", XBase::Json::Value(code));
+            XBase::WebBridge::Emit("i18n.changed", payload);
+        }
         Log::Info(std::string("语言已切换为: ") + GetLanguageName(code));
     }
 

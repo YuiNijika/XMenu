@@ -456,6 +456,7 @@ namespace {
         MenuState::UseNativeMenu = JsonLoader::GetBool(menu, "UseNativeMenu", MenuState::UseNativeMenu);
         MenuState::ListMenuMouseInput = JsonLoader::GetBool(menu, "ListMenuMouseInput", MenuState::ListMenuMouseInput);
         MenuState::WindowMode = static_cast<int>(JsonLoader::GetNumber(menu, "windowMode", MenuState::WindowMode));
+        MenuState::ReactUi = JsonLoader::GetString(menu, "ui", "imgui") == "react";
         if (MenuState::WindowMode < 0 || MenuState::WindowMode > 2) {
             MenuState::WindowMode = 0;
         }
@@ -819,6 +820,7 @@ namespace {
         file << indent << "  \"interaction\": " << MenuState::GuiInteractionMode << ",\n";
         file << indent << "  \"UseNativeMenu\": " << (MenuState::UseNativeMenu ? "true" : "false") << ",\n";
         file << indent << "  \"ListMenuMouseInput\": " << (MenuState::ListMenuMouseInput ? "true" : "false") << ",\n";
+        file << indent << "  \"ui\": \"" << (MenuState::ReactUi ? "react" : "imgui") << "\",\n";
         file << indent << "  \"borderlessWindow\": " << (MenuState::WindowMode > 0 ? "true" : "false") << ",\n";
         file << indent << "  \"windowMode\": " << MenuState::WindowMode << ",\n";
         file << indent << "  \"hotkey\": \"" << EscapeJson(CanonicalHotkeyName(menuHotkey)) << "\"\n";
@@ -1467,6 +1469,15 @@ namespace AppConfig {
         }
         const int value = static_cast<int>(JsonLoader::GetNumber(menu, "windowMode", 0.0));
         return (value >= 0 && value <= 2) ? value : 0;
+    }
+
+    std::string GetUiMode() {
+        return MenuState::ReactUi ? "react" : "imgui";
+    }
+
+    void SetUiMode(const std::string& mode) {
+        MenuState::ReactUi = mode == "react";
+        Save();
     }
 
     bool SetWindowModeSetting(int mode) {

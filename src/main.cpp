@@ -20,17 +20,20 @@
 #include "utils/AppConfig.h"
 #include "utils/I18n.h"
 #include "utils/Log.h"
+#include "controllers/ReactUi.h"
+#include "utils/BuildInfo.h"
 #include "utils/UpdateChecker.h"
 
 #include <XBase/Hooks.h>
+#include <XBase/WebBridge.h>
 #include <XBase/Host.h>
 #include <XBase/Input.h>
 
 extern const bool XMENU_DEBUG_MODE = false;
-const char* XMENU_VERSION = "v0.1.0-alpha1";
-const char* XMENU_AUTHOR = "鼠子(YuiNijika)";
+const char* XMENU_VERSION = BuildInfo::Version;
+const char* XMENU_AUTHOR = BuildInfo::Author;
 const char* XMENU_AUTHOR_TEST = "枫林、狂风晨、IIScar、Happy";
-const char* XMENU_URL = "https://gtamodx.com/mods/xmenu";
+const char* XMENU_URL = BuildInfo::Url;
 const char* XMENU_GITHUB = "https://github.com/YuiNijika/XMenu";
 const char* XMENU_GITHUB_API = "https://api.github.com/repos/YuiNijika/XMenu/releases/latest";
 const char* XMENU_QQ_GROUP = "https://gtamodx.com/qqun";
@@ -79,6 +82,12 @@ void AdvanceBootstrap() {
             Menu::Draw();
         });
         const bool hookReady = static_cast<bool>(xMenuDrawCallbackId) && XBase::Hooks::Init();
+        if (hookReady) {
+            // 网页页可以调用 XBase API，前端框架因此可以替代 ImGui 写界面
+            XBase::WebBridge::Install();
+            Controllers::ReactUi::Install();
+            Controllers::ReactUi::Enable(AppConfig::GetUiMode() == "react");
+        }
 
         if (hookReady) {
             xMenuActive = true;
@@ -130,6 +139,8 @@ void OnProcess() {
         return;
     }
 
+    Controllers::ReactUi::Process();
+
     if (XBase::Input::WasPressed(AppConfig::GetMenuHotkey())) {
         XBase::Hooks::SetMenuVisible(!XBase::Hooks::IsMenuVisible());
     }
@@ -173,6 +184,7 @@ extern "C" void XBasePayloadDetach() {
         XBase::Hooks::UnregisterDrawCallback(xMenuDrawCallbackId);
         xMenuDrawCallbackId = {};
     }
+    XBase::WebBridge::Shutdown();
     XBase::Hooks::Shutdown();
     Log::Shutdown();
 }

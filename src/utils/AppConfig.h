@@ -85,6 +85,8 @@ namespace AppConfig {
     void SetGuiThemeIndex(int index);
     int GetInteractionMode();
     void SetInteractionMode(int mode);
+    std::string GetUiMode();
+    void SetUiMode(const std::string& mode);
     int GetWindowModeSetting();
     int PeekStoredWindowMode();
     bool SetWindowModeSetting(int mode);

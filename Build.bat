@@ -498,6 +498,30 @@ for %%L in (zh en jp ru) do (
     )
 )
 
+if exist "react\dist\ui.html" (
+    if exist "build\bin\XMenu\ui" rmdir /S /Q "build\bin\XMenu\ui"
+    rem 脚本与样式放在 data 目录，ui.html 只用相对路径引用，file 协议下经典脚本不受 CORS 限制
+    copy /Y "react\dist\ui.html" "build\bin\XMenu\ui.html" >nul
+    if exist "react\dist\data" (
+        xcopy "react\dist\data" "build\bin\XMenu\data\" /E /I /Y >nul
+        if errorlevel 1 (
+            echo [Error] Failed to stage React UI assets.
+            exit /b 1
+        )
+    )
+    if not exist "build\bin\XMenu\ui.html" (
+        echo [Error] Failed to stage React UI bundle.
+        exit /b 1
+    )
+    if not exist "build\bin\XMenu\data\app.js" (
+        echo [Error] Failed to stage React UI scripts.
+        exit /b 1
+    )
+) else (
+    echo [Warning] react\dist not found; run pnpm build in react before packaging.
+)
+exit /b 0
+
 if exist "lib\WebView2Loader.dll" (
     copy /Y "lib\WebView2Loader.dll" "build\bin\XMenu\WebView2Loader.dll" >nul
     if errorlevel 1 (

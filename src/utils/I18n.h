@@ -1,6 +1,7 @@
 #pragma once
 #include <cstring>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace I18n {
@@ -28,6 +29,9 @@ namespace I18n {
     const char* GetLanguageCode(Language language);
     const char* GetLanguageName(Language language);
     const char* GetLanguageName(const std::string& code);
+    // ????? C++ ????????React ??? i18n.dictionary ??
+    std::unordered_map<std::string, std::string> GetDictionary();
+
     const char* T(const char* key);
     const char* T(Language language, const char* key);
     const char* T(const std::string& languageCode, const char* key);
