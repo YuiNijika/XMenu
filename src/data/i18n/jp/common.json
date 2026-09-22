@@ -203,5 +203,18 @@
   "react.fallback.uiMissing": "WebUI ページ ui.html が見つかりません。再インストールか react のビルドをしてください",
   "react.fallback.loadFailed": "WebUI ページの読み込みに失敗しました。ui フォルダを確認してください",
   "react.fallback.runtimeGone": "WebView2 ランタイムが利用できなくなりました",
-  "react.fallback.notice": "WebUI が使えないため ImGui に戻しました"
+  "react.fallback.notice": "WebUI が使えないため ImGui に戻しました",
+  "react.done": "完了",
+  "react.failed": "失敗",
+  "react.wanted": "手配度",
+  "react.spawn": "車両を出す",
+  "react.forward": "前方へ移動",
+  "react.teleportTo": "座標へ移動",
+  "react.resizeHint": "右下をドラッグしてパネルの大きさを変更",
+  "react.bridgeOffline": "XBase ブリッジが使えません。パネルがゲームに接続されていません",
+  "react.destroyVehicles": "すべての車両を消す",
+  "react.destroyPeds": "すべての歩行者を消す",
+  "react.teleportCenter": "街の中心へ戻る",
+  "react.mapPosition": "マップ座標へ移動",
+  "react.resetStats": "ステータスを初期値に戻す"
 }

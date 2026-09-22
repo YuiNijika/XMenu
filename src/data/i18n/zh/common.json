@@ -203,5 +203,18 @@
   "react.fallback.uiMissing": "未找到 WebUI 页面文件 ui.html，请重新安装或先构建 react",
   "react.fallback.loadFailed": "WebUI 页面加载失败，请检查 ui 目录是否完整",
   "react.fallback.runtimeGone": "WebView2 运行时已不可用",
-  "react.fallback.notice": "WebUI 不可用，已回退 ImGui"
+  "react.fallback.notice": "WebUI 不可用，已回退 ImGui",
+  "react.done": "完成",
+  "react.failed": "失败",
+  "react.wanted": "通缉",
+  "react.spawn": "生成载具",
+  "react.forward": "向前传送",
+  "react.teleportTo": "坐标传送",
+  "react.resizeHint": "拖动右下角调整面板大小",
+  "react.bridgeOffline": "XBase 桥不可用，面板没有连接到游戏",
+  "react.destroyVehicles": "清除所有载具",
+  "react.destroyPeds": "清除所有行人",
+  "react.teleportCenter": "回到城市中心",
+  "react.mapPosition": "地图坐标传送",
+  "react.resetStats": "恢复默认属性"
 }

@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { call, isUsable, type CapabilityReport } from '@/lib/bridge'
+import { DataBrowser } from '@/components/menu/data-browser'
+import { runAction } from '@/lib/actions'
+import { isUsable, type CapabilityReport } from '@/lib/bridge'
 import { useI18n } from '@/lib/i18n'
 
 type PageProps = {
@@ -10,28 +12,20 @@ type PageProps = {
 }
 
 export function TeleportPage({ report }: PageProps) {
-  const [x, setX] = useState('0')
   const { t } = useI18n()
+  const [x, setX] = useState('0')
   const [y, setY] = useState('0')
   const [z, setZ] = useState('0')
   const [distance, setDistance] = useState('50')
-  const [message, setMessage] = useState<string | null>(null)
-
-  const run = async (method: string, params?: Record<string, unknown>, label?: string) => {
-    try {
-      const result = await call<boolean>(method, params)
-      setMessage(result ? `${label ?? method} 完成` : `${label ?? method} 未生效`)
-    } catch (reason: unknown) {
-      setMessage(reason instanceof Error ? reason.message : String(reason))
-    }
-  }
+  const [mapX, setMapX] = useState('0')
+  const [mapY, setMapY] = useState('0')
 
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle>{t('react.teleportHint', '坐标传送')}</CardTitle>
-          <CardDescription>直接写入世界坐标</CardDescription>
+          <CardTitle>{t('react.teleportTo')}</CardTitle>
+          <CardDescription>{t('react.teleportHint')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="grid grid-cols-3 gap-3">
@@ -41,17 +35,23 @@ export function TeleportPage({ report }: PageProps) {
           </div>
           <Button
             disabled={!isUsable(report, 'teleport.to')}
-            onClick={() => run('teleport.to', { x: Number(x) || 0, y: Number(y) || 0, z: Number(z) || 0 }, '坐标传送')}
+            onClick={() =>
+              void runAction(
+                'teleport.to',
+                { x: Number(x) || 0, y: Number(y) || 0, z: Number(z) || 0 },
+                'react.teleportTo',
+              )
+            }
           >
-            传送
+            {t('react.teleport')}
           </Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('react.quickTeleport', '快捷传送')}</CardTitle>
-          <CardDescription>{t('react.quickTeleportHint', '沿当前朝向或地图标记移动')}</CardDescription>
+          <CardTitle>{t('react.quickTeleport')}</CardTitle>
+          <CardDescription>{t('react.quickTeleportHint')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex items-end gap-3">
@@ -62,25 +62,70 @@ export function TeleportPage({ report }: PageProps) {
             <Button
               variant="outline"
               disabled={!isUsable(report, 'teleport.forward')}
-              onClick={() => run('teleport.forward', { distance: Number(distance) || 0 }, '向前传送')}
+              onClick={() => void runAction('teleport.forward', { distance: Number(distance) || 0 }, 'react.forward')}
             >
-              向前
+              {t('react.forward')}
             </Button>
           </div>
           <Button
             disabled={!isUsable(report, 'teleport.marker')}
-            onClick={() => run('teleport.marker', { underwater: false }, '标记传送')}
+            onClick={() => void runAction('teleport.marker', { underwater: false }, 'teleport.toMarker')}
           >
             {t('teleport.toMarker')}
           </Button>
         </CardContent>
       </Card>
+      <Card className="lg:col-span-2">
+        <CardHeader>
+          <CardTitle>{t('react.mapPosition')}</CardTitle>
+          <CardDescription>{t('react.teleportHint')}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="w-28">
+            <div className="mb-2 text-xs text-muted-foreground">X</div>
+            <Input value={mapX} onChange={(event) => setMapX(event.target.value)} inputMode="numeric" />
+          </div>
+          <div className="w-28">
+            <div className="mb-2 text-xs text-muted-foreground">Y</div>
+            <Input value={mapY} onChange={(event) => setMapY(event.target.value)} inputMode="numeric" />
+          </div>
+          <Button
+            disabled={!isUsable(report, 'teleport.mapPosition')}
+            onClick={() =>
+              void runAction(
+                'teleport.mapPosition',
+                { x: Number(mapX) || 0, y: Number(mapY) || 0 },
+                'react.mapPosition',
+              )
+            }
+          >
+            {t('react.teleport')}
+          </Button>
+          <Button
+            variant="outline"
+            disabled={!isUsable(report, 'teleport.center')}
+            onClick={() => void runAction('teleport.center', undefined, 'react.teleportCenter')}
+          >
+            {t('react.teleportCenter')}
+          </Button>
+        </CardContent>
+      </Card>
+      <Card className="lg:col-span-2">
+        <CardHeader>
+          <CardTitle>{t('teleport.coordinates')}</CardTitle>
+          <CardDescription>{t('scene.listHint')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DataBrowser
+            method="data.locations"
+            disabled={!isUsable(report, 'teleport.to')}
+            onPick={(item) =>
+              void runAction('teleport.to', { x: item.x ?? 0, y: item.y ?? 0, z: item.z ?? 0 }, item.name)
+            }
+          />
+        </CardContent>
+      </Card>
 
-      {message ? (
-        <Card className="lg:col-span-2">
-          <CardContent className="py-4 text-sm text-muted-foreground">{message}</CardContent>
-        </Card>
-      ) : null}
     </div>
   )
 }

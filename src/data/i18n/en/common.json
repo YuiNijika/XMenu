@@ -203,5 +203,18 @@
   "react.fallback.uiMissing": "WebUI page ui.html is missing, reinstall or build react first",
   "react.fallback.loadFailed": "WebUI page failed to load, check the ui folder",
   "react.fallback.runtimeGone": "WebView2 runtime is no longer available",
-  "react.fallback.notice": "WebUI unavailable, fell back to ImGui"
+  "react.fallback.notice": "WebUI unavailable, fell back to ImGui",
+  "react.done": "Done",
+  "react.failed": "Failed",
+  "react.wanted": "Wanted",
+  "react.spawn": "Spawn vehicle",
+  "react.forward": "Teleport forward",
+  "react.teleportTo": "Teleport to coordinates",
+  "react.resizeHint": "Drag the bottom right corner to resize the panel",
+  "react.bridgeOffline": "XBase bridge unavailable, the panel is not connected to the game",
+  "react.destroyVehicles": "Remove all vehicles",
+  "react.destroyPeds": "Remove all pedestrians",
+  "react.teleportCenter": "Back to city center",
+  "react.mapPosition": "Teleport by map position",
+  "react.resetStats": "Restore default stats"
 }

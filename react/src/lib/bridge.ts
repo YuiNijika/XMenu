@@ -1,7 +1,11 @@
+import { translateKey } from '@/lib/i18n'
+
 export type CapabilityState = 'supported' | 'partial' | 'unsupported'
 
 export type CapabilityReport = {
   protocol: number
+  game: string
+  gameName: string
   methods: Record<string, CapabilityState>
 }
 
@@ -23,7 +27,7 @@ export function isBridgeAvailable(): boolean {
 
 export async function call<T = unknown>(method: string, params?: Record<string, unknown>): Promise<T> {
   if (!window.xbase) {
-    throw new Error('XBase 桥不可用，当前面板没有连接到游戏')
+    throw new Error(translateKey('react.bridgeOffline'))
   }
   return window.xbase.call<T>(method, params)
 }

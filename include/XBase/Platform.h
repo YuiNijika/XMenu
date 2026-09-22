@@ -30,6 +30,9 @@ std::string ModuleDirectory(const char* moduleName);
 std::string CurrentModuleDirectory();
 bool IsModuleLoaded(const char* moduleName);
 
+// Windows 10 及以上返回 true，用于挑默认界面
+bool IsWindows10OrNewer();
+
 bool EnsureDirectory(const std::string& path);
 bool DirectoryExists(const std::string& path);
 bool FileExists(const std::string& path);

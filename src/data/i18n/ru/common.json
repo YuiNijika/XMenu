@@ -203,5 +203,18 @@
   "react.fallback.uiMissing": "Страница WebUI ui.html не найдена, переустановите или соберите react",
   "react.fallback.loadFailed": "Не удалось загрузить WebUI, проверьте папку ui",
   "react.fallback.runtimeGone": "Среда WebView2 больше недоступна",
-  "react.fallback.notice": "WebUI недоступен, возврат к ImGui"
+  "react.fallback.notice": "WebUI недоступен, возврат к ImGui",
+  "react.done": "Готово",
+  "react.failed": "Ошибка",
+  "react.wanted": "Розыск",
+  "react.spawn": "Создать транспорт",
+  "react.forward": "Вперёд",
+  "react.teleportTo": "К координатам",
+  "react.resizeHint": "Потяните за правый нижний угол, чтобы изменить размер панели",
+  "react.bridgeOffline": "Мост XBase недоступен, панель не подключена к игре",
+  "react.destroyVehicles": "Убрать весь транспорт",
+  "react.destroyPeds": "Убрать всех пешеходов",
+  "react.teleportCenter": "В центр города",
+  "react.mapPosition": "Перемещение по координатам карты",
+  "react.resetStats": "Сбросить характеристики"
 }

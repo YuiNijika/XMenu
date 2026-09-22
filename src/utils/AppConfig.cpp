@@ -25,6 +25,11 @@ extern const char* XMENU_URL;
 extern const char* XMENU_GITHUB;
 
 namespace {
+
+// Windows 10 及以上系统自带 WebView2 运行时的概率更高，默认走网页界面
+const char* DefaultUiMode() {
+    return XBase::Platform::IsWindows10OrNewer() ? "react" : "imgui";
+}
     constexpr const char* DefaultMenuKey = "M";
 
     std::string menuKeyName = DefaultMenuKey;
@@ -456,7 +461,7 @@ namespace {
         MenuState::UseNativeMenu = JsonLoader::GetBool(menu, "UseNativeMenu", MenuState::UseNativeMenu);
         MenuState::ListMenuMouseInput = JsonLoader::GetBool(menu, "ListMenuMouseInput", MenuState::ListMenuMouseInput);
         MenuState::WindowMode = static_cast<int>(JsonLoader::GetNumber(menu, "windowMode", MenuState::WindowMode));
-        MenuState::ReactUi = JsonLoader::GetString(menu, "ui", "imgui") == "react";
+        MenuState::ReactUi = JsonLoader::GetString(menu, "ui", DefaultUiMode()) == "react";
         if (MenuState::WindowMode < 0 || MenuState::WindowMode > 2) {
             MenuState::WindowMode = 0;
         }

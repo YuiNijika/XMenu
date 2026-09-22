@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { translateKey } from '@/lib/i18n'
 import { call, capabilities, isBridgeAvailable, type CapabilityReport } from '@/lib/bridge'
 
 // 能力表只在挂载时取一次，之后用它决定入口是否可用
@@ -8,7 +9,7 @@ export function useCapabilities() {
 
   useEffect(() => {
     if (!isBridgeAvailable()) {
-      setError('XBase 桥不可用')
+      setError(translateKey('react.bridgeOffline'))
       return
     }
     let cancelled = false

@@ -64,4 +64,7 @@ bool PostJson(const std::string& json);
 // 注入在页面脚本之前执行的代码，可重复调用，创建中的请求会排队
 bool InjectScript(const std::string& script);
 
+// 把本地目录映射成虚拟 https 主机，页面就能像普通站点一样加载脚本与样式
+bool MapFolder(const std::string& hostName, const std::string& folderPath);
+
 } // namespace XBase::WebView
