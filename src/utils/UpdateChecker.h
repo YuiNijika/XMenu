@@ -31,7 +31,7 @@ namespace UpdateChecker {
         bool remindersDisabled = false;
     };
 
-    // 双源检测：优先 GTAMODX，失败回退 GitHub
+    // 双源检测，优先 GTAMODX，失败回退 GitHub
     void Start(const char* currentVersion);
     void Refresh();
     bool IsChecking();
@@ -40,7 +40,7 @@ namespace UpdateChecker {
     void Dismiss();
     void ForceDebugUpdate();
 
-    // 自动弹窗策略：可稍后提醒、跳过当前版本或关闭提醒
+    // 自动弹窗策略，可稍后提醒、跳过当前版本或关闭提醒
     void SnoozeHours(int hours);
     void SkipCurrentVersion();
     void DisableReminders();

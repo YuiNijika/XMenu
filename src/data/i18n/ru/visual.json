@@ -17,5 +17,7 @@
   "visual.hideAreaNames": "Скрыть названия районов",
   "visual.hideVehicleNames": "Скрыть названия транспорта",
   "visual.nightVision": "ПНВ",
-  "visual.infrared": "Тепловизор"
+  "visual.infrared": "Тепловизор",
+  "visual.sectionDisplay": "Отображение",
+  "visual.sectionRadarOptions": "Настройки радара"
 }

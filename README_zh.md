@@ -114,8 +114,8 @@ XMenu 是一个面向 GTA III、GTA Vice City、GTA San Andreas 的 ASI 菜单�
 ### 方式 B：手动复制
 
 1. 安装运行依赖。
-2. 将 `XMenu.asi` 放入游戏根目录。
-3. 将 `XMenu` 文件夹放入游戏根目录。
+2. 将 `XMenuSA.asi`（按你的游戏选择 `XMenuVC.asi` / `XMenuIII.asi`）放入游戏的 `plugins` 文件夹（或游戏根目录）。
+3. 将 `XBase` 文件夹（内含 `Mods\XMenu`，含数据与 `ui.html`）放入游戏根目录。
 4. GTA III / Vice City 额外放入 `d3d8.dll`。
 5. 启动游戏，按 `M` 打开菜单。
 
@@ -123,17 +123,22 @@ XMenu 是一个面向 GTA III、GTA Vice City、GTA San Andreas 的 ASI 菜单�
 
 ```text
 GameRoot/
-├─ XMenu.asi
-├─ XMenu/
-│  ├─ XMenuSA.dll
-│  ├─ XMenuVC.dll
-│  ├─ XMenuIII.dll
-│  ├─ data/
-│  │  ├─ sa/
-│  │  ├─ vc/
-│  │  ├─ iii/
-│  │  └─ i18n/
-│  └─ i18n/
+├─ plugins/
+│  ├─ XMenuSA.asi      (按你的游戏选择对应 asi)
+│  ├─ XMenuVC.asi
+│  └─ XMenuIII.asi
+├─ XBase/
+│  ├─ Library/
+│  │  ├─ XBaseSA.dll / XBaseVC.dll / XBaseIII.dll
+│  │  └─ WebView2Loader.dll
+│  └─ Mods/
+│     └─ XMenu/
+│        ├─ data/
+│        │  ├─ sa/
+│        │  ├─ vc/
+│        │  ├─ iii/
+│        │  └─ i18n/
+│        └─ ui.html
 └─ d3d8.dll
 ```
 
@@ -228,14 +233,13 @@ Build.bat Release --no-pause
 构建产物：
 
 ```text
-build/bin/XMenu.asi
+build/bin/XMenuSA.asi
+build/bin/XMenuVC.asi
+build/bin/XMenuIII.asi
 build/bin/XMenuInstaller.exe
-build/bin/XMenu/XMenuSA.dll
-build/bin/XMenu/XMenuVC.dll
-build/bin/XMenu/XMenuIII.dll
-build/bin/XMenu/data/**
-build/bin/XMenu/data/i18n/**
-build/bin/XMenu/i18n/**
+build/bin/XBase/Mods/XMenu/data/**
+build/bin/XBase/Mods/XMenu/data/i18n/**
+build/bin/XBase/Mods/XMenu/ui.html
 ```
 
 | 路径 | 说明 |

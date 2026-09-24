@@ -1,29 +1,20 @@
 #include "World.h"
-#include "utils/I18n.h"
-#include <XBase/UI.h>
 
 namespace {
-    const char* T(const char* key) {
-        return I18n::T(key);
-    }
+    const Controllers::World::WeatherEntry kWeatherCatalog[] = {
+        {0, "weather.sunny"},
+        {1, "weather.cloudy"},
+        {2, "weather.rainy"},
+        {3, "weather.foggy"},
+        {4, "weather.extrasunny"},
+        {5, "weather.hurricane"},
+        {6, "weather.extracolours"},
+    };
 }
 
 namespace Controllers::World {
-    void DrawWeatherButtons() {
-        if (XBase::UI::Button(T("weather.sunny"))) {
-            ForceWeatherNow(0);
-        }
-        XBase::UI::SameLine();
-        if (XBase::UI::Button(T("weather.cloudy"))) {
-            ForceWeatherNow(1);
-        }
-        XBase::UI::SameLine();
-        if (XBase::UI::Button(T("weather.rainy"))) {
-            ForceWeatherNow(2);
-        }
-        XBase::UI::SameLine();
-        if (XBase::UI::Button(T("weather.foggy"))) {
-                        ForceWeatherNow(3);
-        }
+    const WeatherEntry* GetWeatherCatalog(int& count) {
+        count = static_cast<int>(sizeof(kWeatherCatalog) / sizeof(kWeatherCatalog[0]));
+        return kWeatherCatalog;
     }
 }

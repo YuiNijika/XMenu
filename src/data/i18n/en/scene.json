@@ -32,5 +32,6 @@
   "scene.missionIndex": "Mission ID",
   "scene.startMission": "Start mission",
   "scene.noMissions": "No mission is currently running.",
+  "scene.missionListHint": "Click a list entry to start that mission immediately.",
   "scene.failMission": "Fail current mission"
 }

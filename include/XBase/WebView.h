@@ -40,8 +40,8 @@ bool IsVisible();
 void SetBounds(const Rect& bounds);
 State GetState();
 
-// 隐藏只让面板不可见，浏览器保持存活；关闭会释放浏览器与宿主窗口，
-// 之后再次 SetVisible(true) 或 Navigate 会重新创建，两者对应窗口的最小化与关闭
+// 隐藏只让面板不可见，浏览器保持存活，关闭会释放浏览器与宿主窗口，
+// 之后再次设为可见或导航会重新创建，两者分别对应窗口的最小化与关闭
 bool Close();
 
 // 独占全屏等无法合成 HWND 的环境下，面板改用抓帧贴图呈现。

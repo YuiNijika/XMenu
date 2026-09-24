@@ -49,7 +49,7 @@ namespace MenuState {
     inline bool WeaponVehicleEsp = false;          // 绘制车辆包围盒线框
     inline bool WeaponVehicleColEsp = false;       // 绘制车辆碰撞体局部线框
     inline bool WeaponBulletTrack = false;         // 子弹追踪
-    // 追踪筛选（开追踪后 UI 多选）：非任务 / 任务友敌中立
+    // 追踪筛选，开启追踪后界面可多选，分为非任务与任务的友敌中立
     inline bool WeaponTrackCivilian = true;        // 其他（非任务行人）
     inline bool WeaponTrackFriend = false;         // 任务-友方（默认不锁）
     inline bool WeaponTrackHostile = true;         // 任务-敌对
@@ -113,7 +113,7 @@ namespace MenuState {
     inline bool VehicleInfNitro = false;
     inline int VehicleDoorIndex = 0;
     inline int VehicleSeatIndex = 0;
-    inline float VehicleTrafficClearRadius = 80.0f;
+    inline float VehicleTrafficDensity = 0.8f;
     inline bool TeleportInsertCoord = false;
     inline bool TeleportMarker = false;
     inline bool QuickTeleport = false;
@@ -121,8 +121,9 @@ namespace MenuState {
     inline bool SpawnUnderwater = false;
     inline float TeleportForwardDistance = 5.0f;
     inline bool TeleportForwardHold = false;
-    inline float TeleportMapWidth = 6000.0f;
-    inline float TeleportMapHeight = 6000.0f;
+    // 0 表示跟随游戏雷达范围 由 XBase 提供
+    inline float TeleportMapWidth = 0.0f;
+    inline float TeleportMapHeight = 0.0f;
     inline int PedSpawnModel = 7;
     inline int PedSpawnType = 4;
     inline int PedGangType = 0;

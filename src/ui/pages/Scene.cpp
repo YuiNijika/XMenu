@@ -1,6 +1,7 @@
 #include "Scene.h"
 #include "controllers/Scene.h"
 #include "ui/MenuState.h"
+#include "ui/UiSchema.h"
 #include "ui/Widget.h"
 #include "utils/DataManager.h"
 #include "utils/I18n.h"
@@ -121,7 +122,35 @@ namespace {
     }
 
     void DrawMissionList() {
-        XBase::UI::TextDisabled(T("scene.noMissions"));
+        static LiveList<DataManager::MissionData> missions;
+        const std::string path = DataManager::GetDataFilePath("missions.json");
+        if (ShouldReload(path, missions.lastWrite, missions.loaded)) {
+            missions.loaded = true;
+            missions.entries = DataManager::LoadMissions();
+        }
+        if (missions.entries.empty()) {
+            XBase::UI::TextDisabled(T("scene.noMissions"));
+            return;
+        }
+
+        std::string currentCategory;
+        int index = 0;
+        for (const DataManager::MissionData& mission : missions.entries) {
+            if (currentCategory != mission.category) {
+                currentCategory = mission.category;
+                index = 0;
+                XBase::UI::Spacing();
+                XBase::UI::SeparatorText(mission.category.c_str());
+            }
+
+            char label[160];
+            std::snprintf(label, sizeof(label), "%s (%d)##mission_%d", mission.name.c_str(), mission.id, mission.id);
+            if (UI::Button(label, 3)) {
+                MenuState::SceneMissionIndex = mission.id;
+                Controllers::Scene::StartMission(mission.id);
+            }
+            UI::SameLineEvery(index++, 3);
+        }
     }
     void DrawAnimationList() {
         static LiveList<AnimationEntry> animations;
@@ -203,13 +232,18 @@ namespace Pages::Scene {
                     !XBaseBridge::HasCapability(XBase::FeatureCapability::SceneAnimation), [&] {
                 XBase::UI::InputText(T("scene.animGroup"), MenuState::SceneAnimGroup, sizeof(MenuState::SceneAnimGroup));
                 XBase::UI::InputText(T("scene.animName"), MenuState::SceneAnimName, sizeof(MenuState::SceneAnimName));
-                XBase::UI::Checkbox(T("scene.loop"), MenuState::SceneAnimLoop);
+
+                // 循环、副任务动作与目标行人三个开关交给界面注册表，网页界面读的是同一份配置
+                if (!UiSchema::DrawSection("scene", "sceneMain", "animation")) {
+                    XBase::UI::Checkbox(T("scene.loop"), MenuState::SceneAnimLoop);
 #ifdef GTASA
-                XBase::UI::SameLine();
-                XBase::UI::Checkbox(T("scene.secondary"), MenuState::SceneAnimSecondary);
-                XBase::UI::SameLine();
-                XBase::UI::Checkbox(T("scene.onTargetPed"), MenuState::SceneAnimOnPed);
+                    XBase::UI::SameLine();
+                    XBase::UI::Checkbox(T("scene.secondary"), MenuState::SceneAnimSecondary);
+                    XBase::UI::SameLine();
+                    XBase::UI::Checkbox(T("scene.onTargetPed"), MenuState::SceneAnimOnPed);
 #endif
+                }
+
                 if (UI::Button(T("scene.playAnim"), 2)) {
                     Controllers::Scene::PlayPlayerAnimation();
                 }
@@ -227,16 +261,18 @@ namespace Pages::Scene {
             XBase::UI::Tab("scene.styles", T("scene.styles"), [&] {
                 XBase::UI::Disabled(
                     !XBaseBridge::HasCapability(XBase::FeatureCapability::SceneAnimation), [&] {
-                UI::PushItemWidth(180);
-                UI::SliderInt(T("scene.fightStyle"), &MenuState::SceneFightStyle, 0, 15);
-                UI::SliderInt(T("scene.walkStyle"), &MenuState::SceneWalkStyle, 0, 21);
-                UI::PopItemWidth();
-                if (UI::Button(T("scene.applyFightStyle"), 2)) {
-                    Controllers::Scene::SetFightingStyle(MenuState::SceneFightStyle);
-                }
-                XBase::UI::SameLine();
-                if (UI::Button(T("scene.applyWalkStyle"), 2)) {
-                    Controllers::Scene::SetWalkingStyle(MenuState::SceneWalkStyle);
+                if (!UiSchema::DrawSection("scene", "sceneMain", "styles")) {
+                    UI::PushItemWidth(180);
+                    UI::SliderInt(T("scene.fightStyle"), &MenuState::SceneFightStyle, 0, 15);
+                    UI::SliderInt(T("scene.walkStyle"), &MenuState::SceneWalkStyle, 0, 21);
+                    UI::PopItemWidth();
+                    if (UI::Button(T("scene.applyFightStyle"), 2)) {
+                        Controllers::Scene::SetFightingStyle(MenuState::SceneFightStyle);
+                    }
+                    XBase::UI::SameLine();
+                    if (UI::Button(T("scene.applyWalkStyle"), 2)) {
+                        Controllers::Scene::SetWalkingStyle(MenuState::SceneWalkStyle);
+                    }
                 }
                 });
                 });
@@ -305,6 +341,7 @@ namespace Pages::Scene {
                 }
 
                 UI::SpacingSeparator();
+                XBase::UI::TextWrapped(T("scene.missionListHint"));
                 DrawMissionList();
                 });
                 });

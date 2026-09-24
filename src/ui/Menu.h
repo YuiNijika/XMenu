@@ -10,4 +10,7 @@ namespace Menu {
 
     void PushPage(Page page);
     void PopPage();
+
+    // 界面外观或交互模式改了之后调用，让列表界面在下一帧复位选中项
+    void NotifySurfaceChanged();
 }

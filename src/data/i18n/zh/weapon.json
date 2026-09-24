@@ -129,5 +129,9 @@
   "weapon.detonator_grenade": "遥控手雷",
   "weapon.cellphone": "手机",
   "weapon.jetpack": "飞行器",
-  "weapon.helicannon": "直升机机关炮"
+  "weapon.helicannon": "直升机机关炮",
+  "weapon.sectionRuntime": "运行时效果",
+  "weapon.sectionOverrides": "属性改写",
+  "weapon.sectionBulletAssist": "子弹辅助",
+  "weapon.sectionGiveOptions": "获取选项"
 }

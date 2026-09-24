@@ -15,6 +15,9 @@ struct Entry {
 };
 
 void Init(const char* filePath = nullptr);
+
+// 模组日志写到 XBase 目录下以模组名命名的子目录里的 debug 日志
+void InitForMod(const char* modName);
 void Shutdown();
 bool IsInitialized();
 

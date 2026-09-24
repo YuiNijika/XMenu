@@ -129,5 +129,9 @@
   "weapon.detonator_grenade": "Дистанционная граната",
   "weapon.cellphone": "Телефон",
   "weapon.jetpack": "Реактивный ранец",
-  "weapon.helicannon": "Вертолётная пушка"
+  "weapon.helicannon": "Вертолётная пушка",
+  "weapon.sectionRuntime": "Эффекты во время игры",
+  "weapon.sectionOverrides": "Переопределение характеристик",
+  "weapon.sectionBulletAssist": "Помощь по пулям",
+  "weapon.sectionGiveOptions": "Настройки выдачи"
 }

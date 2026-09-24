@@ -333,6 +333,10 @@
   "vehicle.sectionCheat": "車両チート",
   "vehicle.sectionEffect": "エフェクトと自動化",
   "vehicle.sectionSpeed": "速度",
+  "vehicle.sectionTraffic": "交通",
   "vehicle.sectionPaint": "カラーと塗装",
-  "vehicle.sectionDoors": "ドアとシート"
+  "vehicle.sectionDoors": "ドアとシート",
+  "vehicle.sectionActions": "クイック操作",
+  "vehicle.sectionAutoDrive": "自動運転",
+  "vehicle.sectionSpawnOptions": "出現オプション"
 }

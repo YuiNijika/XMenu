@@ -129,5 +129,9 @@
   "weapon.detonator_grenade": "Remote Grenade",
   "weapon.cellphone": "Cellphone",
   "weapon.jetpack": "Jetpack",
-  "weapon.helicannon": "Helicannon"
+  "weapon.helicannon": "Helicannon",
+  "weapon.sectionRuntime": "Runtime effects",
+  "weapon.sectionOverrides": "Stat overrides",
+  "weapon.sectionBulletAssist": "Bullet assist",
+  "weapon.sectionGiveOptions": "Give options"
 }

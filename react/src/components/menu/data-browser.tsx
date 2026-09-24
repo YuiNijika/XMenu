@@ -23,7 +23,7 @@ type DataBrowserProps = {
   onPick: (item: DataItem) => void
 }
 
-const MaxVisible = 120
+const MaxVisible = 600
 
 // 数据包列表统一走这里，分类筛选加关键字过滤，避免一次渲染上千个条目
 export function DataBrowser({ method, disabled, max = MaxVisible, onPick }: DataBrowserProps) {
@@ -77,6 +77,7 @@ export function DataBrowser({ method, disabled, max = MaxVisible, onPick }: Data
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}
           placeholder={t('common.search')}
+          aria-label={t('common.search')}
         />
         <Button variant={category ? 'outline' : 'default'} size="sm" onClick={() => setCategory('')}>
           {t('common.toggles')}

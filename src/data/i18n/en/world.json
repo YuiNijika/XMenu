@@ -85,5 +85,8 @@
   "weather.sandstorm_desert": "Desert Sandstorm",
   "weather.underwater": "Underwater",
   "weather.extracolours_1": "Extra Colours 1",
-  "weather.extracolours_2": "Extra Colours 2"
+  "weather.extracolours_2": "Extra Colours 2",
+  "weather.extrasunny_la": "LA Extra Sunny",
+  "weather.hurricane": "Hurricane",
+  "weather.extracolours": "Extra Colours"
 }

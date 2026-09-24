@@ -66,7 +66,7 @@ bool IsWindowModeSupported();
 WindowMode GetWindowMode();
 bool SetWindowMode(WindowMode mode);
 
-// Call before the game creates its D3D device (ASI load time) to make the
+// Call before the game creates its D3D device at ASI load time to make the
 // game build a windowed swap chain from the start, like the reference
 // III.VC.SA.WindowedMode plugin: windowed presentation is what lets DWM
 // compose the game window and HWND overlays. Exclusive fullscreen can only

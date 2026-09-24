@@ -16,7 +16,7 @@
   "teleport.forwardHold": "Непрерывный телепорт вперёд",
   "teleport.forwardHoldHint": "Если включено, удержание горячей клавиши телепорта вперёд будет повторять телепорт вперёд.",
   "teleport.customMapSize": "Пользовательский размер карты",
-  "teleport.customMapSizeHint": "Если быстрый телепорт по карте смещен, здесь можно изменить ширину и высоту карты. Значение по умолчанию: 6000 x 6000.",
+  "teleport.customMapSizeHint": "Значение 0 следует диапазону радара игры; измените ширину и высоту здесь, если быстрый телепорт по карте смещён.",
   "teleport.width": "Ширина",
   "teleport.height": "Высота",
   "teleport.applyMapSize": "Применить размер карты",
@@ -263,5 +263,6 @@
   "teleport.location.sa_sf_airport_runway": "Аэродром Сан-Фиерро",
   "teleport.location.sa_lv_airport_ticket": "Аэропорт Лас-Вентураса: кассы",
   "teleport.location.sa_lv_airport_runway": "Аэродром Лас-Вентураса",
-  "teleport.location.sa_desert_airstrip": "Аэродром Verdant Meadows"
+  "teleport.location.sa_desert_airstrip": "Аэродром Verdant Meadows",
+  "teleport.sectionQuickOptions": "Настройки быстрого телепорта"
 }

@@ -18,12 +18,8 @@ const char* LevelName(XBase::Log::Level level) {
 namespace Log {
 
 void Init() {
-    std::string directory = XBase::Platform::ModuleDirectory("XMenu.asi");
-    if (directory.empty()) directory = XBase::Platform::CurrentModuleDirectory();
-    directory += "XMenu\\";
-    XBase::Platform::EnsureDirectory(directory);
-    const std::string path = directory + "debug.log";
-    XBase::Log::Init(path.c_str());
+    // 统一写到游戏根目录 XBase 下 XMenu 子目录里的日志文件
+    XBase::Log::InitForMod("XMenu");
 }
 
 void Shutdown() {

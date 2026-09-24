@@ -333,6 +333,10 @@
   "vehicle.sectionCheat": "载具作弊",
   "vehicle.sectionEffect": "特效与自动化",
   "vehicle.sectionSpeed": "速度",
+  "vehicle.sectionTraffic": "交通",
   "vehicle.sectionPaint": "颜色与涂装",
-  "vehicle.sectionDoors": "车门与座位"
+  "vehicle.sectionDoors": "车门与座位",
+  "vehicle.sectionActions": "快捷动作",
+  "vehicle.sectionAutoDrive": "自动驾驶",
+  "vehicle.sectionSpawnOptions": "生成选项"
 }

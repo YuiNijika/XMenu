@@ -1439,9 +1439,9 @@
         gUi.localVersionText = CreateLabel(window, L"本地版本：未检测", ContentLeft, 198, 400, 22, gUi.normalFont);
 
         // --- 组件页 ---
-        gUi.moduleIII = CreateCheckbox(window, L"安装 GTA III 模块（XMenuIII.dll）", ControlModuleIII, ContentLeft, 110, 360, 26);
-        gUi.moduleVC = CreateCheckbox(window, L"安装 GTA Vice City 模块（XMenuVC.dll）", ControlModuleVC, ContentLeft, 146, 380, 26);
-        gUi.moduleSA = CreateCheckbox(window, L"安装 GTA San Andreas 模块（XMenuSA.dll）", ControlModuleSA, ContentLeft, 182, 400, 26);
+        gUi.moduleIII = CreateCheckbox(window, L"安装 GTA III 模块（XMenuIII.asi）", ControlModuleIII, ContentLeft, 110, 360, 26);
+        gUi.moduleVC = CreateCheckbox(window, L"安装 GTA Vice City 模块（XMenuVC.asi）", ControlModuleVC, ContentLeft, 146, 380, 26);
+        gUi.moduleSA = CreateCheckbox(window, L"安装 GTA San Andreas 模块（XMenuSA.asi）", ControlModuleSA, ContentLeft, 182, 400, 26);
         gUi.rootDependencies = CreateCheckbox(window, L"安装 Ultimate ASI Loader / D3D8to9 到游戏根目录", ControlRootDependencies, ContentLeft, 230, 420, 26);
         gUi.downloadSource = CreateDownloadSourceCombo(window, ContentLeft, 306, 360, 200);
 
@@ -1481,7 +1481,7 @@
         SetWindowPos(hwnd, nullptr, x, y, width, height, SWP_NOZORDER | SWP_NOACTIVATE);
     }
 
-    // 统一布局：左栏固定宽度，内容区左右留白一致，底部按钮右对齐
+    // 统一布局，左栏固定宽度，内容区左右留白一致，底部按钮右对齐
     void LayoutControls(int clientWidth, int clientHeight) {
         if (clientWidth <= 0 || clientHeight <= 0) {
             return;

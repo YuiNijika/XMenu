@@ -1,8 +1,8 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Toaster } from '@/components/ui/toast'
+import { Toaster, toast } from '@/components/ui/toast'
 import { call } from '@/lib/bridge'
 import { runAction } from '@/lib/actions'
 import { useI18n } from '@/lib/i18n'
@@ -35,16 +35,77 @@ type DragState = {
 export function Shell({ pages, activePage, onSelect, title, subtitle, game, children }: ShellProps) {
   const { t } = useI18n()
   const dragRef = useRef<DragState | null>(null)
-  const lastSent = useRef(0)
   const [resizing, setResizing] = useState(false)
+  const [exclusiveFullscreen, setExclusiveFullscreen] = useState(false)
+  const moveRef = useRef<{ x: number; y: number; left: number; top: number } | null>(null)
+  const panelRectRef = useRef<{ x: number; y: number } | null>(null)
 
-  const sendSize = (width: number, height: number, force: boolean) => {
-    const now = Date.now()
-    if (!force && now - lastSent.current < 80) {
+  // 面板矩形提前取好并定期刷新，拖动时才不用等异步回调
+  useEffect(() => {
+    const refresh = () => {
+      call<{ x: number; y: number }>('menu.panelRect')
+        .then((rect) => {
+          panelRectRef.current = { x: rect.x, y: rect.y }
+        })
+        .catch(() => {
+          panelRectRef.current = null
+        })
+    }
+    refresh()
+    const timer = window.setInterval(refresh, 2000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  // 独占全屏下面板只能抓帧回显，这里判断后提示改成窗口或无边框
+  useEffect(() => {
+    const check = () => {
+      call<{ current: number }>('settings.windowModeGet')
+        .then((state) => setExclusiveFullscreen(state.current === 0))
+        .catch(() => setExclusiveFullscreen(false))
+    }
+    check()
+    const timer = window.setInterval(check, 5000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  // 宿主每帧只处理一次挂起动作，这里不做节流，拖动才能跟手
+  const sendSize = (width: number, height: number) => {
+    void call('menu.setPanelSize', { width, height })
+  }
+
+  const sendPosition = (x: number, y: number) => {
+    void call('menu.setPanelPos', { x, y })
+  }
+
+  // 拖动标题栏整体移动面板，位置以缓存的面板矩形为基准
+  const beginMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const start = panelRectRef.current
+    if (!start) {
+      // 缓存还没就绪，先补一次再让用户重拖，避免异步里丢指针捕获
+      void call<{ x: number; y: number }>('menu.panelRect').then((rect) => {
+        panelRectRef.current = { x: rect.x, y: rect.y }
+      })
       return
     }
-    lastSent.current = now
-    void call('menu.setPanelSize', { width, height })
+    event.currentTarget.setPointerCapture(event.pointerId)
+    moveRef.current = { x: event.clientX, y: event.clientY, left: start.x, top: start.y }
+  }
+
+  const moveMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const start = moveRef.current
+    if (!start) {
+      return
+    }
+    sendPosition(start.left + (event.clientX - start.x), start.top + (event.clientY - start.y))
+  }
+
+  const endMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const start = moveRef.current
+    moveRef.current = null
+    if (!start) {
+      return
+    }
+    sendPosition(start.left + (event.clientX - start.x), start.top + (event.clientY - start.y))
   }
 
   const beginResize = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -64,7 +125,7 @@ export function Shell({ pages, activePage, onSelect, title, subtitle, game, chil
     if (!start) {
       return
     }
-    sendSize(start.width + (event.clientX - start.x), start.height + (event.clientY - start.y), false)
+    sendSize(start.width + (event.clientX - start.x), start.height + (event.clientY - start.y))
   }
 
   const endResize = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -74,7 +135,7 @@ export function Shell({ pages, activePage, onSelect, title, subtitle, game, chil
     if (!start) {
       return
     }
-    sendSize(start.width + (event.clientX - start.x), start.height + (event.clientY - start.y), true)
+    sendSize(start.width + (event.clientX - start.x), start.height + (event.clientY - start.y))
   }
 
   return (
@@ -112,8 +173,45 @@ export function Shell({ pages, activePage, onSelect, title, subtitle, game, chil
         </aside>
 
         <main className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {exclusiveFullscreen ? (
+            <div className="flex flex-wrap items-center gap-3 border-b border-amber-500/40 bg-amber-500/10 px-7 py-3 text-xs text-amber-200">
+              <span className="min-w-0 flex-1">{t('react.fullscreenBanner')}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  call<{ restartRequired: boolean }>('settings.windowMode', { value: 2 })
+                    .then((state) => {
+                      toast.add({
+                        type: 'success',
+                        title: t(state.restartRequired
+                          ? 'settings.displayModeRestartNotice'
+                          : 'react.done'),
+                        description: t('settings.displayMode.borderless'),
+                      })
+                    })
+                    .catch(() => {
+                      toast.add({
+                        type: 'error',
+                        title: t('react.failed'),
+                        description: t('settings.displayMode.borderless'),
+                      })
+                    })
+                }}
+              >
+                {t('settings.displayMode.borderless')}
+              </Button>
+            </div>
+          ) : null}
           <header className="flex items-center justify-between border-b border-border/60 px-7 py-5">
-            <div>
+            <div
+              className="min-w-0 flex-1 cursor-move select-none"
+              title={t('react.moveHint')}
+              onPointerDown={beginMove}
+              onPointerMove={moveMove}
+              onPointerUp={endMove}
+              onPointerCancel={endMove}
+            >
               <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
               <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
             </div>

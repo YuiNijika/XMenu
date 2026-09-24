@@ -1,0 +1,234 @@
+{
+  "missions": [
+    {
+      "category": "Arena missions",
+      "entries": [
+        { "name": "Beat the Cock!", "id": 130 },
+        { "name": "Blood Ring", "id": 128 },
+        { "name": "Kickstart", "id": 129 }
+      ]
+    },
+    {
+      "category": "Big smoke",
+      "entries": [
+        { "name": "Just Business", "id": 30 },
+        { "name": "OG Loc", "id": 27 },
+        { "name": "Running Dog", "id": 28 },
+        { "name": "Wrong Side of the Tracks", "id": 29 }
+      ]
+    },
+    {
+      "category": "Caligulas casino",
+      "entries": [
+        { "name": "Freefall", "id": 91 },
+        { "name": "Intensive Care", "id": 89 },
+        { "name": "Saint Marks Bistro", "id": 92 },
+        { "name": "The Meat Business", "id": 90 }
+      ]
+    },
+    {
+      "category": "Carl johnson",
+      "entries": [
+        { "name": "555 WE TIP", "id": 51 },
+        { "name": "Cut Throat Business", "id": 105 },
+        { "name": "Deconstruction", "id": 50 },
+        { "name": "Home Coming", "id": 104 },
+        { "name": "Vertical Bird", "id": 103 },
+        { "name": "Wear Flowers In Your Hair", "id": 49 }
+      ]
+    },
+    {
+      "category": "Cesar vialpando",
+      "entries": [
+        { "name": "King in Exile", "id": 45 }
+      ]
+    },
+    {
+      "category": "Frank tenpenny",
+      "entries": [
+        { "name": "Badlands", "id": 39 },
+        { "name": "Burning Desire", "id": 22 },
+        { "name": "Gray Imports", "id": 23 },
+        { "name": "High Noon", "id": 94 },
+        { "name": "Misappropriation", "id": 93 },
+        { "name": "Snail Trail", "id": 52 }
+      ]
+    },
+    {
+      "category": "Heist",
+      "entries": [
+        { "name": "Architectural Espionage", "id": 96 },
+        { "name": "Breaking the Bank at Caligulas", "id": 101 },
+        { "name": "Cop Wheels", "id": 99 },
+        { "name": "Dam And Blast", "id": 98 },
+        { "name": "Key To Her Heart", "id": 97 },
+        { "name": "Up Up and Away!", "id": 100 }
+      ]
+    },
+    {
+      "category": "Introduction",
+      "entries": [
+        { "name": "Big Smoke", "id": 11 },
+        { "name": "Ryder", "id": 12 }
+      ]
+    },
+    {
+      "category": "Loco syndicate",
+      "entries": [
+        { "name": "Ice Cold Killa", "id": 61 },
+        { "name": "Jizzy", "id": 59 },
+        { "name": "Mike Toreno", "id": 66 },
+        { "name": "Outrider", "id": 60 },
+        { "name": "Photo Opportunity", "id": 58 },
+        { "name": "Pier 69", "id": 64 },
+        { "name": "T-Bone Mendez", "id": 65 },
+        { "name": "Torenos Last Flight", "id": 62 },
+        { "name": "Yay Ka-Boom-Boom", "id": 63 }
+      ]
+    },
+    {
+      "category": "Madd dogg",
+      "entries": [
+        { "name": "Madd Dogg", "id": 95 }
+      ]
+    },
+    {
+      "category": "Mike toreno",
+      "entries": [
+        { "name": "Highjack", "id": 76 },
+        { "name": "Interdiction", "id": 77 },
+        { "name": "Monster", "id": 75 },
+        { "name": "Verdant Meadows", "id": 78 }
+      ]
+    },
+    {
+      "category": "Miscellaneous",
+      "entries": [
+        { "name": "Quarry", "id": 118 },
+        { "name": "Trucking", "id": 117 }
+      ]
+    },
+    {
+      "category": "OG loc",
+      "entries": [
+        { "name": "House Party", "id": 34 },
+        { "name": "Lifes a Beach", "id": 31 },
+        { "name": "Madd Doggs Rhymes", "id": 32 },
+        { "name": "Management Issues", "id": 33 }
+      ]
+    },
+    {
+      "category": "Riot",
+      "entries": [
+        { "name": "End Of The Line 1", "id": 110 },
+        { "name": "End Of The Line 2", "id": 111 },
+        { "name": "End Of The Line 3", "id": 112 },
+        { "name": "Los Desperados", "id": 109 },
+        { "name": "Riot", "id": 108 }
+      ]
+    },
+    {
+      "category": "Robbery",
+      "entries": [
+        { "name": "Against All Odds", "id": 44 },
+        { "name": "Local Liquor Store", "id": 41 },
+        { "name": "Small Town Bank", "id": 42 },
+        { "name": "Tanker Commander", "id": 43 }
+      ]
+    },
+    {
+      "category": "Ryder",
+      "entries": [
+        { "name": "Catalyst", "id": 25 },
+        { "name": "Home Invasion", "id": 24 },
+        { "name": "Robbing Uncle Sam", "id": 26 }
+      ]
+    },
+    {
+      "category": "Sweet",
+      "entries": [
+        { "name": "Beat Down on B Dup", "id": 106 },
+        { "name": "Cesar Vialpando", "id": 19 },
+        { "name": "Cleaning The Hood", "id": 14 },
+        { "name": "Doberman", "id": 21 },
+        { "name": "Drive-By", "id": 17 },
+        { "name": "Drive-Thru", "id": 15 },
+        { "name": "Grove 4 Life", "id": 107 },
+        { "name": "Los Sepulcros", "id": 20 },
+        { "name": "Nines And AKs", "id": 16 },
+        { "name": "Reuniting The Families", "id": 37 },
+        { "name": "Sweets Girl", "id": 18 },
+        { "name": "Tagging Up Turf", "id": 13 },
+        { "name": "The Green Sabre", "id": 38 }
+      ]
+    },
+    {
+      "category": "The four dragons casino",
+      "entries": [
+        { "name": "A Home In The Hills", "id": 102 },
+        { "name": "Don Peyote", "id": 88 },
+        { "name": "Explosive Situation", "id": 85 },
+        { "name": "Fender Ketchup", "id": 84 },
+        { "name": "Fish in a Barrel", "id": 87 },
+        { "name": "Youve Had Your Chips", "id": 86 }
+      ]
+    },
+    {
+      "category": "The truth",
+      "entries": [
+        { "name": "Are you going to San Fierro?", "id": 47 },
+        { "name": "Body Harvest", "id": 46 }
+      ]
+    },
+    {
+      "category": "Verdant meadows airstrip",
+      "entries": [
+        { "name": "Black Project", "id": 81 },
+        { "name": "Green Goo", "id": 82 },
+        { "name": "Learning to Fly", "id": 83 },
+        { "name": "N.O.E.", "id": 79 },
+        { "name": "Stowaway", "id": 80 }
+      ]
+    },
+    {
+      "category": "Video games",
+      "entries": [
+        { "name": "Beefy Baron", "id": 10 },
+        { "name": "Duality", "id": 4 },
+        { "name": "Go Go Space Monkey", "id": 5 },
+        { "name": "Inside Track Betting", "id": 7 },
+        { "name": "Lets Get Ready To Bumble", "id": 6 },
+        { "name": "Lowrider (Bet And Dance)", "id": 9 },
+        { "name": "They Crawled From Uranus", "id": 3 }
+      ]
+    },
+    {
+      "category": "Wang cars",
+      "entries": [
+        { "name": "Back to School", "id": 71 },
+        { "name": "Customs Fast Track", "id": 69 },
+        { "name": "Puncture Wounds", "id": 70 },
+        { "name": "Test Drive", "id": 68 },
+        { "name": "Zeroing In", "id": 67 }
+      ]
+    },
+    {
+      "category": "WuZiMu",
+      "entries": [
+        { "name": "Amphibious Assault", "id": 56 },
+        { "name": "Lure", "id": 55 },
+        { "name": "Mountain Cloud Boys", "id": 53 },
+        { "name": "Ran Fa Li", "id": 54 },
+        { "name": "The Da Nang Thang", "id": 57 }
+      ]
+    },
+    {
+      "category": "Zero",
+      "entries": [
+        { "name": "Air Raid", "id": 72 },
+        { "name": "New Model Army", "id": 74 },
+        { "name": "Supply Lines", "id": 73 }
+      ]
+    }
+  ]
+}

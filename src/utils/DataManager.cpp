@@ -9,29 +9,27 @@
     #define WEAPONS_RESOURCE_ID IDR_DATA_SA_WEAPONS
     #define VEHICLES_RESOURCE_ID IDR_DATA_SA_VEHICLES
     #define PEDS_RESOURCE_ID IDR_DATA_SA_PEDS
+    #define MISSIONS_RESOURCE_ID IDR_DATA_SA_MISSIONS
 #elif GTAVC
     #define GAME_DIR "vc"
     #define MAPS_RESOURCE_ID IDR_DATA_VC_MAPS
     #define WEAPONS_RESOURCE_ID IDR_DATA_VC_WEAPONS
     #define VEHICLES_RESOURCE_ID IDR_DATA_VC_VEHICLES
     #define PEDS_RESOURCE_ID IDR_DATA_VC_PEDS
+    #define MISSIONS_RESOURCE_ID IDR_DATA_VC_MISSIONS
 #else
     #define GAME_DIR "iii"
     #define MAPS_RESOURCE_ID IDR_DATA_III_MAPS
     #define WEAPONS_RESOURCE_ID IDR_DATA_III_WEAPONS
     #define VEHICLES_RESOURCE_ID IDR_DATA_III_VEHICLES
     #define PEDS_RESOURCE_ID IDR_DATA_III_PEDS
+    #define MISSIONS_RESOURCE_ID IDR_DATA_III_MISSIONS
 #endif
 
 namespace DataManager {
 
 std::string GetDataFilePath(const std::string& filename) {
-    const std::string directory = XBase::Platform::ModuleDirectory("XMenu.asi");
-    if (!directory.empty()) {
-        return directory + "XMenu/data/" GAME_DIR "/" + filename;
-    }
-
-    return std::string("XMenu/data/") + GAME_DIR + "/" + filename;
+    return XBase::Platform::ModDirectory("XMenu") + "data/" GAME_DIR "/" + filename;
 }
 
 JsonLoader::JsonValue LoadDataJson(const std::string& filename, int resourceId, const char* label) {
@@ -211,6 +209,43 @@ std::vector<PedData> LoadPeds() {
 
     Log::Info(std::string("成功加载 ") + std::to_string(peds.size()) + " 个行人");
     return peds;
+}
+
+std::vector<MissionData> LoadMissions() {
+    std::vector<MissionData> missions;
+
+    JsonLoader::JsonValue data = LoadDataJson("missions.json", MISSIONS_RESOURCE_ID, "任务");
+    if (data.type != JsonLoader::JsonValue::OBJECT) {
+        Log::Warn("任务数据加载失败，使用空数据");
+        return missions;
+    }
+
+    const auto& missionCategories = JsonLoader::GetArray(data, "missions");
+
+    for (const auto& category : missionCategories) {
+        if (category.type != JsonLoader::JsonValue::OBJECT) {
+            continue;
+        }
+
+        std::string categoryName = JsonLoader::GetString(category, "category", "unknown");
+        const auto& entries = JsonLoader::GetArray(category, "entries");
+
+        for (const auto& entry : entries) {
+            if (entry.type != JsonLoader::JsonValue::OBJECT) {
+                continue;
+            }
+
+            MissionData mission;
+            mission.category = categoryName;
+            mission.name = JsonLoader::GetString(entry, "name", "unknown");
+            mission.id = static_cast<int>(JsonLoader::GetNumber(entry, "id", 0));
+
+            missions.push_back(mission);
+        }
+    }
+
+    Log::Info(std::string("成功加载 ") + std::to_string(missions.size()) + " 个任务");
+    return missions;
 }
 
 } // namespace DataManager

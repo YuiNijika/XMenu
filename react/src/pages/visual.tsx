@@ -1,47 +1,40 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
-import { runAction, runActionQuiet } from '@/lib/actions'
-import { isUsable, type CapabilityReport } from '@/lib/bridge'
+import { SchemaSection } from '@/components/menu/schema-section'
+import { runAction } from '@/lib/actions'
+import {
+  fetchUiSchema,
+  isUsable,
+  type CapabilityReport,
+  type UiSchemaPayload,
+} from '@/lib/bridge'
 import { useI18n } from '@/lib/i18n'
 
 type PageProps = {
   report: CapabilityReport | null
 }
 
-type RadarToggle = {
-  key: string
-  label: string
-  capability: string
-}
-
-const RadarToggles: RadarToggle[] = [
-  { key: 'square', label: 'visual.squareRadar', capability: 'visual.radarOptions' },
-  { key: 'noRadarRot', label: 'visual.noRadarRot', capability: 'visual.radarOptions' },
-  { key: 'fullscreenMap', label: 'visual.fullscreenMap', capability: 'visual.radarOptions' },
-  { key: 'unfogMap', label: 'visual.unfogMap', capability: 'visual.radarOptions' },
-  { key: 'hideAreaNames', label: 'visual.hideAreaNames', capability: 'visual.radarOptions' },
-  { key: 'hideVehicleNames', label: 'visual.hideVehicleNames', capability: 'visual.radarOptions' },
-  { key: 'nightVision', label: 'visual.nightVision', capability: 'visual.radarOptions' },
-  { key: 'infrared', label: 'visual.infrared', capability: 'visual.radarOptions' },
-]
-
 export function VisualPage({ report }: PageProps) {
   const { t } = useI18n()
-  const [hud, setHud] = useState(true)
-  const [radar, setRadar] = useState(true)
-  const [options, setOptions] = useState<Record<string, boolean>>({})
   const [filterId, setFilterId] = useState('0')
   const [strength, setStrength] = useState('1')
+  const [schema, setSchema] = useState<UiSchemaPayload | null>(null)
 
-  const toggleOption = (key: string, checked: boolean) => {
-    const next = { ...options, [key]: checked }
-    setOptions(next)
-    void runActionQuiet('visual.radarOptions', next)
-  }
+  // 界面注册表只取一次，网页端与 ImGui 从此共用同一份控件与能力门控
+  useEffect(() => {
+    let alive = true
+    void fetchUiSchema()
+      .then((payload) => {
+        if (alive) setSchema(payload)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
 
   return (
     <div className="grid gap-5 lg:grid-cols-2">
@@ -50,29 +43,8 @@ export function VisualPage({ report }: PageProps) {
           <CardTitle>{t('tab.visual')}</CardTitle>
           <CardDescription>{t('visual.squareRadarHint')}</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          <label className="flex items-center justify-between text-sm">
-            <span>{t('visual.hud')}</span>
-            <Switch
-              checked={hud}
-              disabled={!isUsable(report, 'visual.hud')}
-              onCheckedChange={(checked) => {
-                setHud(checked)
-                void runActionQuiet('visual.hud', { enable: checked })
-              }}
-            />
-          </label>
-          <label className="flex items-center justify-between text-sm">
-            <span>{t('visual.radar')}</span>
-            <Switch
-              checked={radar}
-              disabled={!isUsable(report, 'visual.radar')}
-              onCheckedChange={(checked) => {
-                setRadar(checked)
-                void runActionQuiet('visual.radar', { enable: checked })
-              }}
-            />
-          </label>
+        <CardContent>
+          <p className="text-xs text-muted-foreground">{t('visual.sectionDisplay')}</p>
         </CardContent>
       </Card>
 
@@ -111,21 +83,31 @@ export function VisualPage({ report }: PageProps) {
           <CardDescription>{t('visual.listHint')}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-2">
-          {RadarToggles.map((item) => (
-            <label key={item.key} className="flex items-center justify-between text-sm">
-              <span>{t(item.label)}</span>
-              <Switch
-                checked={options[item.key] ?? false}
-                disabled={!isUsable(report, item.capability)}
-                onCheckedChange={(checked) => toggleOption(item.key, checked)}
-              />
-            </label>
-          ))}
           <Badge variant="secondary" className="justify-self-start md:col-span-2">
             {report?.gameName ?? t('react.unknown')}
           </Badge>
         </CardContent>
       </Card>
+
+      {schema ? (
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>{t('common.toggles')}</CardTitle>
+            <CardDescription>{t('react.uiHint')}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <SchemaSection payload={schema} report={report} tabId="visual" pageId="visualMain" sectionId="display" />
+            <SchemaSection
+              payload={schema}
+              report={report}
+              tabId="visual"
+              pageId="visualMain"
+              sectionId="radarOptions"
+            />
+            <SchemaSection payload={schema} report={report} tabId="visual" pageId="visualMain" sectionId="filter" />
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   )
 }

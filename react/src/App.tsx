@@ -11,7 +11,8 @@ import { VehiclePage } from '@/pages/vehicle'
 import { VisualPage } from '@/pages/visual'
 import { WeaponPage } from '@/pages/weapon'
 import { WorldPage } from '@/pages/world'
-import { call, isBridgeAvailable, type CapabilityReport } from '@/lib/bridge'
+import { Button } from '@/components/ui/button'
+import { call, isBridgeAvailable, rawCall, type CapabilityReport } from '@/lib/bridge'
 import { I18nProvider, useI18n } from '@/lib/i18n'
 import { useCapabilities } from '@/lib/hooks'
 import './App.css'
@@ -54,14 +55,7 @@ function MenuApp() {
   const current = Pages.find((page) => page.id === activePage) ?? Pages[0]
 
   if (!bridgeReady) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background p-10">
-        <Alert className="max-w-xl">
-          <AlertTitle>{t('react.bridgeUnavailable')}</AlertTitle>
-          <AlertDescription>{t('react.bridgeUnavailableHint')}</AlertDescription>
-        </Alert>
-      </div>
-    )
+    return <BridgeHero />
   }
 
   return (
@@ -81,6 +75,37 @@ function MenuApp() {
       ) : null}
       {renderPage(current.id, report, info)}
     </Shell>
+  )
+}
+
+// 没有接入 XBase 时不给任何页面入口，只留重载与切回 ImGui 两条出路
+function BridgeHero() {
+  const { t } = useI18n()
+  const [busy, setBusy] = useState(false)
+
+  const toImgui = () => {
+    setBusy(true)
+    rawCall('menu.setUi', { ui: 'imgui' })
+    window.setTimeout(() => setBusy(false), 800)
+  }
+
+  return (
+    <div className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-background p-8 text-foreground">
+      <div className="pointer-events-none absolute -top-40 left-1/2 h-96 w-[38rem] -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" />
+      <div className="relative w-full max-w-lg rounded-3xl border border-border/60 bg-card/70 p-10 text-center shadow-2xl backdrop-blur-2xl">
+        <div className="text-xs font-medium tracking-[0.3em] text-muted-foreground uppercase">XMenu</div>
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight">{t('react.heroTitle')}</h1>
+        <p className="mt-3 text-sm text-muted-foreground">{t('react.heroHint')}</p>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            {t('react.heroReload')}
+          </Button>
+          <Button disabled={busy} onClick={toImgui}>
+            {t('react.heroImgui')}
+          </Button>
+        </div>
+      </div>
+    </div>
   )
 }
 

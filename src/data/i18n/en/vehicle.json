@@ -333,6 +333,10 @@
   "vehicle.sectionCheat": "Vehicle cheats",
   "vehicle.sectionEffect": "Effects and automation",
   "vehicle.sectionSpeed": "Speed",
+  "vehicle.sectionTraffic": "Traffic",
   "vehicle.sectionPaint": "Colors and paint",
-  "vehicle.sectionDoors": "Doors and seats"
+  "vehicle.sectionDoors": "Doors and seats",
+  "vehicle.sectionActions": "Quick actions",
+  "vehicle.sectionAutoDrive": "Auto drive",
+  "vehicle.sectionSpawnOptions": "Spawn options"
 }

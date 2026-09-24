@@ -79,6 +79,7 @@ enum class FeatureCapability {
     VehicleCheats,
     WorldTime,
     WorldWeather,
+    WorldWeatherEffects,
     WorldGravity,
     WorldPickups,
     WorldGameSpeed,

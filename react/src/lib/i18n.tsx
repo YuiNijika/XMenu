@@ -6,6 +6,7 @@ type Dictionary = Record<string, string>
 type I18nContextValue = {
   lang: string
   ready: boolean
+  dictionary: Dictionary
   t: (key: string, fallback?: string) => string
 }
 
@@ -25,6 +26,7 @@ const DataRoot = './data/i18n'
 const I18nContext = createContext<I18nContextValue>({
   lang: DefaultLanguage,
   ready: false,
+  dictionary: {},
   t: (key, fallback) => fallback ?? key,
 })
 
@@ -129,7 +131,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<I18nContextValue>(() => {
     const translate = (key: string, fallback?: string) => entries[key] ?? fallback ?? key
     activeTranslate = translate
-    return { lang, ready, t: translate }
+    return { lang, ready, dictionary: entries, t: translate }
   }, [lang, ready, entries])
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>

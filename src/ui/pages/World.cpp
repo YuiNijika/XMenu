@@ -1,6 +1,7 @@
 #include "World.h"
 #include "controllers/World.h"
 #include "ui/MenuState.h"
+#include "ui/UiSchema.h"
 #include "utils/AppConfig.h"
 #include "utils/I18n.h"
 #include <XBase/Camera.h>
@@ -73,6 +74,9 @@ void Draw() {
         });
     }
 
+    // 世界规则走界面注册表，网页界面读的是同一份配置
+    // 注册表缺失或没登记时退回原生绘制，保证界面不会开天窗
+    if (!UiSchema::DrawSection("world", "worldMain", "gameRules")) {
     if (UI::CollapsingHeader(T("world.gameRules"), true)) {
         UI::Columns(2, nullptr, false);
         const auto drawRule = [&](XBase::FeatureCapability capability, const char* label,
@@ -108,6 +112,7 @@ void Draw() {
             T("world.noWaterPhysics"), MenuState::NoWaterPhysics,
             [&] { Controllers::World::SetNoWaterPhysics(MenuState::NoWaterPhysics); });
         UI::Columns(1);
+    }
         UI::Spacing();
         UI::PushItemWidth(150.0f);
 

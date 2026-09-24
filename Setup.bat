@@ -35,7 +35,7 @@ if not exist "tools\premake5.exe" (
     goto fail
 )
 
-for %%T in (XBaseBootstrap XBasePayloadEntry XBaseSA XBaseVC XBaseIII) do (
+for %%T in (XBaseModEntry XBaseSA XBaseVC XBaseIII) do (
     if not exist "lib\%%T.lib" (
         echo [Error] Missing local XBase SDK library: lib\%%T.lib
         goto fail

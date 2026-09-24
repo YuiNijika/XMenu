@@ -114,8 +114,8 @@ Neon, freecam, top-down camera, random cheats, and many scene tools are SA-orien
 ### Option B: Manual copy
 
 1. Install requirements.
-2. Copy `XMenu.asi` into the game root.
-3. Copy the `XMenu` folder into the game root.
+2. Copy `XMenuSA.asi` (matching your game: `XMenuVC.asi` / `XMenuIII.asi`) into the game's `plugins` folder (or game root).
+3. Copy the `XBase` folder (contains `Mods\XMenu` with data and `ui.html`) into the game root.
 4. For GTA III / Vice City, also copy `d3d8.dll`.
 5. Start the game and press `M`.
 
@@ -123,17 +123,22 @@ Recommended layout:
 
 ```text
 GameRoot/
-├─ XMenu.asi
-├─ XMenu/
-│  ├─ XMenuSA.dll
-│  ├─ XMenuVC.dll
-│  ├─ XMenuIII.dll
-│  ├─ data/
-│  │  ├─ sa/
-│  │  ├─ vc/
-│  │  ├─ iii/
-│  │  └─ i18n/
-│  └─ i18n/
+├─ plugins/
+│  ├─ XMenuSA.asi      (use the asi matching your game)
+│  ├─ XMenuVC.asi
+│  └─ XMenuIII.asi
+├─ XBase/
+│  ├─ Library/
+│  │  ├─ XBaseSA.dll / XBaseVC.dll / XBaseIII.dll
+│  │  └─ WebView2Loader.dll
+│  └─ Mods/
+│     └─ XMenu/
+│        ├─ data/
+│        │  ├─ sa/
+│        │  ├─ vc/
+│        │  ├─ iii/
+│        │  └─ i18n/
+│        └─ ui.html
 └─ d3d8.dll
 ```
 
@@ -177,14 +182,13 @@ Optional: `Debug` / `Release`, `--toolset v143|v145`, `--no-pause`.
 Output:
 
 ```text
-build/bin/XMenu.asi
+build/bin/XMenuSA.asi
+build/bin/XMenuVC.asi
+build/bin/XMenuIII.asi
 build/bin/XMenuInstaller.exe
-build/bin/XMenu/XMenuSA.dll
-build/bin/XMenu/XMenuVC.dll
-build/bin/XMenu/XMenuIII.dll
-build/bin/XMenu/data/**
-build/bin/XMenu/data/i18n/**
-build/bin/XMenu/i18n/**
+build/bin/XBase/Mods/XMenu/data/**
+build/bin/XBase/Mods/XMenu/data/i18n/**
+build/bin/XBase/Mods/XMenu/ui.html
 ```
 
 | Path | Purpose |

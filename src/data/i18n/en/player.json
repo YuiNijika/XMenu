@@ -62,5 +62,6 @@
   "player.wantedLevel": "Wanted level",
   "player.setWanted": "Set wanted",
   "player.readCurrentValues": "Read current values",
-  "player.clearWanted": "Clear wanted"
+  "player.clearWanted": "Clear wanted",
+  "player.sectionActions": "Quick actions"
 }

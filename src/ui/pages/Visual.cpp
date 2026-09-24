@@ -1,5 +1,6 @@
 #include "Visual.h"
 #include "ui/MenuState.h"
+#include "ui/UiSchema.h"
 #include "ui/Widget.h"
 #include "utils/DataManager.h"
 #include "utils/I18n.h"
@@ -134,43 +135,51 @@ namespace Pages::Visual {
         const bool hasHudRadar = XBaseBridge::HasCapability(XBase::FeatureCapability::VisualHudRadar);
         const bool hasFilter = XBaseBridge::HasCapability(XBase::FeatureCapability::VisualFilter);
         const bool hasRadarOptions = XBaseBridge::HasCapability(XBase::FeatureCapability::VisualRadarOptions);
-        XBase::UI::Disabled(!hasHudRadar, [&] {
-            if (XBase::UI::Checkbox(T("visual.hud"), MenuState::VisualHud)) {
-                XBase::Visual::DisplayHud(MenuState::VisualHud);
-            }
-            XBase::UI::SameLine();
-            if (XBase::UI::Checkbox(T("visual.radar"), MenuState::VisualRadar)) {
-                XBase::Visual::DisplayRadar(MenuState::VisualRadar);
-            }
-        });
+
+        // 显示、雷达选项与滤镜开关都交给界面注册表，网页界面读的是同一份配置
+        if (!UiSchema::DrawSection("visual", "visualMain", "display")) {
+            XBase::UI::Disabled(!hasHudRadar, [&] {
+                if (XBase::UI::Checkbox(T("visual.hud"), MenuState::VisualHud)) {
+                    XBase::Visual::DisplayHud(MenuState::VisualHud);
+                }
+                XBase::UI::SameLine();
+                if (XBase::UI::Checkbox(T("visual.radar"), MenuState::VisualRadar)) {
+                    XBase::Visual::DisplayRadar(MenuState::VisualRadar);
+                }
+            });
+        }
 
 #ifdef GTASA
         UI::SpacingSeparator();
-        XBase::UI::Disabled(!hasRadarOptions, [&] {
-            XBase::UI::Columns(2, nullptr, false);
-            XBase::UI::Checkbox(T("visual.squareRadar"), MenuState::VisualSquareRadar);
-            XBase::UI::TextDisabled(T("visual.squareRadarHint"));
-            XBase::UI::NextColumn();
-            XBase::UI::Checkbox(T("visual.noRadarRot"), MenuState::VisualNoRadarRot);
-            XBase::UI::NextColumn();
-            XBase::UI::Checkbox(T("visual.fullscreenMap"), MenuState::VisualFullscreenMap);
-            XBase::UI::NextColumn();
-            XBase::UI::Checkbox(T("visual.unfogMap"), MenuState::VisualUnfogMap);
-            XBase::UI::NextColumn();
-            XBase::UI::Checkbox(T("visual.hideAreaNames"), MenuState::VisualHideAreaNames);
-            XBase::UI::NextColumn();
-            XBase::UI::Checkbox(T("visual.hideVehicleNames"), MenuState::VisualHideVehicleNames);
-            XBase::UI::NextColumn();
-            XBase::UI::Checkbox(T("visual.nightVision"), MenuState::VisualNightVision);
-            XBase::UI::NextColumn();
-            XBase::UI::Checkbox(T("visual.infrared"), MenuState::VisualInfrared);
-            XBase::UI::Columns(1);
-        });
+        if (!UiSchema::DrawSection("visual", "visualMain", "radarOptions")) {
+            XBase::UI::Disabled(!hasRadarOptions, [&] {
+                XBase::UI::Columns(2, nullptr, false);
+                XBase::UI::Checkbox(T("visual.squareRadar"), MenuState::VisualSquareRadar);
+                XBase::UI::TextDisabled(T("visual.squareRadarHint"));
+                XBase::UI::NextColumn();
+                XBase::UI::Checkbox(T("visual.noRadarRot"), MenuState::VisualNoRadarRot);
+                XBase::UI::NextColumn();
+                XBase::UI::Checkbox(T("visual.fullscreenMap"), MenuState::VisualFullscreenMap);
+                XBase::UI::NextColumn();
+                XBase::UI::Checkbox(T("visual.unfogMap"), MenuState::VisualUnfogMap);
+                XBase::UI::NextColumn();
+                XBase::UI::Checkbox(T("visual.hideAreaNames"), MenuState::VisualHideAreaNames);
+                XBase::UI::NextColumn();
+                XBase::UI::Checkbox(T("visual.hideVehicleNames"), MenuState::VisualHideVehicleNames);
+                XBase::UI::NextColumn();
+                XBase::UI::Checkbox(T("visual.nightVision"), MenuState::VisualNightVision);
+                XBase::UI::NextColumn();
+                XBase::UI::Checkbox(T("visual.infrared"), MenuState::VisualInfrared);
+                XBase::UI::Columns(1);
+            });
+        }
 #endif
 
         UI::SpacingSeparator();
         XBase::UI::Disabled(!hasFilter, [&] {
-            XBase::UI::Checkbox(T("visual.filter"), MenuState::VisualFilter);
+            if (!UiSchema::DrawSection("visual", "visualMain", "filter")) {
+                XBase::UI::Checkbox(T("visual.filter"), MenuState::VisualFilter);
+            }
             XBase::UI::PushItemWidth(160.0f);
             XBase::UI::Input(T("visual.filterId"), MenuState::VisualFilterId);
             XBase::UI::Disabled(true, [&] {

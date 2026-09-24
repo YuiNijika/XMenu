@@ -62,5 +62,6 @@
   "player.wantedLevel": "Уровень розыска",
   "player.setWanted": "Установить розыск",
   "player.readCurrentValues": "Считать текущие значения",
-  "player.clearWanted": "Снять розыск"
+  "player.clearWanted": "Снять розыск",
+  "player.sectionActions": "Быстрые действия"
 }

@@ -333,6 +333,10 @@
   "vehicle.sectionCheat": "Читы машины",
   "vehicle.sectionEffect": "Эффекты и автоматизация",
   "vehicle.sectionSpeed": "Скорость",
+  "vehicle.sectionTraffic": "Трафик",
   "vehicle.sectionPaint": "Цвет и покраска",
-  "vehicle.sectionDoors": "Двери и места"
+  "vehicle.sectionDoors": "Двери и места",
+  "vehicle.sectionActions": "Быстрые действия",
+  "vehicle.sectionAutoDrive": "Автовождение",
+  "vehicle.sectionSpawnOptions": "Опции создания"
 }

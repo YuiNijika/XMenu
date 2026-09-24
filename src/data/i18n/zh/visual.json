@@ -17,5 +17,7 @@
   "visual.hideAreaNames": "隐藏区域名",
   "visual.hideVehicleNames": "隐藏载具名",
   "visual.nightVision": "夜视",
-  "visual.infrared": "热成像"
+  "visual.infrared": "热成像",
+  "visual.sectionDisplay": "显示",
+  "visual.sectionRadarOptions": "雷达选项"
 }

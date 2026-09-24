@@ -3,6 +3,7 @@
 #include "integration/XBaseBridge.h"
 #include "resources/ResourceData.h"
 #include "ui/MenuState.h"
+#include "ui/UiSchema.h"
 #include "ui/Widget.h"
 #include "utils/I18n.h"
 #include <XBase/UI.h>
@@ -13,7 +14,6 @@ namespace {
     const char* T(const char* key) {
         return I18n::T(key);
     }
-
     bool Checkbox(const char* label, bool* value) {
         return value && XBase::UI::Checkbox(label, *value);
     }
@@ -24,6 +24,14 @@ namespace {
 
     bool InputFloat(const char* label, float* value, float step, float fastStep, const char* format) {
         return value && XBase::UI::Input(label, *value, step, fastStep, format);
+    }
+
+    void ApplySpawnLimits() {
+        Controllers::Ped::SetSpawnLimits(
+            MenuState::PedsLimitPolice,
+            MenuState::PedsLimitGangs,
+            MenuState::PedsMaxNearbyPolice,
+            MenuState::PedsMaxNearbyGangs);
     }
 
     void DrawPedList() {
@@ -63,124 +71,124 @@ namespace Pages::Ped {
     void Draw() {
         XBase::UI::Tabs("PedTabs", [&] {
             XBase::UI::Tab("ped.toggles", T("common.toggles"), [&] {
-                XBase::UI::Columns(2, nullptr, false);
+                // 全局策略、不开枪与刷新限制都交给界面注册表，网页界面读的是同一份配置
+                if (!UiSchema::DrawSection("ped", "pedMain", "strategies")) {
+                    XBase::UI::Columns(2, nullptr, false);
 #if defined(GTASA) || defined(GTA3)
-                XBase::UI::Disabled(!XBaseBridge::HasCapability(XBase::FeatureCapability::PedBigHead), [&] {
-                    if (Checkbox(T("ped.bigHeadMode"), &MenuState::BigHeadMode)) {
-                        Controllers::Ped::SetBigHead(MenuState::BigHeadMode);
-                    }
-                });
-                XBase::UI::NextColumn();
+                    XBase::UI::Disabled(!XBaseBridge::HasCapability(XBase::FeatureCapability::PedBigHead), [&] {
+                        if (Checkbox(T("ped.bigHeadMode"), &MenuState::BigHeadMode)) {
+                            Controllers::Ped::SetBigHead(MenuState::BigHeadMode);
+                        }
+                    });
+                    XBase::UI::NextColumn();
 #endif
 #ifdef GTASA
-                XBase::UI::Disabled(!XBaseBridge::HasCapability(XBase::FeatureCapability::PedThinBody), [&] {
-                    if (Checkbox(T("ped.thinBodyMode"), &MenuState::ThinBodyMode)) {
-                        Controllers::Ped::SetThinBody(MenuState::ThinBodyMode);
+                    XBase::UI::Disabled(!XBaseBridge::HasCapability(XBase::FeatureCapability::PedThinBody), [&] {
+                        if (Checkbox(T("ped.thinBodyMode"), &MenuState::ThinBodyMode)) {
+                            Controllers::Ped::SetThinBody(MenuState::ThinBodyMode);
+                        }
+                    });
+                    XBase::UI::NextColumn();
+                    if (Checkbox(T("ped.elvisEverywhere"), &MenuState::ElvisEverywhere)) {
+                        Controllers::Ped::SetElvisEverywhere(MenuState::ElvisEverywhere);
                     }
-                });
-                XBase::UI::NextColumn();
-                if (Checkbox(T("ped.elvisEverywhere"), &MenuState::ElvisEverywhere)) {
-                    Controllers::Ped::SetElvisEverywhere(MenuState::ElvisEverywhere);
-                }
-                XBase::UI::NextColumn();
-                if (Checkbox(T("ped.everyoneArmed"), &MenuState::EveryoneArmed)) {
-                    Controllers::Ped::SetEveryoneArmed(MenuState::EveryoneArmed);
-                }
-                XBase::UI::NextColumn();
-                if (Checkbox(T("ped.pedsMayhem"), &MenuState::PedsMayhem)) {
-                    Controllers::Ped::SetPedsMayhem(MenuState::PedsMayhem);
-                }
-                XBase::UI::NextColumn();
-                if (Checkbox(T("ped.pedsAtkRocket"), &MenuState::PedsAtkRocket)) {
-                    Controllers::Ped::SetPedsAtkRocket(MenuState::PedsAtkRocket);
-                }
-                XBase::UI::NextColumn();
-                if (Checkbox(T("ped.pedsRiot"), &MenuState::PedsRiot)) {
-                    Controllers::Ped::SetPedsRiot(MenuState::PedsRiot);
-                }
-                XBase::UI::NextColumn();
-                if (Checkbox(T("ped.slutMagnet"), &MenuState::SlutMagnet)) {
-                    Controllers::Ped::SetSlutMagnet(MenuState::SlutMagnet);
-                }
-                XBase::UI::NextColumn();
-                if (Checkbox(T("ped.gangsControl"), &MenuState::GangsControl)) {
-                    Controllers::Ped::SetGangsControl(MenuState::GangsControl);
-                }
-                XBase::UI::NextColumn();
-                if (Checkbox(T("ped.gangsEverywhere"), &MenuState::GangsEverywhere)) {
-                    Controllers::Ped::SetGangsEverywhere(MenuState::GangsEverywhere);
-                }
-                XBase::UI::NextColumn();
+                    XBase::UI::NextColumn();
+                    if (Checkbox(T("ped.everyoneArmed"), &MenuState::EveryoneArmed)) {
+                        Controllers::Ped::SetEveryoneArmed(MenuState::EveryoneArmed);
+                    }
+                    XBase::UI::NextColumn();
+                    if (Checkbox(T("ped.pedsMayhem"), &MenuState::PedsMayhem)) {
+                        Controllers::Ped::SetPedsMayhem(MenuState::PedsMayhem);
+                    }
+                    XBase::UI::NextColumn();
+                    if (Checkbox(T("ped.pedsAtkRocket"), &MenuState::PedsAtkRocket)) {
+                        Controllers::Ped::SetPedsAtkRocket(MenuState::PedsAtkRocket);
+                    }
+                    XBase::UI::NextColumn();
+                    if (Checkbox(T("ped.pedsRiot"), &MenuState::PedsRiot)) {
+                        Controllers::Ped::SetPedsRiot(MenuState::PedsRiot);
+                    }
+                    XBase::UI::NextColumn();
+                    if (Checkbox(T("ped.slutMagnet"), &MenuState::SlutMagnet)) {
+                        Controllers::Ped::SetSlutMagnet(MenuState::SlutMagnet);
+                    }
+                    XBase::UI::NextColumn();
+                    if (Checkbox(T("ped.gangsControl"), &MenuState::GangsControl)) {
+                        Controllers::Ped::SetGangsControl(MenuState::GangsControl);
+                    }
+                    XBase::UI::NextColumn();
+                    if (Checkbox(T("ped.gangsEverywhere"), &MenuState::GangsEverywhere)) {
+                        Controllers::Ped::SetGangsEverywhere(MenuState::GangsEverywhere);
+                    }
+                    XBase::UI::NextColumn();
 #endif
 #ifdef GTAVC
-                if (Checkbox(T("ped.everyoneArmed"), &MenuState::EveryoneArmed)) {
-                    Controllers::Ped::SetEveryoneArmed(MenuState::EveryoneArmed);
-                }
-                XBase::UI::NextColumn();
-                if (Checkbox(T("ped.slutMagnet"), &MenuState::SlutMagnet)) {
-                    Controllers::Ped::SetSlutMagnet(MenuState::SlutMagnet);
-                }
-                XBase::UI::NextColumn();
-                if (Checkbox(T("ped.noProstitutes"), &MenuState::PedNoProstitutes)) {
-                    Controllers::Ped::SetNoProstitutes(MenuState::PedNoProstitutes);
-                }
-                XBase::UI::NextColumn();
+                    if (Checkbox(T("ped.everyoneArmed"), &MenuState::EveryoneArmed)) {
+                        Controllers::Ped::SetEveryoneArmed(MenuState::EveryoneArmed);
+                    }
+                    XBase::UI::NextColumn();
+                    if (Checkbox(T("ped.slutMagnet"), &MenuState::SlutMagnet)) {
+                        Controllers::Ped::SetSlutMagnet(MenuState::SlutMagnet);
+                    }
+                    XBase::UI::NextColumn();
+                    if (Checkbox(T("ped.noProstitutes"), &MenuState::PedNoProstitutes)) {
+                        Controllers::Ped::SetNoProstitutes(MenuState::PedNoProstitutes);
+                    }
+                    XBase::UI::NextColumn();
 #endif
 #ifdef GTA3
-                if (Checkbox(T("ped.everyoneArmed"), &MenuState::EveryoneArmed)) {
-                    Controllers::Ped::SetEveryoneArmed(MenuState::EveryoneArmed);
-                }
-                XBase::UI::NextColumn();
-                if (Checkbox(T("ped.pedsMayhem"), &MenuState::PedsMayhem)) {
-                    Controllers::Ped::SetPedsMayhem(MenuState::PedsMayhem);
-                }
-                XBase::UI::NextColumn();
-                if (Checkbox(T("ped.pedsRiot"), &MenuState::PedsRiot)) {
-                    Controllers::Ped::SetPedsRiot(MenuState::PedsRiot);
-                }
-                XBase::UI::NextColumn();
-                if (Checkbox(T("ped.nastyLimbs"), &MenuState::PedNastyLimbs)) {
-                    Controllers::Ped::SetNastyLimbs(MenuState::PedNastyLimbs);
-                }
-                XBase::UI::NextColumn();
+                    if (Checkbox(T("ped.everyoneArmed"), &MenuState::EveryoneArmed)) {
+                        Controllers::Ped::SetEveryoneArmed(MenuState::EveryoneArmed);
+                    }
+                    XBase::UI::NextColumn();
+                    if (Checkbox(T("ped.pedsMayhem"), &MenuState::PedsMayhem)) {
+                        Controllers::Ped::SetPedsMayhem(MenuState::PedsMayhem);
+                    }
+                    XBase::UI::NextColumn();
+                    if (Checkbox(T("ped.pedsRiot"), &MenuState::PedsRiot)) {
+                        Controllers::Ped::SetPedsRiot(MenuState::PedsRiot);
+                    }
+                    XBase::UI::NextColumn();
+                    if (Checkbox(T("ped.nastyLimbs"), &MenuState::PedNastyLimbs)) {
+                        Controllers::Ped::SetNastyLimbs(MenuState::PedNastyLimbs);
+                    }
+                    XBase::UI::NextColumn();
 #endif
-                XBase::UI::Columns(1);
-
-                // Peds No Fire
-                XBase::UI::SeparatorText(T("ped.pedsNoFire"));
-                if (Checkbox(T("ped.pedsNoFire"), &MenuState::PedsNoFire)) {
-                    Controllers::Ped::SetPedsNoFire(MenuState::PedsNoFire);
+                    XBase::UI::Columns(1);
                 }
-                if (MenuState::PedsNoFire) {
-                    XBase::UI::Indented([&] {
-                        Checkbox(T("ped.pedsNoFireCivilians"), &MenuState::PedsNoFireCivilians);
-                        Checkbox(T("ped.pedsNoFireGangs"), &MenuState::PedsNoFireGangs);
-                        Checkbox(T("ped.pedsNoFirePolice"), &MenuState::PedsNoFirePolice);
-                        Checkbox(T("ped.pedsNoFireMission"), &MenuState::PedsNoFireMission);
+
+                if (!UiSchema::DrawSection("ped", "pedMain", "noFire")) {
+                    XBase::UI::SeparatorText(T("ped.pedsNoFire"));
+                    XBase::UI::Disabled(
+                        !XBaseBridge::HasCapability(XBase::FeatureCapability::BulletAssistFireSuppression), [&] {
+                    if (Checkbox(T("ped.pedsNoFire"), &MenuState::PedsNoFire)) {
+                        Controllers::Ped::SetPedsNoFire(MenuState::PedsNoFire);
+                    }
+                    if (MenuState::PedsNoFire) {
+                        XBase::UI::Indented([&] {
+                            Checkbox(T("ped.pedsNoFireCivilians"), &MenuState::PedsNoFireCivilians);
+                            Checkbox(T("ped.pedsNoFireGangs"), &MenuState::PedsNoFireGangs);
+                            Checkbox(T("ped.pedsNoFirePolice"), &MenuState::PedsNoFirePolice);
+                            Checkbox(T("ped.pedsNoFireMission"), &MenuState::PedsNoFireMission);
+                        });
+                    }
                     });
                 }
 
-                // Spawn limits
-                XBase::UI::SeparatorText(T("ped.spawnLimits"));
-                if (Checkbox(T("ped.pedsLimitPolice"), &MenuState::PedsLimitPolice)) {
-                    Controllers::Ped::SetSpawnLimits(
-                        MenuState::PedsLimitPolice,
-                        MenuState::PedsLimitGangs,
-                        MenuState::PedsMaxNearbyPolice,
-                        MenuState::PedsMaxNearbyGangs);
-                }
-                if (Checkbox(T("ped.pedsLimitGangs"), &MenuState::PedsLimitGangs)) {
-                    Controllers::Ped::SetSpawnLimits(
-                        MenuState::PedsLimitPolice,
-                        MenuState::PedsLimitGangs,
-                        MenuState::PedsMaxNearbyPolice,
-                        MenuState::PedsMaxNearbyGangs);
-                }
-                if (MenuState::PedsLimitPolice || MenuState::PedsLimitGangs) {
-                    XBase::UI::Indented([&] {
-                        InputInt(T("ped.pedsMaxNearbyPolice"), &MenuState::PedsMaxNearbyPolice);
-                        InputInt(T("ped.pedsMaxNearbyGangs"), &MenuState::PedsMaxNearbyGangs);
-                    });
+                if (!UiSchema::DrawSection("ped", "pedMain", "spawnLimits")) {
+                    XBase::UI::SeparatorText(T("ped.spawnLimits"));
+                    if (Checkbox(T("ped.pedsLimitPolice"), &MenuState::PedsLimitPolice)) {
+                        ApplySpawnLimits();
+                    }
+                    if (Checkbox(T("ped.pedsLimitGangs"), &MenuState::PedsLimitGangs)) {
+                        ApplySpawnLimits();
+                    }
+                    if (MenuState::PedsLimitPolice || MenuState::PedsLimitGangs) {
+                        XBase::UI::Indented([&] {
+                            InputInt(T("ped.pedsMaxNearbyPolice"), &MenuState::PedsMaxNearbyPolice);
+                            InputInt(T("ped.pedsMaxNearbyGangs"), &MenuState::PedsMaxNearbyGangs);
+                        });
+                    }
                 }
 
                 });
@@ -196,18 +204,21 @@ namespace Pages::Ped {
                 InputFloat(T("ped.armour"), &MenuState::PedArmour, 1.0f, 10.0f, "%.1f");
                 XBase::UI::PopItemWidth();
 
-                Checkbox(T("ped.asGang"), &MenuState::PedSpawnAsGang);
-                XBase::UI::SameLine();
-                Checkbox(T("ped.freeze"), &MenuState::PedFreeze);
-                XBase::UI::SameLine();
-                Checkbox(T("ped.hostile"), &MenuState::PedHostile);
+                // 生成选项交给界面注册表，网页界面读的是同一份配置
+                if (!UiSchema::DrawSection("ped", "pedMain", "spawnOptions")) {
+                    Checkbox(T("ped.asGang"), &MenuState::PedSpawnAsGang);
+                    XBase::UI::SameLine();
+                    Checkbox(T("ped.freeze"), &MenuState::PedFreeze);
+                    XBase::UI::SameLine();
+                    Checkbox(T("ped.hostile"), &MenuState::PedHostile);
 
-                XBase::UI::Disabled(
-                    !XBaseBridge::HasCapability(XBase::FeatureCapability::PedSmokeFlies), [&] {
-                Checkbox(T("ped.smoking"), &MenuState::SmokingEffect);
-                XBase::UI::SameLine();
-                Checkbox(T("ped.flies"), &MenuState::FliesEffect);
-                });
+                    XBase::UI::Disabled(
+                        !XBaseBridge::HasCapability(XBase::FeatureCapability::PedSmokeFlies), [&] {
+                    Checkbox(T("ped.smoking"), &MenuState::SmokingEffect);
+                    XBase::UI::SameLine();
+                    Checkbox(T("ped.flies"), &MenuState::FliesEffect);
+                    });
+                }
 
                 UI::SpacingSeparator();
                 if (UI::Button(T("ped.spawnNear"), 3)) {
@@ -232,19 +243,21 @@ namespace Pages::Ped {
 
 #ifdef GTASA
             XBase::UI::Tab("ped.gangs", T("ped.gangs"), [&] {
-                if (Checkbox(T("ped.gangWarsActive"), &MenuState::GangWarsActive)) {
-                    Controllers::Ped::SetGangWarsActive(MenuState::GangWarsActive);
-                }
-                if (UI::Button(T("ped.startGangWar"), 3)) {
-                    Controllers::Ped::StartGangWar(true);
-                }
-                XBase::UI::SameLine();
-                if (UI::Button(T("ped.endGangWar"), 3)) {
-                    Controllers::Ped::EndGangWar();
-                }
-                XBase::UI::SameLine();
-                if (UI::Button(T("ped.resetGangModels"), 3)) {
-                    Controllers::Ped::ResetGangModels();
+                if (!UiSchema::DrawSection("ped", "pedMain", "gangWars")) {
+                    if (Checkbox(T("ped.gangWarsActive"), &MenuState::GangWarsActive)) {
+                        Controllers::Ped::SetGangWarsActive(MenuState::GangWarsActive);
+                    }
+                    if (UI::Button(T("ped.startGangWar"), 3)) {
+                        Controllers::Ped::StartGangWar(true);
+                    }
+                    XBase::UI::SameLine();
+                    if (UI::Button(T("ped.endGangWar"), 3)) {
+                        Controllers::Ped::EndGangWar();
+                    }
+                    XBase::UI::SameLine();
+                    if (UI::Button(T("ped.resetGangModels"), 3)) {
+                        Controllers::Ped::ResetGangModels();
+                    }
                 }
 
                 UI::PushItemWidth(160);
@@ -270,7 +283,7 @@ namespace Pages::Ped {
                 UI::InputInt(T("ped.gangWeaponType"), &MenuState::GangWeaponType);
                 UI::PopItemWidth();
                 if (UI::Button(T("ped.applyGangWeapons"), 2)) {
-                    // 简化：三个槽位用同一武器类型，足够日常调参
+                    // 简化处理，三个槽位用同一武器类型，足够日常调参
                     Controllers::Ped::SetGangWeapons(
                         static_cast<unsigned int>(MenuState::GangSelected),
                         MenuState::GangWeaponType,

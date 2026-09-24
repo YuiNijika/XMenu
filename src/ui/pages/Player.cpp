@@ -1,6 +1,7 @@
 #include "Player.h"
 #include "controllers/Player.h"
 #include "ui/MenuState.h"
+#include "ui/UiSchema.h"
 #include "ui/Widget.h"
 #include <XBase/Hooks.h>
 #include <XBase/Platform.h>
@@ -15,14 +16,103 @@ namespace {
     const char* T(const char* key) {
         return I18n::T(key);
     }
-}
 
-namespace Pages::Player {
-    void Process() {
-        Controllers::Player::Process();
+    void DrawCapabilityCheckbox(const char* label, XBase::FeatureCapability capability, bool& value) {
+        XBase::UI::Disabled(!XBaseBridge::HasCapability(capability), [&] {
+            UI::Checkbox(label, &value);
+        });
     }
 
-    void Draw() {
+    // 注册表接管失败时的兜底版本，内容与注册表分区保持一致
+    void DrawNativeToggleGrid() {
+        UI::Columns(3, nullptr, false);
+        UI::Checkbox(T("player.godMode"), &MenuState::GodMode);
+        UI::NextColumn();
+        UI::Checkbox(T("player.autoHeal"), &MenuState::AutoHeal);
+        UI::NextColumn();
+        UI::Checkbox(T("player.hardMode"), &MenuState::HardMode);
+        UI::NextColumn();
+
+        if (UI::Checkbox(T("player.infiniteSprint"), &MenuState::InfiniteSprint)) {
+            Controllers::Player::SetInfiniteSprint(MenuState::InfiniteSprint);
+        }
+        UI::NextColumn();
+        UI::Checkbox(T("player.respawnAtDeathPosition"), &MenuState::RespawnAtDeathPosition);
+        UI::NextColumn();
+        UI::Checkbox(T("player.freezeWantedLevel"), &MenuState::FreezeWantedLevel);
+        UI::NextColumn();
+
+        XBase::UI::Disabled(!XBaseBridge::HasCapability(XBase::FeatureCapability::PlayerKeepStuff), [&] {
+            if (UI::Checkbox(T("player.keepStuff"), &MenuState::KeepStuff)) {
+                Controllers::Player::SetKeepStuff(MenuState::KeepStuff);
+            }
+        });
+        UI::NextColumn();
+        UI::Checkbox(T("player.autoFlight"), &MenuState::FreeFlyEnabled);
+        UI::NextColumn();
+
+        const XBase::FeatureCapability neverWanted = XBase::FeatureCapability::PlayerNeverWanted;
+        const XBase::FeatureCapability superJump = XBase::FeatureCapability::PlayerSuperJump;
+        const XBase::FeatureCapability superPunch = XBase::FeatureCapability::PlayerSuperPunch;
+        const XBase::FeatureCapability cycleJump = XBase::FeatureCapability::PlayerCycleJump;
+        const XBase::FeatureCapability breathing = XBase::FeatureCapability::PlayerUnderwaterBreathing;
+        const XBase::FeatureCapability neverHungry = XBase::FeatureCapability::PlayerNeverHungry;
+        const XBase::FeatureCapability fastSprint = XBase::FeatureCapability::PlayerFastSprint;
+        const XBase::FeatureCapability drunkEffect = XBase::FeatureCapability::PlayerDrunkEffect;
+        const XBase::FeatureCapability sprintEverywhere = XBase::FeatureCapability::PlayerSprintEverywhere;
+        const XBase::FeatureCapability aimSkinChanger = XBase::FeatureCapability::PlayerAimSkinChanger;
+
+        DrawCapabilityCheckbox(T("player.neverWanted"), neverWanted, MenuState::NeverWanted);
+        UI::NextColumn();
+        DrawCapabilityCheckbox(T("player.megaJump"), superJump, MenuState::MegaJump);
+        UI::NextColumn();
+        DrawCapabilityCheckbox(T("player.megaPunch"), superPunch, MenuState::MegaPunch);
+        UI::NextColumn();
+        DrawCapabilityCheckbox(T("player.cycleJump"), cycleJump, MenuState::CycleJump);
+        UI::NextColumn();
+        DrawCapabilityCheckbox(T("player.infiniteOxygen"), breathing, MenuState::InfiniteOxygen);
+        UI::NextColumn();
+        DrawCapabilityCheckbox(T("player.neverHungry"), neverHungry, MenuState::NeverHungry);
+        UI::NextColumn();
+        DrawCapabilityCheckbox(T("player.fastSprint"), fastSprint, MenuState::FastSprint);
+        UI::NextColumn();
+        DrawCapabilityCheckbox(T("player.drunkEffect"), drunkEffect, MenuState::DrunkEffect);
+        UI::NextColumn();
+        DrawCapabilityCheckbox(T("player.sprintEverywhere"), sprintEverywhere, MenuState::SprintEverywhere);
+        UI::NextColumn();
+        DrawCapabilityCheckbox(T("player.aimSkinChanger"), aimSkinChanger, MenuState::AimSkinChanger);
+        UI::NextColumn();
+
+#ifdef GTASA
+        XBase::UI::Disabled(!XBaseBridge::HasCapability(XBase::FeatureCapability::PlayerRuntimeEffects), [&] {
+            UI::Checkbox(T("player.invisible"), &MenuState::InvisiblePlayer);
+        });
+        UI::NextColumn();
+#endif
+        UI::Columns(1);
+    }
+
+    // 住院免费、被捕免费与瞄准换肤不在注册表里。前两个读的是运行时状态，
+    // 瞄准换肤只写本地选项而没有被任何逻辑消费，三者都留在原生代码绘制
+    void DrawLocalOnlyToggles() {
+        UI::Columns(3, nullptr, false);
+        bool freeHealth = Controllers::Player::GetFreeHealthcare();
+        if (UI::Checkbox(T("player.freeHospital"), &freeHealth)) {
+            Controllers::Player::SetFreeHealthcare(freeHealth);
+        }
+        UI::NextColumn();
+        bool freeJail = Controllers::Player::GetFreeJail();
+        if (UI::Checkbox(T("player.freeJail"), &freeJail)) {
+            Controllers::Player::SetFreeJail(freeJail);
+        }
+        UI::NextColumn();
+        DrawCapabilityCheckbox(
+            T("player.aimSkinChanger"), XBase::FeatureCapability::PlayerAimSkinChanger, MenuState::AimSkinChanger);
+        UI::NextColumn();
+        UI::Columns(1);
+    }
+
+    void DrawNativeActionRow() {
         if (UI::Button(T("player.copyCoordinates"), 3)) {
             Controllers::Player::CopyCoordinates();
         }
@@ -34,6 +124,7 @@ namespace Pages::Player {
         if (UI::Button(T("player.refillArmor"), 3)) {
             Controllers::Player::GiveArmour();
         }
+        UI::SameLine();
         XBase::UI::Disabled(!XBaseBridge::HasCapability(XBase::FeatureCapability::PlayerSaveGame), [&] {
             if (UI::Button(T("player.saveAnywhere"), 3)) {
                 if (Controllers::Player::RequestSaveGame()) {
@@ -49,87 +140,37 @@ namespace Pages::Player {
         if (UI::Button(T("player.kill"), 3)) {
             Controllers::Player::Kill();
         }
+    }
+}
+
+namespace Pages::Player {
+    void Process() {
+        Controllers::Player::Process();
+    }
+
+    void Draw() {
+        // 快捷操作与状态开关都走界面注册表，网页界面读的是同一份配置
+        if (!UiSchema::DrawSection("player", "playerMain", "actions")) {
+            DrawNativeActionRow();
+        }
 
         UI::SpacingSeparator();
 
         XBase::UI::Tabs("PlayerTabBar", [&] {
             XBase::UI::Tab("player_toggles", T("common.toggles"), [&] {
-                UI::Columns(3, nullptr, false);
-                UI::Checkbox(T("player.godMode"), &MenuState::GodMode);
-                UI::NextColumn();
-                UI::Checkbox(T("player.autoHeal"), &MenuState::AutoHeal);
-                UI::NextColumn();
-                UI::Checkbox(T("player.hardMode"), &MenuState::HardMode);
-                UI::NextColumn();
-
-                if (UI::Checkbox(T("player.infiniteSprint"), &MenuState::InfiniteSprint)) {
-                    Controllers::Player::SetInfiniteSprint(MenuState::InfiniteSprint);
+                if (UiSchema::DrawSection("player", "playerMain", "statusToggles")) {
+                    DrawLocalOnlyToggles();
+                } else {
+                    DrawNativeToggleGrid();
                 }
-                UI::NextColumn();
-                UI::Checkbox(T("player.respawnAtDeathPosition"), &MenuState::RespawnAtDeathPosition);
-                UI::NextColumn();
-                UI::Checkbox(T("player.freezeWantedLevel"), &MenuState::FreezeWantedLevel);
-                UI::NextColumn();
-
-                XBase::UI::Disabled(!XBaseBridge::HasCapability(XBase::FeatureCapability::PlayerKeepStuff), [&] {
-                    if (UI::Checkbox(T("player.keepStuff"), &MenuState::KeepStuff)) {
-                        Controllers::Player::SetKeepStuff(MenuState::KeepStuff);
-                    }
-                });
-                UI::NextColumn();
-                UI::Checkbox(T("player.autoFlight"), &MenuState::FreeFlyEnabled);
-                UI::NextColumn();
-
-                const auto drawPlayerToggle = [&](XBase::FeatureCapability capability, const char* label, bool& value) {
-                    XBase::UI::Disabled(!XBaseBridge::HasCapability(capability), [&] {
-                        UI::Checkbox(label, &value);
-                    });
-                    UI::NextColumn();
-                };
-                drawPlayerToggle(XBase::FeatureCapability::PlayerNeverWanted,
-                    T("player.neverWanted"), MenuState::NeverWanted);
-                drawPlayerToggle(XBase::FeatureCapability::PlayerSuperJump,
-                    T("player.megaJump"), MenuState::MegaJump);
-                drawPlayerToggle(XBase::FeatureCapability::PlayerSuperPunch,
-                    T("player.megaPunch"), MenuState::MegaPunch);
-                drawPlayerToggle(XBase::FeatureCapability::PlayerCycleJump,
-                    T("player.cycleJump"), MenuState::CycleJump);
-                drawPlayerToggle(XBase::FeatureCapability::PlayerUnderwaterBreathing,
-                    T("player.infiniteOxygen"), MenuState::InfiniteOxygen);
-                drawPlayerToggle(XBase::FeatureCapability::PlayerNeverHungry,
-                    T("player.neverHungry"), MenuState::NeverHungry);
-                drawPlayerToggle(XBase::FeatureCapability::PlayerFastSprint,
-                    T("player.fastSprint"), MenuState::FastSprint);
-                drawPlayerToggle(XBase::FeatureCapability::PlayerDrunkEffect,
-                    T("player.drunkEffect"), MenuState::DrunkEffect);
-                drawPlayerToggle(XBase::FeatureCapability::PlayerSprintEverywhere,
-                    T("player.sprintEverywhere"), MenuState::SprintEverywhere);
-                drawPlayerToggle(XBase::FeatureCapability::PlayerAimSkinChanger,
-                    T("player.aimSkinChanger"), MenuState::AimSkinChanger);
-
-                #ifdef GTASA
-                XBase::UI::Disabled(!XBaseBridge::HasCapability(XBase::FeatureCapability::PlayerRuntimeEffects), [&] {
-                    UI::Checkbox(T("player.invisible"), &MenuState::InvisiblePlayer);
-                });
-                UI::NextColumn();
-#endif
-
-                bool freeHealth = Controllers::Player::GetFreeHealthcare();
-                if (UI::Checkbox(T("player.freeHospital"), &freeHealth)) {
-                    Controllers::Player::SetFreeHealthcare(freeHealth);
-                }
-                UI::NextColumn();
-                bool freeJail = Controllers::Player::GetFreeJail();
-                if (UI::Checkbox(T("player.freeJail"), &freeJail)) {
-                    Controllers::Player::SetFreeJail(freeJail);
-                }
-                UI::Columns(1);
 
                 UI::SpacingSeparator();
-                if (!MenuState::UseNativeMenu) XBase::UI::Text(T("player.autoFlightOptions"));
-                UI::PushItemWidth(160);
-                UI::SliderFloat(T("player.autoFlightSpeed"), &MenuState::FreeFlySpeed, 0.1f, 5.0f, "%.1f");
-                UI::PopItemWidth();
+                if (!UiSchema::DrawSection("player", "playerMain", "flight")) {
+                    if (!MenuState::UseNativeMenu) XBase::UI::Text(T("player.autoFlightOptions"));
+                    UI::PushItemWidth(160);
+                    UI::SliderFloat(T("player.autoFlightSpeed"), &MenuState::FreeFlySpeed, 0.1f, 5.0f, "%.1f");
+                    UI::PopItemWidth();
+                }
 
                 UI::SpacingSeparator();
                 if (!MenuState::UseNativeMenu) XBase::UI::Text(T("player.proofFlags"));

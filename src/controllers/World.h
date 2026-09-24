@@ -3,6 +3,12 @@
 #include <XBase/Types.h>
 
 namespace Controllers::World {
+    struct WeatherEntry {
+        int id;
+        const char* key;
+    };
+
+    const WeatherEntry* GetWeatherCatalog(int& count);
     void ProcessHost();
     void SetWeather(int id, bool lock);
     void ReleaseWeather();

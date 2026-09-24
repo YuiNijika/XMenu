@@ -5,6 +5,7 @@
 #include "resources/ResourceData.h"
 #include "integration/XBaseBridge.h"
 #include "ui/Widget.h"
+#include "ui/UiSchema.h"
 #include "utils/I18n.h"
 #include <XBase/UI.h>
 #include <cstring>
@@ -84,32 +85,35 @@ namespace Pages::Vehicle {
             vehicleHealth = Controllers::Vehicle::GetHealth();
         }
 
-        if (UI::Button(T("vehicle.blowUpAll"))) {
-            Controllers::Vehicle::BlowUpAll();
-        }
+        // 顶部动作行交给界面注册表，网页界面读的是同一份配置
+        if (!UiSchema::DrawSection("vehicle", "vehicleMain", "actions")) {
+            if (UI::Button(T("vehicle.blowUpAll"))) {
+                Controllers::Vehicle::BlowUpAll();
+            }
 
-        if (UI::Button(T("vehicle.repair"), 6)) {
-            Controllers::Vehicle::Repair();
-        }
-        UI::SameLine();
-        if (UI::Button(T("vehicle.stop"), 6)) {
-            Controllers::Vehicle::Stop();
-        }
-        UI::SameLine();
-        if (UI::Button(T("vehicle.unflip"), 6)) {
-            Controllers::Vehicle::Unflip();
-        }
-        UI::SameLine();
-        if (UI::Button(T("vehicle.start"), 6)) {
-            Controllers::Vehicle::Start();
-        }
-        UI::SameLine();
-        if (UI::Button(T("vehicle.engineOn"), 6)) {
-            Controllers::Vehicle::SetEngine(true);
-        }
-        UI::SameLine();
-        if (UI::Button(T("vehicle.engineOff"), 6)) {
-            Controllers::Vehicle::SetEngine(false);
+            if (UI::Button(T("vehicle.repair"), 6)) {
+                Controllers::Vehicle::Repair();
+            }
+            UI::SameLine();
+            if (UI::Button(T("vehicle.stop"), 6)) {
+                Controllers::Vehicle::Stop();
+            }
+            UI::SameLine();
+            if (UI::Button(T("vehicle.unflip"), 6)) {
+                Controllers::Vehicle::Unflip();
+            }
+            UI::SameLine();
+            if (UI::Button(T("vehicle.start"), 6)) {
+                Controllers::Vehicle::Start();
+            }
+            UI::SameLine();
+            if (UI::Button(T("vehicle.engineOn"), 6)) {
+                Controllers::Vehicle::SetEngine(true);
+            }
+            UI::SameLine();
+            if (UI::Button(T("vehicle.engineOff"), 6)) {
+                Controllers::Vehicle::SetEngine(false);
+            }
         }
 
         if (!hasVehicle) {
@@ -121,6 +125,7 @@ namespace Pages::Vehicle {
 
         XBase::UI::Tabs("VehicleTabs", [&] {
             XBase::UI::Tab("VehicleToggles", T("common.toggles"), [&] {
+if (!UiSchema::DrawSection("vehicle", "vehicleMain", "runtime")) {
                 DrawSectionTitle("vehicle.sectionRuntime");
                 UI::Columns(4, nullptr, false);
                 UI::Checkbox(T("vehicle.noDamage"), &MenuState::VehicleNoDamage);
@@ -131,8 +136,11 @@ namespace Pages::Vehicle {
                 UI::NextColumn();
                 UI::Checkbox(T("vehicle.watertight"), &MenuState::VehicleWatertight);
                 UI::Columns(1);
+                }
 
-                if (hasVehicle) {
+                // 灯光、防护、血量与载具属性读的是当前载具的实时状态，
+                // 注册表侧由宿主登记的一对读写函数承担，没有载具时不画
+                if (!UiSchema::DrawSection("vehicle", "vehicleMain", "status") && hasVehicle) {
                     DrawSectionTitle("vehicle.sectionStatus");
                     UI::Columns(3, nullptr, false);
                     bool lights = Controllers::Vehicle::GetLights();
@@ -151,7 +159,9 @@ namespace Pages::Vehicle {
                         Controllers::Vehicle::SetVisible(!invisible);
                     }
                     UI::Columns(1);
+                }
 
+                if (!UiSchema::DrawSection("vehicle", "vehicleMain", "proof") && hasVehicle) {
                     DrawSectionTitle("vehicle.sectionProof");
                     XBase::Types::ProofState proofs = Controllers::Vehicle::GetProofState();
                     UI::Columns(5, nullptr, false);
@@ -175,7 +185,9 @@ namespace Pages::Vehicle {
                         Controllers::Vehicle::SetProofState(proofs);
                     }
                     UI::Columns(1);
+                }
 
+                if (!UiSchema::DrawSection("vehicle", "vehicleMain", "health") && hasVehicle) {
                     DrawSectionTitle("vehicle.sectionHealth");
                     UI::PushItemWidth(200);
                     UI::SliderFloat(T("vehicle.health"), &vehicleHealth, 0.0f, 1000.0f, "%.0f");
@@ -188,7 +200,9 @@ namespace Pages::Vehicle {
                     if (UI::Button(T("vehicle.readHealth"))) {
                         vehicleHealth = Controllers::Vehicle::GetHealth();
                     }
+                }
 
+                if (!UiSchema::DrawSection("vehicle", "vehicleMain", "special") && hasVehicle) {
                     XBase::UI::Disabled(
                         !XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleAlwaysSkidMarks)
                             && !XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleDisableParticles)
@@ -262,6 +276,7 @@ namespace Pages::Vehicle {
                     });
                 }
 
+if (!UiSchema::DrawSection("vehicle", "vehicleMain", "cheat")) {
                 DrawSectionTitle("vehicle.sectionCheat");
                 XBase::UI::Disabled(
                     !XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleCheats), [&] {
@@ -298,8 +313,10 @@ namespace Pages::Vehicle {
 #endif
                 UI::Columns(1);
                 });
+                }
 
 #ifdef GTASA
+if (!UiSchema::DrawSection("vehicle", "vehicleMain", "effect")) {
                 DrawSectionTitle("vehicle.sectionEffect");
                 UI::Checkbox(T("vehicle.neon"), &MenuState::VehicleNeon);
                 if (MenuState::VehicleNeon) {
@@ -309,6 +326,7 @@ namespace Pages::Vehicle {
                     UI::SliderInt(T("vehicle.neonB"), &MenuState::VehicleNeonColorB, 0, 255);
                     UI::PopItemWidth();
                 }
+                }
                 XBase::UI::Disabled(
                     !XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleAutoDrive),
                     [&] {
@@ -317,35 +335,56 @@ namespace Pages::Vehicle {
                                 Controllers::Vehicle::WarpToSeat();
                             }
                         }
+                        if (MenuState::VehicleAutoDrive) {
+                            UI::PushItemWidth(200);
+                            UI::SliderFloat(T("vehicle.autoDriveSpeed"), &MenuState::VehicleAutoDriveSpeed, 5.0f, 300.0f, "%.0f");
+                            UI::PopItemWidth();
+                        }
                     });
 #endif
 
-                DrawSectionTitle("vehicle.sectionSpeed");
-                if (UI::Checkbox(T("vehicle.lockSpeed"), &MenuState::VehicleSpeedLock)) {
-                    Controllers::Vehicle::ApplySpeedLock();
-                }
+if (!UiSchema::DrawSection("vehicle", "vehicleMain", "traffic")) {
+                DrawSectionTitle("vehicle.sectionTraffic");
+                XBase::UI::Disabled(
+                    !XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleTrafficDensity), [&] {
                 UI::PushItemWidth(200);
-                if (UI::SliderFloat(T("vehicle.targetSpeed"), &MenuState::VehicleSpeed, 5.0f, 300.0f, "%.0f")) {
-                    Controllers::Vehicle::ApplySpeedLock();
-                }
+                UI::SliderFloat(T("vehicle.trafficDensity"), &MenuState::VehicleTrafficDensity, 0.0f, 1.0f, "%.2f");
                 UI::PopItemWidth();
-                UI::SameLine();
-                if (UI::Button(T("vehicle.applyTargetSpeed"))) {
-                    Controllers::Vehicle::ApplyTargetSpeed();
+                });
                 }
-                UI::SameLine();
-                if (UI::Button(T("vehicle.restoreDefaultSpeed"))) {
-                    Controllers::Vehicle::RestoreDefaultTargetSpeed();
+
+                // 速度分区走界面注册表，网页界面读的是同一份配置
+                // 注册表缺失或该分区没登记时退回原生绘制，保证界面不会开天窗
+                if (!UiSchema::DrawSection("vehicle", "vehicleMain", "speed")) {
+                    DrawSectionTitle("vehicle.sectionSpeed");
+                    if (UI::Checkbox(T("vehicle.lockSpeed"), &MenuState::VehicleSpeedLock)) {
+                        Controllers::Vehicle::ApplySpeedLock();
+                    }
+                    UI::PushItemWidth(200);
+                    if (UI::SliderFloat(T("vehicle.targetSpeed"), &MenuState::VehicleSpeed, 5.0f, 300.0f, "%.0f")) {
+                        Controllers::Vehicle::ApplySpeedLock();
+                    }
+                    UI::PopItemWidth();
+                    UI::SameLine();
+                    if (UI::Button(T("vehicle.applyTargetSpeed"))) {
+                        Controllers::Vehicle::ApplyTargetSpeed();
+                    }
+                    UI::SameLine();
+                    if (UI::Button(T("vehicle.restoreDefaultSpeed"))) {
+                        Controllers::Vehicle::RestoreDefaultTargetSpeed();
+                    }
                 }
                 });
 
             XBase::UI::Tab("VehicleSpawn", T("vehicle.spawnVehicle"), [&] {
+if (!UiSchema::DrawSection("vehicle", "vehicleSpawn", "spawnOptions")) {
                 UI::Columns(3, nullptr, false);
                 UI::Checkbox(T("vehicle.spawnAsDriver"), &MenuState::VehicleSpawnAsDriver);
                 UI::NextColumn();
                 UI::Checkbox(T("vehicle.spawnAircraftInAir"), &MenuState::VehicleSpawnAircraftInAir);
                 UI::NextColumn();
                 UI::Checkbox(T("vehicle.cleanupAfterSpawn"), &MenuState::VehicleCleanupAfterSpawn);
+                }
                 UI::Columns(1);
 
                 UI::PushItemWidth(160);

@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { runAction } from '@/lib/actions'
+import { call } from '@/lib/bridge'
 import { useI18n } from '@/lib/i18n'
 import type { MenuInfo } from '@/pages/settings'
 
@@ -31,8 +32,23 @@ export function AboutPage({ info }: PageProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('settings.uiMode')}</CardTitle>
-          <CardDescription>{t('settings.uiMode.hint')}</CardDescription>
+          <CardTitle>{t('about.projectPage')}</CardTitle>
+          <CardDescription>{t('about.notice1')}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => void call('update.open', { url: info?.url })}>
+            {t('about.projectPage')}
+          </Button>
+          <Button variant="outline" onClick={() => void call('update.open')}>
+            {t('update.openGitHub')}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('react.actions')}</CardTitle>
+          <CardDescription>{t('react.actionsHint')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button

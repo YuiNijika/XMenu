@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Badge } from '@/components/ui/badge'
+import { useEffect, useState } from 'react'
+import { SchemaSection } from '@/components/menu/schema-section'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -8,7 +8,13 @@ import { Switch } from '@/components/ui/switch'
 import { ToggleGrid } from '@/components/menu/toggle-grid'
 import { DataBrowser } from '@/components/menu/data-browser'
 import { runAction, runActionQuiet } from '@/lib/actions'
-import { isUsable, type CapabilityReport, type VehicleSnapshot } from '@/lib/bridge'
+import {
+  fetchUiSchema,
+  isUsable,
+  type CapabilityReport,
+  type UiSchemaPayload,
+  type VehicleSnapshot,
+} from '@/lib/bridge'
 import { usePolling } from '@/lib/hooks'
 import { useI18n } from '@/lib/i18n'
 
@@ -20,8 +26,6 @@ export function VehiclePage({ report }: PageProps) {
   const { value } = usePolling<VehicleSnapshot>('vehicle.snapshot', 500)
   const { t } = useI18n()
   const [model, setModel] = useState('411')
-  const [asDriver, setAsDriver] = useState(true)
-  const [cleanup, setCleanup] = useState(true)
   const [primary, setPrimary] = useState('0')
   const [secondary, setSecondary] = useState('0')
   const [locked, setLocked] = useState(false)
@@ -29,10 +33,25 @@ export function VehiclePage({ report }: PageProps) {
   const [paintjob, setPaintjob] = useState('0')
   const [tertiary, setTertiary] = useState('0')
   const [quaternary, setQuaternary] = useState('0')
-  const [density, setDensity] = useState('1')
+  const [density, setDensity] = useState('0.8')
   const [siren, setSiren] = useState(false)
   const [speed, setSpeed] = useState('60')
   const [modId, setModId] = useState('1000')
+  const [seat, setSeat] = useState('0')
+  const [schema, setSchema] = useState<UiSchemaPayload | null>(null)
+
+  // 界面注册表只取一次，网页端与 ImGui 从此共用同一份控件与能力门控
+  useEffect(() => {
+    let alive = true
+    void fetchUiSchema()
+      .then((payload) => {
+        if (alive) setSchema(payload)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
 
   return (
     <div className="grid gap-5 lg:grid-cols-2">
@@ -52,28 +71,6 @@ export function VehiclePage({ report }: PageProps) {
             label={t('react.lights')}
             value={value?.valid ? (value.lights ? t('react.on') : t('react.off')) : '--'}
           />
-          <div className="col-span-2 flex flex-wrap gap-2 pt-2">
-            <Button
-              disabled={!isUsable(report, 'vehicle.repair')}
-              onClick={() => void runAction('vehicle.repair', undefined, 'vehicle.repair')}
-            >
-              {t('vehicle.repair')}
-            </Button>
-            <Button
-              variant="outline"
-              disabled={!isUsable(report, 'vehicle.unflip')}
-              onClick={() => void runAction('vehicle.unflip', undefined, 'vehicle.unflip')}
-            >
-              {t('vehicle.unflip')}
-            </Button>
-            <Button
-              variant="outline"
-              disabled={!isUsable(report, 'vehicle.lights')}
-              onClick={() => void runActionQuiet('vehicle.lights', { enable: !value?.lights })}
-            >
-              {t('react.lights')}
-            </Button>
-          </div>
         </CardContent>
       </Card>
 
@@ -90,30 +87,14 @@ export function VehiclePage({ report }: PageProps) {
             </div>
             <Button
               disabled={!isUsable(report, 'vehicle.spawn')}
-              onClick={() =>
-                void runAction(
-                  'vehicle.spawn',
-                  {
-                    model: Number(model) || 0,
-                    asDriver,
-                    cleanupPrevious: cleanup,
-                  },
-                  'react.spawn',
-                )
-              }
+              onClick={() => void runAction('vehicle.spawn', { model: Number(model) || 0 }, 'react.spawn')}
             >
               {t('react.spawn')}
             </Button>
           </div>
           <Separator />
-          <label className="flex items-center justify-between text-sm">
-            <span>{t('vehicle.spawnAsDriver')}</span>
-            <Switch checked={asDriver} onCheckedChange={setAsDriver} />
-          </label>
-          <label className="flex items-center justify-between text-sm">
-            <span>{t('vehicle.cleanupAfterSpawn')}</span>
-            <Switch checked={cleanup} onCheckedChange={setCleanup} />
-          </label>
+          {/* 生成选项由注册表的生成选项分区维护，宿主侧读的是同一份状态 */}
+          <p className="text-xs text-muted-foreground">{t('vehicle.spawnAsDriver')}</p>
         </CardContent>
       </Card>
 
@@ -144,9 +125,6 @@ export function VehiclePage({ report }: PageProps) {
           >
             {t('react.apply')}
           </Button>
-          <Badge variant="secondary" className="ml-auto">
-            {t('react.requiresCapability').replace('%s', 'VehicleColors')}
-          </Badge>
         </CardContent>
       </Card>
       <Card className="lg:col-span-2">
@@ -162,7 +140,7 @@ export function VehiclePage({ report }: PageProps) {
           <Button
             variant="outline"
             disabled={!isUsable(report, 'vehicle.health')}
-            onClick={() => void runAction('vehicle.health', { value: Number(health) || 0 }, 'react.durability')}
+            onClick={() => void runAction('ui.set', { id: 'vehicle.health', value: Number(health) || 0 }, 'react.durability')}
           >
             {t('react.set')}
           </Button>
@@ -184,7 +162,7 @@ export function VehiclePage({ report }: PageProps) {
               disabled={!isUsable(report, 'vehicle.locked')}
               onCheckedChange={(checked) => {
                 setLocked(checked)
-                void runActionQuiet('vehicle.locked', { enable: checked })
+                void runActionQuiet('ui.set', { id: 'vehicle.locked', value: checked })
               }}
             />
           </label>
@@ -199,27 +177,7 @@ export function VehiclePage({ report }: PageProps) {
       </Card>
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle>{t('common.toggles')}</CardTitle>
-          <CardDescription>{t('react.actionsHint')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ToggleGrid
-            report={report}
-            items={[
-              { method: 'vehicle.heavy', label: 'vehicle.heavy' },
-              { method: 'vehicle.watertight', label: 'vehicle.watertight' },
-              { method: 'vehicle.alwaysSkidMarks', label: 'vehicle.alwaysSkidMarks' },
-              { method: 'vehicle.disableParticles', label: 'vehicle.disableParticles' },
-              { method: 'vehicle.driverTargetable', label: 'vehicle.driverTargetable' },
-              { method: 'vehicle.heatSeekingTargetable', label: 'vehicle.missileTargetable' },
-              { method: 'vehicle.autoDrive', label: 'vehicle.autoDrive' },
-            ]}
-          />
-        </CardContent>
-      </Card>
-      <Card className="lg:col-span-2">
-        <CardHeader>
-          <CardTitle>{t('vehicle.neon')}</CardTitle>
+          <CardTitle>{t('vehicle.sectionRuntime')}</CardTitle>
           <CardDescription>{t('react.actionsHint')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-3">
@@ -248,14 +206,14 @@ export function VehiclePage({ report }: PageProps) {
             {t('react.apply')}
           </Button>
           <div className="w-28">
-            <div className="mb-2 text-xs text-muted-foreground">{t('vehicle.targetSpeed')}</div>
+            <div className="mb-2 text-xs text-muted-foreground">{t('vehicle.trafficDensity')}</div>
             <Input value={density} onChange={(event) => setDensity(event.target.value)} inputMode="decimal" />
           </div>
           <Button
             variant="outline"
             disabled={!isUsable(report, 'vehicle.trafficDensity')}
             onClick={() =>
-              void runAction('vehicle.trafficDensity', { value: Number(density) || 1 }, 'react.apply')
+              void runAction('ui.set', { id: 'vehicle.trafficDensity', value: Number(density) || 1 }, 'react.apply')
             }
           >
             {t('react.apply')}
@@ -263,7 +221,7 @@ export function VehiclePage({ report }: PageProps) {
           <Button
             variant="outline"
             disabled={!isUsable(report, 'vehicle.blowUpAll')}
-            onClick={() => void runAction('vehicle.blowUpAll', undefined, 'vehicle.blowUpAll')}
+            onClick={() => void runAction('ui.run', { id: 'vehicle.blowUpAll' }, 'vehicle.blowUpAll')}
           >
             {t('vehicle.blowUpAll')}
           </Button>
@@ -281,7 +239,7 @@ export function VehiclePage({ report }: PageProps) {
               disabled={!isUsable(report, 'vehicle.siren')}
               onCheckedChange={(checked) => {
                 setSiren(checked)
-                void runActionQuiet('vehicle.siren', { enable: checked })
+                void runActionQuiet('ui.set', { id: 'vehicle.siren', value: checked })
               }}
             />
           </label>
@@ -301,7 +259,7 @@ export function VehiclePage({ report }: PageProps) {
           <Button
             variant="outline"
             disabled={!isUsable(report, 'vehicle.targetSpeed')}
-            onClick={() => void runAction('vehicle.targetSpeed', { speed: Number(speed) || 60 }, 'vehicle.applyTargetSpeed')}
+            onClick={() => void runAction('ui.set', { id: 'vehicle.targetSpeed', value: Number(speed) || 60 }, 'vehicle.applyTargetSpeed')}
           >
             {t('react.apply')}
           </Button>
@@ -348,6 +306,99 @@ export function VehiclePage({ report }: PageProps) {
           />
         </CardContent>
       </Card>
+
+      <Card className="lg:col-span-2">
+        <CardHeader>
+          <CardTitle>{t('vehicle.sectionRuntime')}</CardTitle>
+          <CardDescription>{t('react.actionsHint')}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <ToggleGrid
+            report={report}
+            items={[
+              { method: 'vehicle.noDamage', label: 'vehicle.noDamage' },
+              { method: 'vehicle.invisible', label: 'vehicle.invisible' },
+            ]}
+          />
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="w-24">
+              <div className="mb-2 text-xs text-muted-foreground">{t('vehicle.seatIndex')}</div>
+              <Input value={seat} onChange={(event) => setSeat(event.target.value)} inputMode="numeric" />
+            </div>
+            <Button
+              variant="outline"
+              disabled={!isUsable(report, 'vehicle.seat')}
+              onClick={() => void runAction('vehicle.seat', { index: Number(seat) || 0 }, 'vehicle.warpToSeat')}
+            >
+              {t('vehicle.warpToSeat')}
+            </Button>
+            <Button
+              variant="outline"
+              disabled={!isUsable(report, 'vehicle.resetColors')}
+              onClick={() => void runAction('vehicle.resetColors', undefined, 'vehicle.resetColors')}
+            >
+              {t('vehicle.resetColors')}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {schema ? (
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>{t('vehicle.sectionCheat')}</CardTitle>
+            <CardDescription>{t('react.uiHint')}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <SchemaSection payload={schema} report={report} tabId="vehicle" pageId="vehicleMain" sectionId="actions" />
+            <SchemaSection payload={schema} report={report} tabId="vehicle" pageId="vehicleMain" sectionId="runtime" />
+            <SchemaSection
+              payload={schema}
+              report={report}
+              tabId="vehicle"
+              pageId="vehicleMain"
+              sectionId="status"
+              visible={value?.valid === true}
+            />
+            <SchemaSection
+              payload={schema}
+              report={report}
+              tabId="vehicle"
+              pageId="vehicleMain"
+              sectionId="proof"
+              visible={value?.valid === true}
+            />
+            <SchemaSection
+              payload={schema}
+              report={report}
+              tabId="vehicle"
+              pageId="vehicleMain"
+              sectionId="health"
+              visible={value?.valid === true}
+            />
+            <SchemaSection
+              payload={schema}
+              report={report}
+              tabId="vehicle"
+              pageId="vehicleMain"
+              sectionId="special"
+              visible={value?.valid === true}
+            />
+            <SchemaSection payload={schema} report={report} tabId="vehicle" pageId="vehicleMain" sectionId="cheat" />
+            <SchemaSection payload={schema} report={report} tabId="vehicle" pageId="vehicleMain" sectionId="effect" />
+            <SchemaSection payload={schema} report={report} tabId="vehicle" pageId="vehicleMain" sectionId="autoDrive" />
+            <SchemaSection payload={schema} report={report} tabId="vehicle" pageId="vehicleMain" sectionId="traffic" />
+            <SchemaSection payload={schema} report={report} tabId="vehicle" pageId="vehicleMain" sectionId="speed" />
+            <SchemaSection
+              payload={schema}
+              report={report}
+              tabId="vehicle"
+              pageId="vehicleSpawn"
+              sectionId="spawnOptions"
+            />
+          </CardContent>
+        </Card>
+      ) : null}
 
     </div>
   )

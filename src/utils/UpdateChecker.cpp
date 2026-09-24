@@ -365,7 +365,7 @@ namespace {
             return;
         }
 
-        // 1) 优先 GTAMODX data.version
+        // 第一步优先取 GTAMODX 数据里的版本字段
         if (TryGtamodx(latestVersion, releaseUrl)) {
             source = UpdateChecker::UpdateSource::GTAMODX;
             SaveCache(latestVersion, releaseUrl, source);
@@ -375,7 +375,7 @@ namespace {
             return;
         }
 
-        // 2) 回退 GitHub tag_name
+        // 第二步回退到 GitHub 的标签名
         if (TryGithub(latestVersion, releaseUrl)) {
             source = UpdateChecker::UpdateSource::GitHub;
             SaveCache(latestVersion, releaseUrl, source);

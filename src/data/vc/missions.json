@@ -1,0 +1,206 @@
+{
+  "missions": [
+    {
+      "category": "Arrival to Vice City",
+      "entries": [
+        { "name": "Initial", "id": 0 },
+        { "name": "Intro", "id": 1 },
+        { "name": "An Old Friend", "id": 2 }
+      ]
+    },
+    {
+      "category": "Ken Rosenberg",
+      "entries": [
+        { "name": "The Party", "id": 3 },
+        { "name": "Back Alley Brawl", "id": 4 },
+        { "name": "Jury Fury", "id": 5 },
+        { "name": "Riot", "id": 6 }
+      ]
+    },
+    {
+      "category": "Mr. Black",
+      "entries": [
+        { "name": "Road Kill", "id": 67 },
+        { "name": "Waste the Wife", "id": 68 },
+        { "name": "Autocide", "id": 69 },
+        { "name": "Check Out at the Check In", "id": 70 },
+        { "name": "Loose Ends", "id": 71 }
+      ]
+    },
+    {
+      "category": "Avery Carrington",
+      "entries": [
+        { "name": "Four Iron", "id": 18 },
+        { "name": "Demolition Man", "id": 19 },
+        { "name": "Two Bit Hit", "id": 20 }
+      ]
+    },
+    {
+      "category": "Juan Cortez",
+      "entries": [
+        { "name": "Treacherous Swine", "id": 7 },
+        { "name": "Mall Shootout", "id": 8 },
+        { "name": "Guardian Angels", "id": 9 },
+        { "name": "Sir, Yes Sir!", "id": 10 },
+        { "name": "All Hands On Deck!", "id": 11 }
+      ]
+    },
+    {
+      "category": "Ricardo Diaz",
+      "entries": [
+        { "name": "The Chase", "id": 12 },
+        { "name": "Phnom Penh '86", "id": 13 },
+        { "name": "The Fastest Boat", "id": 14 },
+        { "name": "Supply & Demand", "id": 15 },
+        { "name": "Rub Out", "id": 16 }
+      ]
+    },
+    {
+      "category": "Umberto Robina",
+      "entries": [
+        { "name": "Stunt Boat Challenge", "id": 56 },
+        { "name": "Cannon Fodder", "id": 57 },
+        { "name": "Naval Engagement", "id": 58 },
+        { "name": "Trojan Voodoo", "id": 59 }
+      ]
+    },
+    {
+      "category": "Auntie Poulet",
+      "entries": [
+        { "name": "Juju Scramble", "id": 60 },
+        { "name": "Bombs Away!", "id": 61 },
+        { "name": "Dirty Lickin's", "id": 62 }
+      ]
+    },
+    {
+      "category": "Kent Paul",
+      "entries": [
+        { "name": "Death Row", "id": 17 }
+      ]
+    },
+    {
+      "category": "Tommy Vercetti",
+      "entries": [
+        { "name": "Shakedown", "id": 31 },
+        { "name": "Bar Brawl", "id": 32 },
+        { "name": "Cop Land", "id": 33 },
+        { "name": "Cap the Collector", "id": 51 },
+        { "name": "Keep your Friends Close...", "id": 52 }
+      ]
+    },
+    {
+      "category": "Love Fist",
+      "entries": [
+        { "name": "Love Juice", "id": 63 },
+        { "name": "Psycho Killer", "id": 64 }
+      ]
+    },
+    {
+      "category": "Mitch Baker",
+      "entries": [
+        { "name": "Alloy Wheels of Steel", "id": 53 },
+        { "name": "Messing with the Man", "id": 54 },
+        { "name": "Hog Tied", "id": 55 },
+        { "name": "Publicity Tour", "id": 65 }
+      ]
+    },
+    {
+      "category": "Malibu Club",
+      "entries": [
+        { "name": "No Escape?", "id": 21 },
+        { "name": "The Shootist", "id": 22 },
+        { "name": "The Driver", "id": 23 },
+        { "name": "The Job", "id": 24 }
+      ]
+    },
+    {
+      "category": "InterGlobal Studios",
+      "entries": [
+        { "name": "Recruitment Drive", "id": 27 },
+        { "name": "Dildo Dodo", "id": 28 },
+        { "name": "Martha's Mug Shot", "id": 29 },
+        { "name": "G-spotlight", "id": 30 }
+      ]
+    },
+    {
+      "category": "Kaufman Cabs",
+      "entries": [
+        { "name": "V.I.P.", "id": 72 },
+        { "name": "Friendly Rivalry", "id": 73 },
+        { "name": "Cabmaggedon", "id": 74 }
+      ]
+    },
+    {
+      "category": "Print Works",
+      "entries": [
+        { "name": "Spilling the Beans", "id": 34 },
+        { "name": "Hit the Courier", "id": 35 }
+      ]
+    },
+    {
+      "category": "Misc",
+      "entries": [
+        { "name": "Cherry Popper Distribution", "id": 83 },
+        { "name": "Sunshine Autos", "id": 37 },
+        { "name": "Checkpoint Charlie", "id": 96 },
+        { "name": "Printworks Buy", "id": 36 },
+        { "name": "Interglobal Films Buy", "id": 38 },
+        { "name": "Cherry Popper Icecreams Buy", "id": 39 },
+        { "name": "Kaufman Cabs Buy", "id": 40 },
+        { "name": "Malibu Club Buy", "id": 41 },
+        { "name": "The Boatyard Buy", "id": 42 },
+        { "name": "Pole Position Club Buy", "id": 43 },
+        { "name": "El Swanko Casa Buy", "id": 44 },
+        { "name": "Links View Apartment Buy", "id": 45 },
+        { "name": "Hyman Condo Buy", "id": 46 },
+        { "name": "Ocean Heighs Aprt. Buy", "id": 47 },
+        { "name": "1102 Washington Street Buy", "id": 48 },
+        { "name": "Vice Point Buy", "id": 49 },
+        { "name": "Skumole Shack Buy", "id": 50 },
+        { "name": "Weapon Range", "id": 66 },
+        { "name": "TAXI DRIVER", "id": 75 },
+        { "name": "PARAMEDIC", "id": 76 },
+        { "name": "FIREFIGHTER", "id": 77 },
+        { "name": "VIGILANTE", "id": 78 },
+        { "name": "HOTRING", "id": 79 },
+        { "name": "BLOODRING", "id": 80 },
+        { "name": "DIRTRING", "id": 81 },
+        { "name": "PIZZA BOY", "id": 92 }
+      ]
+    },
+    {
+      "category": "Phil Cassidy",
+      "entries": [
+        { "name": "Gun Runner", "id": 25 },
+        { "name": "Boomshine Saigon", "id": 26 }
+      ]
+    },
+    {
+      "category": "Offroad races",
+      "entries": [
+        { "name": "Trial by Dirt", "id": 88 },
+        { "name": "Test Track", "id": 89 },
+        { "name": "PCJ Playground", "id": 90 },
+        { "name": "Cone Crazy", "id": 91 }
+      ]
+    },
+    {
+      "category": "RC Missions",
+      "entries": [
+        { "name": "RC Raider Pickup", "id": 93 },
+        { "name": "RC Bandit Race", "id": 94 },
+        { "name": "RC Baron Race", "id": 95 }
+      ]
+    },
+    {
+      "category": "Sparrow missions",
+      "entries": [
+        { "name": "Sunshine Autos Races", "id": 82 },
+        { "name": "Downtown Chopper Checkpoint", "id": 84 },
+        { "name": "Ocean Beach Chopper Checkpoint", "id": 85 },
+        { "name": "Vice Point Chopper Checkpoint", "id": 86 },
+        { "name": "Little Haiti Chopper Checkpoint", "id": 87 }
+      ]
+    }
+  ]
+}

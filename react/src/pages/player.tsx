@@ -1,14 +1,20 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Separator } from '@/components/ui/separator'
 import { Slider } from '@/components/ui/slider'
 import { ToggleGrid } from '@/components/menu/toggle-grid'
+import { SchemaSection } from '@/components/menu/schema-section'
 import { Switch } from '@/components/ui/switch'
 import { runAction, runActionQuiet } from '@/lib/actions'
-import { isUsable, type CapabilityReport, type PlayerSnapshot } from '@/lib/bridge'
+import {
+  fetchUiSchema,
+  isUsable,
+  type CapabilityReport,
+  type PlayerSnapshot,
+  type UiSchemaPayload,
+} from '@/lib/bridge'
 import { usePolling } from '@/lib/hooks'
 import { useI18n } from '@/lib/i18n'
 
@@ -35,10 +41,24 @@ export function PlayerPage({ report }: PageProps) {
   const { value } = usePolling<PlayerSnapshot>('player.snapshot', 400)
   const { t } = useI18n()
   const [amount, setAmount] = useState('1000')
+  const [schema, setSchema] = useState<UiSchemaPayload | null>(null)
+
+  // 界面注册表只取一次，网页端与 ImGui 从此共用同一份控件与能力门控
+  useEffect(() => {
+    let alive = true
+    void fetchUiSchema()
+      .then((payload) => {
+        if (alive) setSchema(payload)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
+
   const [wanted, setWanted] = useState([0])
   const [skin, setSkin] = useState('0')
   const [health, setHealth] = useState('100')
-  const [sprint, setSprint] = useState(false)
   const [proofs, setProofs] = useState<Record<string, boolean>>({})
   const [runtime, setRuntime] = useState<Record<string, boolean>>({})
   const [texture, setTexture] = useState('0')
@@ -78,29 +98,6 @@ export function PlayerPage({ report }: PageProps) {
           <CardDescription>{t('react.actionsHint')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-wrap gap-2">
-            <Button
-              disabled={!isUsable(report, 'player.heal')}
-              onClick={() => void runAction('player.heal', undefined, 'player.healFully')}
-            >
-              {t('player.healFully')}
-            </Button>
-            <Button
-              variant="outline"
-              disabled={!isUsable(report, 'player.armour')}
-              onClick={() => void runAction('player.armour', undefined, 'player.armor')}
-            >
-              {t('player.armor')}
-            </Button>
-            <Button
-              variant="outline"
-              disabled={!isUsable(report, 'player.kill')}
-              onClick={() => void runAction('player.kill', undefined, 'player.kill')}
-            >
-              {t('player.kill')}
-            </Button>
-          </div>
-          <Separator />
           <div className="flex items-end gap-3">
             <div className="flex-1">
               <div className="mb-2 text-xs text-muted-foreground">{t('player.money')}</div>
@@ -161,17 +158,6 @@ export function PlayerPage({ report }: PageProps) {
           >
             {t('react.set')}
           </Button>
-          <label className="flex items-center gap-2 text-sm">
-            <span>{t('player.fastSprint')}</span>
-            <Switch
-              checked={sprint}
-              disabled={!isUsable(report, 'player.infiniteSprint')}
-              onCheckedChange={(checked) => {
-                setSprint(checked)
-                void runActionQuiet('player.infiniteSprint', { enable: checked })
-              }}
-            />
-          </label>
         </CardContent>
       </Card>
       <Card className="lg:col-span-2">
@@ -180,23 +166,10 @@ export function PlayerPage({ report }: PageProps) {
           <CardDescription>{t('react.actionsHint')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
+          {/* 已登记的开关改由注册表绘制，这里只留没进注册表的两项 */}
           <ToggleGrid
             report={report}
             items={[
-              { method: 'player.godMode', label: 'player.godMode' },
-              { method: 'player.invisible', label: 'player.invisible' },
-              { method: 'player.hardMode', label: 'player.hardMode' },
-              { method: 'player.freeFly', label: 'player.autoFlight' },
-              { method: 'player.superJump', label: 'player.megaJump' },
-              { method: 'player.superPunch', label: 'player.megaPunch' },
-              { method: 'player.underwaterBreathing', label: 'player.infiniteOxygen' },
-              { method: 'player.cycleJump', label: 'player.cycleJump' },
-              { method: 'player.neverHungry', label: 'player.neverHungry' },
-              { method: 'player.fastSprint', label: 'player.fastSprint' },
-              { method: 'player.sprintEverywhere', label: 'player.sprintEverywhere' },
-              { method: 'player.drunkEffect', label: 'player.drunkEffect' },
-              { method: 'player.neverWanted', label: 'player.neverWanted' },
-              { method: 'player.keepStuff', label: 'player.keepStuff' },
               { method: 'player.freeHealthcare', label: 'player.freeHospital' },
               { method: 'player.freeJail', label: 'player.freeJail' },
             ]}
@@ -218,16 +191,10 @@ export function PlayerPage({ report }: PageProps) {
             </Button>
             <Button
               variant="outline"
-              disabled={!isUsable(report, 'player.saveGame')}
-              onClick={() => void runAction('player.saveGame', undefined, 'player.saveAnywhere')}
+              disabled={!isUsable(report, 'player.aimSkin')}
+              onClick={() => void runAction('player.aimSkin', undefined, 'player.aimSkinChanger')}
             >
-              {t('player.saveAnywhere')}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => void runAction('player.copyCoordinates', undefined, 'player.copyCoordinates')}
-            >
-              {t('player.copyCoordinates')}
+              {t('player.aimSkinChanger')}
             </Button>
           </div>
         </CardContent>
@@ -256,7 +223,7 @@ export function PlayerPage({ report }: PageProps) {
 
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle>{t('player.autoHeal')}</CardTitle>
+          <CardTitle>{t('settings.runtime')}</CardTitle>
           <CardDescription>{t('react.actionsHint')}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-2">
@@ -345,6 +312,26 @@ export function PlayerPage({ report }: PageProps) {
           </Button>
         </CardContent>
       </Card>
+
+      {schema ? (
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>{t('player.statusToggles')}</CardTitle>
+            <CardDescription>{t('react.uiHint')}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <SchemaSection payload={schema} report={report} tabId="player" pageId="playerMain" sectionId="actions" />
+            <SchemaSection
+              payload={schema}
+              report={report}
+              tabId="player"
+              pageId="playerMain"
+              sectionId="statusToggles"
+            />
+            <SchemaSection payload={schema} report={report} tabId="player" pageId="playerMain" sectionId="flight" />
+          </CardContent>
+        </Card>
+      ) : null}
 
     </div>
   )

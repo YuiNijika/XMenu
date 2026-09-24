@@ -85,5 +85,8 @@
   "weather.sandstorm_desert": "沙漠沙尘暴",
   "weather.underwater": "水下",
   "weather.extracolours_1": "特殊色彩 1",
-  "weather.extracolours_2": "特殊色彩 2"
+  "weather.extracolours_2": "特殊色彩 2",
+  "weather.extrasunny_la": "洛城特晴",
+  "weather.hurricane": "飓风",
+  "weather.extracolours": "特殊色彩"
 }

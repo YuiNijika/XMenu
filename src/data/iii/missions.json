@@ -1,0 +1,142 @@
+{
+  "missions": [
+    {
+      "category": "Misc",
+      "entries": [
+        { "name": "Patriot Playground", "id": 7 },
+        { "name": "A Ride In The Park", "id": 8 },
+        { "name": "Gripped!", "id": 9 },
+        { "name": "Multistorey Mayhem", "id": 10 },
+        { "name": "Paramedic", "id": 11 },
+        { "name": "Firefighter", "id": 12 },
+        { "name": "Vigilante", "id": 13 },
+        { "name": "Taxi Driver", "id": 14 },
+        { "name": "The Exchange", "id": 79 }
+      ]
+    },
+    {
+      "category": "Asuka Kasen",
+      "entries": [
+        { "name": "Sayonara Salvatore", "id": 44 },
+        { "name": "Under Surveillance", "id": 45 },
+        { "name": "Paparazzi Purge", "id": 46 },
+        { "name": "Payday For Ray", "id": 47 },
+        { "name": "Two-Faced Tanner", "id": 48 },
+        { "name": "Bait", "id": 71 },
+        { "name": "Espresso-2-Go!", "id": 72 },
+        { "name": "S.A.M.", "id": 73 }
+      ]
+    },
+    {
+      "category": "Kenji Kasen",
+      "entries": [
+        { "name": "Kanbu Bust-Out", "id": 49 },
+        { "name": "Grand Theft Auto", "id": 50 },
+        { "name": "Deal Steal", "id": 51 },
+        { "name": "Shima", "id": 52 },
+        { "name": "Smack Down", "id": 53 }
+      ]
+    },
+    {
+      "category": "Ray Machowski",
+      "entries": [
+        { "name": "Silence The Sneak", "id": 54 },
+        { "name": "Arms Shortage", "id": 55 },
+        { "name": "Evidence Dash", "id": 56 },
+        { "name": "Gone Fishing", "id": 57 },
+        { "name": "Plaster Blaster", "id": 58 },
+        { "name": "Marked Man", "id": 59 }
+      ]
+    },
+    {
+      "category": "Donald Love",
+      "entries": [
+        { "name": "Liberator", "id": 60 },
+        { "name": "Waka-Gashira Wipeout!", "id": 61 },
+        { "name": "A Drop In The Ocean", "id": 62 },
+        { "name": "Grand Theft Aero", "id": 67 },
+        { "name": "Escort Service", "id": 68 },
+        { "name": "Decoy", "id": 69 },
+        { "name": "Love's Disappearance", "id": 70 }
+      ]
+    },
+    {
+      "category": "Toni Cipriani",
+      "entries": [
+        { "name": "Taking Out The Laundry", "id": 30 },
+        { "name": "The Pick-Up", "id": 31 },
+        { "name": "Salvatore's Called A Meeting", "id": 32 },
+        { "name": "Triads And Tribulations", "id": 33 },
+        { "name": "Blow Fish", "id": 34 }
+      ]
+    },
+    {
+      "category": "Luigi Goterelli",
+      "entries": [
+        { "name": "Give Me Liberty and Luigi's Girls", "id": 19 },
+        { "name": "Don't Spank My Bitch Up", "id": 20 },
+        { "name": "Drive Misty For Me", "id": 21 },
+        { "name": "Pump-Action Pimp", "id": 22 },
+        { "name": "The Fuzz Ball", "id": 23 }
+      ]
+    },
+    {
+      "category": "Marty Chonks",
+      "entries": [
+        { "name": "The Crook", "id": 15 },
+        { "name": "The Thieves", "id": 16 },
+        { "name": "The Wife", "id": 17 },
+        { "name": "Her Lover", "id": 18 }
+      ]
+    },
+    {
+      "category": "Salvatore Leone",
+      "entries": [
+        { "name": "Chaperone", "id": 35 },
+        { "name": "Cutting The Grass", "id": 36 },
+        { "name": "Bomb Da Base: Act I", "id": 37 },
+        { "name": "Bomb Da Base: Act II", "id": 38 },
+        { "name": "Last Requests", "id": 39 }
+      ]
+    },
+    {
+      "category": "Joey Leone",
+      "entries": [
+        { "name": "Mike Lips Last Lunch", "id": 24 },
+        { "name": "Farewell 'Chunky' Lee Chong", "id": 25 },
+        { "name": "Van Heist", "id": 26 },
+        { "name": "Cipriani's Chauffeur", "id": 27 },
+        { "name": "Dead Skunk In The Trunk", "id": 28 },
+        { "name": "The Getaway", "id": 29 }
+      ]
+    },
+    {
+      "category": "El Burro",
+      "entries": [
+        { "name": "Turismo", "id": 40 },
+        { "name": "I Scream, You Scream", "id": 41 },
+        { "name": "Trial By Fire", "id": 42 },
+        { "name": "Big'N'Veiny", "id": 43 }
+      ]
+    },
+    {
+      "category": "King Courtney",
+      "entries": [
+        { "name": "Bling-Bling Scramble", "id": 63 },
+        { "name": "Uzi Rider", "id": 64 },
+        { "name": "Gangcar Round-Up", "id": 65 },
+        { "name": "Kingdom Come", "id": 66 }
+      ]
+    },
+    {
+      "category": "D-Ice",
+      "entries": [
+        { "name": "Uzi Money", "id": 74 },
+        { "name": "Toyminator", "id": 75 },
+        { "name": "Rigged To Blow", "id": 76 },
+        { "name": "Bullion Run", "id": 77 },
+        { "name": "Rumble", "id": 78 }
+      ]
+    }
+  ]
+}

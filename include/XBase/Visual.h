@@ -16,6 +16,7 @@ struct RadarOptions {
 bool DisplayHud(bool enable);
 bool DisplayRadar(bool enable);
 bool SetFilter(int id, float strength);
+int GetFilter();
 void SetRadarOptions(const RadarOptions& options);
 void NotifyGameInit();
 void Shutdown();

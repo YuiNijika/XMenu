@@ -129,5 +129,9 @@
   "weapon.detonator_grenade": "リモートグレネード",
   "weapon.cellphone": "携帯電話",
   "weapon.jetpack": "ジェットパック",
-  "weapon.helicannon": "ヘリキャノン"
+  "weapon.helicannon": "ヘリキャノン",
+  "weapon.sectionRuntime": "実行時効果",
+  "weapon.sectionOverrides": "ステータス上書き",
+  "weapon.sectionBulletAssist": "バレットアシスト",
+  "weapon.sectionGiveOptions": "入手オプション"
 }

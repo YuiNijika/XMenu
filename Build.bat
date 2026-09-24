@@ -86,7 +86,7 @@ if /i not "%CONFIG%"=="Release" (
     echo [Error] Build XBase Debug and stage it separately before using Debug.
     goto fail
 )
-for %%T in (XBaseBootstrap XBasePayloadEntry XBaseSA XBaseVC XBaseIII PluginSA PluginVC PluginIII) do (
+for %%T in (XBaseModEntry XBaseSA XBaseVC XBaseIII PluginSA PluginVC PluginIII) do (
     if not exist "lib\%%T.lib" (
         echo [Error] Missing staged library: lib\%%T.lib
         echo [Error] Run XBase Build.bat Release to rebuild the XBase SDK and stage plugin-sdk libraries.
@@ -139,35 +139,27 @@ if errorlevel 1 (
 
 set "MSBUILD_PROPS=/p:Configuration=%CONFIG% /p:Platform=Win32 /p:PlatformToolset=!PLATFORM_TOOLSET! /verbosity:minimal"
 
-echo Building loader build\bin\XMenu.asi...
-"!MSBUILD_EXE!" "build\XMenu.sln" /m /t:XMenu !MSBUILD_PROPS!
+echo Building mod asi build\bin\XMenuSA.asi...
+"!MSBUILD_EXE!" "build\XMenu.sln" /m /t:XMenuSA !MSBUILD_PROPS!
 if errorlevel 1 (
     echo.
-    echo [Error] ASI loader build failed.
+    echo [Error] XMenuSA asi build failed.
     goto fail
 )
 
-echo Building payload build\bin\XMenu\XMenuSA.dll...
-"!MSBUILD_EXE!" "build\XMenu.sln" /m /t:XMenuPayloadSA !MSBUILD_PROPS!
+echo Building mod asi build\bin\XMenuVC.asi...
+"!MSBUILD_EXE!" "build\XMenu.sln" /m /t:XMenuVC !MSBUILD_PROPS!
 if errorlevel 1 (
     echo.
-    echo [Error] SA payload build failed.
+    echo [Error] XMenuVC asi build failed.
     goto fail
 )
 
-echo Building payload build\bin\XMenu\XMenuVC.dll...
-"!MSBUILD_EXE!" "build\XMenu.sln" /m /t:XMenuPayloadVC !MSBUILD_PROPS!
+echo Building mod asi build\bin\XMenuIII.asi...
+"!MSBUILD_EXE!" "build\XMenu.sln" /m /t:XMenuIII !MSBUILD_PROPS!
 if errorlevel 1 (
     echo.
-    echo [Error] VC payload build failed.
-    goto fail
-)
-
-echo Building payload build\bin\XMenu\XMenuIII.dll...
-"!MSBUILD_EXE!" "build\XMenu.sln" /m /t:XMenuPayloadIII !MSBUILD_PROPS!
-if errorlevel 1 (
-    echo.
-    echo [Error] III payload build failed.
+    echo [Error] XMenuIII asi build failed.
     goto fail
 )
 
@@ -179,20 +171,16 @@ if errorlevel 1 (
     goto fail
 )
 
-if not exist "build\bin\XMenu.asi" (
-    echo [Error] build\bin\XMenu.asi was not produced.
+if not exist "build\bin\XMenuSA.asi" (
+    echo [Error] build\bin\XMenuSA.asi was not produced.
     goto fail
 )
-if not exist "build\bin\XMenu\XMenuSA.dll" (
-    echo [Error] build\bin\XMenu\XMenuSA.dll was not produced.
+if not exist "build\bin\XMenuVC.asi" (
+    echo [Error] build\bin\XMenuVC.asi was not produced.
     goto fail
 )
-if not exist "build\bin\XMenu\XMenuVC.dll" (
-    echo [Error] build\bin\XMenu\XMenuVC.dll was not produced.
-    goto fail
-)
-if not exist "build\bin\XMenu\XMenuIII.dll" (
-    echo [Error] build\bin\XMenu\XMenuIII.dll was not produced.
+if not exist "build\bin\XMenuIII.asi" (
+    echo [Error] build\bin\XMenuIII.asi was not produced.
     goto fail
 )
 if not exist "build\bin\XMenuInstaller.exe" (
@@ -206,13 +194,12 @@ if errorlevel 1 goto fail
 echo.
 echo Build completed successfully.
 echo Output files:
-echo   build\bin\XMenu.asi
-echo   build\bin\XMenu\XMenuSA.dll
-echo   build\bin\XMenu\XMenuVC.dll
-echo   build\bin\XMenu\XMenuIII.dll
+echo   build\bin\XMenuSA.asi
+echo   build\bin\XMenuVC.asi
+echo   build\bin\XMenuIII.asi
 echo   build\bin\XMenuInstaller.exe
-echo   build\bin\XMenu\data\{sa,vc,iii}\*.json
-echo   build\bin\XMenu\data\i18n\{lang}\index.json
+echo   build\bin\XBase\Mods\XMenu\data\{sa,vc,iii}\*.json
+echo   build\bin\XBase\Mods\XMenu\data\i18n\{lang}\index.json
 echo.
 goto success
 
@@ -220,7 +207,7 @@ rem ============================================================
 rem Generated projects must consume only the staged XBase SDK.
 rem ============================================================
 :validate_xbase_sdk_boundary
-for %%P in (XMenu XMenuPayloadSA XMenuPayloadVC XMenuPayloadIII XMenuInstaller) do (
+for %%P in (XMenuSA XMenuVC XMenuIII XMenuInstaller) do (
     if not exist "build\%%P.vcxproj" (
         echo [Error] Missing generated project: build\%%P.vcxproj
         exit /b 1
@@ -234,37 +221,27 @@ if not errorlevel 1 (
     exit /b 1
 )
 
-rem Installer owns its platform dependencies; loader and payloads must not.
-findstr /I /M /C:"d3d9" /C:"Direct3D" /C:"urlmon.lib" /C:"Pdh.lib" /C:"shell32.lib" /C:"ole32.lib" "build\XMenu.vcxproj" "build\XMenuPayload*.vcxproj" >nul 2>nul
+rem Installer owns its platform dependencies; mod asis must not.
+findstr /I /M /C:"d3d9" /C:"Direct3D" /C:"urlmon.lib" /C:"Pdh.lib" /C:"shell32.lib" /C:"ole32.lib" "build\XMenuSA.vcxproj" "build\XMenuVC.vcxproj" "build\XMenuIII.vcxproj" >nul 2>nul
 if not errorlevel 1 (
-    echo [Error] Generated runtime projects still link platform or renderer libraries directly.
+    echo [Error] Generated mod asi projects still link platform or renderer libraries directly.
     exit /b 1
 )
 
-findstr /I /C:"XBaseBootstrap.lib" "build\XMenu.vcxproj" >nul 2>nul
-if errorlevel 1 (
-    echo [Error] Loader project does not link XBaseBootstrap.lib.
-    exit /b 1
-)
-findstr /I /C:"/WHOLEARCHIVE:XBaseBootstrap.lib" "build\XMenu.vcxproj" >nul 2>nul
-if errorlevel 1 (
-    echo [Error] Loader project does not retain the XBase bootstrap entry object.
-    exit /b 1
-)
 for %%G in (SA VC III) do (
-    findstr /I /C:"XBase%%G.lib" "build\XMenuPayload%%G.vcxproj" >nul 2>nul
+    findstr /I /C:"XBaseModEntry.lib" "build\XMenu%%G.vcxproj" >nul 2>nul
     if errorlevel 1 (
-        echo [Error] Payload project %%G does not link XBase%%G.lib.
+        echo [Error] Mod project %%G does not link XBaseModEntry.lib.
         exit /b 1
     )
-    findstr /I /C:"XBasePayloadEntry.lib" "build\XMenuPayload%%G.vcxproj" >nul 2>nul
+    findstr /I /C:"/WHOLEARCHIVE:XBaseModEntry.lib" "build\XMenu%%G.vcxproj" >nul 2>nul
     if errorlevel 1 (
-        echo [Error] Payload project %%G does not link XBasePayloadEntry.lib.
+        echo [Error] Mod project %%G does not retain the XBase mod entry object.
         exit /b 1
     )
-    findstr /I /C:"/WHOLEARCHIVE:XBasePayloadEntry.lib" "build\XMenuPayload%%G.vcxproj" >nul 2>nul
+    findstr /I /C:"XBase%%G.lib" "build\XMenu%%G.vcxproj" >nul 2>nul
     if errorlevel 1 (
-        echo [Error] Payload project %%G does not retain the XBase payload entry object.
+        echo [Error] Mod project %%G does not link XBase%%G.lib.
         exit /b 1
     )
 )
@@ -468,68 +445,68 @@ if exist "tools\generate_scene_visual_data.py" (
     if errorlevel 1 python "tools\generate_scene_visual_data.py" >nul 2>nul
 )
 
-if exist "build\bin\XMenu\data" rmdir /S /Q "build\bin\XMenu\data"
-if exist "build\bin\XMenu\i18n" rmdir /S /Q "build\bin\XMenu\i18n"
-if not exist "build\bin\XMenu" mkdir "build\bin\XMenu"
-if not exist "build\bin\XMenu\data" mkdir "build\bin\XMenu\data"
+if exist "build\bin\XBase\Mods\XMenu\data" rmdir /S /Q "build\bin\XBase\Mods\XMenu\data"
+if exist "build\bin\XBase\Mods\XMenu\i18n" rmdir /S /Q "build\bin\XBase\Mods\XMenu\i18n"
+if not exist "build\bin\XBase\Mods\XMenu" mkdir "build\bin\XBase\Mods\XMenu"
+if not exist "build\bin\XBase\Mods\XMenu\data" mkdir "build\bin\XBase\Mods\XMenu\data"
 
 for %%G in (sa vc iii) do (
     if not exist "src\data\%%G" (
         echo [Error] Missing data directory: src\data\%%G
         exit /b 1
     )
-    xcopy "src\data\%%G" "build\bin\XMenu\data\%%G\" /E /I /Y >nul
+    xcopy "src\data\%%G" "build\bin\XBase\Mods\XMenu\data\%%G\" /E /I /Y >nul
     if errorlevel 1 (
         echo [Error] Failed to stage data pack: %%G
         exit /b 1
     )
 )
 
-if not exist "build\bin\XMenu\data\i18n" mkdir "build\bin\XMenu\data\i18n"
+if not exist "build\bin\XBase\Mods\XMenu\data\i18n" mkdir "build\bin\XBase\Mods\XMenu\data\i18n"
 for %%L in (zh en jp ru) do (
     if not exist "src\data\i18n\%%L\index.json" (
         echo [Error] Missing language index: src\data\i18n\%%L\index.json
         exit /b 1
     )
-    xcopy "src\data\i18n\%%L" "build\bin\XMenu\data\i18n\%%L\" /E /I /Y >nul
+    xcopy "src\data\i18n\%%L" "build\bin\XBase\Mods\XMenu\data\i18n\%%L\" /E /I /Y >nul
     if errorlevel 1 (
         echo [Error] Failed to stage data language pack: %%L
         exit /b 1
     )
 )
 
+rem 界面特性注册表，ImGui 与网页界面共用同一份，两边都从这里取控件与能力门控
+if not exist "src\data\ui-schema.json" (
+    echo [Error] Missing UI schema: src\data\ui-schema.json
+    exit /b 1
+)
+copy /Y "src\data\ui-schema.json" "build\bin\XBase\Mods\XMenu\data\ui-schema.json" >nul
+if errorlevel 1 (
+    echo [Error] Failed to stage UI schema
+    exit /b 1
+)
+
 if exist "react\dist\ui.html" (
-    if exist "build\bin\XMenu\ui" rmdir /S /Q "build\bin\XMenu\ui"
+    if exist "build\bin\XBase\Mods\XMenu\ui" rmdir /S /Q "build\bin\XBase\Mods\XMenu\ui"
     rem 脚本与样式放在 data 目录，ui.html 只用相对路径引用，file 协议下经典脚本不受 CORS 限制
-    copy /Y "react\dist\ui.html" "build\bin\XMenu\ui.html" >nul
+    copy /Y "react\dist\ui.html" "build\bin\XBase\Mods\XMenu\ui.html" >nul
     if exist "react\dist\data" (
-        xcopy "react\dist\data" "build\bin\XMenu\data\" /E /I /Y >nul
+        xcopy "react\dist\data" "build\bin\XBase\Mods\XMenu\data\" /E /I /Y >nul
         if errorlevel 1 (
             echo [Error] Failed to stage React UI assets.
             exit /b 1
         )
     )
-    if not exist "build\bin\XMenu\ui.html" (
+    if not exist "build\bin\XBase\Mods\XMenu\ui.html" (
         echo [Error] Failed to stage React UI bundle.
         exit /b 1
     )
-    if not exist "build\bin\XMenu\data\app.js" (
+    if not exist "build\bin\XBase\Mods\XMenu\data\app.js" (
         echo [Error] Failed to stage React UI scripts.
         exit /b 1
     )
 ) else (
     echo [Warning] react\dist not found; run pnpm build in react before packaging.
-)
-exit /b 0
-
-if exist "lib\WebView2Loader.dll" (
-    copy /Y "lib\WebView2Loader.dll" "build\bin\XMenu\WebView2Loader.dll" >nul
-    if errorlevel 1 (
-        echo [Error] Failed to stage WebView2Loader.dll.
-        exit /b 1
-    )
-) else (
-    echo [Warning] lib\WebView2Loader.dll not found; WebView feature will be unavailable.
 )
 exit /b 0
 

@@ -55,7 +55,7 @@ namespace GuiTheme {
     constexpr int ThemeCount = 4;
     constexpr int InteractionCount = 2;
 
-    // 兼容旧调用：不再依赖 Push/Pop 配对
+    // 兼容旧调用，不再依赖压栈与出栈配对
     constexpr int ColorPushCount = 0;
     constexpr int StyleVarPushCount = 0;
 
@@ -70,19 +70,19 @@ namespace GuiTheme {
     void SetInteractionByIndex(int index);
     const char* GetInteractionNameKey(int index);
 
-    // 应用到 XBase 渲染主题（需运行时已初始化）
+    // 应用到 XBase 渲染主题，需要运行时已初始化
     void ApplyToStyle();
 
     // 按列表/面板 + 交互模式同步键盘导航与鼠标开关
     void ApplyInteraction();
 
-    // 每帧轻量同步（交互标志）；主题仅在变更时重写 Style
+    // 每帧轻量同步交互标志，主题仅在变更时重写样式
     void Sync();
 
-    // 列表模式且未开鼠标时：隐藏菜单光标
+    // 列表模式且未开鼠标时隐藏菜单光标
     bool WantsMouseCursor();
 
-    // 兼容：等同 ApplyToStyle / 空操作
+    // 兼容旧名，等同应用到样式或空操作
     void ApplyTheme();
     void RestoreTheme();
 }

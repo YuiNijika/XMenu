@@ -21,7 +21,6 @@ namespace Controllers::Vehicle {
     void OpenDoor();
     void PopDoor();
     void WarpToSeat();
-    void SetTrafficDensity(float density);
     void SetFlyingCars(bool enable);
     void SetEngine(bool enable);
     void Unflip();

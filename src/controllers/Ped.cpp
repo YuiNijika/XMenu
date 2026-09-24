@@ -58,6 +58,14 @@ namespace Controllers::Ped {
         XBase::Ped::SetThinBody(MenuState::ThinBodyMode);
         XBase::Ped::SetSmokingEffect(MenuState::SmokingEffect);
         XBase::Ped::SetFliesEffect(MenuState::FliesEffect);
+        // XBase 每帧只接收整组选项 分次调用会被下一帧覆盖
+        XBase::Ped::NoFireOptions noFire;
+        noFire.enable = MenuState::PedsNoFire;
+        noFire.civilians = MenuState::PedsNoFireCivilians;
+        noFire.gangs = MenuState::PedsNoFireGangs;
+        noFire.cops = MenuState::PedsNoFirePolice;
+        noFire.mission = MenuState::PedsNoFireMission;
+        XBase::Ped::SetNoFire(noFire);
     }
 
     void SetElvisEverywhere(bool enable) { XBase::Ped::SetElvisEverywhere(enable); }

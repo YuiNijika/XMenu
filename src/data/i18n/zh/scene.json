@@ -32,5 +32,6 @@
   "scene.missionIndex": "任务 ID",
   "scene.startMission": "开始任务",
   "scene.noMissions": "没有正在运行的任务。",
+  "scene.missionListHint": "点击列表项会立即启动对应任务。",
   "scene.failMission": "失败当前任务"
 }

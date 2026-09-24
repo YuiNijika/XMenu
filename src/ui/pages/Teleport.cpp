@@ -1,6 +1,7 @@
 #include "Teleport.h"
 #include "ui/MenuState.h"
 #include "resources/ResourceData.h"
+#include "ui/UiSchema.h"
 #include "ui/Widget.h"
 #include "utils/I18n.h"
 #include "utils/AppConfig.h"
@@ -96,14 +97,17 @@ namespace Pages::Teleport {
         XBase::UI::Disabled(!XBaseBridge::HasCapability(XBase::FeatureCapability::TeleportBasic), [&] {
             XBase::UI::Tabs("TeleportTabs", [&] {
             XBase::UI::Tab("teleport.tab", T("tab.teleport"), [&] {
+                // 快捷传送选项与向前传送的参数都交给界面注册表，网页界面读的是同一份配置
+                if (!UiSchema::DrawSection("teleport", "teleportMain", "quickOptions")) {
 #ifdef GTASA
-                XBase::UI::Columns(2, nullptr, false);
-                XBase::UI::Checkbox(T("teleport.quickMapTeleport"), MenuState::QuickTeleport);
-                XBase::UI::NextColumn();
-                XBase::UI::Checkbox(T("teleport.allowUnderwaterLanding"), MenuState::SpawnUnderwater);
-                XBase::UI::Checkbox(T("teleport.quickMarkerTeleport"), MenuState::TeleportMarker);
-                XBase::UI::Columns(1);
+                    XBase::UI::Columns(2, nullptr, false);
+                    XBase::UI::Checkbox(T("teleport.quickMapTeleport"), MenuState::QuickTeleport);
+                    XBase::UI::NextColumn();
+                    XBase::UI::Checkbox(T("teleport.allowUnderwaterLanding"), MenuState::SpawnUnderwater);
+                    XBase::UI::Checkbox(T("teleport.quickMarkerTeleport"), MenuState::TeleportMarker);
+                    XBase::UI::Columns(1);
 #endif
+                }
 
                 XBase::UI::Spacing();
                 XBase::UI::InputText(T("teleport.currentCoordinates"), currentCoordText, sizeof(currentCoordText), "x, y, z", true);
@@ -149,21 +153,22 @@ namespace Pages::Teleport {
                 }
 
                 XBase::UI::Spacing();
-                bool teleportSettingsChanged = false;
-                XBase::UI::PushItemWidth(180.0f);
-                teleportSettingsChanged |= XBase::UI::Input(T("teleport.forwardDistance"), MenuState::TeleportForwardDistance, 1.0f, 5.0f, "%.1f");
-                XBase::UI::PopItemWidth();
-                if (MenuState::TeleportForwardDistance < 0.1f) {
-                    MenuState::TeleportForwardDistance = 0.1f;
-                    teleportSettingsChanged = true;
-                }
-                teleportSettingsChanged |= XBase::UI::Checkbox(T("teleport.forwardHold"), MenuState::TeleportForwardHold);
-                XBase::UI::TextDisabled(T("teleport.forwardHoldHint"));
-                if (teleportSettingsChanged) {
-                    AppConfig::Save();
+                if (!UiSchema::DrawSection("teleport", "teleportMain", "forward")) {
+                    bool teleportSettingsChanged = false;
+                    XBase::UI::PushItemWidth(180.0f);
+                    teleportSettingsChanged |= XBase::UI::Input(T("teleport.forwardDistance"), MenuState::TeleportForwardDistance, 1.0f, 5.0f, "%.1f");
+                    XBase::UI::PopItemWidth();
+                    if (MenuState::TeleportForwardDistance < 0.1f) {
+                        MenuState::TeleportForwardDistance = 0.1f;
+                        teleportSettingsChanged = true;
+                    }
+                    teleportSettingsChanged |= XBase::UI::Checkbox(T("teleport.forwardHold"), MenuState::TeleportForwardHold);
+                    XBase::UI::TextDisabled(T("teleport.forwardHoldHint"));
+                    if (teleportSettingsChanged) {
+                        AppConfig::Save();
+                    }
                 }
 
-#ifdef GTASA
                 if (MenuState::QuickTeleport && XBase::UI::CollapsingHeader(T("teleport.customMapSize"))) {
                     static float mapWidthDraft = MenuState::TeleportMapWidth;
                     static float mapHeightDraft = MenuState::TeleportMapHeight;
@@ -171,18 +176,17 @@ namespace Pages::Teleport {
                     XBase::UI::Input(T("teleport.width"), mapWidthDraft, 1.0f, 100.0f, "%.1f");
                     XBase::UI::Input(T("teleport.height"), mapHeightDraft, 1.0f, 100.0f, "%.1f");
                     if (UI::Button(T("teleport.applyMapSize"), 2)) {
-                        MenuState::TeleportMapWidth = mapWidthDraft;
-                        MenuState::TeleportMapHeight = mapHeightDraft;
+                        MenuState::TeleportMapWidth = mapWidthDraft > 0.0f ? mapWidthDraft : 0.0f;
+                        MenuState::TeleportMapHeight = mapHeightDraft > 0.0f ? mapHeightDraft : 0.0f;
                     }
                     XBase::UI::SameLine();
                     if (UI::Button(T("teleport.restoreDefault"), 2)) {
-                        mapWidthDraft = 6000.0f;
-                        mapHeightDraft = 6000.0f;
-                        MenuState::TeleportMapWidth = mapWidthDraft;
-                        MenuState::TeleportMapHeight = mapHeightDraft;
+                        mapWidthDraft = 0.0f;
+                        mapHeightDraft = 0.0f;
+                        MenuState::TeleportMapWidth = 0.0f;
+                        MenuState::TeleportMapHeight = 0.0f;
                     }
                 }
-#endif
                 });
 
             XBase::UI::Tab("teleport.locations", T("teleport.locations"), [&] {

@@ -34,15 +34,15 @@ function configureBuildMode()
     filter {}
 end
 
-function createPayloadProject(projectID)
+function createModProject(projectID)
     local upperID = string.upper(projectID)
     local gameDefine = upperID == "III" and "GTA3" or "GTA" .. upperID
 
-    project ("XMenuPayload" .. upperID)
+    project ("XMenu" .. upperID)
         kind "SharedLib"
         targetname ("XMenu" .. upperID)
-        targetextension ".dll"
-        targetdir "build/bin/XMenu"
+        targetextension ".asi"
+        targetdir "build/bin"
 
         includedirs {
             "include",
@@ -72,33 +72,14 @@ function createPayloadProject(projectID)
         libdirs { XBASE_LIB_DIR }
 
         if projectID == "sa" then
-            links { "XBaseSA", "PluginSA" }
+            links { "XBaseModEntry", "XBaseSA", "PluginSA" }
         elseif projectID == "vc" then
-            links { "XBaseVC", "PluginVC" }
+            links { "XBaseModEntry", "XBaseVC", "PluginVC" }
         else
-            links { "XBaseIII", "PluginIII" }
+            links { "XBaseModEntry", "XBaseIII", "PluginIII" }
         end
 
-        links { "XBasePayloadEntry" }
-        linkoptions { "/WHOLEARCHIVE:XBasePayloadEntry.lib" }
-
-        configureBuildMode()
-end
-
-function createLoaderProject()
-    project "XMenu"
-        kind "SharedLib"
-        targetname "XMenu"
-        targetextension ".asi"
-
-        files {
-            "loader/**.h",
-            "loader/**.cpp"
-        }
-
-        libdirs { XBASE_LIB_DIR }
-        links { "XBaseBootstrap" }
-        linkoptions { "/WHOLEARCHIVE:XBaseBootstrap.lib" }
+        linkoptions { "/WHOLEARCHIVE:XBaseModEntry.lib" }
 
         configureBuildMode()
 end
@@ -130,8 +111,7 @@ function createInstallerProject()
         configureBuildMode()
 end
 
-createPayloadProject("sa")
-createPayloadProject("vc")
-createPayloadProject("iii")
-createLoaderProject()
+createModProject("sa")
+createModProject("vc")
+createModProject("iii")
 createInstallerProject()

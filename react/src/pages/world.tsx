@@ -5,27 +5,52 @@ import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { ParamToggles, ToggleGrid } from '@/components/menu/toggle-grid'
+import { SchemaSection } from '@/components/menu/schema-section'
 import { runAction, runActionQuiet } from '@/lib/actions'
-import { isUsable, type CapabilityReport, type WorldTime } from '@/lib/bridge'
+import {
+  call,
+  fetchUiSchema,
+  isUsable,
+  type CapabilityReport,
+  type UiSchemaPayload,
+  type WorldTime,
+} from '@/lib/bridge'
 import { usePolling } from '@/lib/hooks'
 import { useI18n } from '@/lib/i18n'
+
+const WeatherFields = [
+  { key: 'rain', label: 'world.rain' },
+  { key: 'fog', label: 'world.fog' },
+  { key: 'clouds', label: 'world.clouds' },
+  { key: 'wind', label: 'world.wind' },
+  { key: 'sandstorm', label: 'world.sandstorm' },
+  { key: 'extraSunny', label: 'world.extraSunny' },
+  { key: 'wetRoads', label: 'world.wetRoads' },
+  { key: 'gameSpeed', label: 'world.gameSpeed' },
+]
 
 type PageProps = {
   report: CapabilityReport | null
 }
 
-const WeatherNames = [
-  'weather.sunny',
-  'weather.cloudy',
-  'weather.rainy',
-  'weather.foggy',
-  'weather.extrasunny',
-  'weather.sandstorm_desert',
-  'weather.underwater',
-  'weather.extracolours_1',
-]
+type WeatherEntry = { id: number; key: string }
 
 export function WorldPage({ report }: PageProps) {
+  const [schema, setSchema] = useState<UiSchemaPayload | null>(null)
+
+  // 界面注册表只取一次，网页端与 ImGui 从此共用同一份控件与能力门控
+  useEffect(() => {
+    let alive = true
+    void fetchUiSchema()
+      .then((payload) => {
+        if (alive) setSchema(payload)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
+
   const { value } = usePolling<WorldTime>('world.getTime', 1000)
   const { t } = useI18n()
   const [hour, setHour] = useState('12')
@@ -41,6 +66,14 @@ export function WorldPage({ report }: PageProps) {
   const [pickupQuantity, setPickupQuantity] = useState('1')
   const [pickupMoney, setPickupMoney] = useState('0')
   const [interval, setInterval] = useState('5')
+  const [weatherValues, setWeatherValues] = useState<Record<string, string>>({})
+  const [weatherList, setWeatherList] = useState<WeatherEntry[]>([])
+
+  useEffect(() => {
+    call<{ items: WeatherEntry[] }>('world.weatherCatalog')
+      .then((payload) => setWeatherList(payload.items ?? []))
+      .catch(() => setWeatherList([]))
+  }, [])
 
   useEffect(() => {
     if (!value) return
@@ -81,7 +114,7 @@ export function WorldPage({ report }: PageProps) {
               disabled={!isUsable(report, 'world.freezeTime')}
               onCheckedChange={(checked) => {
                 setFreeze(checked)
-                void runActionQuiet('world.freezeTime', { enable: checked })
+                void runActionQuiet('ui.set', { id: 'world.freezeTime', value: checked })
               }}
             />
           </label>
@@ -94,19 +127,27 @@ export function WorldPage({ report }: PageProps) {
           <CardDescription>{t('react.weatherHint')}</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-2">
-          {WeatherNames.map((name, index) => (
+          {weatherList.map((item) => (
             <Button
-              key={name}
-              variant={weather === index ? 'default' : 'outline'}
+              key={item.id}
+              variant={weather === item.id ? 'default' : 'outline'}
               disabled={!isUsable(report, 'world.weather')}
               onClick={() => {
-                setWeather(index)
-                void runAction('world.weather', { id: index, lock: true }, name)
+                setWeather(item.id)
+                void runAction('world.weather', { id: item.id, lock: true }, item.key)
               }}
             >
-              {t(name)}
+              {t(item.key)}
             </Button>
           ))}
+          <Button
+            variant="outline"
+            className="col-span-2"
+            disabled={!isUsable(report, 'world.weatherRelease')}
+            onClick={() => void runAction('world.weatherRelease', undefined, 'world.revertWeather')}
+          >
+            {t('world.revertWeather')}
+          </Button>
         </CardContent>
       </Card>
 
@@ -209,17 +250,19 @@ export function WorldPage({ report }: PageProps) {
             </Button>
             <Button
               variant="outline"
-              disabled={!isUsable(report, 'world.weatherRelease')}
-              onClick={() => void runAction('world.weatherRelease', undefined, 'world.revertWeather')}
+              disabled={!isUsable(report, 'world.syncClock')}
+              onClick={() => void runAction('ui.run', { id: 'world.syncClock' }, 'world.syncRealTime')}
             >
-              {t('world.revertWeather')}
+              {t('world.syncRealTime')}
             </Button>
             <Button
               variant="outline"
-              disabled={!isUsable(report, 'world.syncClock')}
-              onClick={() => void runAction('world.syncClock', undefined, 'world.syncRealTime')}
+              onClick={() => void runAction('world.destroyVehicles', undefined, 'react.destroyVehicles')}
             >
-              {t('world.syncRealTime')}
+              {t('react.destroyVehicles')}
+            </Button>
+            <Button variant="outline" onClick={() => void runAction('world.destroyPeds', undefined, 'react.destroyPeds')}>
+              {t('react.destroyPeds')}
             </Button>
           </div>
         </CardContent>
@@ -283,7 +326,7 @@ export function WorldPage({ report }: PageProps) {
 
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle>{t('vehicle.flyingCars')}</CardTitle>
+          <CardTitle>{t('world.cheats')}</CardTitle>
           <CardDescription>{t('react.actionsHint')}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -317,8 +360,8 @@ export function WorldPage({ report }: PageProps) {
             report={report}
             method="cheats.random"
             items={[
-              { method: '', label: 'enabled' },
-              { method: '', label: 'showProgress' },
+              { method: 'cheats.random', key: 'enabled', label: 'world.enableRandomCheats' },
+              { method: 'cheats.random', key: 'showProgress', label: 'world.showRandomCheatsProgress' },
             ]}
           />
           <div className="flex flex-wrap items-end gap-3">
@@ -343,6 +386,53 @@ export function WorldPage({ report }: PageProps) {
           </div>
         </CardContent>
       </Card>
+
+      <Card className="lg:col-span-2">
+        <CardHeader>
+          <CardTitle>{t('world.environment')}</CardTitle>
+          <CardDescription>{t('react.environmentHint')}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-4">
+          {WeatherFields.map((field) => (
+            <div key={field.key}>
+              <div className="mb-2 text-xs text-muted-foreground">{t(field.label)}</div>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={weatherValues[field.key] ?? '0'}
+                  onChange={(event) =>
+                    setWeatherValues((previous) => ({ ...previous, [field.key]: event.target.value }))
+                  }
+                  inputMode="decimal"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!isUsable(report, 'world.environment')}
+                  onClick={() =>
+                    void runActionQuiet('world.environment', {
+                      [field.key]: Number(weatherValues[field.key] ?? '0') || 0,
+                    })
+                  }
+                >
+                  {t('react.apply')}
+                </Button>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {schema ? (
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>{t('world.gameRules')}</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <SchemaSection payload={schema} report={report} tabId="world" pageId="worldMain" sectionId="timeLock" />
+            <SchemaSection payload={schema} report={report} tabId="world" pageId="worldMain" sectionId="gameRules" />
+          </CardContent>
+        </Card>
+      ) : null}
 
     </div>
   )

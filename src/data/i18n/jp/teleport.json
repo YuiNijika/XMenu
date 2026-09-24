@@ -16,7 +16,7 @@
   "teleport.forwardHold": "前方テレポートを継続",
   "teleport.forwardHoldHint": "有効にすると、「前方へテレポート」のホットキーを押している間、前方テレポートを繰り返します。",
   "teleport.customMapSize": "カスタムマップサイズ",
-  "teleport.customMapSizeHint": "クイックマップテレポートの位置がずれる場合、ここでマップの幅と高さを調整できます。既定値は 6000 x 6000 です。",
+  "teleport.customMapSizeHint": "幅か高さに 0 を入れるとゲームのレーダー範囲に従います。クイックマップテレポートの位置がずれる場合はここで調整できます。",
   "teleport.width": "幅",
   "teleport.height": "高さ",
   "teleport.applyMapSize": "マップサイズを適用",
@@ -263,5 +263,6 @@
   "teleport.location.sa_sf_airport_runway": "サンフィエロ空港 内部",
   "teleport.location.sa_lv_airport_ticket": "ラスベンチュラス空港 チケット売り場",
   "teleport.location.sa_lv_airport_runway": "ラスベンチュラス空港 内部",
-  "teleport.location.sa_desert_airstrip": "Verdant Meadows 飛行場"
+  "teleport.location.sa_desert_airstrip": "Verdant Meadows 飛行場",
+  "teleport.sectionQuickOptions": "クイックテレポート設定"
 }

@@ -229,7 +229,7 @@ const char* DefaultUiMode() {
         }
 
         if (feature == "ped.bigHeadMode") {
-            // SA 皮肤缩放 + III pre-render 钩子；VC 无实现
+            // SA 皮肤缩放与 III 预渲染钩子，VC 无实现
             return IsSaRuntime() || XBase::Runtime::GetGameTarget() == XBase::Runtime::GameTarget::III;
         }
         if (feature == "ped.noProstitutes") {
@@ -237,6 +237,11 @@ const char* DefaultUiMode() {
         }
         if (feature == "ped.nastyLimbs") {
             return XBase::Runtime::GetGameTarget() == XBase::Runtime::GameTarget::III;
+        }
+        if (feature == "ped.pedsNoFire" || feature == "ped.pedsNoFireCivilians"
+            || feature == "ped.pedsNoFireGangs" || feature == "ped.pedsNoFirePolice"
+            || feature == "ped.pedsNoFireMission") {
+            return XBase::HasCapability(XBase::FeatureCapability::BulletAssistFireSuppression);
         }
 
         return true;
@@ -293,22 +298,17 @@ const char* DefaultUiMode() {
     }
 
     std::string XMenuModuleDirectory() {
-        const std::string asiDirectory = XBase::Platform::ModuleDirectory("XMenu.asi");
-        return asiDirectory.empty()
-            ? XBase::Platform::CurrentModuleDirectory()
-            : asiDirectory;
+        // 单文件 asi 改名后不再有固定文件名，直接取当前模块所在目录作为 asi 自身目录
+        return XBase::Platform::CurrentModuleDirectory();
     }
 
     std::string XMenuDataDirectory() {
-        const std::string directory = XMenuModuleDirectory();
-        if (!directory.empty()) {
-            return directory + "XMenu\\";
-        }
-        return "XMenu\\";
+        // 数据统一放在 XBase 目录下以 XMenu 命名的子目录，不再跟随 asi
+        return XBase::Platform::ModDirectory("XMenu");
     }
 
     std::string ConfigPath() {
-        return XMenuDataDirectory() + "config.json";
+        return XBase::Platform::ModConfigPath("XMenu");
     }
 
     std::string LegacyConfigPath() {
@@ -771,7 +771,7 @@ const char* DefaultUiMode() {
             MenuState::WeaponBulletLockRange = 300.0f;
         }
 
-        // 兼容旧 espDraw*；优先 track*
+        // 兼容旧的绘制开关命名，优先使用追踪开头的字段
         MenuState::WeaponTrackFriend = JsonLoader::GetBool(weapon, "trackFriend",
             JsonLoader::GetBool(weapon, "espDrawFriend", MenuState::WeaponTrackFriend));
         MenuState::WeaponTrackHostile = JsonLoader::GetBool(weapon, "trackHostile",

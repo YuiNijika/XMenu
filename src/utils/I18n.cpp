@@ -11,8 +11,8 @@
 #include <vector>
 
 namespace {
-    // 透明哈希：让 find(key) 直接用 const char* / string_view 查找，
-    // 避免每帧构造临时 std::string（菜单绘制每帧调用大量 T()）。
+    // 透明哈希让查找直接接受字符指针与字符串视图，
+    // 避免每帧构造临时字符串对象，菜单绘制每帧会调用大量翻译函数
     struct TransparentStringHash {
         using is_transparent = void;
         std::size_t operator()(std::string_view view) const {
@@ -102,8 +102,8 @@ namespace {
     }
 
     std::string AsiDirectory() {
-        const std::string asiDirectory = XBase::Platform::ModuleDirectory("XMenu.asi");
-        return asiDirectory.empty() ? XBase::Platform::CurrentModuleDirectory() : asiDirectory;
+        // 单文件 asi 改名后不再有固定文件名，直接取当前模块所在目录作为 asi 自身目录
+        return XBase::Platform::CurrentModuleDirectory();
     }
 
     std::string NormalizeDirectory(std::string path) {
@@ -267,9 +267,11 @@ namespace I18n {
         fallbacks.clear();
         availableLanguages.clear();
 
+        // 语言包随载荷放在 XBase 目录下 XMenu 子目录的 data 里的 i18n，asi 同级目录仅作兼容
+        const std::string modDir = XBase::Platform::ModDirectory("XMenu");
         const std::string baseDir = AsiDirectory();
-        bool loadedFromPackagedData = false;
-        if (!baseDir.empty()) {
+        bool loadedFromPackagedData = ScanLanguageBase(modDir + "data\\i18n\\");
+        if (!loadedFromPackagedData && !baseDir.empty()) {
             loadedFromPackagedData = ScanLanguageBase(baseDir + "XMenu\\data\\i18n\\");
             if (!loadedFromPackagedData) {
                 ScanLanguageBase(baseDir + "XMenu\\i18n\\");

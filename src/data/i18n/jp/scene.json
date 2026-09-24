@@ -32,5 +32,6 @@
   "scene.missionIndex": "ミッション ID",
   "scene.startMission": "ミッション開始",
   "scene.noMissions": "現在実行中のミッションはありません。",
+  "scene.missionListHint": "リスト項目をクリックすると対応するミッションを開始します。",
   "scene.failMission": "現在のミッションを失敗させる"
 }

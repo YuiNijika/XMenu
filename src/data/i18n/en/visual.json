@@ -17,5 +17,7 @@
   "visual.hideAreaNames": "Hide area names",
   "visual.hideVehicleNames": "Hide vehicle names",
   "visual.nightVision": "Night vision",
-  "visual.infrared": "Infrared"
+  "visual.infrared": "Infrared",
+  "visual.sectionDisplay": "Display",
+  "visual.sectionRadarOptions": "Radar options"
 }

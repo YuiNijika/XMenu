@@ -233,7 +233,7 @@ namespace {
         if (gameRoot.empty()) {
             return;
         }
-        const std::string logPath = JoinPath(gameRoot, "plugins\\XMenu\\install.log");
+        const std::string logPath = JoinPath(gameRoot, "XBase\\Mods\\XMenu\\install.log");
         EnsureDirectory(ParentDirectory(logPath));
         std::ofstream file(logPath, std::ios::binary | std::ios::app);
         if (!file.is_open()) {
@@ -697,11 +697,11 @@ namespace {
     std::string GameModuleName(GameType gameType) {
         switch (gameType) {
         case GameType::GTA3:
-            return "XMenuIII.dll";
+            return "XMenuIII.asi";
         case GameType::GTAVC:
-            return "XMenuVC.dll";
+            return "XMenuVC.asi";
         case GameType::GTASA:
-            return "XMenuSA.dll";
+            return "XMenuSA.asi";
         default:
             return "";
         }
@@ -717,17 +717,16 @@ namespace {
 
     std::string BuildSelectedComponentSummary(const InstallOptions& options) {
         std::ostringstream summary;
-        summary << "- XMenu.asi -> plugins\\XMenu.asi\r\n";
         if (options.installXMenuIII) {
-            summary << "- GTA III 模块 -> plugins\\XMenu\\XMenuIII.dll\r\n";
+            summary << "- GTA III 模块 -> plugins\\XMenuIII.asi\r\n";
         }
         if (options.installXMenuVC) {
-            summary << "- GTA VC 模块 -> plugins\\XMenu\\XMenuVC.dll\r\n";
+            summary << "- GTA VC 模块 -> plugins\\XMenuVC.asi\r\n";
         }
         if (options.installXMenuSA) {
-            summary << "- GTA SA 模块 -> plugins\\XMenu\\XMenuSA.dll\r\n";
+            summary << "- GTA SA 模块 -> plugins\\XMenuSA.asi\r\n";
         }
-        summary << "- XMenu data/config -> plugins\\XMenu\\\r\n";
+        summary << "- XMenu data/config -> XBase\\Mods\\XMenu\\\r\n";
         summary << "- SilentPatch -> plugins\\\r\n";
         summary << (options.installRootDependencies ? "- Ultimate ASI Loader / D3D8to9 -> 游戏根目录\r\n" : "- Ultimate ASI Loader / D3D8to9 -> 跳过\r\n");
         return summary.str();
@@ -751,7 +750,7 @@ namespace {
     }
 
     std::string ReadInstalledVersion(const std::string& gameRoot) {
-        const std::string configPath = JoinPath(gameRoot, "plugins\\XMenu\\config.json");
+        const std::string configPath = JoinPath(gameRoot, "XBase\\Mods\\XMenu\\config.json");
         const std::string config = ReadTextFile(configPath);
         const std::string xmenuSection = "\"XMenu\"";
         const std::size_t section = config.find(xmenuSection);
@@ -759,7 +758,7 @@ namespace {
     }
 
     bool VerifyInstalledFiles(const std::string& gameRoot, std::string& report) {
-        const std::string manifest = ReadTextFile(JoinPath(gameRoot, std::string("plugins\\XMenu\\") + ManifestFileName));
+        const std::string manifest = ReadTextFile(JoinPath(gameRoot, std::string("XBase\\Mods\\XMenu\\") + ManifestFileName));
         if (manifest.empty()) {
             report = "未找到安装清单，无法做完整性检测。";
             return false;
@@ -811,7 +810,7 @@ namespace {
     }
 
     bool SyncConfigVersion(const std::string& gameRoot, const std::string& version) {
-        const std::string configPath = JoinPath(gameRoot, "plugins\\XMenu\\config.json");
+        const std::string configPath = JoinPath(gameRoot, "XBase\\Mods\\XMenu\\config.json");
         std::string config = ReadTextFile(configPath);
         const std::string escapedVersion = EscapeJson(version);
 
@@ -874,7 +873,7 @@ namespace {
         }
         json << "  ]\n";
         json << "}\n";
-        return WriteTextFile(JoinPath(gameRoot, std::string("plugins\\XMenu\\") + ManifestFileName), json.str());
+        return WriteTextFile(JoinPath(gameRoot, std::string("XBase\\Mods\\XMenu\\") + ManifestFileName), json.str());
     }
 
     bool InstallDirectoryContents(const std::string& sourceDir, const std::string& targetDir, const std::string& targetRelativePrefix, const std::string& gameRoot, std::vector<InstalledFile>& manifestFiles) {
@@ -901,8 +900,8 @@ namespace {
 
     std::string BuildComponentSummary(const std::string& extractedRoot, const InstallOptions& options) {
         std::ostringstream summary;
-        summary << "- XMenu.asi -> plugins\\XMenu.asi\r\n";
-        summary << "- XMenu payload/config/data -> plugins\\XMenu\\\r\n";
+        summary << "- XMenuSA.asi / XMenuVC.asi / XMenuIII.asi -> plugins\\\r\n";
+        summary << "- XMenu payload/config/data -> XBase\\Mods\\XMenu\\\r\n";
 
         if (HasInstallableSilentPatch(extractedRoot)) {
             summary << "- SilentPatch -> plugins\\\r\n";
@@ -959,50 +958,43 @@ namespace {
 
     bool InstallRelease(const std::string& extractedRoot, const std::string& gameRoot, const std::string& version, const InstallOptions& options) {
         const std::string pluginsDir = JoinPath(gameRoot, "plugins");
-        const std::string xmenuDir = JoinPath(pluginsDir, "XMenu");
+        // 载荷与数据放在 XBase 目录下以 XMenu 命名的子目录，asi 仍留在 plugins
+    const std::string xmenuDir = JoinPath(gameRoot, "XBase\\Mods\\XMenu");
         EnsureDirectory(pluginsDir);
         EnsureDirectory(xmenuDir);
 
         std::vector<InstalledFile> manifestFiles;
         ExtractNestedArchivesForDependencies(extractedRoot, gameRoot);
 
-        const std::string asi = FindFirstFileByName(extractedRoot, "XMenu.asi");
-        if (asi.empty() || !CopyFileEnsureDirectory(asi, JoinPath(pluginsDir, "XMenu.asi"), true)) {
-            AppendInstallLog(gameRoot, "ERROR missing or failed to copy plugins\\XMenu.asi");
-            AskInstallerDialog(InstallerTitle, L"安装失败：发布包中缺少 XMenu.asi。", MB_ICONERROR | MB_OK);
-            return false;
-        }
-        AddManifestRecord(manifestFiles, gameRoot, "plugins\\XMenu.asi");
-        AppendInstallLog(gameRoot, "Installed plugins\\XMenu.asi");
-
-        struct PayloadInstall {
-            const char* fileName;
-            bool enabled;
-        };
-        const PayloadInstall payloads[] = {
-            {"XMenuSA.dll", options.installXMenuSA},
-            {"XMenuVC.dll", options.installXMenuVC},
-            {"XMenuIII.dll", options.installXMenuIII}
-        };
-        for (const PayloadInstall& payload : payloads) {
-            if (!payload.enabled) {
+        const char* modAsiNames[] = { "XMenuSA.asi", "XMenuVC.asi", "XMenuIII.asi" };
+        bool copiedAnyAsi = false;
+        for (const char* asiName : modAsiNames) {
+            const std::string asi = FindFirstFileByName(extractedRoot, asiName);
+            if (asi.empty()) {
                 continue;
             }
-            const std::string source = FindFirstFileByName(extractedRoot, payload.fileName);
-            if (!source.empty()) {
-                CopyFileEnsureDirectory(source, JoinPath(xmenuDir, payload.fileName), true);
-                AddManifestRecord(manifestFiles, gameRoot, JoinPath("plugins\\XMenu", payload.fileName));
-                AppendInstallLog(gameRoot, std::string("Installed plugins\\XMenu\\") + payload.fileName);
-            } else {
-                AppendInstallLog(gameRoot, std::string("Selected payload missing in release asset: ") + payload.fileName);
+            if (!CopyFileEnsureDirectory(asi, JoinPath(pluginsDir, asiName), true)) {
+                AppendInstallLog(gameRoot, std::string("ERROR failed to copy plugins\\") + asiName);
+                AskInstallerDialog(InstallerTitle, (L"安装失败：复制 " + WideFromAnsi(asiName) + L" 到 plugins 失败。").c_str(), MB_ICONERROR | MB_OK);
+                return false;
             }
+            AddManifestRecord(manifestFiles, gameRoot, std::string("plugins\\") + asiName);
+            AppendInstallLog(gameRoot, std::string("Installed plugins\\") + asiName);
+            copiedAnyAsi = true;
+        }
+        if (!copiedAnyAsi) {
+            AppendInstallLog(gameRoot, "ERROR missing XMenu asi files in release asset");
+            AskInstallerDialog(InstallerTitle, L"安装失败：发布包中缺少 XMenu 的 asi 文件。", MB_ICONERROR | MB_OK);
+            return false;
         }
 
+        // 网页视图加载器属于公用库，放 XBase 目录下的 Library 子目录，不进模组目录
+        const std::string libraryDir = JoinPath(gameRoot, "XBase\\Library");
         const std::string webViewLoader = FindFirstFileByName(extractedRoot, "WebView2Loader.dll");
         if (!webViewLoader.empty()) {
-            CopyFileEnsureDirectory(webViewLoader, JoinPath(xmenuDir, "WebView2Loader.dll"), true);
-            AddManifestRecord(manifestFiles, gameRoot, "plugins\\XMenu\\WebView2Loader.dll");
-            AppendInstallLog(gameRoot, "Installed plugins\\XMenu\\WebView2Loader.dll");
+            CopyFileEnsureDirectory(webViewLoader, JoinPath(libraryDir, "WebView2Loader.dll"), true);
+            AddManifestRecord(manifestFiles, gameRoot, "XBase\\Library\\WebView2Loader.dll");
+            AppendInstallLog(gameRoot, "Installed XBase\\Library\\WebView2Loader.dll");
         } else {
             AppendInstallLog(gameRoot, "WebView2Loader.dll not found in release asset");
         }
@@ -1021,22 +1013,36 @@ namespace {
                 }
                 rootDataDir = parent;
             }
-            InstallDirectoryContents(rootDataDir, JoinPath(xmenuDir, "data"), "plugins\\XMenu\\data", gameRoot, manifestFiles);
+            InstallDirectoryContents(rootDataDir, JoinPath(xmenuDir, "data"), "XBase\\Mods\\XMenu\\data", gameRoot, manifestFiles);
             AppendInstallLog(gameRoot, "Installed plugins\\XMenu\\data");
         }
 
         // React 界面的入口页放在载荷目录旁的 ui.html，脚本与样式随 data 目录一起安装
-        std::string payloadDir = FindDirectoryContaining(extractedRoot, "XMenuSA.dll");
+        // 网页视图加载器属于公用库放 Library 子目录，XBase 自身数据放在游戏根目录的 XBase 下
+        {
+            const std::string loaderDir = FindDirectoryContaining(extractedRoot, "WebView2Loader.dll");
+            if (!loaderDir.empty()) {
+                InstallDirectoryContents(
+                    loaderDir,
+                    JoinPath(gameRoot, "XBase"),
+                    "XBase",
+                    gameRoot,
+                    manifestFiles);
+                AppendInstallLog(gameRoot, "Installed XBase shared files");
+            }
+        }
+
+        std::string payloadDir = FindDirectoryContaining(extractedRoot, "XMenuSA.asi");
         if (payloadDir.empty()) {
-            payloadDir = FindDirectoryContaining(extractedRoot, "XMenuVC.dll");
+            payloadDir = FindDirectoryContaining(extractedRoot, "XMenuVC.asi");
         }
         if (payloadDir.empty()) {
-            payloadDir = FindDirectoryContaining(extractedRoot, "XMenuIII.dll");
+            payloadDir = FindDirectoryContaining(extractedRoot, "XMenuIII.asi");
         }
         if (!payloadDir.empty()) {
-            const std::string uiPage = JoinPath(payloadDir, "ui.html");
+            const std::string uiPage = JoinPath(payloadDir, "XBase\\Mods\\XMenu\\ui.html");
             if (PathExists(uiPage) && CopyFileEnsureDirectory(uiPage, JoinPath(xmenuDir, "ui.html"), true)) {
-                AddManifestRecord(manifestFiles, gameRoot, "plugins\\XMenu\\ui.html");
+                AddManifestRecord(manifestFiles, gameRoot, "XBase\\Mods\\XMenu\\ui.html");
                 AppendInstallLog(gameRoot, "Installed plugins\\XMenu\\ui.html");
             } else {
                 AppendInstallLog(gameRoot, "React UI page not found in release asset");
@@ -1090,6 +1096,6 @@ namespace {
         return true;
     }
 
-// UI 实现：仅由 main.cpp #include，勿作为独立编译单元加入 vcxproj
+// 界面实现仅被主文件包含，不要作为独立编译单元加入工程
 #define XMENU_INSTALLER_MAIN_CPP
 #include "Ui.cpp"

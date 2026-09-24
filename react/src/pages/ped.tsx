@@ -1,13 +1,18 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
-import { ToggleGrid } from '@/components/menu/toggle-grid'
+import { SchemaSection } from '@/components/menu/schema-section'
 import { DataBrowser } from '@/components/menu/data-browser'
-import { runAction, runActionQuiet } from '@/lib/actions'
-import { isUsable, type CapabilityReport } from '@/lib/bridge'
+import { runAction } from '@/lib/actions'
+import {
+  fetchUiSchema,
+  isUsable,
+  type CapabilityReport,
+  type UiSchemaPayload,
+} from '@/lib/bridge'
 import { useI18n } from '@/lib/i18n'
 
 type PageProps = {
@@ -18,7 +23,23 @@ export function PedPage({ report }: PageProps) {
   const { t } = useI18n()
   const [model, setModel] = useState('0')
   const [atMarker, setAtMarker] = useState(false)
-  const [noFire, setNoFire] = useState(false)
+  const [schema, setSchema] = useState<UiSchemaPayload | null>(null)
+
+  // 界面注册表只取一次，网页端与 ImGui 从此共用同一份控件与能力门控
+  useEffect(() => {
+    let alive = true
+    void fetchUiSchema()
+      .then((payload) => {
+        if (alive) setSchema(payload)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  const [pedHealth, setPedHealth] = useState('100')
+  const [pedArmour, setPedArmour] = useState('0')
   const [gangId, setGangId] = useState('0')
   const [density, setDensity] = useState('0')
   const [slot, setSlot] = useState('0')
@@ -41,7 +62,16 @@ export function PedPage({ report }: PageProps) {
             <Button
               disabled={!isUsable(report, 'ped.spawn')}
               onClick={() =>
-                void runAction('ped.spawn', { model: Number(model) || 0, atMarker }, 'ped.spawnPed')
+                void runAction(
+                  'ped.spawn',
+                  {
+                    model: Number(model) || 0,
+                    atMarker,
+                    health: Number(pedHealth) || 100,
+                    armour: Number(pedArmour) || 0,
+                  },
+                  'ped.spawnPed',
+                )
               }
             >
               {t('react.spawn')}
@@ -51,6 +81,16 @@ export function PedPage({ report }: PageProps) {
             <span>{t('ped.spawnMarker')}</span>
             <Switch checked={atMarker} onCheckedChange={setAtMarker} />
           </label>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <div className="mb-2 text-xs text-muted-foreground">{t('ped.health')}</div>
+              <Input value={pedHealth} onChange={(event) => setPedHealth(event.target.value)} inputMode="numeric" />
+            </div>
+            <div>
+              <div className="mb-2 text-xs text-muted-foreground">{t('ped.armour')}</div>
+              <Input value={pedArmour} onChange={(event) => setPedArmour(event.target.value)} inputMode="numeric" />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -67,17 +107,6 @@ export function PedPage({ report }: PageProps) {
           >
             {t('ped.deleteLast')}
           </Button>
-          <label className="flex items-center justify-between text-sm">
-            <span>{t('ped.pedsNoFire')}</span>
-            <Switch
-              checked={noFire}
-              disabled={!isUsable(report, 'ped.noFire')}
-              onCheckedChange={(checked) => {
-                setNoFire(checked)
-                void runActionQuiet('ped.noFire', { enable: checked })
-              }}
-            />
-          </label>
           <Badge variant="secondary" className="self-start">
             {report?.gameName ?? t('react.unknown')}
           </Badge>
@@ -90,42 +119,8 @@ export function PedPage({ report }: PageProps) {
           <CardDescription>{t('ped.hint')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <ToggleGrid
-            report={report}
-            items={[
-              { method: 'ped.bigHead', label: 'ped.bigHeadMode' },
-              { method: 'ped.thinBody', label: 'ped.thinBodyMode' },
-              { method: 'ped.flies', label: 'ped.flies' },
-              { method: 'ped.smoking', label: 'ped.smoking' },
-              { method: 'ped.everyoneArmed', label: 'ped.everyoneArmed' },
-              { method: 'ped.mayhem', label: 'ped.pedsMayhem' },
-              { method: 'ped.riot', label: 'ped.pedsRiot' },
-              { method: 'ped.atkRocket', label: 'ped.pedsAtkRocket' },
-              { method: 'ped.elvis', label: 'ped.elvisEverywhere' },
-              { method: 'ped.slutMagnet', label: 'ped.slutMagnet' },
-              { method: 'ped.nastyLimbs', label: 'ped.nastyLimbs' },
-              { method: 'ped.noProstitutes', label: 'ped.noProstitutes' },
-              { method: 'ped.gangsEverywhere', label: 'ped.gangsEverywhere' },
-              { method: 'ped.gangsControl', label: 'ped.gangsControl' },
-              { method: 'ped.gangWars', label: 'ped.gangWarsActive' },
-            ]}
-          />
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              disabled={!isUsable(report, 'ped.gangWarStart')}
-              onClick={() => void runAction('ped.gangWarStart', { offensive: true }, 'ped.startGangWar')}
-            >
-              {t('ped.startGangWar')}
-            </Button>
-            <Button
-              variant="outline"
-              disabled={!isUsable(report, 'ped.gangWarEnd')}
-              onClick={() => void runAction('ped.gangWarEnd', undefined, 'ped.endGangWar')}
-            >
-              {t('ped.endGangWar')}
-            </Button>
-          </div>
+          {/* 开关与帮派战争动作都改由注册表绘制 */}
+          <p className="text-xs text-muted-foreground">{t('react.uiHint')}</p>
         </CardContent>
       </Card>
       <Card className="lg:col-span-2">
@@ -196,7 +191,7 @@ export function PedPage({ report }: PageProps) {
           <Button
             variant="outline"
             disabled={!isUsable(report, 'ped.resetGangModels')}
-            onClick={() => void runAction('ped.resetGangModels', undefined, 'ped.resetGangModels')}
+            onClick={() => void runAction('ui.run', { id: 'ped.resetGangModels' }, 'ped.resetGangModels')}
           >
             {t('ped.resetGangModels')}
           </Button>
@@ -216,6 +211,22 @@ export function PedPage({ report }: PageProps) {
           />
         </CardContent>
       </Card>
+
+      {schema ? (
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>{t('common.toggles')}</CardTitle>
+            <CardDescription>{t('react.uiHint')}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <SchemaSection payload={schema} report={report} tabId="ped" pageId="pedMain" sectionId="strategies" />
+            <SchemaSection payload={schema} report={report} tabId="ped" pageId="pedMain" sectionId="noFire" />
+            <SchemaSection payload={schema} report={report} tabId="ped" pageId="pedMain" sectionId="spawnOptions" />
+            <SchemaSection payload={schema} report={report} tabId="ped" pageId="pedMain" sectionId="gangWars" />
+            <SchemaSection payload={schema} report={report} tabId="ped" pageId="pedMain" sectionId="spawnLimits" />
+          </CardContent>
+        </Card>
+      ) : null}
 
     </div>
   )

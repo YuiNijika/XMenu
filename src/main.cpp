@@ -20,6 +20,7 @@
 #include "utils/AppConfig.h"
 #include "utils/I18n.h"
 #include "utils/Log.h"
+#include "ui/MenuState.h"
 #include "controllers/ReactUi.h"
 #include "utils/BuildInfo.h"
 #include "utils/UpdateChecker.h"
@@ -45,7 +46,7 @@ namespace {
 bool xMenuActive = false;
 XBase::Hooks::DrawCallbackId xMenuDrawCallbackId;
 
-// -1=等待游戏初始化，0=配置，1=产品逻辑，2=渲染 Hook，3=收尾，4=就绪。
+// 启动阶段依次为等待游戏初始化、配置、产品逻辑、渲染钩子、收尾与就绪
 int bootstrapStage = -1;
 
 void ShowRenderBackendFailedMessage() {
@@ -86,7 +87,17 @@ void AdvanceBootstrap() {
             // 网页页可以调用 XBase API，前端框架因此可以替代 ImGui 写界面
             XBase::WebBridge::Install();
             Controllers::ReactUi::Install();
-            Controllers::ReactUi::Enable(AppConfig::GetUiMode() == "react");
+            // 启用前先确认系统版本与网页视图都可用，不合格就写回 ImGui，避免每次启动都失败一次
+            if (AppConfig::GetUiMode() == "react") {
+                std::string reason;
+                if (Controllers::ReactUi::IsAvailable(reason)) {
+                    Controllers::ReactUi::Enable(true);
+                } else {
+                    Log::Warn(std::string("网页界面不可用，已改回 ImGui：") + reason);
+                    MenuState::ReactUiFallbackReason = reason;
+                    AppConfig::SetUiMode("imgui");
+                }
+            }
         }
 
         if (hookReady) {
@@ -153,7 +164,8 @@ bool InitXMenu() {
 
 } // namespace
 
-extern "C" void XBasePayloadAttach() {
+// 入口必须导出，Bootstrap 靠它判断是否走单文件形态，探测不到会退回两段式去加载外部 payload
+extern "C" __declspec(dllexport) void XBasePayloadAttach() {
     Log::Init();
     Log::Info("DLL 已加载，开始启动校验");
     if (!Startup::Validate()) {
@@ -176,7 +188,7 @@ extern "C" void XBasePayloadAttach() {
     }
 }
 
-extern "C" void XBasePayloadDetach() {
+extern "C" __declspec(dllexport) void XBasePayloadDetach() {
     Controllers::BulletAssist::Shutdown();
     XBase::Host::Shutdown();
     XBaseBridge::Shutdown();

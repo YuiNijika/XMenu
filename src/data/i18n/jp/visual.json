@@ -17,5 +17,7 @@
   "visual.hideAreaNames": "エリア名を隠す",
   "visual.hideVehicleNames": "車両名を隠す",
   "visual.nightVision": "暗視",
-  "visual.infrared": "赤外線"
+  "visual.infrared": "赤外線",
+  "visual.sectionDisplay": "表示",
+  "visual.sectionRadarOptions": "レーダー設定"
 }

@@ -22,8 +22,18 @@ void Init();
 void Process();
 void NotifyGameInit();
 void Shutdown();
+struct NoFireOptions {
+    bool enable = false;
+    bool civilians = true;
+    bool gangs = true;
+    bool cops = true;
+    bool mission = false;
+};
+
 void SetNoFire(bool enable);
+void SetNoFire(const NoFireOptions& options);
 bool GetNoFire();
+NoFireOptions GetNoFireOptions();
 void SetSpawnLimits(bool limitPolice, bool limitGangs, int maxPolice, int maxGangs);
 void SetSmokingEffect(bool enable);
 void SetFliesEffect(bool enable);

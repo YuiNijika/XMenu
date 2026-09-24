@@ -1,10 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { SchemaSection } from '@/components/menu/schema-section'
 import { DataBrowser } from '@/components/menu/data-browser'
 import { runAction } from '@/lib/actions'
-import { isUsable, type CapabilityReport } from '@/lib/bridge'
+import {
+  fetchUiSchema,
+  isUsable,
+  type CapabilityReport,
+  type UiSchemaPayload,
+} from '@/lib/bridge'
 import { useI18n } from '@/lib/i18n'
 
 type PageProps = {
@@ -13,6 +19,21 @@ type PageProps = {
 
 export function TeleportPage({ report }: PageProps) {
   const { t } = useI18n()
+  const [schema, setSchema] = useState<UiSchemaPayload | null>(null)
+
+  // 界面注册表只取一次，网页端与 ImGui 从此共用同一份控件与能力门控
+  useEffect(() => {
+    let alive = true
+    void fetchUiSchema()
+      .then((payload) => {
+        if (alive) setSchema(payload)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
+
   const [x, setX] = useState('0')
   const [y, setY] = useState('0')
   const [z, setZ] = useState('0')
@@ -125,6 +146,25 @@ export function TeleportPage({ report }: PageProps) {
           />
         </CardContent>
       </Card>
+
+      {schema ? (
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>{t('teleport.sectionQuickOptions')}</CardTitle>
+            <CardDescription>{t('react.uiHint')}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <SchemaSection
+              payload={schema}
+              report={report}
+              tabId="teleport"
+              pageId="teleportMain"
+              sectionId="quickOptions"
+            />
+            <SchemaSection payload={schema} report={report} tabId="teleport" pageId="teleportMain" sectionId="forward" />
+          </CardContent>
+        </Card>
+      ) : null}
 
     </div>
   )

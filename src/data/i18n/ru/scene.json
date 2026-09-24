@@ -32,5 +32,6 @@
   "scene.missionIndex": "ID миссии",
   "scene.startMission": "Начать миссию",
   "scene.noMissions": "Сейчас нет активной миссии.",
+  "scene.missionListHint": "Нажмите элемент списка, чтобы сразу начать миссию.",
   "scene.failMission": "Провалить текущую миссию"
 }

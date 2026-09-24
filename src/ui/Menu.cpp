@@ -24,6 +24,7 @@
 #include "ui/Widget.h"
 #include "ui/MenuState.h"
 #include "ui/GuiTheme.h"
+#include "ui/UiSchema.h"
 #include "ui/pages/Player.h"
 #include "ui/pages/Vehicle.h"
 #include "ui/pages/Teleport.h"
@@ -304,37 +305,41 @@ namespace Menu {
 
     void DrawSettings() {
         namespace BaseUI = XBase::UI;
-        BaseUI::Text(T("settings.interfaceLanguage"));
-        BaseUI::Spacing();
 
-        const std::vector<I18n::LanguageInfo>& languages = I18n::GetAvailableLanguages();
-        const std::string currentLanguageCode = I18n::GetCurrentLanguageCode();
-        BaseUI::Combo("##InterfaceLanguage", I18n::GetLanguageName(currentLanguageCode), [&] {
-            for (const I18n::LanguageInfo& language : languages) {
-                const bool selected = currentLanguageCode == language.code;
-                if (BaseUI::Selectable(language.name.c_str(), selected)) {
-                    I18n::SetLanguage(language.code);
+        // 语言与回退语言交给界面注册表，网页界面读的是同一份语言列表
+        if (!UiSchema::DrawSection("settings", "settingsMain", "language")) {
+            BaseUI::Text(T("settings.interfaceLanguage"));
+            BaseUI::Spacing();
+
+            const std::vector<I18n::LanguageInfo>& languages = I18n::GetAvailableLanguages();
+            const std::string currentLanguageCode = I18n::GetCurrentLanguageCode();
+            BaseUI::Combo("##InterfaceLanguage", I18n::GetLanguageName(currentLanguageCode), [&] {
+                for (const I18n::LanguageInfo& language : languages) {
+                    const bool selected = currentLanguageCode == language.code;
+                    if (BaseUI::Selectable(language.name.c_str(), selected)) {
+                        I18n::SetLanguage(language.code);
+                    }
+                    if (selected) BaseUI::FocusLastItemByDefault();
                 }
-                if (selected) BaseUI::FocusLastItemByDefault();
-            }
-        });
+            });
 
-        BaseUI::Spacing();
-        BaseUI::Text(T("settings.fallbackLanguage"));
-        const std::string fallbackLanguageCode = AppConfig::GetFallbackLanguageCode();
-        BaseUI::Combo("##FallbackLanguage", I18n::GetLanguageName(fallbackLanguageCode), [&] {
-            for (const I18n::LanguageInfo& language : languages) {
-                const bool selected = fallbackLanguageCode == language.code;
-                if (BaseUI::Selectable(language.name.c_str(), selected)) {
-                    AppConfig::SetFallbackLanguageCode(language.code);
+            BaseUI::Spacing();
+            BaseUI::Text(T("settings.fallbackLanguage"));
+            const std::string fallbackLanguageCode = AppConfig::GetFallbackLanguageCode();
+            BaseUI::Combo("##FallbackLanguage", I18n::GetLanguageName(fallbackLanguageCode), [&] {
+                for (const I18n::LanguageInfo& language : languages) {
+                    const bool selected = fallbackLanguageCode == language.code;
+                    if (BaseUI::Selectable(language.name.c_str(), selected)) {
+                        AppConfig::SetFallbackLanguageCode(language.code);
+                    }
+                    if (selected) BaseUI::FocusLastItemByDefault();
                 }
-                if (selected) BaseUI::FocusLastItemByDefault();
-            }
-        });
-        BaseUI::TextDisabled(T("settings.fallbackLanguageHint"));
+            });
+            BaseUI::TextDisabled(T("settings.fallbackLanguageHint"));
 
-        BaseUI::Spacing();
-        BaseUI::TextDisabled(T("settings.applyImmediately"));
+            BaseUI::Spacing();
+            BaseUI::TextDisabled(T("settings.applyImmediately"));
+        }
 
         static char hotkeyInput[32] = "";
         if (hotkeyInput[0] == '\0') {
@@ -428,7 +433,8 @@ namespace Menu {
                 MenuState::ShowNotice(fallbackNotice.c_str(), 4.0, true);
             }
         }
-        BaseUI::SameLine();
+        // 说明单独一行放在选择下方，避免挤在按钮旁边
+        BaseUI::Spacing();
         BaseUI::TextDisabled(T("settings.uiMode.hint"));
         if (!Controllers::ReactUi::IsActive() && !MenuState::ReactUiFallbackReason.empty()) {
             const std::string fallbackText =
@@ -437,79 +443,89 @@ namespace Menu {
         }
 
         if (XBaseBridge::HasCapability(XBase::Capability::WebView)) {
-            BaseUI::Spacing();
-            BaseUI::Text(T("settings.webSection"));
-            BaseUI::PushItemWidth(220.0f);
-            if (BaseUI::Slider(T("web.zoom"), MenuState::WebViewZoom, 0.5f, 2.0f, "%.2fx")) {
-                XBase::WebView::SetZoom(MenuState::WebViewZoom);
+            if (!UiSchema::DrawSection("settings", "settingsMain", "web")) {
+                BaseUI::Spacing();
+                BaseUI::Text(T("settings.webSection"));
+                BaseUI::PushItemWidth(220.0f);
+                if (BaseUI::Slider(T("web.zoom"), MenuState::WebViewZoom, 0.5f, 2.0f, "%.2fx")) {
+                    XBase::WebView::SetZoom(MenuState::WebViewZoom);
+                }
+                BaseUI::PopItemWidth();
+                BaseUI::TextDisabled(T("settings.webZoomHint"));
             }
-            BaseUI::PopItemWidth();
-            BaseUI::TextDisabled(T("settings.webZoomHint"));
         }
     }
 
     void DrawGuiSettings() {
         namespace BaseUI = XBase::UI;
-        BaseUI::Text(T("settings.guiStyle"));
-        BaseUI::Spacing();
 
-        bool listChanged = UI::Checkbox(T("settings.useListMenu"), &MenuState::UseNativeMenu);
-        if (MenuState::UseNativeMenu) {
-            listChanged |= UI::Checkbox(T("settings.enableListMouse"), &MenuState::ListMenuMouseInput);
-            BaseUI::TextDisabled(T("settings.listMouseHint"));
-        }
-        if (listChanged) {
-            AppConfig::Save();
-            GuiTheme::Sync();
+        if (!UiSchema::DrawSection("settings", "settingsMain", "guiStyle")) {
+            BaseUI::Text(T("settings.guiStyle"));
+            BaseUI::Spacing();
+
+            bool listChanged = UI::Checkbox(T("settings.useListMenu"), &MenuState::UseNativeMenu);
             if (MenuState::UseNativeMenu) {
-                listSurfaceState.selectedIndex = 0;
-                listSurfaceState.itemCount = 0;
+                listChanged |= UI::Checkbox(T("settings.enableListMouse"), &MenuState::ListMenuMouseInput);
+                BaseUI::TextDisabled(T("settings.listMouseHint"));
+            }
+            if (listChanged) {
+                AppConfig::Save();
+                GuiTheme::Sync();
+                NotifySurfaceChanged();
             }
         }
 
         BaseUI::Spacing();
         BaseUI::Separator();
         BaseUI::Spacing();
-        BaseUI::Text(T("settings.theme"));
-        const int currentTheme = GuiTheme::GetThemeIndex();
-        BaseUI::Combo("##GuiTheme", T(GuiTheme::GetThemeNameKey(currentTheme)), [&] {
-            for (int i = 0; i < GuiTheme::ThemeCount; ++i) {
-                const bool selected = i == currentTheme;
-                if (BaseUI::Selectable(T(GuiTheme::GetThemeNameKey(i)), selected)) {
-                    AppConfig::SetGuiThemeIndex(i);
-                    GuiTheme::Sync();
-                }
-                if (selected) BaseUI::FocusLastItemByDefault();
-            }
-        });
 
-        if (!MenuState::UseNativeMenu) {
-            BaseUI::Spacing();
-            BaseUI::Text(T("settings.interactionMode"));
-            const int currentInteraction = GuiTheme::GetInteractionIndex();
-            BaseUI::Combo("##InteractionMode", T(GuiTheme::GetInteractionNameKey(currentInteraction)), [&] {
-                for (int i = 0; i < GuiTheme::InteractionCount; ++i) {
-                    const bool selected = i == currentInteraction;
-                    if (BaseUI::Selectable(T(GuiTheme::GetInteractionNameKey(i)), selected)) {
-                        AppConfig::SetInteractionMode(i);
+        // 主题与交互模式同样走注册表，交互模式在列表界面下不显示
+        if (!UiSchema::DrawSection("settings", "settingsMain", "appearance")) {
+            BaseUI::Text(T("settings.theme"));
+            const int currentTheme = GuiTheme::GetThemeIndex();
+            BaseUI::Combo("##GuiTheme", T(GuiTheme::GetThemeNameKey(currentTheme)), [&] {
+                for (int i = 0; i < GuiTheme::ThemeCount; ++i) {
+                    const bool selected = i == currentTheme;
+                    if (BaseUI::Selectable(T(GuiTheme::GetThemeNameKey(i)), selected)) {
+                        AppConfig::SetGuiThemeIndex(i);
                         GuiTheme::Sync();
                     }
                     if (selected) BaseUI::FocusLastItemByDefault();
                 }
             });
-            BaseUI::TextDisabled(T("settings.interactionHint"));
-        } else {
+
+            if (!MenuState::UseNativeMenu) {
+                BaseUI::Spacing();
+                BaseUI::Text(T("settings.interactionMode"));
+                const int currentInteraction = GuiTheme::GetInteractionIndex();
+                BaseUI::Combo("##InteractionMode", T(GuiTheme::GetInteractionNameKey(currentInteraction)), [&] {
+                    for (int i = 0; i < GuiTheme::InteractionCount; ++i) {
+                        const bool selected = i == currentInteraction;
+                        if (BaseUI::Selectable(T(GuiTheme::GetInteractionNameKey(i)), selected)) {
+                            AppConfig::SetInteractionMode(i);
+                            GuiTheme::Sync();
+                        }
+                        if (selected) BaseUI::FocusLastItemByDefault();
+                    }
+                });
+                BaseUI::TextDisabled(T("settings.interactionHint"));
+            }
+        } else if (MenuState::UseNativeMenu) {
             BaseUI::Spacing();
             BaseUI::TextDisabled(T("settings.listNavHint"));
         }
     }
 
     void DrawRuntimeSettings() {
+        // 运行时开关与叠加层都交给界面注册表，网页界面读的是同一份配置
+        if (UiSchema::DrawSection("settings", "settingsMain", "runtime")) {
+            return;
+        }
         XBase::UI::Text(T("settings.runtime"));
         XBase::UI::Checkbox(T("command.enabled"), MenuState::CommandWindowEnabled);
     }
 
-    void DrawOverlaySettings() {
+    void DrawNativeOverlaySettings() {
         XBase::UI::Text(T("settings.overlay"));
         XBase::UI::TextDisabled(T("settings.overlayHint"));
 
@@ -535,6 +551,13 @@ namespace Menu {
         XBase::UI::Columns(1);
 
         if (changed) AppConfig::Save();
+    }
+
+    void DrawOverlaySettings() {
+        if (UiSchema::DrawSection("settings", "settingsMain", "overlay")) {
+            return;
+        }
+        DrawNativeOverlaySettings();
     }
 
     void DrawPersistentStateSettings() {
@@ -1047,11 +1070,48 @@ void Menu::Process() {
         || MenuState::WeaponBulletTrack);
 }
 
+void Menu::NotifySurfaceChanged() {
+    // 外观或交互模式改了之后列表界面的选中项要复位，否则会停在上一页的序号上
+    listSurfaceResetPending = true;
+}
+
 void Menu::Draw() {
     menuVisible = XBase::Hooks::IsMenuVisible();
 
     // React 界面接管时不再画 ImGui 窗口，只保留叠加层与命令窗
     if (MenuState::ReactUi) {
+        // 独占全屏下浏览器无法直接显示，用抓帧画面顶上，保证界面仍然可用
+        if (XBase::WebView::UsesCaptureMode() && XBase::WebView::IsVisible()) {
+            const XBase::Rect panel = Controllers::ReactUi::PanelBounds();
+            const float panelWidth = panel.right - panel.left;
+            const float panelHeight = panel.bottom - panel.top;
+            // 抓帧画面必须落在真正的窗口里，否则 ImGui 会塞进默认的 Debug 窗口
+            XBase::UI::SetNextWindowPosition({panel.left, panel.top}, true);
+            XBase::UI::SetNextWindowSize({panelWidth, panelHeight}, true);
+            bool previewOpen = true;
+            XBase::UI::Window(
+                "XMenuWebPanel",
+                "XMenu",
+                [&] {
+                    XBase::WebView::DrawPanel(panel);
+                    // 按住左键时也要继续转发，否则拖动面板的过程中会中断
+                    const bool mouseDown = XBase::UI::IsMouseDown(XBase::UI::MouseButton::Left);
+                    if (XBase::UI::IsLastItemHovered() || mouseDown) {
+                        const float wheelDelta = XBase::Hooks::ConsumeWheelDelta();
+                        XBase::WebView::ForwardPanelInput(
+                            panel,
+                            XBase::UI::GetMousePosition(),
+                            mouseDown,
+                            wheelDelta);
+                    }
+                },
+                &previewOpen,
+                XBase::UI::Flag(XBase::UI::WindowFlag::NoTitleBar)
+                    | XBase::UI::Flag(XBase::UI::WindowFlag::NoResize)
+                    | XBase::UI::Flag(XBase::UI::WindowFlag::NoMove)
+                    | XBase::UI::Flag(XBase::UI::WindowFlag::NoScrollbar)
+                    | XBase::UI::Flag(XBase::UI::WindowFlag::NoBackground));
+        }
         Controllers::Overlay::Draw();
         Controllers::Command::Draw();
         Controllers::Teleport::DrawQuickMap();

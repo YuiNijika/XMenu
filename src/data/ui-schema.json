@@ -1,0 +1,599 @@
+{
+  "version": 1,
+  "note": "界面特性注册表。以 ImGui 页面为基准登记，React 与 ImGui 共用同一份。capability 对应 XBase 的 FeatureCapability，games 省略表示三个版本都显示。",
+  "tabs": [
+    {
+      "id": "player",
+      "labelKey": "tab.player",
+      "pages": [
+        {
+          "id": "playerMain",
+          "labelKey": "tab.player",
+          "sections": [
+            {
+              "id": "actions",
+              "labelKey": "player.sectionActions",
+              "inline": true,
+              "columns": 3,
+              "controls": [
+                { "id": "player.copyCoordinates", "kind": "action", "labelKey": "player.copyCoordinates" },
+                { "id": "player.heal", "kind": "action", "labelKey": "player.healFully" },
+                { "id": "player.armour", "kind": "action", "labelKey": "player.refillArmor" },
+                { "id": "player.saveGame", "kind": "action", "labelKey": "player.saveAnywhere", "capability": "PlayerSaveGame" },
+                { "id": "player.addMoney", "kind": "action", "labelKey": "player.addMoney" },
+                { "id": "player.kill", "kind": "action", "labelKey": "player.kill" }
+              ]
+            },
+            {
+              "id": "statusToggles",
+              "labelKey": "player.statusToggles",
+              "columns": 3,
+              "controls": [
+                { "id": "player.godMode", "kind": "toggle", "labelKey": "player.godMode", "state": "GodMode" },
+                { "id": "player.autoHeal", "kind": "toggle", "labelKey": "player.autoHeal", "state": "AutoHeal" },
+                { "id": "player.hardMode", "kind": "toggle", "labelKey": "player.hardMode", "state": "HardMode" },
+                { "id": "player.infiniteSprint", "kind": "toggle", "labelKey": "player.infiniteSprint", "state": "InfiniteSprint" },
+                { "id": "player.respawnAtDeathPosition", "kind": "toggle", "labelKey": "player.respawnAtDeathPosition", "state": "RespawnAtDeathPosition" },
+                { "id": "player.freezeWantedLevel", "kind": "toggle", "labelKey": "player.freezeWantedLevel", "state": "FreezeWantedLevel" },
+                { "id": "player.keepStuff", "kind": "toggle", "labelKey": "player.keepStuff", "state": "KeepStuff", "capability": "PlayerKeepStuff" },
+                { "id": "player.freeFly", "kind": "toggle", "labelKey": "player.autoFlight", "state": "FreeFlyEnabled" },
+                { "id": "player.neverWanted", "kind": "toggle", "labelKey": "player.neverWanted", "state": "NeverWanted", "capability": "PlayerNeverWanted" },
+                { "id": "player.superJump", "kind": "toggle", "labelKey": "player.megaJump", "state": "MegaJump", "capability": "PlayerSuperJump" },
+                { "id": "player.superPunch", "kind": "toggle", "labelKey": "player.megaPunch", "state": "MegaPunch", "capability": "PlayerSuperPunch" },
+                { "id": "player.cycleJump", "kind": "toggle", "labelKey": "player.cycleJump", "state": "CycleJump", "capability": "PlayerCycleJump" },
+                { "id": "player.underwaterBreathing", "kind": "toggle", "labelKey": "player.infiniteOxygen", "state": "InfiniteOxygen", "capability": "PlayerUnderwaterBreathing" },
+                { "id": "player.neverHungry", "kind": "toggle", "labelKey": "player.neverHungry", "state": "NeverHungry", "capability": "PlayerNeverHungry" },
+                { "id": "player.fastSprint", "kind": "toggle", "labelKey": "player.fastSprint", "state": "FastSprint", "capability": "PlayerFastSprint" },
+                { "id": "player.drunkEffect", "kind": "toggle", "labelKey": "player.drunkEffect", "state": "DrunkEffect", "capability": "PlayerDrunkEffect" },
+                { "id": "player.sprintEverywhere", "kind": "toggle", "labelKey": "player.sprintEverywhere", "state": "SprintEverywhere", "capability": "PlayerSprintEverywhere" },
+                { "id": "player.invisible", "kind": "toggle", "labelKey": "player.invisible", "state": "InvisiblePlayer", "capability": "PlayerRuntimeEffects", "games": ["sa"] }
+              ]
+            },
+            {
+              "id": "flight",
+              "labelKey": "player.autoFlight",
+              "hintKey": "player.autoFlightOptions",
+              "controls": [
+                { "id": "player.freeFlySpeed", "kind": "float", "labelKey": "player.autoFlightSpeed", "state": "FreeFlySpeed", "min": 0.1, "max": 5, "step": 0.1, "format": "%.1f" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ped",
+      "labelKey": "tab.ped",
+      "pages": [
+        {
+          "id": "pedMain",
+          "labelKey": "tab.ped",
+          "sections": [
+            {
+              "id": "strategies",
+              "labelKey": "common.toggles",
+              "columns": 2,
+              "controls": [
+                { "id": "ped.bigHead", "kind": "toggle", "labelKey": "ped.bigHeadMode", "state": "BigHeadMode", "capability": "PedBigHead", "games": ["sa", "iii"], "onChange": "Ped.BigHead" },
+                { "id": "ped.thinBody", "kind": "toggle", "labelKey": "ped.thinBodyMode", "state": "ThinBodyMode", "capability": "PedThinBody", "games": ["sa"], "onChange": "Ped.ThinBody" },
+                { "id": "ped.elvis", "kind": "toggle", "labelKey": "ped.elvisEverywhere", "state": "ElvisEverywhere", "games": ["sa"], "onChange": "Ped.Elvis" },
+                { "id": "ped.everyoneArmed", "kind": "toggle", "labelKey": "ped.everyoneArmed", "state": "EveryoneArmed", "onChange": "Ped.EveryoneArmed" },
+                { "id": "ped.mayhem", "kind": "toggle", "labelKey": "ped.pedsMayhem", "state": "PedsMayhem", "games": ["sa", "iii"], "onChange": "Ped.Mayhem" },
+                { "id": "ped.atkRocket", "kind": "toggle", "labelKey": "ped.pedsAtkRocket", "state": "PedsAtkRocket", "games": ["sa"], "onChange": "Ped.AtkRocket" },
+                { "id": "ped.riot", "kind": "toggle", "labelKey": "ped.pedsRiot", "state": "PedsRiot", "games": ["sa", "iii"], "onChange": "Ped.Riot" },
+                { "id": "ped.slutMagnet", "kind": "toggle", "labelKey": "ped.slutMagnet", "state": "SlutMagnet", "games": ["sa", "vc"], "onChange": "Ped.SlutMagnet" },
+                { "id": "ped.gangsControl", "kind": "toggle", "labelKey": "ped.gangsControl", "state": "GangsControl", "games": ["sa"], "onChange": "Ped.GangsControl" },
+                { "id": "ped.gangsEverywhere", "kind": "toggle", "labelKey": "ped.gangsEverywhere", "state": "GangsEverywhere", "games": ["sa"], "onChange": "Ped.GangsEverywhere" },
+                { "id": "ped.noProstitutes", "kind": "toggle", "labelKey": "ped.noProstitutes", "state": "PedNoProstitutes", "games": ["vc"], "onChange": "Ped.NoProstitutes" },
+                { "id": "ped.nastyLimbs", "kind": "toggle", "labelKey": "ped.nastyLimbs", "state": "PedNastyLimbs", "games": ["iii"], "onChange": "Ped.NastyLimbs" }
+              ]
+            },
+            {
+              "id": "noFire",
+              "labelKey": "ped.pedsNoFire",
+              "columns": 2,
+              "controls": [
+                { "id": "ped.noFire", "kind": "toggle", "labelKey": "ped.pedsNoFire", "state": "PedsNoFire", "capability": "BulletAssistFireSuppression", "onChange": "Ped.NoFire" },
+                { "id": "ped.pedsNoFireCivilians", "kind": "toggle", "labelKey": "ped.pedsNoFireCivilians", "state": "PedsNoFireCivilians", "capability": "BulletAssistFireSuppression", "visibleWhen": "ped.noFire" },
+                { "id": "ped.pedsNoFireGangs", "kind": "toggle", "labelKey": "ped.pedsNoFireGangs", "state": "PedsNoFireGangs", "capability": "BulletAssistFireSuppression", "visibleWhen": "ped.noFire" },
+                { "id": "ped.pedsNoFirePolice", "kind": "toggle", "labelKey": "ped.pedsNoFirePolice", "state": "PedsNoFirePolice", "capability": "BulletAssistFireSuppression", "visibleWhen": "ped.noFire" },
+                { "id": "ped.pedsNoFireMission", "kind": "toggle", "labelKey": "ped.pedsNoFireMission", "state": "PedsNoFireMission", "capability": "BulletAssistFireSuppression", "visibleWhen": "ped.noFire" }
+              ]
+            },
+            {
+              "id": "spawnOptions",
+              "labelKey": "ped.spawnPed",
+              "columns": 3,
+              "controls": [
+                { "id": "ped.asGang", "kind": "toggle", "labelKey": "ped.asGang", "state": "PedSpawnAsGang" },
+                { "id": "ped.freeze", "kind": "toggle", "labelKey": "ped.freeze", "state": "PedFreeze" },
+                { "id": "ped.hostile", "kind": "toggle", "labelKey": "ped.hostile", "state": "PedHostile" },
+                { "id": "ped.smoking", "kind": "toggle", "labelKey": "ped.smoking", "state": "SmokingEffect", "capability": "PedSmokeFlies" },
+                { "id": "ped.flies", "kind": "toggle", "labelKey": "ped.flies", "state": "FliesEffect", "capability": "PedSmokeFlies" }
+              ]
+            },
+            {
+              "id": "gangWars",
+              "labelKey": "ped.gangs",
+              "columns": 2,
+              "games": ["sa"],
+              "controls": [
+                { "id": "ped.gangWars", "kind": "toggle", "labelKey": "ped.gangWarsActive", "state": "GangWarsActive", "onChange": "Ped.GangWars" },
+                { "id": "ped.startGangWar", "kind": "action", "labelKey": "ped.startGangWar" },
+                { "id": "ped.endGangWar", "kind": "action", "labelKey": "ped.endGangWar" },
+                { "id": "ped.resetGangModels", "kind": "action", "labelKey": "ped.resetGangModels" }
+              ]
+            },
+            {
+              "id": "spawnLimits",
+              "labelKey": "ped.spawnLimits",
+              "columns": 2,
+              "controls": [
+                { "id": "ped.pedsLimitPolice", "kind": "toggle", "labelKey": "ped.pedsLimitPolice", "state": "PedsLimitPolice", "onChange": "Ped.SpawnLimits" },
+                { "id": "ped.pedsLimitGangs", "kind": "toggle", "labelKey": "ped.pedsLimitGangs", "state": "PedsLimitGangs", "onChange": "Ped.SpawnLimits" },
+                { "id": "ped.pedsMaxNearbyPolice", "kind": "int", "labelKey": "ped.pedsMaxNearbyPolice", "state": "PedsMaxNearbyPolice", "min": 0, "max": 50, "step": 1, "visibleWhen": "ped.pedsLimitPolice", "onChange": "Ped.SpawnLimits" },
+                { "id": "ped.pedsMaxNearbyGangs", "kind": "int", "labelKey": "ped.pedsMaxNearbyGangs", "state": "PedsMaxNearbyGangs", "min": 0, "max": 50, "step": 1, "visibleWhen": "ped.pedsLimitGangs", "onChange": "Ped.SpawnLimits" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "weapon",
+      "labelKey": "tab.weapon",
+      "pages": [
+        {
+          "id": "weaponMain",
+          "labelKey": "tab.weapon",
+          "sections": [
+            {
+              "id": "runtime",
+              "labelKey": "weapon.sectionRuntime",
+              "columns": 3,
+              "controls": [
+                { "id": "weapon.infiniteAmmo", "kind": "toggle", "labelKey": "weapon.infiniteAmmo", "state": "InfiniteAmmo", "capability": "WeaponRuntimeEffects" },
+                { "id": "weapon.fastReload", "kind": "toggle", "labelKey": "weapon.fastReload", "state": "FastReload", "capability": "WeaponRuntimeEffects", "onChange": "Weapon.ResetStats" }
+              ]
+            },
+            {
+              "id": "statOverrides",
+              "labelKey": "weapon.sectionOverrides",
+              "columns": 3,
+              "capability": "WeaponStatOverrides",
+              "controls": [
+                { "id": "weapon.hugeDamage", "kind": "toggle", "labelKey": "weapon.highDamage", "state": "HugeWeaponDamage", "onChange": "Weapon.ResetStats" },
+                { "id": "weapon.longRange", "kind": "toggle", "labelKey": "weapon.longRange", "state": "LongWeaponRange", "onChange": "Weapon.ResetStats" },
+                { "id": "weapon.autoAim", "kind": "toggle", "labelKey": "weapon.autoAim", "state": "WeaponAutoAim", "games": ["sa"], "onChange": "Weapon.ResetStats" },
+                { "id": "weapon.moveAim", "kind": "toggle", "labelKey": "weapon.moveWhileAiming", "state": "MoveAim", "games": ["sa"], "onChange": "Weapon.ResetStats" },
+                { "id": "weapon.moveFire", "kind": "toggle", "labelKey": "weapon.moveWhileFiring", "state": "MoveFire", "games": ["sa"], "onChange": "Weapon.ResetStats" },
+                { "id": "weapon.noSpread", "kind": "toggle", "labelKey": "weapon.noSpread", "state": "NoSpread", "onChange": "Weapon.ResetStats" },
+                { "id": "weapon.rapidFire", "kind": "toggle", "labelKey": "weapon.rapidFire", "state": "RapidFire", "games": ["sa"], "onChange": "Weapon.ResetStats" },
+                { "id": "weapon.dualWield", "kind": "toggle", "labelKey": "weapon.dualWield", "state": "DualWield", "games": ["sa"], "onChange": "Weapon.ResetStats" },
+                { "id": "weapon.fireRate", "kind": "toggle", "labelKey": "weapon.fireRate", "state": "WeaponFireRateEnabled", "onChange": "Weapon.ResetStats" },
+                { "id": "weapon.fireRateValue", "kind": "float", "labelKey": "weapon.fireRateValue", "state": "WeaponFireRate", "min": 0.25, "max": 10, "step": 0.05, "format": "x%.2f", "visibleWhen": "weapon.fireRate", "onChange": "Weapon.ResetStats" }
+              ]
+            },
+            {
+              "id": "bulletAssist",
+              "labelKey": "weapon.sectionBulletAssist",
+              "columns": 3,
+              "controls": [
+                { "id": "weapon.pedEsp", "kind": "toggle", "labelKey": "weapon.pedEsp", "state": "WeaponPedEsp", "capability": "BulletAssistPedBounds" },
+                { "id": "weapon.pedColEsp", "kind": "toggle", "labelKey": "weapon.pedColEsp", "state": "WeaponPedColEsp", "capability": "BulletAssistPedCollision" },
+                { "id": "weapon.pedSkeleton", "kind": "toggle", "labelKey": "weapon.pedSkeleton", "state": "WeaponPedSkeleton", "capability": "BulletAssistPedSkeleton" },
+                { "id": "weapon.vehicleEsp", "kind": "toggle", "labelKey": "weapon.vehicleEsp", "state": "WeaponVehicleEsp", "capability": "BulletAssistVehicleBounds" },
+                { "id": "weapon.vehicleColEsp", "kind": "toggle", "labelKey": "weapon.vehicleColEsp", "state": "WeaponVehicleColEsp", "capability": "BulletAssistVehicleCollision" },
+                { "id": "weapon.bulletTrack", "kind": "toggle", "labelKey": "weapon.bulletTrack", "state": "WeaponBulletTrack", "capability": "BulletAssistTracking" },
+                { "id": "weapon.bulletThroughWalls", "kind": "toggle", "labelKey": "weapon.bulletThroughWalls", "state": "WeaponBulletThroughWalls", "capability": "BulletAssistThroughWalls" },
+                { "id": "weapon.trackCivilian", "kind": "toggle", "labelKey": "weapon.trackCivilian", "state": "WeaponTrackCivilian", "capability": "BulletAssistTracking", "visibleWhen": "weapon.bulletTrack" },
+                { "id": "weapon.trackFriend", "kind": "toggle", "labelKey": "weapon.trackFriend", "state": "WeaponTrackFriend", "capability": "BulletAssistTracking", "visibleWhen": "weapon.bulletTrack" },
+                { "id": "weapon.trackHostile", "kind": "toggle", "labelKey": "weapon.trackHostile", "state": "WeaponTrackHostile", "capability": "BulletAssistTracking", "visibleWhen": "weapon.bulletTrack" },
+                { "id": "weapon.trackNeutral", "kind": "toggle", "labelKey": "weapon.trackNeutral", "state": "WeaponTrackNeutral", "capability": "BulletAssistTracking", "visibleWhen": "weapon.bulletTrack" },
+                { "id": "weapon.bulletHardLock", "kind": "toggle", "labelKey": "weapon.bulletHardLock", "state": "WeaponBulletHardLock", "capability": "BulletAssistHardLock", "visibleWhen": "weapon.bulletTrack" },
+                { "id": "weapon.bulletLockRange", "kind": "float", "labelKey": "weapon.bulletLockRange", "state": "WeaponBulletLockRange", "min": 10, "max": 300, "step": 1, "format": "%.0f", "capability": "BulletAssistTracking", "visibleWhen": "weapon.bulletTrack" },
+                { "id": "weapon.bulletMaxTargets", "kind": "int", "labelKey": "weapon.bulletMaxTargets", "state": "WeaponBulletMaxTargets", "min": 1, "max": 16, "step": 1, "capability": "BulletAssistTracking", "visibleWhen": "weapon.bulletTrack" }
+              ]
+            },
+            {
+              "id": "giveOptions",
+              "labelKey": "weapon.sectionGiveOptions",
+              "columns": 2,
+              "controls": [
+                { "id": "weapon.safeMode", "kind": "toggle", "labelKey": "weapon.safeMode", "state": "WeaponSafeMode" },
+                { "id": "weapon.giveAll", "kind": "action", "labelKey": "weapon.getAll", "games": ["iii"] }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "visual",
+      "labelKey": "tab.visual",
+      "pages": [
+        {
+          "id": "visualMain",
+          "labelKey": "tab.visual",
+          "sections": [
+            {
+              "id": "display",
+              "labelKey": "visual.sectionDisplay",
+              "columns": 2,
+              "capability": "VisualHudRadar",
+              "controls": [
+                { "id": "visual.hud", "kind": "toggle", "labelKey": "visual.hud", "state": "VisualHud", "onChange": "Visual.DisplayHud" },
+                { "id": "visual.radar", "kind": "toggle", "labelKey": "visual.radar", "state": "VisualRadar", "onChange": "Visual.DisplayRadar" }
+              ]
+            },
+            {
+              "id": "radarOptions",
+              "labelKey": "visual.sectionRadarOptions",
+              "columns": 2,
+              "capability": "VisualRadarOptions",
+              "games": ["sa"],
+              "hintKey": "visual.squareRadarHint",
+              "controls": [
+                { "id": "visual.squareRadar", "kind": "toggle", "labelKey": "visual.squareRadar", "state": "VisualSquareRadar" },
+                { "id": "visual.noRadarRot", "kind": "toggle", "labelKey": "visual.noRadarRot", "state": "VisualNoRadarRot" },
+                { "id": "visual.fullscreenMap", "kind": "toggle", "labelKey": "visual.fullscreenMap", "state": "VisualFullscreenMap" },
+                { "id": "visual.unfogMap", "kind": "toggle", "labelKey": "visual.unfogMap", "state": "VisualUnfogMap" },
+                { "id": "visual.hideAreaNames", "kind": "toggle", "labelKey": "visual.hideAreaNames", "state": "VisualHideAreaNames" },
+                { "id": "visual.hideVehicleNames", "kind": "toggle", "labelKey": "visual.hideVehicleNames", "state": "VisualHideVehicleNames" },
+                { "id": "visual.nightVision", "kind": "toggle", "labelKey": "visual.nightVision", "state": "VisualNightVision" },
+                { "id": "visual.infrared", "kind": "toggle", "labelKey": "visual.infrared", "state": "VisualInfrared" }
+              ]
+            },
+            {
+              "id": "filter",
+              "labelKey": "visual.filter",
+              "capability": "VisualFilter",
+              "controls": [
+                { "id": "visual.filterEnable", "kind": "toggle", "labelKey": "visual.filter", "state": "VisualFilter" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "teleport",
+      "labelKey": "tab.teleport",
+      "pages": [
+        {
+          "id": "teleportMain",
+          "labelKey": "tab.teleport",
+          "sections": [
+            {
+              "id": "quickOptions",
+              "labelKey": "teleport.sectionQuickOptions",
+              "columns": 2,
+              "games": ["sa"],
+              "controls": [
+                { "id": "teleport.quickMapTeleport", "kind": "toggle", "labelKey": "teleport.quickMapTeleport", "state": "QuickTeleport", "onChange": "AppConfig.Save" },
+                { "id": "teleport.allowUnderwaterLanding", "kind": "toggle", "labelKey": "teleport.allowUnderwaterLanding", "state": "SpawnUnderwater", "onChange": "AppConfig.Save" },
+                { "id": "teleport.quickMarkerTeleport", "kind": "toggle", "labelKey": "teleport.quickMarkerTeleport", "state": "TeleportMarker", "onChange": "AppConfig.Save" }
+              ]
+            },
+            {
+              "id": "forward",
+              "labelKey": "teleport.forwardDistance",
+              "columns": 2,
+              "hintKey": "teleport.forwardHoldHint",
+              "controls": [
+                { "id": "teleport.forwardDistance", "kind": "float", "labelKey": "teleport.forwardDistance", "state": "TeleportForwardDistance", "min": 0.1, "max": 50, "step": 0.5, "format": "%.1f", "onChange": "AppConfig.Save" },
+                { "id": "teleport.forwardHold", "kind": "toggle", "labelKey": "teleport.forwardHold", "state": "TeleportForwardHold", "onChange": "AppConfig.Save" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scene",
+      "labelKey": "tab.scene",
+      "pages": [
+        {
+          "id": "sceneMain",
+          "labelKey": "tab.scene",
+          "sections": [
+            {
+              "id": "animation",
+              "labelKey": "scene.animation",
+              "columns": 3,
+              "capability": "SceneAnimation",
+              "controls": [
+                { "id": "scene.loop", "kind": "toggle", "labelKey": "scene.loop", "state": "SceneAnimLoop" },
+                { "id": "scene.secondary", "kind": "toggle", "labelKey": "scene.secondary", "state": "SceneAnimSecondary", "games": ["sa"] },
+                { "id": "scene.onTargetPed", "kind": "toggle", "labelKey": "scene.onTargetPed", "state": "SceneAnimOnPed", "games": ["sa"] }
+              ]
+            },
+            {
+              "id": "styles",
+              "labelKey": "scene.styles",
+              "columns": 2,
+              "capability": "SceneAnimation",
+              "games": ["sa"],
+              "controls": [
+                { "id": "scene.fightStyle", "kind": "int", "labelKey": "scene.fightStyle", "state": "SceneFightStyle", "min": 0, "max": 15, "step": 1 },
+                { "id": "scene.walkStyle", "kind": "int", "labelKey": "scene.walkStyle", "state": "SceneWalkStyle", "min": 0, "max": 21, "step": 1 },
+                { "id": "scene.applyFightStyle", "kind": "action", "labelKey": "scene.applyFightStyle" },
+                { "id": "scene.applyWalkStyle", "kind": "action", "labelKey": "scene.applyWalkStyle" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "labelKey": "tab.settings",
+      "pages": [
+        {
+          "id": "settingsMain",
+          "labelKey": "tab.settings",
+          "sections": [
+            {
+              "id": "runtime",
+              "labelKey": "settings.runtime",
+              "columns": 2,
+              "controls": [
+                { "id": "command.enabled", "kind": "toggle", "labelKey": "command.enabled", "state": "CommandWindowEnabled" }
+              ]
+            },
+            {
+              "id": "overlay",
+              "labelKey": "settings.overlay",
+              "columns": 2,
+              "hintKey": "settings.overlayHint",
+              "controls": [
+                { "id": "overlay.enabled", "kind": "toggle", "labelKey": "overlay.enabled", "state": "OverlayEnabled", "onChange": "AppConfig.Save" },
+                { "id": "overlay.showDetails", "kind": "toggle", "labelKey": "overlay.showDetails", "state": "OverlayShowDetails", "onChange": "AppConfig.Save" },
+                { "id": "overlay.showFeatures", "kind": "toggle", "labelKey": "overlay.showFeatures", "state": "OverlayShowFeatures", "onChange": "AppConfig.Save" },
+                { "id": "overlay.showPosition", "kind": "toggle", "labelKey": "overlay.showPosition", "state": "OverlayShowPosition", "onChange": "AppConfig.Save" },
+                { "id": "overlay.showPlayer", "kind": "toggle", "labelKey": "overlay.showPlayer", "state": "OverlayShowPlayer", "onChange": "AppConfig.Save" },
+                { "id": "overlay.showVehicle", "kind": "toggle", "labelKey": "overlay.showVehicle", "state": "OverlayShowVehicle", "onChange": "AppConfig.Save" },
+                { "id": "overlay.showTime", "kind": "toggle", "labelKey": "overlay.showTime", "state": "OverlayShowTime", "onChange": "AppConfig.Save" },
+                { "id": "overlay.showWorld", "kind": "toggle", "labelKey": "overlay.showWorld", "state": "OverlayShowWorld", "onChange": "AppConfig.Save" },
+                { "id": "overlay.showFps", "kind": "toggle", "labelKey": "overlay.showFps", "state": "OverlayShowFps", "onChange": "AppConfig.Save" }
+              ]
+            },
+            {
+              "id": "language",
+              "labelKey": "settings.interfaceLanguage",
+              "columns": 2,
+              "hintKey": "settings.applyImmediately",
+              "controls": [
+                { "id": "settings.language", "kind": "select", "labelKey": "settings.interfaceLanguage", "source": "language" },
+                { "id": "settings.fallbackLanguage", "kind": "select", "labelKey": "settings.fallbackLanguage", "source": "fallbackLanguage" }
+              ]
+            },
+            {
+              "id": "appearance",
+              "labelKey": "settings.theme",
+              "columns": 2,
+              "controls": [
+                { "id": "settings.theme", "kind": "select", "labelKey": "settings.theme", "source": "theme" },
+                { "id": "settings.interactionMode", "kind": "select", "labelKey": "settings.interactionMode", "source": "interaction", "visibleWhen": "!settings.useListMenu" }
+              ]
+            },
+            {
+              "id": "guiStyle",
+              "labelKey": "settings.guiStyle",
+              "columns": 2,
+              "controls": [
+                { "id": "settings.useListMenu", "kind": "toggle", "labelKey": "settings.useListMenu", "state": "UseNativeMenu", "onChange": "Menu.SyncGuiTheme" },
+                { "id": "settings.enableListMouse", "kind": "toggle", "labelKey": "settings.enableListMouse", "state": "ListMenuMouseInput", "visibleWhen": "settings.useListMenu", "onChange": "Menu.SyncGuiTheme" }
+              ]
+            },
+            {
+              "id": "web",
+              "labelKey": "settings.webSection",
+              "capability": "WebView",
+              "hintKey": "settings.webZoomHint",
+              "controls": [
+                { "id": "web.zoom", "kind": "float", "labelKey": "web.zoom", "state": "WebViewZoom", "min": 0.5, "max": 2, "step": 0.05, "format": "%.2fx", "onChange": "Web.SetZoom" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vehicle",
+      "labelKey": "tab.vehicle",
+      "pages": [
+        {
+          "id": "vehicleMain",
+          "labelKey": "tab.vehicleMain",
+          "sections": [
+            {
+              "id": "actions",
+              "labelKey": "vehicle.sectionActions",
+              "controls": [
+                { "id": "vehicle.repair", "kind": "action", "labelKey": "vehicle.repair" },
+                { "id": "vehicle.stop", "kind": "action", "labelKey": "vehicle.stop" },
+                { "id": "vehicle.unflip", "kind": "action", "labelKey": "vehicle.unflip" },
+                { "id": "vehicle.start", "kind": "action", "labelKey": "vehicle.start" },
+                { "id": "vehicle.engineOn", "kind": "action", "labelKey": "vehicle.engineOn" },
+                { "id": "vehicle.engineOff", "kind": "action", "labelKey": "vehicle.engineOff" },
+                { "id": "vehicle.blowUpAll", "kind": "action", "labelKey": "vehicle.blowUpAll" }
+              ]
+            },
+            {
+              "id": "runtime",
+              "labelKey": "vehicle.sectionRuntime",
+              "columns": 4,
+              "controls": [
+                { "id": "vehicle.noDamage", "kind": "toggle", "labelKey": "vehicle.noDamage", "state": "VehicleNoDamage" },
+                { "id": "vehicle.autoUnflip", "kind": "toggle", "labelKey": "vehicle.autoUnflip", "state": "VehicleAutoUnflip" },
+                { "id": "vehicle.heavy", "kind": "toggle", "labelKey": "vehicle.heavy", "state": "VehicleHeavy" },
+                { "id": "vehicle.watertight", "kind": "toggle", "labelKey": "vehicle.watertight", "state": "VehicleWatertight" }
+              ]
+            },
+            {
+              "id": "status",
+              "labelKey": "vehicle.sectionStatus",
+              "requiresVehicle": true,
+              "controls": [
+                { "id": "vehicle.lights", "kind": "toggle", "labelKey": "vehicle.lights", "capability": "VehicleBasic" },
+                { "id": "vehicle.locked", "kind": "toggle", "labelKey": "vehicle.lockDoors", "capability": "VehicleBasic" },
+                { "id": "vehicle.invisible", "kind": "toggle", "labelKey": "vehicle.invisible", "capability": "VehicleBasic" }
+              ]
+            },
+            {
+              "id": "proof",
+              "labelKey": "vehicle.sectionProof",
+              "requiresVehicle": true,
+              "controls": [
+                { "id": "proof.bullet", "kind": "toggle", "labelKey": "proof.bullet", "capability": "VehicleBasic" },
+                { "id": "proof.collision", "kind": "toggle", "labelKey": "proof.collision", "capability": "VehicleBasic" },
+                { "id": "proof.explosion", "kind": "toggle", "labelKey": "proof.explosion", "capability": "VehicleBasic" },
+                { "id": "proof.fire", "kind": "toggle", "labelKey": "proof.fire", "capability": "VehicleBasic" },
+                { "id": "proof.melee", "kind": "toggle", "labelKey": "proof.melee", "capability": "VehicleBasic" }
+              ]
+            },
+            {
+              "id": "health",
+              "labelKey": "vehicle.sectionHealth",
+              "requiresVehicle": true,
+              "controls": [
+                { "id": "vehicle.health", "kind": "float", "labelKey": "vehicle.health", "min": 0, "max": 1000, "step": 1, "capability": "VehicleBasic" },
+                { "id": "vehicle.blowUpAll", "kind": "action", "labelKey": "vehicle.blowUpAll", "capability": "VehicleBasic" }
+              ]
+            },
+            {
+              "id": "special",
+              "labelKey": "vehicle.sectionSpecial",
+              "requiresVehicle": true,
+              "controls": [
+                { "id": "vehicle.alwaysSkidMarks", "kind": "toggle", "labelKey": "vehicle.alwaysSkidMarks", "capability": "VehicleAlwaysSkidMarks" },
+                { "id": "vehicle.disableParticles", "kind": "toggle", "labelKey": "vehicle.disableParticles", "capability": "VehicleDisableParticles" },
+                { "id": "vehicle.driverTargetable", "kind": "toggle", "labelKey": "vehicle.driverTargetable", "capability": "VehicleDriverTargetable" },
+                { "id": "vehicle.heatSeekingTargetable", "kind": "toggle", "labelKey": "vehicle.missileTargetable", "capability": "VehicleHeatSeekingTargetable" },
+                { "id": "vehicle.petrolTankWeak", "kind": "toggle", "labelKey": "vehicle.petrolTankWeakness", "capability": "VehiclePetrolTankWeakPoint" },
+                { "id": "vehicle.siren", "kind": "toggle", "labelKey": "vehicle.sirenAlarm", "capability": "VehicleSirenOrAlarm" },
+                { "id": "vehicle.takeLessDamage", "kind": "toggle", "labelKey": "vehicle.takeLessDamage", "capability": "VehicleTakeLessDamage" }
+              ]
+            },
+            {
+              "id": "cheat",
+              "labelKey": "vehicle.sectionCheat",
+              "columns": 4,
+              "capability": "VehicleCheats",
+              "controls": [
+                { "id": "vehicle.flyingCars", "kind": "toggle", "labelKey": "vehicle.flyingCars", "state": "VehicleFlyingCars" },
+                { "id": "vehicle.boatFly", "kind": "toggle", "labelKey": "vehicle.boatFly", "state": "VehicleBoatFly", "games": ["sa", "vc"] },
+                { "id": "vehicle.driveWater", "kind": "toggle", "labelKey": "vehicle.driveWater", "state": "VehicleDriveWater", "games": ["sa", "vc"] },
+                { "id": "vehicle.greenLights", "kind": "toggle", "labelKey": "vehicle.greenLights", "state": "VehicleGreenLights", "games": ["sa", "vc"] },
+                { "id": "vehicle.perfectHandling", "kind": "toggle", "labelKey": "vehicle.perfectHandling", "state": "VehiclePerfectHandling", "games": ["sa", "iii"] },
+                { "id": "vehicle.bikeFly", "kind": "toggle", "labelKey": "vehicle.bikeFly", "state": "VehicleBikeFly" },
+                { "id": "vehicle.stayOnBike", "kind": "toggle", "labelKey": "vehicle.stayOnBike", "state": "VehicleStayOnBike", "games": ["sa"] },
+                { "id": "vehicle.tankMode", "kind": "toggle", "labelKey": "vehicle.tankMode", "state": "VehicleTankMode", "games": ["sa"] },
+                { "id": "vehicle.aimDrive", "kind": "toggle", "labelKey": "vehicle.aimDrive", "state": "VehicleAimDrive", "games": ["sa"] },
+                { "id": "vehicle.noDerail", "kind": "toggle", "labelKey": "vehicle.noDerail", "state": "VehicleNoDerail", "games": ["sa"] },
+                { "id": "vehicle.flipNoBurn", "kind": "toggle", "labelKey": "vehicle.flipNoBurn", "state": "VehicleFlipNoBurn", "games": ["sa"] },
+                { "id": "vehicle.infNitro", "kind": "toggle", "labelKey": "vehicle.infNitro", "state": "VehicleInfNitro", "games": ["sa"] }
+              ]
+            },
+            {
+              "id": "effect",
+              "labelKey": "vehicle.sectionEffect",
+              "games": ["sa"],
+              "capability": "VehicleEffectsNeon",
+              "controls": [
+                { "id": "vehicle.neon", "kind": "toggle", "labelKey": "vehicle.neon", "state": "VehicleNeon" },
+                { "id": "vehicle.neonR", "kind": "int", "labelKey": "vehicle.neonR", "state": "VehicleNeonColorR", "min": 0, "max": 255, "step": 1, "visibleWhen": "vehicle.neon" },
+                { "id": "vehicle.neonG", "kind": "int", "labelKey": "vehicle.neonG", "state": "VehicleNeonColorG", "min": 0, "max": 255, "step": 1, "visibleWhen": "vehicle.neon" },
+                { "id": "vehicle.neonB", "kind": "int", "labelKey": "vehicle.neonB", "state": "VehicleNeonColorB", "min": 0, "max": 255, "step": 1, "visibleWhen": "vehicle.neon" }
+              ]
+            },
+            {
+              "id": "autoDrive",
+              "labelKey": "vehicle.sectionAutoDrive",
+              "games": ["sa"],
+              "capability": "VehicleAutoDrive",
+              "controls": [
+                { "id": "vehicle.autoDrive", "kind": "toggle", "labelKey": "vehicle.autoDrive", "state": "VehicleAutoDrive" },
+                { "id": "vehicle.autoDriveSpeed", "kind": "float", "labelKey": "vehicle.autoDriveSpeed", "state": "VehicleAutoDriveSpeed", "min": 5, "max": 300, "step": 1, "visibleWhen": "vehicle.autoDrive" }
+              ]
+            },
+            {
+              "id": "traffic",
+              "labelKey": "vehicle.sectionTraffic",
+              "capability": "VehicleTrafficDensity",
+              "controls": [
+                { "id": "vehicle.trafficDensity", "kind": "float", "labelKey": "vehicle.trafficDensity", "state": "VehicleTrafficDensity", "min": 0, "max": 1, "step": 0.01 }
+              ]
+            },
+            {
+              "id": "speed",
+              "labelKey": "vehicle.sectionSpeed",
+              "capability": "VehicleBasic",
+              "controls": [
+                { "id": "vehicle.lockSpeed", "kind": "toggle", "labelKey": "vehicle.lockSpeed", "state": "VehicleSpeedLock", "onChange": "ApplySpeedLock" },
+                { "id": "vehicle.targetSpeed", "kind": "float", "labelKey": "vehicle.targetSpeed", "state": "VehicleSpeed", "min": 5, "max": 300, "step": 1, "onChange": "ApplySpeedLock" },
+                { "id": "vehicle.applyTargetSpeed", "kind": "action", "labelKey": "vehicle.applyTargetSpeed" },
+                { "id": "vehicle.restoreDefaultSpeed", "kind": "action", "labelKey": "vehicle.restoreDefaultSpeed" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "vehicleSpawn",
+          "labelKey": "vehicle.spawnVehicle",
+          "sections": [
+            {
+              "id": "spawnOptions",
+              "labelKey": "vehicle.sectionSpawnOptions",
+              "columns": 3,
+              "controls": [
+                { "id": "vehicle.spawnAsDriver", "kind": "toggle", "labelKey": "vehicle.spawnAsDriver", "state": "VehicleSpawnAsDriver" },
+                { "id": "vehicle.spawnAircraftInAir", "kind": "toggle", "labelKey": "vehicle.spawnAircraftInAir", "state": "VehicleSpawnAircraftInAir" },
+                { "id": "vehicle.cleanupAfterSpawn", "kind": "toggle", "labelKey": "vehicle.cleanupAfterSpawn", "state": "VehicleCleanupAfterSpawn" }
+              ]
+            }
+          ],
+          "custom": [
+            { "id": "vehicle.spawnList", "renderer": "native", "note": "按车型分类的生成列表，含名称与 ID，两边各自实现" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "world",
+      "labelKey": "tab.world",
+      "pages": [
+        {
+          "id": "worldMain",
+          "labelKey": "tab.worldMain",
+          "sections": [
+            {
+              "id": "timeLock",
+              "labelKey": "world.time",
+              "columns": 2,
+              "controls": [
+                { "id": "world.lockTime", "kind": "toggle", "labelKey": "world.lockCurrentTime", "state": "WorldLockTime", "onChange": "World.LockTime" },
+                { "id": "world.syncClock", "kind": "action", "labelKey": "world.syncRealTime" }
+              ]
+            },
+            {
+              "id": "gameRules",
+              "labelKey": "world.gameRules",
+              "columns": 2,
+              "controls": [
+                { "id": "world.disableReplay", "kind": "toggle", "labelKey": "world.disableReplay", "state": "DisableReplay", "capability": "WorldDisableReplay", "onChange": "World.DisableReplay" },
+                { "id": "world.disableCheats", "kind": "toggle", "labelKey": "world.disableCheats", "state": "DisableCheats", "capability": "WorldDisableCheats", "onChange": "World.DisableCheats" },
+                { "id": "world.fasterClock", "kind": "toggle", "labelKey": "world.fasterClock", "state": "FasterClock", "capability": "WorldFasterClock", "onChange": "World.FasterClock" },
+                { "id": "world.freezeTime", "kind": "toggle", "labelKey": "world.freezeTime", "state": "FreezeTime", "capability": "WorldFreezeTime", "onChange": "World.FreezeTime" },
+                { "id": "world.disableForbiddenAreaWanted", "kind": "toggle", "labelKey": "world.disableForbiddenAreaWanted", "state": "ForbiddenAreaWanted", "capability": "WorldForbiddenAreaWanted", "onChange": "World.ForbiddenAreaWanted" },
+                { "id": "world.freePayNSpray", "kind": "toggle", "labelKey": "world.freePayNSpray", "state": "FreePayNSpray", "capability": "WorldFreePayNSpray", "onChange": "World.FreePayNSpray" },
+                { "id": "world.noWaterPhysics", "kind": "toggle", "labelKey": "world.noWaterPhysics", "state": "NoWaterPhysics", "capability": "WorldNoWaterPhysics", "onChange": "World.NoWaterPhysics" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

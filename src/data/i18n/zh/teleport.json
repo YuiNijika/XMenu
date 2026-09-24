@@ -16,7 +16,7 @@
   "teleport.forwardHold": "向前传送持续",
   "teleport.forwardHoldHint": "启用后按住“向前传送”热键会持续向前传送。",
   "teleport.customMapSize": "自定义地图尺寸",
-  "teleport.customMapSizeHint": "如果快速地图传送位置偏移，可以在这里调整地图宽高。默认值是 6000 x 6000。",
+  "teleport.customMapSizeHint": "宽高填 0 时跟随游戏雷达范围；快速地图传送位置偏移时可以在这里手动指定地图宽高。",
   "teleport.width": "宽度",
   "teleport.height": "高度",
   "teleport.applyMapSize": "应用地图尺寸",
@@ -263,5 +263,6 @@
   "teleport.location.sa_sf_airport_runway": "圣菲耶罗机场内",
   "teleport.location.sa_lv_airport_ticket": "拉斯云祖华机场售票处",
   "teleport.location.sa_lv_airport_runway": "拉斯云祖华机场内",
-  "teleport.location.sa_desert_airstrip": "沙漠机场"
+  "teleport.location.sa_desert_airstrip": "沙漠机场",
+  "teleport.sectionQuickOptions": "快捷传送选项"
 }

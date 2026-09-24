@@ -62,5 +62,6 @@
   "player.wantedLevel": "手配度",
   "player.setWanted": "手配度を設定",
   "player.readCurrentValues": "現在値を読み込み",
-  "player.clearWanted": "手配度を消去"
+  "player.clearWanted": "手配度を消去",
+  "player.sectionActions": "クイック操作"
 }

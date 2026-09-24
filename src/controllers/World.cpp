@@ -2,6 +2,7 @@
 #include <XBase/World.h>
 #include <XBase/Cheats.h>
 #include <XBase/Capabilities.h>
+#include <XBase/UI.h>
 #include "ui/MenuState.h"
 #include "utils/Log.h"
 #include "utils/I18n.h"
@@ -80,6 +81,20 @@ namespace Controllers::World {
     void ForceWeatherNow(int id) {
         XBase::World::SetWeather(id, MenuState::LockWeather);
         MenuState::LockedWeatherType = id;
+    }
+
+    void DrawWeatherButtons() {
+        int count = 0;
+        const WeatherEntry* entries = GetWeatherCatalog(count);
+        if (count <= 0) return;
+        XBase::UI::Columns(4, nullptr, false);
+        for (int i = 0; i < count; ++i) {
+            if (XBase::UI::Button(I18n::T(entries[i].key))) {
+                ForceWeatherNow(entries[i].id);
+            }
+            XBase::UI::NextColumn();
+        }
+        XBase::UI::Columns(1);
     }
 
     void SetTime(int hour, int minute) {

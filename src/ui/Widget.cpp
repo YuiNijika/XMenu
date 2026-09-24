@@ -31,7 +31,7 @@ void TextCentered(const char* text) {
     if (!UsesMenuSurface()) XBase::UI::CenterText(text);
 }
 
-// 红色警告文字：先按正常排版占位，再用画布在同一位置覆盖红色
+// 红色警告文字先按正常排版占位，再用画布在同一位置覆盖红色
 void TextWarning(const char* text) {
     if (!text || !text[0] || UsesMenuSurface()) {
         if (text) XBase::UI::TextWrapped(text);

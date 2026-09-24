@@ -62,5 +62,6 @@
   "player.wantedLevel": "通缉星级",
   "player.setWanted": "设置通缉",
   "player.readCurrentValues": "读取当前数值",
-  "player.clearWanted": "消除通缉"
+  "player.clearWanted": "消除通缉",
+  "player.sectionActions": "快捷操作"
 }

@@ -77,9 +77,9 @@ namespace Controllers::Vehicle {
         const bool canTrafficDensity =
             XBaseBridge::HasCapability(XBase::FeatureCapability::VehicleTrafficDensity);
         if (canTrafficDensity) {
-            XBase::Vehicle::SetTrafficDensity(MenuState::VehicleTrafficClearRadius / 100.0f);
+            XBase::Vehicle::SetTrafficDensity(MenuState::VehicleTrafficDensity);
         } else {
-            MenuState::VehicleTrafficClearRadius = 100.0f;
+            MenuState::VehicleTrafficDensity = 0.8f;
         }
 
         const bool canAutoDrive =
@@ -134,7 +134,7 @@ namespace Controllers::Vehicle {
         XBase::VehicleEffects::ApplyCurrentNeon(neonSettings);
 
         if (canAutoDrive) {
-            XBase::Vehicle::SetAutoDriveToWaypoint(MenuState::VehicleAutoDrive);
+            XBase::Vehicle::SetAutoDriveToWaypoint(MenuState::VehicleAutoDrive, MenuState::VehicleAutoDriveSpeed);
         }
 #else
         (void)canAutoDrive;
@@ -227,10 +227,6 @@ namespace Controllers::Vehicle {
 
     void WarpToSeat() {
         XBase::Vehicle::WarpToSeat(MenuState::VehicleSeatIndex);
-    }
-
-    void SetTrafficDensity(float density) {
-        XBase::Vehicle::SetTrafficDensity(density);
     }
 
     void SetFlyingCars(bool enable) {
