@@ -39,11 +39,21 @@ function App() {
 }
 
 function MenuApp() {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const [activePage, setActivePage] = useState(Pages[0].id)
   const [info, setInfo] = useState<MenuInfo | null>(null)
   const { report, error } = useCapabilities()
   const bridgeReady = useMemo(() => isBridgeAvailable(), [])
+
+  // 面板跟着产品默认主题走深色，原生控件与滚动条才会一起变深，
+  // 语言也要写到 html 上，读屏与自动翻译才认得当前语言
+  useEffect(() => {
+    document.documentElement.classList.add('dark')
+  }, [])
+
+  useEffect(() => {
+    document.documentElement.lang = lang
+  }, [lang])
 
   useEffect(() => {
     if (!bridgeReady) return
@@ -66,6 +76,7 @@ function MenuApp() {
       title={t(current.titleKey)}
       subtitle={t(current.subtitleKey)}
       game={report?.gameName ?? ''}
+      version={info?.version}
     >
       {error ? (
         <Alert className="mb-5">

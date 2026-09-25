@@ -76,17 +76,25 @@ export function DataBrowser({ method, disabled, max = MaxVisible, onPick }: Data
           className="h-8 w-48"
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}
-          placeholder={t('common.search')}
-          aria-label={t('common.search')}
+          placeholder={t('react.search')}
+          aria-label={t('react.search')}
+          spellCheck={false}
+          autoComplete="off"
         />
-        <Button variant={category ? 'outline' : 'default'} size="sm" onClick={() => setCategory('')}>
-          {t('common.toggles')}
+        <Button
+          variant={category ? 'outline' : 'default'}
+          size="sm"
+          aria-pressed={category === ''}
+          onClick={() => setCategory('')}
+        >
+          {t('react.all')}
         </Button>
         {categories.slice(0, 8).map((value) => (
           <Button
             key={value}
             variant={category === value ? 'default' : 'outline'}
             size="sm"
+            aria-pressed={category === value}
             onClick={() => setCategory(value)}
           >
             {t(value)}
@@ -104,11 +112,16 @@ export function DataBrowser({ method, disabled, max = MaxVisible, onPick }: Data
             onClick={() => onPick(item)}
           >
             {t(item.name)}
-            {item.id !== undefined ? <span className="ml-2 opacity-60">{item.id}</span> : null}
+            {item.id !== undefined ? (
+              <span className="ml-2 tabular-nums opacity-60">{item.id}</span>
+            ) : null}
           </Button>
         ))}
+        {!loaded ? (
+          <div className="text-xs text-muted-foreground">{t('react.loading')}</div>
+        ) : null}
         {loaded && visible.length === 0 ? (
-          <div className="text-xs text-muted-foreground">{t('ped.noListData')}</div>
+          <div className="text-xs text-muted-foreground">{t('react.noResults')}</div>
         ) : null}
       </div>
     </div>

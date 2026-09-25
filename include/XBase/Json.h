@@ -36,6 +36,10 @@ struct Value {
     const Value& operator[](const std::string& key) const;
     const Value& operator[](std::size_t index) const;
 
+    // 数组与对象通用的元素数；对象的键顺序不保证
+    std::size_t Size() const;
+    std::vector<std::string> Keys() const;
+
     Value& Set(const std::string& key, const Value& val);
     void Push(const Value& val);
 

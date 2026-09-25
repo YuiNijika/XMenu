@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import { runAction } from '@/lib/actions'
 import { call } from '@/lib/bridge'
 import { useI18n } from '@/lib/i18n'
@@ -14,57 +14,56 @@ export function AboutPage({ info }: PageProps) {
   const { t } = useI18n()
 
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('tab.about')}</CardTitle>
-          <CardDescription>{t('react.aboutHint')}</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-2 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">XMenu</span>
-            <Badge variant="secondary">{info?.version ?? '--'}</Badge>
+    <div className="flex flex-col gap-5">
+      <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/15 via-card to-card p-8 lg:p-10">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/20 blur-3xl" />
+        <div className="relative flex flex-col gap-6">
+          <div>
+            <div className="text-xs font-semibold tracking-[0.3em] text-muted-foreground uppercase">XMenu</div>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight">{t('tab.about')}</h1>
+            <p className="mt-2 max-w-prose text-sm text-muted-foreground">{t('react.aboutHint')}</p>
           </div>
-          <div>{info?.author ?? '--'}</div>
-          <div className="text-muted-foreground">{info?.url ?? ''}</div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('about.projectPage')}</CardTitle>
-          <CardDescription>{t('about.notice1')}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => void call('update.open', { url: info?.url })}>
-            {t('about.projectPage')}
-          </Button>
-          <Button variant="outline" onClick={() => void call('update.open')}>
-            {t('update.openGitHub')}
-          </Button>
-        </CardContent>
-      </Card>
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <Badge variant="secondary" className="tabular-nums">
+              XMenu {info?.version ?? '--'}
+            </Badge>
+            <Badge variant="secondary" className="tabular-nums">
+              XBase {info?.xbaseVersion ?? '--'}
+            </Badge>
+            <span className="text-muted-foreground">{info?.author ?? '--'}</span>
+          </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('react.actions')}</CardTitle>
-          <CardDescription>{t('react.actionsHint')}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            onClick={() => void runAction('menu.setUi', { ui: 'imgui' }, 'settings.uiMode.imgui')}
-          >
-            {t('settings.uiMode.imgui')}
-          </Button>
-          <Button variant="outline" onClick={() => void runAction('menu.hide', undefined, 'react.hide')}>
-            {t('react.hide')}
-          </Button>
-          <Button variant="outline" onClick={() => void runAction('menu.close', undefined, 'react.close')}>
-            {t('react.close')}
-          </Button>
-        </CardContent>
-      </Card>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => void call('update.open', { url: info?.url })}>
+              {t('about.projectPage')}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => void call('update.open', { url: 'https://github.com/YuiNijika/XMenu' })}
+            >
+              {t('update.openGitHub')}
+            </Button>
+          </div>
+
+          <Separator />
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() => void runAction('menu.setUi', { ui: 'imgui' }, 'settings.uiMode.imgui')}
+            >
+              {t('settings.uiMode.imgui')}
+            </Button>
+            <Button variant="outline" onClick={() => void runAction('menu.hide', undefined, 'react.hide')}>
+              {t('react.hide')}
+            </Button>
+            <Button variant="outline" onClick={() => void runAction('menu.close', undefined, 'react.close')}>
+              {t('react.close')}
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

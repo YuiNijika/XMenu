@@ -49,7 +49,6 @@ async function fetchJson<T>(path: string): Promise<T | null> {
   }
 }
 
-// 与 ImGui 完全同源：读 data/i18n 下的 json，按 index.json 列出的文件逐个合并
 async function loadFromFiles(lang: string): Promise<Dictionary> {
   const index = await fetchJson<LanguageIndex>(`${DataRoot}/${lang}/index.json`)
   const files = index?.files ?? []

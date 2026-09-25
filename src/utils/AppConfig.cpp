@@ -19,9 +19,7 @@
 #undef GetObject
 #endif
 
-extern const char* XMENU_VERSION;
-extern const char* XMENU_AUTHOR;
-extern const char* XMENU_URL;
+#include "../Identity.h"
 extern const char* XMENU_GITHUB;
 
 namespace {
@@ -1031,9 +1029,9 @@ const char* DefaultUiMode() {
         }
 
         file << "  \"XMenu\": {\n";
-        file << "    \"version\": \"" << EscapeJson(XMENU_VERSION) << "\",\n";
-        file << "    \"XMENU_AUTHOR\": \"" << EscapeJson(XMENU_AUTHOR) << "\",\n";
-        file << "    \"XMENU_URL\": \"" << EscapeJson(XMENU_URL) << "\",\n";
+        file << "    \"version\": \"" << EscapeJson(ModIdentity::Version) << "\",\n";
+        file << "    \"XMENU_AUTHOR\": \"" << EscapeJson(ModIdentity::Author) << "\",\n";
+        file << "    \"XMENU_URL\": \"" << EscapeJson(ModIdentity::Url) << "\",\n";
         file << "    \"XMENU_GITHUB\": \"" << EscapeJson(XMENU_GITHUB) << "\"\n";
         file << "  },\n";
         WriteUpdateCache(file, true);

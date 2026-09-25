@@ -42,12 +42,10 @@
 #include "controllers/Ped.h"
 #include "controllers/BulletAssist.h"
 
+#include "../Identity.h"
+
 extern const bool XMENU_DEBUG_MODE;
-extern const char* XMENU_VERSION;
-extern const char* XMENU_AUTHOR;
-extern const char* XMENU_AUTHOR_TEST;
 extern const char* XMENU_GITHUB;
-extern const char* XMENU_URL;
 extern const char* XMENU_QQ_GROUP;
 extern const char* XMENU_TECH_STACK;
 extern const char* XMENU_OPEN_SOURCE_LIBS;
@@ -251,14 +249,14 @@ namespace Menu {
         tooltip += "\n";
         tooltip += T("status.localVersion");
         tooltip += ": ";
-        tooltip += XMENU_VERSION;
+        tooltip += ModIdentity::Version;
         tooltip += "\n";
         tooltip += T("status.remoteVersion");
         tooltip += ": ";
         tooltip += remoteVersion;
 
         // 居中的一行版本号，更新状态与远端版本放在悬浮提示里
-        XBase::UI::CenterText(XMENU_VERSION);
+        XBase::UI::CenterText(ModIdentity::Version.c_str());
         XBase::UI::Tooltip(tooltip.c_str());
     }
 
@@ -905,7 +903,7 @@ namespace Menu {
 
         XBase::UI::Text(T("update.details"));
         XBase::UI::Text(checking ? T("status.checking") : VersionStatusText(info.status));
-        XBase::UI::Text(T("status.localVersion"), XMENU_VERSION);
+        XBase::UI::Text(T("status.localVersion"), ModIdentity::Version.c_str());
         XBase::UI::Text(T("status.remoteVersion"), remoteVersion);
         XBase::UI::Text(T("update.source"), checking ? T("status.checking") : sourceText);
         XBase::UI::TextDisabled(T("update.sourceHint"));
@@ -916,7 +914,7 @@ namespace Menu {
             XBase::UI::TextDisabled(T("status.checking"));
         }
         XBase::UI::Spacing();
-        if (XBase::UI::Button(T("update.openGTAMODX"), {130.0f, 0.0f})) XBase::Platform::OpenExternal(XMENU_URL);
+        if (XBase::UI::Button(T("update.openGTAMODX"), {130.0f, 0.0f})) XBase::Platform::OpenExternal(ModIdentity::Url.c_str());
         XBase::UI::SameLine();
         if (XBase::UI::Button(T("update.openGitHub"), {130.0f, 0.0f})) XBase::Platform::OpenExternal(releaseUrl);
 
@@ -966,10 +964,9 @@ namespace Menu {
     }
 
     void DrawAbout() {
-        XBase::UI::CenterText("XMenu");
-        XBase::UI::TextWrapped(T("about.version"), XMENU_VERSION);
-        XBase::UI::TextWrapped(T("about.author"), XMENU_AUTHOR);
-        XBase::UI::TextWrapped(T("about.testing"), XMENU_AUTHOR_TEST);
+        XBase::UI::CenterText(ModIdentity::Name.c_str());
+        XBase::UI::TextWrapped(T("about.version"), ModIdentity::Version.c_str());
+        XBase::UI::TextWrapped(T("about.author"), ModIdentity::Author.c_str());
         XBase::UI::TextWrapped(T("about.techStack"), XMENU_TECH_STACK);
         XBase::UI::TextWrapped(T("about.openSourceLibs"), XMENU_OPEN_SOURCE_LIBS);
         UI::SpacingSeparator();
@@ -1004,7 +1001,7 @@ namespace Menu {
             }
             XBase::UI::SameLine();
             if (XBase::UI::Button(T("update.openGTAMODX"), {120.0f, 0.0f})) {
-                XBase::Platform::OpenExternal(XMENU_URL);
+                XBase::Platform::OpenExternal(ModIdentity::Url.c_str());
                 UpdateChecker::Dismiss();
                 XBase::UI::CloseModal();
             }
@@ -1122,7 +1119,7 @@ void Menu::Draw() {
     char windowTitle[160] = {};
 
     char visibleTitle[128] = {};
-    std::snprintf(visibleTitle, sizeof(visibleTitle), T("window.title"), XMENU_AUTHOR);
+    std::snprintf(visibleTitle, sizeof(visibleTitle), T("window.title"), ModIdentity::Author.c_str());
     std::snprintf(windowTitle, sizeof(windowTitle), "%s###XMenuMainWindow", visibleTitle);
 
     if (menuVisible) {

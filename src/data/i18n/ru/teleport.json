@@ -264,5 +264,6 @@
   "teleport.location.sa_lv_airport_ticket": "Аэропорт Лас-Вентураса: кассы",
   "teleport.location.sa_lv_airport_runway": "Аэродром Лас-Вентураса",
   "teleport.location.sa_desert_airstrip": "Аэродром Verdant Meadows",
-  "teleport.sectionQuickOptions": "Настройки быстрого телепорта"
+  "teleport.sectionQuickOptions": "Настройки быстрого телепорта",
+  "teleport.listHint": "Применяется сразу после выбора"
 }

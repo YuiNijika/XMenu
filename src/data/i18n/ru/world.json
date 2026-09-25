@@ -63,7 +63,6 @@
   "weather.sunny": "Солнечно",
   "weather.rainy": "Дождь",
   "weather.cloudy": "Облачно",
-  "weather.foggy": "Туман",
   "weather.sunny_la": "ЛА Солнечно",
   "weather.extrasunny_smog_la": "ЛА Ясно (смог)",
   "weather.sunny_smog_la": "ЛА Солнечно (смог)",
@@ -88,5 +87,6 @@
   "weather.extracolours_2": "Особые цвета 2",
   "weather.extrasunny_la": "ЛА Ясно (экстра)",
   "weather.hurricane": "Ураган",
-  "weather.extracolours": "Особые цвета"
+  "weather.extracolours": "Особые цвета",
+  "world.environment": "Окружение"
 }

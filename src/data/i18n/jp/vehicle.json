@@ -338,5 +338,6 @@
   "vehicle.sectionDoors": "ドアとシート",
   "vehicle.sectionActions": "クイック操作",
   "vehicle.sectionAutoDrive": "自動運転",
-  "vehicle.sectionSpawnOptions": "出現オプション"
+  "vehicle.sectionSpawnOptions": "出現オプション",
+  "vehicle.doors": "ドア"
 }

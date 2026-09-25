@@ -65,6 +65,21 @@ def main() -> int:
     ui = read(ui_source)
     controllers = controller_text()
 
+    # 注册表的版本号要跟 mod 清单 package.json 的 version 对齐
+    manifest_path = root / "src" / "data" / "package.json"
+    if manifest_path.is_file():
+        manifest_version = load_json(manifest_path).get("version")
+        if schema.get("version") != manifest_version:
+            errors.append(
+                f'注册表 version {schema.get("version")} 与 mod 清单 version {manifest_version} 不一致'
+            )
+    else:
+        notes.append("缺少 src/data/package.json，mod 身份信息无法从清单读取")
+    if '"note"' in read(schema_path):
+        notes.append("注册表里出现了 note 字段，说明文案应该放交接文档而不是数据文件")
+
+    allowed_surfaces = {"imgui", "react"}
+
     states = collect(r'\{"(\w+)", &MenuState', ui)
     feature_caps = collect(r'\{"(\w+)", XBase::FeatureCapability', ui)
     domain_caps = collect(r'\{"(\w+)", XBase::Capability', ui)
@@ -86,10 +101,6 @@ def main() -> int:
         for page in tab.get("pages", []):
             for section in page.get("sections", []):
                 where = f"{tab['id']}/{section['id']}"
-                for key in ("labelKey", "hintKey"):
-                    if section.get(key):
-                        labels.append((section[key], where, key))
-
                 caps_here = []
                 if section.get("capability"):
                     caps_here.append(section["capability"])
@@ -100,10 +111,21 @@ def main() -> int:
                     if name not in published:
                         errors.append(f"{where} 能力 {name} 没有下发给网页端")
 
+                for key in ("labelKey", "hintKey"):
+                    if section.get(key):
+                        labels.append((section[key], where, key))
+
+                for surface in section.get("surfaces", []):
+                    if surface not in allowed_surfaces:
+                        errors.append(f"{where} 的 surfaces {surface} 不是已知界面")
+
                 for control in section.get("controls", []):
                     kind = control["kind"]
                     counts[kind] = counts.get(kind, 0) + 1
                     cid = control["id"]
+                    for surface in control.get("surfaces", []):
+                        if surface not in allowed_surfaces:
+                            errors.append(f"{where} 控件 {cid} 的 surfaces {surface} 不是已知界面")
                     if control.get("labelKey"):
                         labels.append((control["labelKey"], where, cid))
 

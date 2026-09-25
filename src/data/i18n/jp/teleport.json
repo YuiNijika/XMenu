@@ -264,5 +264,6 @@
   "teleport.location.sa_lv_airport_ticket": "ラスベンチュラス空港 チケット売り場",
   "teleport.location.sa_lv_airport_runway": "ラスベンチュラス空港 内部",
   "teleport.location.sa_desert_airstrip": "Verdant Meadows 飛行場",
-  "teleport.sectionQuickOptions": "クイックテレポート設定"
+  "teleport.sectionQuickOptions": "クイックテレポート設定",
+  "teleport.listHint": "選択すると即時反映"
 }

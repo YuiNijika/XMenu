@@ -30,6 +30,7 @@
   "settings.exportFailed": "Ошибка экспорта, проверьте права пути",
   "settings.runtime": "Окна выполнения",
   "settings.overlay": "Настройки Overlay",
+  "settings.basic": "Базовые настройки",
   "settings.overlayHint": "Управляет содержимым Overlay и подробным режимом. Изменения сразу сохраняются для текущей игры.",
   "settings.actionHotkeys": "Горячие клавиши действий",
   "settings.hotkeyHint": "Нажмите Set, чтобы открыть окно прослушивания. Нажмите клавишу, затем Применить для сохранения. Backspace/Delete очищает.",

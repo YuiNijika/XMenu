@@ -338,5 +338,6 @@
   "vehicle.sectionDoors": "车门与座位",
   "vehicle.sectionActions": "快捷动作",
   "vehicle.sectionAutoDrive": "自动驾驶",
-  "vehicle.sectionSpawnOptions": "生成选项"
+  "vehicle.sectionSpawnOptions": "生成选项",
+  "vehicle.doors": "车门"
 }

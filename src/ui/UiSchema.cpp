@@ -441,6 +441,17 @@ void RunAction(const std::string& id) {
     }
 }
 
+// 只该出现在某一种界面上的分区与控件。surfaces 省略表示两边都画，
+// 挑选项各写各的，省得把 ImGui 菜单的外观设置塞进网页界面
+bool SurfaceAllowed(const Value& node, const char* surface) {
+    const Value& surfaces = node["surfaces"];
+    if (!surfaces.IsArray() || ArraySize(surfaces) == 0) return true;
+    for (std::size_t index = 0; index < ArraySize(surfaces); ++index) {
+        if (surfaces[index].AsString() == surface) return true;
+    }
+    return false;
+}
+
 bool GamesAllowed(const Value& node) {
     const Value& games = node["games"];
     if (!games.IsArray()) return true;
@@ -838,6 +849,8 @@ bool DrawSection(const char* tabId, const char* pageId, const char* sectionId) {
     const Value& page = FindById(tab["pages"], pageId);
     const Value& section = FindById(page["sections"], sectionId);
     if (section.IsNull() || !GamesAllowed(section)) return false;
+    // 属于网页界面的分区在这里算作已接管，什么都不画，免得原生兜底又把它画出来
+    if (!SurfaceAllowed(section, "imgui")) return true;
     // 只对当前载具生效的分区在没有载具时直接算作已接管，交给页面自己提示去坐车
     if (section["requiresVehicle"].AsBool(false) && !Controllers::Vehicle::GetCurrentVehicleId()) return true;
 
@@ -864,7 +877,7 @@ bool DrawSection(const char* tabId, const char* pageId, const char* sectionId) {
     XBase::UI::Disabled(!sectionUsable, [&] {
         for (std::size_t index = 0; index < ArraySize(controls); ++index) {
             const Value& control = controls[index];
-            if (!GamesAllowed(control) || !Visible(control, section)) continue;
+            if (!GamesAllowed(control) || !SurfaceAllowed(control, "imgui") || !Visible(control, section)) continue;
             if (!CapabilityUsable(control["capability"].AsString())) continue;
             DrawControl(control, section, inlineRow && drawn > 0 && drawn % columns != 0);
             ++drawn;

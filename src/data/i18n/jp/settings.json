@@ -30,6 +30,7 @@
   "settings.exportFailed": "エクスポート失敗、パス権限を確認してください",
   "settings.runtime": "実行時ウィンドウ",
   "settings.overlay": "Overlay 設定",
+  "settings.basic": "基本設定",
   "settings.overlayHint": "Overlay の表示内容と詳細モードを設定します。変更は現在のゲーム設定へすぐ保存されます。",
   "settings.actionHotkeys": "アクション快捷キー",
   "settings.hotkeyHint": "設定を押して監視ウィンドウを開きます。キーを押してから適用で保存します。Backspace/Delete で解除。",

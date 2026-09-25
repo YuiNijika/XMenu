@@ -63,7 +63,6 @@
   "weather.sunny": "Sunny",
   "weather.rainy": "Rainy",
   "weather.cloudy": "Cloudy",
-  "weather.foggy": "Foggy",
   "weather.sunny_la": "LA Sunny",
   "weather.extrasunny_smog_la": "LA Extra Sunny Smog",
   "weather.sunny_smog_la": "LA Sunny Smog",
@@ -88,5 +87,6 @@
   "weather.extracolours_2": "Extra Colours 2",
   "weather.extrasunny_la": "LA Extra Sunny",
   "weather.hurricane": "Hurricane",
-  "weather.extracolours": "Extra Colours"
+  "weather.extracolours": "Extra Colours",
+  "world.environment": "Environment"
 }

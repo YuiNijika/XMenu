@@ -1,0 +1,59 @@
+==========================================
+   XMenu Builder
+==========================================
+Configuration: Release
+Platform: Win32
+
+[Info] Resolved PlatformToolset: v145
+[Info] Available PlatformToolsets: v145
+Using MSBuild: D:\SoftWare\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe
+Using VS install: D:\SoftWare\Microsoft Visual Studio\18\Community
+Using cl.exe: D:\SoftWare\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\bin\Hostx86\x86\cl.exe
+Using PlatformToolset: v145
+Available toolsets: v145
+
+NOTE: Microsoft\VC\v180 is MSBuild targets path, NOT PlatformToolset.
+      On VS 18 the real C++ toolset is usually v145.
+
+Removing stale generated project files...
+Generating Visual Studio project files (premake action: vs2022)...
+Building configurations...
+Running action 'vs2022'...
+Generated build/XMenu.sln...
+Generated build/XMenuSA.vcxproj...
+Generated build/XMenuSA.vcxproj.filters...
+Generated build/XMenuVC.vcxproj...
+Generated build/XMenuVC.vcxproj.filters...
+Generated build/XMenuIII.vcxproj...
+Generated build/XMenuIII.vcxproj.filters...
+Generated build/XMenuInstaller.vcxproj...
+Done (76ms).
+Rewrote PlatformToolset=v145 in 4 vcxproj file(s).
+[Info] PlatformToolset rewritten to v145 in build\*.vcxproj
+Building mod asi build\bin\XMenuSA.asi...
+适用于 .NET Framework MSBuild 版本 18.9.1+a81b43525
+
+  XMenuSA.vcxproj -> F:\GTA\DEV\XMenu\build\bin\XMenuSA.asi
+Building mod asi build\bin\XMenuVC.asi...
+适用于 .NET Framework MSBuild 版本 18.9.1+a81b43525
+
+  XMenuVC.vcxproj -> F:\GTA\DEV\XMenu\build\bin\XMenuVC.asi
+Building mod asi build\bin\XMenuIII.asi...
+适用于 .NET Framework MSBuild 版本 18.9.1+a81b43525
+
+  XMenuIII.vcxproj -> F:\GTA\DEV\XMenu\build\bin\XMenuIII.asi
+Building installer build\bin\XMenuInstaller.exe...
+适用于 .NET Framework MSBuild 版本 18.9.1+a81b43525
+
+  XMenuInstaller.vcxproj -> F:\GTA\DEV\XMenu\build\bin\XMenuInstaller.exe
+
+Build completed successfully.
+Output files:
+  build\bin\XMenuSA.asi
+  build\bin\XMenuVC.asi
+  build\bin\XMenuIII.asi
+  build\bin\XMenuInstaller.exe
+  build\bin\XBase\Library\XBase{SA,VC,III}.dll
+  build\bin\XBase\Mods\XMenu\data\{sa,vc,iii}\*.json
+  build\bin\XBase\Mods\XMenu\data\i18n\{lang}\index.json
+

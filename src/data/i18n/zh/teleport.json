@@ -264,5 +264,6 @@
   "teleport.location.sa_lv_airport_ticket": "拉斯云祖华机场售票处",
   "teleport.location.sa_lv_airport_runway": "拉斯云祖华机场内",
   "teleport.location.sa_desert_airstrip": "沙漠机场",
-  "teleport.sectionQuickOptions": "快捷传送选项"
+  "teleport.sectionQuickOptions": "快捷传送选项",
+  "teleport.listHint": "选中条目立即生效"
 }

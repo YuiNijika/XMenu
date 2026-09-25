@@ -264,5 +264,6 @@
   "teleport.location.sa_lv_airport_ticket": "Las Venturas Airport Ticket Counter",
   "teleport.location.sa_lv_airport_runway": "Las Venturas Airport Airfield",
   "teleport.location.sa_desert_airstrip": "Verdant Meadows Airstrip",
-  "teleport.sectionQuickOptions": "Quick teleport options"
+  "teleport.sectionQuickOptions": "Quick teleport options",
+  "teleport.listHint": "Entries apply instantly"
 }

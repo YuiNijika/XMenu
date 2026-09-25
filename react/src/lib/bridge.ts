@@ -88,7 +88,6 @@ export type WorldTime = {
   minute: number
 }
 
-// 界面特性注册表，与 ImGui 共用同一份配置
 export type UiControl = {
   id: string
   kind: 'toggle' | 'float' | 'int' | 'action' | 'select'
@@ -104,6 +103,8 @@ export type UiControl = {
   onChange?: string
   // 下拉选择的选项来自宿主的哪张表
   source?: string
+  // 只画在某一种界面上，省略表示 ImGui 与 WebUI 都画
+  surfaces?: string[]
 }
 
 // 下拉选项：label 是要翻译的词条键还是现成的名字
@@ -122,6 +123,8 @@ export type UiSection = {
   columns?: number
   // 内联分区按固定宽度排布并自动换行，适合一排同类型的动作按钮
   inline?: boolean
+  // 只画在某一种界面上，省略表示 ImGui 与 WebUI 都画
+  surfaces?: string[]
   controls: UiControl[]
 }
 

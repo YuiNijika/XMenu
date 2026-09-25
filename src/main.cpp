@@ -22,7 +22,7 @@
 #include "utils/Log.h"
 #include "ui/MenuState.h"
 #include "controllers/ReactUi.h"
-#include "utils/BuildInfo.h"
+#include "Identity.h"
 #include "utils/UpdateChecker.h"
 
 #include <XBase/Hooks.h>
@@ -31,10 +31,7 @@
 #include <XBase/Input.h>
 
 extern const bool XMENU_DEBUG_MODE = false;
-const char* XMENU_VERSION = BuildInfo::Version;
-const char* XMENU_AUTHOR = BuildInfo::Author;
-const char* XMENU_AUTHOR_TEST = "枫林、狂风晨、IIScar、Happy";
-const char* XMENU_URL = BuildInfo::Url;
+// 名称版本作者统一来自 package.json，由 ModIdentity::Load 覆盖
 const char* XMENU_GITHUB = "https://github.com/YuiNijika/XMenu";
 const char* XMENU_GITHUB_API = "https://api.github.com/repos/YuiNijika/XMenu/releases/latest";
 const char* XMENU_QQ_GROUP = "https://gtamodx.com/qqun";
@@ -59,7 +56,8 @@ void AdvanceBootstrap() {
     static bool coreInited = false;
     if (bootstrapStage == 0) {
         if (!coreInited) {
-            Log::Info("分帧初始化[0]: I18n + AppConfig");
+            Log::Info("分帧初始化[0]: ModIdentity + I18n + AppConfig");
+            ModIdentity::Load();
             I18n::Init();
             AppConfig::Init();
             coreInited = true;
@@ -70,7 +68,7 @@ void AdvanceBootstrap() {
 
     if (bootstrapStage == 1) {
         Log::Info("分帧初始化[1]: XBase + UpdateChecker");
-        UpdateChecker::Start(XMENU_VERSION);
+        UpdateChecker::Start(ModIdentity::Version.c_str());
         XBaseBridge::Init();
         Controllers::BulletAssist::Init();
         bootstrapStage = 2;

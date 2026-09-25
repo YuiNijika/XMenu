@@ -338,5 +338,6 @@
   "vehicle.sectionDoors": "Doors and seats",
   "vehicle.sectionActions": "Quick actions",
   "vehicle.sectionAutoDrive": "Auto drive",
-  "vehicle.sectionSpawnOptions": "Spawn options"
+  "vehicle.sectionSpawnOptions": "Spawn options",
+  "vehicle.doors": "Doors"
 }

@@ -191,6 +191,23 @@ if not exist "build\bin\XMenuInstaller.exe" (
 call :stage_data
 if errorlevel 1 goto fail
 
+rem 共享运行时与 mod 是配套的（ABI 版本一起升），构建时一并暂存到安装集，
+rem 否则发布包里的旧运行库会让 mod 报「ABI 版本不符」
+set "XBASE_RUNTIME_DIR=..\XBase\build\bin\Release"
+if not exist "!XBASE_RUNTIME_DIR!\XBaseSA.dll" (
+    echo [Error] Missing XBase shared runtime: !XBASE_RUNTIME_DIR!\XBaseSA.dll
+    echo         Build the XBase project first, then build XMenu.
+    goto fail
+)
+if not exist "build\bin\XBase\Library" mkdir "build\bin\XBase\Library"
+for %%D in (SA VC III) do (
+    copy /Y "!XBASE_RUNTIME_DIR!\XBase%%D.dll" "build\bin\XBase\Library\XBase%%D.dll" >nul
+    if errorlevel 1 (
+        echo [Error] Failed to stage XBase%%D.dll
+        goto fail
+    )
+)
+
 echo.
 echo Build completed successfully.
 echo Output files:
@@ -198,6 +215,7 @@ echo   build\bin\XMenuSA.asi
 echo   build\bin\XMenuVC.asi
 echo   build\bin\XMenuIII.asi
 echo   build\bin\XMenuInstaller.exe
+echo   build\bin\XBase\Library\XBase{SA,VC,III}.dll
 echo   build\bin\XBase\Mods\XMenu\data\{sa,vc,iii}\*.json
 echo   build\bin\XBase\Mods\XMenu\data\i18n\{lang}\index.json
 echo.
@@ -475,7 +493,7 @@ for %%L in (zh en jp ru) do (
     )
 )
 
-rem 界面特性注册表，ImGui 与网页界面共用同一份，两边都从这里取控件与能力门控
+rem 界面特性注册表，网页界面与宿主界面共用同一份 schema，控件与能力门控都从这里取
 if not exist "src\data\ui-schema.json" (
     echo [Error] Missing UI schema: src\data\ui-schema.json
     exit /b 1
@@ -483,6 +501,17 @@ if not exist "src\data\ui-schema.json" (
 copy /Y "src\data\ui-schema.json" "build\bin\XBase\Mods\XMenu\data\ui-schema.json" >nul
 if errorlevel 1 (
     echo [Error] Failed to stage UI schema
+    exit /b 1
+)
+
+rem mod 清单，声明 mod 自身版本与所需 XBase 版本，XBase 挂载时校验
+if not exist "src\data\package.json" (
+    echo [Error] Missing package manifest: src\data\package.json
+    exit /b 1
+)
+copy /Y "src\data\package.json" "build\bin\XBase\Mods\XMenu\package.json" >nul
+if errorlevel 1 (
+    echo [Error] Failed to stage package manifest
     exit /b 1
 )
 

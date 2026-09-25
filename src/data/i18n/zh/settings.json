@@ -30,6 +30,7 @@
   "settings.exportFailed": "导出失败，请检查路径权限",
   "settings.runtime": "运行态窗口",
   "settings.overlay": "Overlay 设置",
+  "settings.basic": "基础设置",
   "settings.overlayHint": "控制 Overlay 显示内容和详细模式。变更会立即保存到当前游戏配置。",
   "settings.actionHotkeys": "动作快捷键",
   "settings.hotkeyHint": "点击设置打开监听窗口；按下键盘按键后点击应用写入，Backspace/Delete 清空。",

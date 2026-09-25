@@ -1,0 +1,16 @@
+{
+  "name": "XMenu",
+  "version": "v0.1.0-rc",
+  "author": "鼠子(YuiNijika)",
+  "description": "A modification menu suitable for GTA III.VC.SA",
+  "homepage": "https://gtamodx.com/mods/xmenu",
+  "engines": {
+    "xbase": ">=0.1.0"
+  },
+  "dependencies": {
+    "Ultimate ASI Loader": "latest",
+    "SilentPatch": "latest",
+    "D3D8to9": "latest"
+  },
+  "license": "MIT"
+}

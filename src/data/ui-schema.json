@@ -1,6 +1,5 @@
 {
-  "version": 1,
-  "note": "界面特性注册表。以 ImGui 页面为基准登记，React 与 ImGui 共用同一份。capability 对应 XBase 的 FeatureCapability，games 省略表示三个版本都显示。",
+  "version": "v0.1.0-alpha1",
   "tabs": [
     {
       "id": "player",
@@ -371,6 +370,7 @@
             {
               "id": "appearance",
               "labelKey": "settings.theme",
+              "surfaces": ["imgui"],
               "columns": 2,
               "controls": [
                 { "id": "settings.theme", "kind": "select", "labelKey": "settings.theme", "source": "theme" },
@@ -380,6 +380,7 @@
             {
               "id": "guiStyle",
               "labelKey": "settings.guiStyle",
+              "surfaces": ["imgui"],
               "columns": 2,
               "controls": [
                 { "id": "settings.useListMenu", "kind": "toggle", "labelKey": "settings.useListMenu", "state": "UseNativeMenu", "onChange": "Menu.SyncGuiTheme" },
@@ -389,6 +390,7 @@
             {
               "id": "web",
               "labelKey": "settings.webSection",
+              "surfaces": ["react"],
               "capability": "WebView",
               "hintKey": "settings.webZoomHint",
               "controls": [
@@ -555,7 +557,7 @@
             }
           ],
           "custom": [
-            { "id": "vehicle.spawnList", "renderer": "native", "note": "按车型分类的生成列表，含名称与 ID，两边各自实现" }
+            { "id": "vehicle.spawnList", "renderer": "native" }
           ]
         }
       ]

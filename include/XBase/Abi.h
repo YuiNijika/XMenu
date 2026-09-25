@@ -6,7 +6,7 @@
 
 #include <cstdint>
 
-#define XBASE_ABI_VERSION 1u
+#define XBASE_ABI_VERSION 2u
 #define XBASE_GET_RUNTIME_NAME "xbaseGetRuntime"
 
 // 只有共享运行时工程会定义 XBASE_RUNTIME_DLL，其余工程把入口当成普通声明
@@ -93,6 +93,12 @@ struct XBaseRuntime {
     void (*drawRect)(float x1, float y1, float x2, float y2, std::uint32_t color, float thickness);
     void (*drawRectFilled)(float x1, float y1, float x2, float y2, std::uint32_t color);
     void (*drawText)(float x, float y, std::uint32_t color, const char* value);
+
+    // v2 追加。版本查询。字符串写入调用方缓冲区并返回需要的长度，
+    // 缓冲区不足时只报长度不写入；数字编码与 Version.h 的 kVersionNumber 同一约定。
+    // mod 判断最低运行环境用 versionNumber，不要解析字符串
+    int (*versionString)(char* buffer, std::uint32_t capacity);
+    std::uint32_t (*versionNumber)();
 };
 
 } // extern "C"

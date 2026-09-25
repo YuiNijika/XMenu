@@ -11,7 +11,7 @@
 #include "ui/Menu.h"
 #include "ui/MenuState.h"
 #include "ui/UiSchema.h"
-#include "utils/BuildInfo.h"
+#include "../Identity.h"
 #include "utils/I18n.h"
 #include "utils/AppConfig.h"
 #include "utils/DataManager.h"
@@ -24,6 +24,7 @@
 #include <XBase/Platform.h>
 #include <XBase/Player.h>
 #include <XBase/UI.h>
+#include <XBase/Version.h>
 #include <XBase/Visual.h>
 #include <XBase/WebBridge.h>
 #include <XBase/WebView.h>
@@ -61,8 +62,8 @@ bool s_enablePending = false;
 // 默认位置与大小对齐 XMenu 0.0.4-rc 的主窗口，网页可拖动标题栏移动、拖右下角改尺寸
 constexpr float PanelDefaultX = 60.0f;
 constexpr float PanelDefaultY = 60.0f;
-constexpr float PanelDefaultWidth = 780.0f;
-constexpr float PanelDefaultHeight = 520.0f;
+constexpr float PanelDefaultWidth = 880.0f;
+constexpr float PanelDefaultHeight = 600.0f;
 constexpr float PanelMinWidth = 480.0f;
 constexpr float PanelMinHeight = 360.0f;
 
@@ -122,9 +123,10 @@ std::string AppUrl() {
 
 XBase::Json::Value InfoValue() {
     XBase::Json::Value info;
-    info.Set("version", XBase::Json::Value(BuildInfo::Version));
-    info.Set("author", XBase::Json::Value(BuildInfo::Author));
-    info.Set("url", XBase::Json::Value(BuildInfo::Url));
+    info.Set("version", XBase::Json::Value(ModIdentity::Version));
+    info.Set("xbaseVersion", XBase::Json::Value(XBase::kVersionString));
+    info.Set("author", XBase::Json::Value(ModIdentity::Author));
+    info.Set("url", XBase::Json::Value(ModIdentity::Url));
     info.Set("ui", XBase::Json::Value(s_active ? "react" : "imgui"));
     info.Set("lang", XBase::Json::Value(I18n::GetCurrentLanguageCode()));
     return info;
@@ -676,10 +678,10 @@ void Install() {
 
     XBase::WebBridge::RegisterMethod("app.info", [](const XBase::Json::Value&) {
         XBase::Json::Value result;
-        result.Set("name", XBase::Json::Value(BuildInfo::Name));
-        result.Set("version", XBase::Json::Value(BuildInfo::Version));
-        result.Set("author", XBase::Json::Value(BuildInfo::Author));
-        result.Set("url", XBase::Json::Value(BuildInfo::Url));
+        result.Set("name", XBase::Json::Value(ModIdentity::Name));
+        result.Set("version", XBase::Json::Value(ModIdentity::Version));
+        result.Set("author", XBase::Json::Value(ModIdentity::Author));
+        result.Set("url", XBase::Json::Value(ModIdentity::Url));
         result.Set("github", XBase::Json::Value(XMENU_GITHUB));
         return result;
     });

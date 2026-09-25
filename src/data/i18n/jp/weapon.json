@@ -45,6 +45,8 @@
   "weapon.bulletMaxTargets": "最大ターゲット数",
   "weapon.bulletThroughWalls": "弾貫通",
   "weapon.getWeapon": "武器取得",
+  "weapon.quickGet": "クイック取得",
+  "weapon.giveOptions": "取得オプション",
   "weapon.ammo": "弾薬",
   "weapon.typeId": "武器タイプ ID",
   "weapon.modelId": "武器モデル ID",

@@ -13,7 +13,7 @@
 #include <vector>
 
 extern const bool XMENU_DEBUG_MODE;
-extern const char* XMENU_URL;
+#include "../Identity.h"
 extern const char* XMENU_GITHUB;
 
 namespace {
@@ -325,8 +325,8 @@ namespace {
         }
 
         releaseUrl = GtamodxPageUrl;
-        if (XMENU_URL && XMENU_URL[0] != '\0') {
-            releaseUrl = XMENU_URL;
+        if (!ModIdentity::Url.empty()) {
+            releaseUrl = ModIdentity::Url;
         }
         return true;
     }

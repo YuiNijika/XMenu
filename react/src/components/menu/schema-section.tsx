@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Slider } from '@/components/ui/slider'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { runActionQuiet } from '@/lib/actions'
@@ -36,6 +37,13 @@ function gamesOk(games: string[] | undefined, game: string | undefined): boolean
   return game ? games.includes(game) : false
 }
 
+// 只在单一界面出现的分区与控件。surfaces 省略表示两边都画，
+// 设置页里 ImGui 菜单的外观与主题就不该出现在网页界面
+function surfaceOk(surfaces: string[] | undefined): boolean {
+  if (!surfaces || surfaces.length === 0) return true
+  return surfaces.includes('react')
+}
+
 // 按界面注册表绘制一个分区。能力表由宿主随注册表一起返回，
 // 因此这里的门控与 ImGui 用的是同一份判断，不会出现两边不一致
 export function SchemaSection({ payload, report, tabId, pageId, sectionId, visible = true }: SchemaSectionProps) {
@@ -50,7 +58,10 @@ export function SchemaSection({ payload, report, tabId, pageId, sectionId, visib
   const usable = section ? capabilityOk(payload, section.capability) : true
   const controls = section
     ? (section.controls ?? []).filter(
-        (control) => gamesOk(control.games, report?.game) && capabilityOk(payload, control.capability),
+        (control) =>
+          surfaceOk(control.surfaces) &&
+          gamesOk(control.games, report?.game) &&
+          capabilityOk(payload, control.capability),
       )
     : []
 
@@ -95,7 +106,8 @@ export function SchemaSection({ payload, report, tabId, pageId, sectionId, visib
     }
   }, [stateKeys])
 
-  if (!visible || !section || !gamesOk(section.games, report?.game) || controls.length === 0) return null
+  if (!visible || !section || !surfaceOk(section.surfaces)) return null
+  if (!gamesOk(section.games, report?.game) || controls.length === 0) return null
 
   // 依赖另一项的显隐，取不到被依赖项的值时先显示，避免加载期间控件闪进闪出
   const shown = controls.filter((control) => {
@@ -148,6 +160,22 @@ export function SchemaSection({ payload, report, tabId, pageId, sectionId, visib
   )
 }
 
+// 按 schema 的 format 渲染数值（x%.2f / %.2fx 这类），没有就按类型给默认
+function formatControlValue(control: UiControl, value: number): string {
+  const format = control.format
+  if (!format) {
+    return control.kind === 'int' ? String(Math.round(value)) : value.toFixed(2)
+  }
+  const token = /%(\.\d+)?f/.exec(format)
+  if (!token) {
+    return format
+  }
+  const rendered = token[1]
+    ? value.toFixed(Number(token[1].slice(1)))
+    : String(Math.round(value))
+  return format.replace(token[0], rendered)
+}
+
 function ControlRow({
   control,
   disabled,
@@ -191,7 +219,7 @@ function ControlRow({
       <label className="flex items-center justify-between gap-3 text-sm">
         <span className="min-w-0 truncate">{t(control.labelKey)}</span>
         <select
-          className="h-8 min-w-0 max-w-[60%] rounded-md border border-input bg-transparent px-2 text-sm"
+          className="h-8 min-w-0 max-w-[60%] rounded-md border border-input bg-background px-2 text-sm text-foreground"
           value={value === undefined ? '' : String(value)}
           disabled={disabled}
           onChange={(event) => {
@@ -211,12 +239,53 @@ function ControlRow({
   }
 
   if (control.kind === 'float' || control.kind === 'int') {
+    const numeric = typeof value === 'number' ? value : Number(text)
+    const bounded = control.min !== undefined && control.max !== undefined && control.max > control.min
+
+    // 有边界的走拖动条：拖动时只更新本地数值，松手才提交宿主，来回拖不会被回写打断
+    if (bounded) {
+      const min = control.min as number
+      const max = control.max as number
+      const step = control.step ?? (control.kind === 'int' ? 1 : 0.05)
+      const current = Number.isNaN(numeric) ? min : Math.min(max, Math.max(min, numeric))
+      return (
+        <div className="text-sm">
+          <div className="flex items-center justify-between gap-3">
+            <span className="min-w-0 truncate">{t(control.labelKey)}</span>
+            <span className="shrink-0 tabular-nums text-muted-foreground">
+              {formatControlValue(control, current)}
+            </span>
+          </div>
+          <Slider
+            className="mt-1.5"
+            min={min}
+            max={max}
+            step={step}
+            value={[current]}
+            disabled={disabled}
+            onValueChange={(next) => {
+              const updated = Array.isArray(next) ? next[0] : next
+              if (typeof updated !== 'number') return
+              onValue(updated)
+            }}
+            onValueCommitted={(next) => {
+              const updated = Array.isArray(next) ? next[0] : next
+              if (typeof updated !== 'number') return
+              onValue(updated)
+              void runActionQuiet('ui.set', { id: control.id, value: updated })
+            }}
+          />
+        </div>
+      )
+    }
+
+    // 没有边界的数值才用输入框
     return (
       <div className="flex items-center gap-2 text-sm">
         <span className="min-w-0 flex-1 truncate">{t(control.labelKey)}</span>
         <Input
           className="w-20"
-          inputMode="numeric"
+          inputMode={control.kind === 'int' ? 'numeric' : 'decimal'}
           value={text}
           disabled={disabled}
           onChange={(event) => setText(event.target.value)}

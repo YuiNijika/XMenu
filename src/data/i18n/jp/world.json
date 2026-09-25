@@ -63,7 +63,6 @@
   "weather.sunny": "晴れ",
   "weather.rainy": "雨",
   "weather.cloudy": "曇り",
-  "weather.foggy": "霧",
   "weather.sunny_la": "LA 晴れ",
   "weather.extrasunny_smog_la": "LA スモッグ快晴",
   "weather.sunny_smog_la": "LA スモッグ晴れ",
@@ -88,5 +87,6 @@
   "weather.extracolours_2": "特殊カラー 2",
   "weather.extrasunny_la": "LA 快晴",
   "weather.hurricane": "ハリケーン",
-  "weather.extracolours": "特殊カラー"
+  "weather.extracolours": "特殊カラー",
+  "world.environment": "環境"
 }

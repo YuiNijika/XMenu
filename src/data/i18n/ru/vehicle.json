@@ -338,5 +338,6 @@
   "vehicle.sectionDoors": "Двери и места",
   "vehicle.sectionActions": "Быстрые действия",
   "vehicle.sectionAutoDrive": "Автовождение",
-  "vehicle.sectionSpawnOptions": "Опции создания"
+  "vehicle.sectionSpawnOptions": "Опции создания",
+  "vehicle.doors": "Двери"
 }

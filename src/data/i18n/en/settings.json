@@ -30,6 +30,7 @@
   "settings.exportFailed": "Export failed; check path permissions",
   "settings.runtime": "Runtime windows",
   "settings.overlay": "Overlay settings",
+  "settings.basic": "Basic settings",
   "settings.overlayHint": "Controls Overlay content and detail mode. Changes are saved immediately for the current game.",
   "settings.actionHotkeys": "Action hotkeys",
   "settings.hotkeyHint": "Click Set to open the listener. Press a key, then click Apply to save. Backspace/Delete clears.",

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -23,7 +22,6 @@ export function VisualPage({ report }: PageProps) {
   const [strength, setStrength] = useState('1')
   const [schema, setSchema] = useState<UiSchemaPayload | null>(null)
 
-  // 界面注册表只取一次，网页端与 ImGui 从此共用同一份控件与能力门控
   useEffect(() => {
     let alive = true
     void fetchUiSchema()
@@ -37,17 +35,7 @@ export function VisualPage({ report }: PageProps) {
   }, [])
 
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('tab.visual')}</CardTitle>
-          <CardDescription>{t('visual.squareRadarHint')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-xs text-muted-foreground">{t('visual.sectionDisplay')}</p>
-        </CardContent>
-      </Card>
-
+    <div className="grid gap-5 md:grid-cols-2">
       <Card>
         <CardHeader>
           <CardTitle>{t('visual.applyFilter')}</CardTitle>
@@ -77,22 +65,10 @@ export function VisualPage({ report }: PageProps) {
         </CardContent>
       </Card>
 
-      <Card className="lg:col-span-2">
-        <CardHeader>
-          <CardTitle>{t('visual.radar')}</CardTitle>
-          <CardDescription>{t('visual.listHint')}</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-2">
-          <Badge variant="secondary" className="justify-self-start md:col-span-2">
-            {report?.gameName ?? t('react.unknown')}
-          </Badge>
-        </CardContent>
-      </Card>
-
       {schema ? (
-        <Card className="lg:col-span-2">
+        <Card className="md:col-span-2">
           <CardHeader>
-            <CardTitle>{t('common.toggles')}</CardTitle>
+            <CardTitle>{t('tab.visual')}</CardTitle>
             <CardDescription>{t('react.uiHint')}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">

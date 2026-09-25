@@ -61,7 +61,8 @@ export function KeyBrowser({ prefix, game, disabled, max = MaxVisible, onPick }:
           className="h-8 w-44"
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}
-          placeholder={t('common.search')}
+          placeholder={t('react.search')}
+          aria-label={t('react.search')}
         />
         <Button variant={group ? 'outline' : 'default'} size="sm" onClick={() => setGroup('')}>
           {t('common.toggles')}
