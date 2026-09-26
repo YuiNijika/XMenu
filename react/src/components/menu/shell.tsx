@@ -13,8 +13,11 @@ import {
   Globe2,
   Info,
   MapPin,
+  Monitor,
+  MoonStar,
   Palette,
   Settings2,
+  SunMedium,
   User,
   Users,
   XIcon,
@@ -26,10 +29,13 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ACCENT_OPTIONS, useAppearancePrefs } from '@/lib/appearance'
+import { ACCENT_OPTIONS, THEME_LABEL_KEYS, THEME_MODES } from '@/lib/appearance'
+import { useAppearance } from '@/lib/appearance-provider'
 
 export type MenuPage = {
   id: string
@@ -387,10 +393,16 @@ export function Shell({ pages, activePage, onSelect, title, subtitle, game, vers
   )
 }
 
-// 标题栏调色板：强调色预设 + 自定义色相，和 MusicStorm 的调色板一致，只发 --accent-hue
+// 标题栏调色板：明暗 + 强调色预设 + 自定义色相，和 MusicStorm 的调色板一致，只发 --accent-hue
+const THEME_ICONS = {
+  system: Monitor,
+  light: SunMedium,
+  dark: MoonStar,
+} as const
+
 function PaletteMenu() {
   const { t } = useI18n()
-  const [prefs, setPrefs] = useAppearancePrefs()
+  const { prefs, theme, setTheme, setAccent, setCustomHue } = useAppearance()
   const hue = prefs.accent === 'custom' ? prefs.customHue : 260
 
   return (
@@ -406,6 +418,32 @@ function PaletteMenu() {
       <DropdownMenuContent align="end" sideOffset={8} className="w-64 p-3">
         <DropdownMenuGroup>
           <DropdownMenuLabel className="px-0 text-[11px] text-muted-foreground">
+            {t('react.theme')}
+          </DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={theme}
+            onValueChange={(value) => {
+              if (value === 'light' || value === 'dark' || value === 'system') {
+                setTheme(value)
+              }
+            }}
+          >
+            {THEME_MODES.map((mode) => {
+              const Icon = THEME_ICONS[mode]
+              return (
+                <DropdownMenuRadioItem key={mode} value={mode} className="cursor-pointer">
+                  <Icon className="mr-1.5 size-3.5" aria-hidden="true" />
+                  {t(THEME_LABEL_KEYS[mode])}
+                </DropdownMenuRadioItem>
+              )
+            })}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuGroup>
+
+        <DropdownMenuSeparator className="my-3" />
+
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="px-0 text-[11px] text-muted-foreground">
             {t('react.accent')}
           </DropdownMenuLabel>
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -418,7 +456,7 @@ function PaletteMenu() {
                   title={t(option.labelKey)}
                   aria-label={t(option.labelKey)}
                   aria-pressed={selected}
-                  onClick={() => setPrefs((previous) => ({ ...previous, accent: option.id }))}
+                  onClick={() => setAccent(option.id)}
                   className={cn(
                     'h-7 w-7 cursor-pointer rounded-full transition-transform active:scale-90',
                     'ring-offset-2 ring-offset-popover',
@@ -447,13 +485,7 @@ function PaletteMenu() {
             step={1}
             value={hue}
             aria-label={t('react.accentCustom')}
-            onChange={(event) =>
-              setPrefs((previous) => ({
-                ...previous,
-                accent: 'custom',
-                customHue: Number(event.currentTarget.value),
-              }))
-            }
+            onChange={(event) => setCustomHue(Number(event.currentTarget.value))}
             className="mt-1.5 w-full cursor-pointer"
             style={{ accentColor: 'oklch(0.72 0.14 var(--accent-hue))' }}
           />

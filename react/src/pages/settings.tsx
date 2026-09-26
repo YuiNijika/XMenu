@@ -16,7 +16,8 @@ import {
   type UiSchemaPayload,
 } from '@/lib/bridge'
 import { useI18n } from '@/lib/i18n'
-import { ACCENT_OPTIONS, useAppearancePrefs } from '@/lib/appearance'
+import { ACCENT_OPTIONS, THEME_LABEL_KEYS, THEME_MODES } from '@/lib/appearance'
+import { useAppearance } from '@/lib/appearance-provider'
 import { cn } from 'cn'
 
 type WindowModeState = {
@@ -205,7 +206,7 @@ function AppearanceTab({
   schema: UiSchemaPayload | null
 }) {
   const { t } = useI18n()
-  const [prefs, setPrefs] = useAppearancePrefs()
+  const { prefs, theme, setTheme, setAccent, setCustomHue } = useAppearance()
   const toastManager = useToastManager()
   const hue = prefs.accent === 'custom' ? prefs.customHue : 260
   const ModeKeys = [
@@ -236,6 +237,26 @@ function AppearanceTab({
           <CardDescription>{t('react.appearanceHint')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
+          {/* 明暗：与顶部调色板同一份状态，跟随系统时按系统设置变化 */}
+          <div className="flex flex-col gap-2">
+            <div className="text-sm font-medium">{t('react.theme')}</div>
+            <div className="flex flex-wrap gap-2">
+              {THEME_MODES.map((mode) => (
+                <Button
+                  key={mode}
+                  size="sm"
+                  variant={theme === mode ? 'default' : 'outline'}
+                  onClick={() => setTheme(mode)}
+                >
+                  {t(THEME_LABEL_KEYS[mode])}
+                </Button>
+              ))}
+            </div>
+            <div className="text-xs text-muted-foreground">{t('react.themeHint')}</div>
+          </div>
+
+          <Separator />
+
           <div className="flex flex-wrap items-center gap-2">
             {ACCENT_OPTIONS.map((option) => (
               <button
@@ -243,7 +264,7 @@ function AppearanceTab({
                 type="button"
                 aria-pressed={prefs.accent === option.id}
                 title={t(option.labelKey)}
-                onClick={() => setPrefs((previous) => ({ ...previous, accent: option.id }))}
+                onClick={() => setAccent(option.id)}
                 className={cn(
                   'h-8 w-8 rounded-full border-2 transition-transform active:scale-90',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -272,7 +293,7 @@ function AppearanceTab({
               onValueChange={(next) => {
                 const updated = Array.isArray(next) ? next[0] : next
                 if (typeof updated !== 'number') return
-                setPrefs((previous) => ({ ...previous, accent: 'custom', customHue: updated }))
+                setCustomHue(updated)
               }}
             />
           </div>

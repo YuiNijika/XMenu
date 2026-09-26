@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { call, isBridgeAvailable, rawCall, type CapabilityReport } from '@/lib/bridge'
 import { I18nProvider, useI18n } from '@/lib/i18n'
 import { useCapabilities } from '@/lib/hooks'
+import { AppearanceProvider } from '@/lib/appearance-provider'
 import './App.css'
 
 const Pages: (MenuPage & { titleKey: string; subtitleKey: string })[] = [
@@ -33,7 +34,9 @@ const Pages: (MenuPage & { titleKey: string; subtitleKey: string })[] = [
 function App() {
   return (
     <I18nProvider>
-      <MenuApp />
+      <AppearanceProvider>
+        <MenuApp />
+      </AppearanceProvider>
     </I18nProvider>
   )
 }
@@ -45,12 +48,8 @@ function MenuApp() {
   const { report, error } = useCapabilities()
   const bridgeReady = useMemo(() => isBridgeAvailable(), [])
 
-  // 面板跟着产品默认主题走深色，原生控件与滚动条才会一起变深，
-  // 语言也要写到 html 上，读屏与自动翻译才认得当前语言
-  useEffect(() => {
-    document.documentElement.classList.add('dark')
-  }, [])
-
+  // 深浅由 AppearanceProvider 按偏好落到 html 上，这里只负责语言，
+  // 写到 html 上读屏与自动翻译才认得当前语言
   useEffect(() => {
     document.documentElement.lang = lang
   }, [lang])

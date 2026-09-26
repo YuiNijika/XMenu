@@ -62,8 +62,8 @@ bool s_enablePending = false;
 // 默认位置与大小对齐 XMenu 0.0.4-rc 的主窗口，网页可拖动标题栏移动、拖右下角改尺寸
 constexpr float PanelDefaultX = 60.0f;
 constexpr float PanelDefaultY = 60.0f;
-constexpr float PanelDefaultWidth = 880.0f;
-constexpr float PanelDefaultHeight = 600.0f;
+constexpr float PanelDefaultWidth = 1000.0f;
+constexpr float PanelDefaultHeight = 660.0f;
 constexpr float PanelMinWidth = 480.0f;
 constexpr float PanelMinHeight = 360.0f;
 

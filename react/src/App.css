@@ -126,7 +126,12 @@
   }
 }
 @layer base {
+  /* 原生控件与滚动条跟着明暗走，深色下才是深滚动条 */
   :root {
+    color-scheme: light;
+  }
+
+  .dark {
     color-scheme: dark;
   }
 
