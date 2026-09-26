@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SchemaSection } from '@/components/menu/schema-section'
-import { Input } from '@/components/ui/input'
 import { DataBrowser } from '@/components/menu/data-browser'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { runAction } from '@/lib/actions'
@@ -14,26 +13,12 @@ import {
 } from '@/lib/bridge'
 import { useI18n } from '@/lib/i18n'
 
-// 武器编号按机型区分，只列出该机型武器表里真实存在的条目
-const QuickWeapons = [
-  { game: 'sa', type: 22, label: 'weapon.colt45' },
-  { game: 'sa', type: 24, label: 'weapon.desert_eagle' },
-  { game: 'sa', type: 30, label: 'weapon.ak47' },
-  { game: 'vc', type: 17, label: 'weapon.colt45' },
-  { game: 'vc', type: 18, label: 'weapon.python' },
-  { game: 'vc', type: 20, label: 'weapon.mp5' },
-  { game: 'iii', type: 17, label: 'weapon.colt45' },
-  { game: 'iii', type: 18, label: 'weapon.uzi' },
-  { game: 'iii', type: 19, label: 'weapon.m16' },
-]
-
 type PageProps = {
   report: CapabilityReport | null
 }
 
 export function WeaponPage({ report }: PageProps) {
   const { t } = useI18n()
-  const [aimPart, setAimPart] = useState('1')
   const [schema, setSchema] = useState<UiSchemaPayload | null>(null)
 
   useEffect(() => {
@@ -121,26 +106,6 @@ export function WeaponPage({ report }: PageProps) {
               </Card>
             ) : null}
 
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle>{t('weapon.aimPart')}</CardTitle>
-                <CardDescription>{t('weapon.bulletTrack')}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-wrap items-end gap-3">
-                {/* 优先锁定部位是单选，注册表没有对应控件类型，这里单独下发 */}
-                <div className="w-28">
-                  <div className="mb-2 text-xs text-muted-foreground">{t('weapon.aimPart')}</div>
-                  <Input value={aimPart} onChange={(event) => setAimPart(event.target.value)} inputMode="numeric" />
-                </div>
-                <Button
-                  variant="outline"
-                  disabled={!isUsable(report, 'bulletAssist.config')}
-                  onClick={() => void runAction('weapon.aimPart', { value: Number(aimPart) || 1 }, 'weapon.aimPart')}
-                >
-                  {t('react.apply')}
-                </Button>
-              </CardContent>
-            </Card>
           </div>
         </TabsContent>
 
@@ -163,25 +128,6 @@ export function WeaponPage({ report }: PageProps) {
                 </CardContent>
               </Card>
             ) : null}
-
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('weapon.quickGet')}</CardTitle>
-                <CardDescription>{t('react.actionsHint')}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-wrap gap-2">
-                {QuickWeapons.filter((item) => item.game === report?.game).map((item) => (
-                  <Button
-                    key={item.label}
-                    variant="outline"
-                    disabled={!isUsable(report, 'weapon.give')}
-                    onClick={() => void runAction('weapon.give', { type: item.type, ammo: 999 }, item.label)}
-                  >
-                    {t(item.label)}
-                  </Button>
-                ))}
-              </CardContent>
-            </Card>
 
             <Card className="md:col-span-2">
               <CardHeader>

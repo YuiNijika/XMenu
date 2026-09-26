@@ -277,26 +277,7 @@ namespace Pages::Weapon {
                     XBase::UI::Columns(1);
                 }
 
-                // 优先锁定部位是单选，注册表没有对应的控件类型，保持原生
-                if (hasBulletAssist && MenuState::WeaponBulletTrack) {
-                    XBase::UI::Spacing();
-                    XBase::UI::Text(T("weapon.aimPart"));
-                    XBase::UI::Columns(4, nullptr, false);
-                    XBase::UI::Choice(T("weapon.aimHead"), MenuState::WeaponBulletAimPart, 0);
-                    XBase::UI::NextColumn();
-                    XBase::UI::Choice(T("weapon.aimChest"), MenuState::WeaponBulletAimPart, 1);
-                    XBase::UI::NextColumn();
-                    XBase::UI::Choice(T("weapon.aimBelly"), MenuState::WeaponBulletAimPart, 2);
-                    XBase::UI::NextColumn();
-                    XBase::UI::Choice(T("weapon.aimLegs"), MenuState::WeaponBulletAimPart, 3);
-                    XBase::UI::Columns(1);
-                    if (MenuState::WeaponBulletAimPart < 0) {
-                        MenuState::WeaponBulletAimPart = 0;
-                    }
-                    if (MenuState::WeaponBulletAimPart > 3) {
-                        MenuState::WeaponBulletAimPart = 3;
-                    }
-                }
+                // 优先锁定部位已登记成下拉放进 bulletAssist 分区，由注册表绘制
 
                 if (weaponStatsChanged) {
                     Controllers::Weapon::ResetStats();

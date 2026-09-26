@@ -65,6 +65,10 @@ def main() -> int:
     ui = read(ui_source)
     controllers = controller_text()
 
+    # 先建好收集容器：下面版本比对会用到，放在后面会在版本不一致时抛 UnboundLocalError
+    errors: list[str] = []
+    notes: list[str] = []
+
     # 注册表的版本号要跟 mod 清单 package.json 的 version 对齐
     manifest_path = root / "src" / "data" / "package.json"
     if manifest_path.is_file():
@@ -92,8 +96,6 @@ def main() -> int:
     for pattern in live_registers:
         live |= collect(pattern, controllers)
 
-    errors: list[str] = []
-    notes: list[str] = []
     counts: dict[str, int] = {}
     labels: list[tuple[str, str, str]] = []
 

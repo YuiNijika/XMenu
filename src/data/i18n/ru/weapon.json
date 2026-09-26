@@ -45,7 +45,6 @@
   "weapon.bulletMaxTargets": "Макс. целей",
   "weapon.bulletThroughWalls": "Пули сквозь стены",
   "weapon.getWeapon": "Получить оружие",
-  "weapon.quickGet": "Быстрая выдача",
   "weapon.giveOptions": "Опции выдачи",
   "weapon.ammo": "Патроны",
   "weapon.typeId": "ID типа оружия",

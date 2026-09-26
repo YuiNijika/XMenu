@@ -269,6 +269,23 @@ void Install() {
             AppConfig::Save();
         });
 
+    // 优先锁定部位：四个部位对应 0–3，选项与 ImGui 原来的四个单选完全一致，
+    // 登记成下拉后两边共用同一份选项与同一个 MenuState
+    UiSchema::RegisterSelectSource("weapon.aimPart",
+        [] {
+            std::vector<UiSchema::SelectOption> options;
+            options.push_back({"0", "weapon.aimHead", true});
+            options.push_back({"1", "weapon.aimChest", true});
+            options.push_back({"2", "weapon.aimBelly", true});
+            options.push_back({"3", "weapon.aimLegs", true});
+            return options;
+        },
+        [] { return std::to_string(MenuState::WeaponBulletAimPart); },
+        [](const std::string& value) {
+            const int parsed = std::atoi(value.c_str());
+            MenuState::WeaponBulletAimPart = std::min(std::max(parsed, 0), 3);
+        });
+
     // 一个方法带多个布尔参数时按参数名落到各自的 MenuState 字段
     struct StateFlagKey {
         const char* method;
@@ -564,22 +581,7 @@ void Install() {
         return result;
     });
 
-    XBase::WebBridge::RegisterMethod("weapon.aimPart", [](const XBase::Json::Value& params) {
-        bool changed = false;
-        if (!params["value"].IsNull()) {
-            MenuState::WeaponBulletAimPart = params["value"].AsInt(MenuState::WeaponBulletAimPart);
-            changed = true;
-        } else if (!params["enable"].IsNull()) {
-            MenuState::WeaponBulletAimPart = params["enable"].AsInt(MenuState::WeaponBulletAimPart);
-            changed = true;
-        }
-        if (changed) {
-            MenuState::WeaponBulletAimPart = std::min(std::max(MenuState::WeaponBulletAimPart, 0), 3);
-        }
-        XBase::Json::Value result;
-        result.Set("value", XBase::Json::Value(MenuState::WeaponBulletAimPart));
-        return result;
-    });
+    // 优先锁定部位改走注册表的下拉控件，读写都经过登记的 source，这里不再单独开桥接方法
 
     XBase::WebBridge::RegisterMethod("ui.schema", [](const XBase::Json::Value&) {
         return UiSchema::SchemaPayload();
