@@ -193,7 +193,7 @@ if errorlevel 1 goto fail
 
 rem 共享运行时与 mod 是配套的（ABI 版本一起升），构建时一并暂存到安装集，
 rem 否则发布包里的旧运行库会让 mod 报「ABI 版本不符」
-set "XBASE_RUNTIME_DIR=..\XBase\build\bin\Release"
+set "XBASE_RUNTIME_DIR=..\XBase\build\bin\Release\XBase\Library"
 if not exist "!XBASE_RUNTIME_DIR!\XBaseSA.dll" (
     echo [Error] Missing XBase shared runtime: !XBASE_RUNTIME_DIR!\XBaseSA.dll
     echo         Build the XBase project first, then build XMenu.
@@ -208,6 +208,20 @@ for %%D in (SA VC III) do (
     )
 )
 
+rem 通用面板随 XBase 一起分发，各模组挂进来就行，不必自带前端
+set "XBASE_PANEL_DIR=..\XBase\build\bin\Release\XBase\Library\panel"
+if exist "!XBASE_PANEL_DIR!\index.html" (
+    if not exist "build\bin\XBase\Library\panel" mkdir "build\bin\XBase\Library\panel"
+    xcopy "!XBASE_PANEL_DIR!\*" "build\bin\XBase\Library\panel\" /E /I /Y >nul
+    if errorlevel 1 (
+        echo [Error] Failed to stage the XBase panel
+        goto fail
+    )
+    echo [Info] Staged XBase panel to build\bin\XBase\Library\panel
+) else (
+    echo [Warning] XBase panel not found at !XBASE_PANEL_DIR!; build it with npm run build inside XBase\panel.
+)
+
 echo.
 echo Build completed successfully.
 echo Output files:
@@ -216,6 +230,7 @@ echo   build\bin\XMenuVC.asi
 echo   build\bin\XMenuIII.asi
 echo   build\bin\XMenuInstaller.exe
 echo   build\bin\XBase\Library\XBase{SA,VC,III}.dll
+echo   build\bin\XBase\Library\panel\index.html
 echo   build\bin\XBase\Mods\XMenu\data\{sa,vc,iii}\*.json
 echo   build\bin\XBase\Mods\XMenu\data\i18n\{lang}\index.json
 echo.

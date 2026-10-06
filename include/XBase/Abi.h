@@ -4,10 +4,15 @@
 // 双方都只把它当作纯数据结构使用，不需要导入导出宏，
 // mod 侧按名字取函数地址拿到函数表，共享库以 C 链接方式暴露唯一的入口函数
 
+#include <cstddef>
 #include <cstdint>
 
-#define XBASE_ABI_VERSION 2u
+#define XBASE_ABI_VERSION 3u
 #define XBASE_GET_RUNTIME_NAME "xbaseGetRuntime"
+
+// 面板段的起点。共享库可能比 mod 的头文件旧，调用方拿这个偏移判断表里有没有这一段，
+// 判断比直接读函数指针安全，缺字段时读出来的是别人的函数
+#define XBASE_ABI_PANEL_OFFSET offsetof(XBaseRuntime, panelMount)
 
 // 只有共享运行时工程会定义 XBASE_RUNTIME_DLL，其余工程把入口当成普通声明
 #if defined(XBASE_RUNTIME_DLL)
@@ -99,6 +104,20 @@ struct XBaseRuntime {
     // mod 判断最低运行环境用 versionNumber，不要解析字符串
     int (*versionString)(char* buffer, std::uint32_t capacity);
     std::uint32_t (*versionNumber)();
+
+    // v3 追加。通用网页面板，界面结构以 JSON 传入，控件读写走回调。
+    // 值统一用 double：开关是 0 与 1，下拉是 options 下标，动作单独绑一个回调。
+    // 这样 C 接口上不必传递任何 STL 容器，跨模块也就没有 CRT 堆不匹配的问题
+    int (*panelMount)(const char* specJson);
+    void (*panelUnmount)(const char* modId);
+    int (*panelBindValue)(const char* controlId, double (*read)(void*), void (*write)(double, void*), void* userData);
+    int (*panelBindAction)(const char* controlId, void (*run)(void*), void* userData);
+    void (*panelNotifyChanged)(const char* controlId, double value);
+    int (*panelAvailable)();
+    void (*panelShow)(const char* modId);
+    void (*panelHide)();
+    int (*panelIsVisible)();
+    void (*panelSetHotkey)(int key, unsigned int modifiers);
 };
 
 } // extern "C"

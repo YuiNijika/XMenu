@@ -19,6 +19,7 @@ enum class Domain : std::uint32_t {
     Cheats = 1u << 11,
     VehicleEffects = 1u << 12,
     WebView = 1u << 13,
+    Panel = 1u << 14,
 };
 
 using DomainMask = std::uint32_t;
@@ -41,7 +42,8 @@ constexpr DomainMask AllDomains =
     DomainBit(Domain::Camera) |
     DomainBit(Domain::Cheats) |
     DomainBit(Domain::VehicleEffects) |
-    DomainBit(Domain::WebView);
+    DomainBit(Domain::WebView) |
+    DomainBit(Domain::Panel);
 
 extern bool s_gameInitialized;
 

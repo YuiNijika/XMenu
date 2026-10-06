@@ -25,6 +25,7 @@ enum class Capability {
     Hooks,
     Ui,
     WebView,
+    Panel,
 };
 
 enum class FeatureCapability {

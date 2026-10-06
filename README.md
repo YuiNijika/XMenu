@@ -115,7 +115,7 @@ Neon, freecam, top-down camera, random cheats, and many scene tools are SA-orien
 
 1. Install requirements.
 2. Copy `XMenuSA.asi` (matching your game: `XMenuVC.asi` / `XMenuIII.asi`) into the game's `plugins` folder (or game root).
-3. Copy the `XBase` folder (contains `Mods\XMenu` with data and `ui.html`) into the game root.
+3. Copy the `XBase` folder into the game root. It holds `Library\` (shared runtime and the WebView2 loader) and `Mods\XMenu\` (data, `ui.html`, and `package.json`).
 4. For GTA III / Vice City, also copy `d3d8.dll`.
 5. Start the game and press `M`.
 
@@ -133,20 +133,21 @@ GameRoot/
 │  │  └─ WebView2Loader.dll
 │  └─ Mods/
 │     └─ XMenu/
-│        ├─ data/
-│        │  ├─ sa/
-│        │  ├─ vc/
-│        │  ├─ iii/
-│        │  └─ i18n/
-│        └─ ui.html
+│        ├─ package.json    mod manifest, validated before mount
+│        ├─ ui.html         React UI entry
+│        └─ data/
+│           ├─ sa/
+│           ├─ vc/
+│           ├─ iii/
+│           └─ i18n/
 └─ d3d8.dll
 ```
 
 Runtime files:
 
 ```text
-XMenu/config.json
-XMenu/debug.log
+XBase/Mods/XMenu/config.json
+XBase/Mods/XMenu/debug.log
 ```
 
 `config.json` stores menu state, hotkeys, weapon assist, fire rate, and more.  
@@ -157,7 +158,7 @@ Startup is staged across frames; resource JSON loads on demand.
 Language files:
 
 ```text
-XMenu/data/i18n/<language>/
+XBase/Mods/XMenu/data/i18n/<language>/
 ```
 
 Source:
@@ -172,12 +173,20 @@ Copy an existing language folder, update `index.json`, and translate JSON **valu
 
 Visual Studio, MSVC, Win32; [plugin-sdk](https://github.com/DK22Pac/plugin-sdk) via `PLUGIN_SDK_DIR`; `tools/premake5.exe`.
 
+XBase headers and libs are staged into `include/XBase` and `lib` by XBase's own `Build.bat Release`; both sides must come from the same source and configuration.
+
+The web UI needs Node.js: run `pnpm install && pnpm run build` inside `react/` first, it produces `react/dist/ui.html`.
+
 ```bat
 Build.bat Release --no-pause
 ```
 
 Optional: `Debug` / `Release`, `--toolset v143|v145`, `--no-pause`.  
 `Setup.bat` helps with first-time setup.
+
+Batch files must keep CRLF endings; `cmd` cannot find `call :label` targets when they are LF. `.gitattributes` pins `*.bat` to CRLF, re-checkout or convert before building if the local copy was changed.
+
+A missing `react/dist` only warns and skips the web UI, the asi is still produced, but the React interface will not open.
 
 Output:
 
@@ -186,14 +195,17 @@ build/bin/XMenuSA.asi
 build/bin/XMenuVC.asi
 build/bin/XMenuIII.asi
 build/bin/XMenuInstaller.exe
+build/bin/XBase/Library/XBase{SA,VC,III}.dll
+build/bin/XBase/Mods/XMenu/package.json
+build/bin/XBase/Mods/XMenu/ui.html
 build/bin/XBase/Mods/XMenu/data/**
 build/bin/XBase/Mods/XMenu/data/i18n/**
-build/bin/XBase/Mods/XMenu/ui.html
 ```
 
 | Path | Purpose |
 | --- | --- |
 | `tools/build_i18n_split.py` | Maintain i18n data |
+| `tools/check_ui_registry.py` | Validate registry ids against bridge methods, run it after editing `ui-schema.json` |
 | `tools/dataEditor/` | Python data editor |
 | `tools/build_plugin_sdk.bat` | Build plugin-sdk |
 | `tools/resolve_vc_toolset.ps1` | Resolve MSVC toolset |
@@ -203,15 +215,23 @@ build/bin/XBase/Mods/XMenu/ui.html
 ```text
 XMenu/
 ├─ src/
-│  ├─ controllers/
-│  ├─ data/i18n|sa|vc|iii/
+│  ├─ app/            startup and lifecycle orchestration
+│  ├─ controllers/    UI registry, bridge, feature logic
+│  ├─ ui/             ImGui pages and sections
+│  ├─ integration/    XBase adapter layer
+│  ├─ game/ universal/ utils/ resources/
+│  ├─ data/           i18n, per-game resources, ui-schema.json, package.json
 │  └─ main.cpp
+├─ react/             React web UI source
 ├─ installer/
-├─ include/
+├─ include/XBase/     XBase public headers (staged by XBase build)
+├─ lib/               XBase and plugin-sdk static libs
 ├─ tools/
 ├─ Build.bat / Setup.bat / premake5.lua
 └─ images/
 ```
+
+`src/data/ui-schema.json` is the single description shared by the ImGui and React surfaces. Run `tools/check_ui_registry.py` after changing it.
 
 ## Links
 

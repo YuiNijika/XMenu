@@ -115,7 +115,7 @@ XMenu 是一个面向 GTA III、GTA Vice City、GTA San Andreas 的 ASI 菜单�
 
 1. 安装运行依赖。
 2. 将 `XMenuSA.asi`（按你的游戏选择 `XMenuVC.asi` / `XMenuIII.asi`）放入游戏的 `plugins` 文件夹（或游戏根目录）。
-3. 将 `XBase` 文件夹（内含 `Mods\XMenu`，含数据与 `ui.html`）放入游戏根目录。
+3. 将 `XBase` 文件夹放入游戏根目录，内含 `Library\`（共享运行时与网页视图加载器）与 `Mods\XMenu\`（数据、`ui.html` 与 `package.json`）。
 4. GTA III / Vice City 额外放入 `d3d8.dll`。
 5. 启动游戏，按 `M` 打开菜单。
 
@@ -133,20 +133,21 @@ GameRoot/
 │  │  └─ WebView2Loader.dll
 │  └─ Mods/
 │     └─ XMenu/
-│        ├─ data/
-│        │  ├─ sa/
-│        │  ├─ vc/
-│        │  ├─ iii/
-│        │  └─ i18n/
-│        └─ ui.html
+│        ├─ package.json    模组清单，挂载前校验
+│        ├─ ui.html         React 界面入口
+│        └─ data/
+│           ├─ sa/
+│           ├─ vc/
+│           ├─ iii/
+│           └─ i18n/
 └─ d3d8.dll
 ```
 
 运行后会生成：
 
 ```text
-XMenu/config.json
-XMenu/debug.log
+XBase/Mods/XMenu/config.json
+XBase/Mods/XMenu/debug.log
 ```
 
 `config.json` 保存菜单状态、快捷键、武器辅助与射速等。首次启动会分帧完成 i18n、配置、逻辑与 D3D Hook；资源 JSON 按需加载。
@@ -156,7 +157,7 @@ XMenu/debug.log
 语言文件位于：
 
 ```text
-XMenu/data/i18n/<language>/
+XBase/Mods/XMenu/data/i18n/<language>/
 ```
 
 源码目录：
@@ -208,7 +209,7 @@ src/data/i18n/en/ -> src/data/i18n/ko/
 4. 重新构建，或把语言目录放到：
 
 ```text
-GameRoot/XMenu/data/i18n/ko/
+GameRoot/XBase/Mods/XMenu/data/i18n/ko/
 ```
 
 5. 启动游戏，在设置页切换语言。
@@ -220,6 +221,8 @@ GameRoot/XMenu/data/i18n/ko/
 - Visual Studio，MSVC C++，Win32
 - [plugin-sdk](https://github.com/DK22Pac/plugin-sdk)，环境变量 `PLUGIN_SDK_DIR` 或上级目录自动探测
 - 仓库内 `tools/premake5.exe`
+- XBase 的头与库由 XBase 的 `Build.bat Release` stage 进 `include/XBase` 与 `lib`，两者必须同源同配置
+- 网页界面需要 Node.js，先在 `react/` 下执行 `pnpm install && pnpm run build`，产物是 `react/dist/ui.html`
 
 ```bat
 Build.bat Release --no-pause
@@ -230,6 +233,8 @@ Build.bat Release --no-pause
 
 批处理文件必须保持 CRLF 行尾，`cmd` 在 LF 行尾下会找不到 `call :label` 标签。仓库通过 `.gitattributes` 固定 `*.bat` 为 CRLF；若本地被改成 LF，重新检出或转换行尾后再构建。
 
+`react/dist` 不存在时构建脚本只告警并跳过界面，asi 仍然产出，但网页界面打不开。
+
 构建产物：
 
 ```text
@@ -237,14 +242,17 @@ build/bin/XMenuSA.asi
 build/bin/XMenuVC.asi
 build/bin/XMenuIII.asi
 build/bin/XMenuInstaller.exe
+build/bin/XBase/Library/XBase{SA,VC,III}.dll
+build/bin/XBase/Mods/XMenu/package.json
+build/bin/XBase/Mods/XMenu/ui.html
 build/bin/XBase/Mods/XMenu/data/**
 build/bin/XBase/Mods/XMenu/data/i18n/**
-build/bin/XBase/Mods/XMenu/ui.html
 ```
 
 | 路径 | 说明 |
 | --- | --- |
 | `tools/build_i18n_split.py` | 拆分 / 整理 i18n |
+| `tools/check_ui_registry.py` | 校验界面注册表 id 与桥接方法名，改完 `ui-schema.json` 必须跑 |
 | `tools/dataEditor/` | Python 数据编辑工具 |
 | `tools/build_plugin_sdk.bat` | 构建 plugin-sdk |
 | `tools/resolve_vc_toolset.ps1` | 解析 MSVC 工具集 |
@@ -256,15 +264,23 @@ build/bin/XBase/Mods/XMenu/ui.html
 ```text
 XMenu/
 ├─ src/
-│  ├─ controllers/
-│  ├─ data/i18n|sa|vc|iii/
+│  ├─ app/            启动与生命周期编排
+│  ├─ controllers/    界面注册、桥接、业务逻辑
+│  ├─ ui/             ImGui 页面与分区
+│  ├─ integration/    XBase 接入层
+│  ├─ game/ universal/ utils/ resources/
+│  ├─ data/           i18n、各版本资源、ui-schema.json、package.json
 │  └─ main.cpp
+├─ react/             React 网页界面源码
 ├─ installer/
-├─ include/
+├─ include/XBase/    XBase 公共头（由 XBase 构建 stage）
+├─ lib/              XBase 与 plugin-sdk 的静态库
 ├─ tools/
 ├─ Build.bat / Setup.bat / premake5.lua
 └─ images/
 ```
+
+界面注册表 `src/data/ui-schema.json` 是 ImGui 与 React 两侧共用的唯一描述，改完必须跑 `tools/check_ui_registry.py`。
 
 ## 反馈与关注
 

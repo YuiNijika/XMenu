@@ -29,6 +29,7 @@
 #include "Host.h"
 #include "Platform.h"
 #include "Package.h"
+#include "Panel.h"
 #include "Runtime.h"
 #include "Theme.h"
 #include "UI.h"
