@@ -47,7 +47,11 @@ bool IsChannelToken(const std::string& value);
 bool SatisfiesText(const std::string& requirement, const std::string& runtimeVersion);
 
 // 便捷封装：清单里的 engines.xbase 与 dependencies 逐一校验。
-// 清单不存在视为无约束返回真；存在但解析失败或校验不通过时返回假并给出原因
-bool Validate(const std::string& modName, std::string& failureReason);
+// 清单不存在视为无约束；清单格式错误返回假并给出 failureReason。
+// 版本约束不满足只写 warningReason，仍返回真，允许模组继续启动。
+bool Validate(
+    const std::string& modName,
+    std::string& failureReason,
+    std::string* warningReason = nullptr);
 
 } // namespace XBase::Package
