@@ -1,12 +1,14 @@
 #pragma once
 
 #include <functional>
+#include <map>
 #include <optional>
 #include <string>
 #include <vector>
 
 #include "Capabilities.h"
 #include "Input.h"
+#include "Json.h"
 
 namespace XBase::Panel {
 
@@ -27,6 +29,33 @@ enum class ControlKind {
     MultiSelect,
     Heading,
     Separator,
+    Component,
+};
+
+enum class ComponentBindingKind {
+    Value,
+    Text,
+    Action,
+    Json,
+};
+
+struct ComponentBinding {
+    std::string controlId;
+    std::string property;
+    std::string event;
+    ComponentBindingKind kind = ComponentBindingKind::Value;
+};
+
+// 属性只接受可序列化数据 交互通过已有绑定跨过共享运行时边界
+struct ComponentNode {
+    std::string component;
+    std::string text;
+    Json::Value props;
+    std::vector<ComponentNode> children;
+    std::map<std::string, std::vector<ComponentNode>> slots;
+    std::map<std::string, ComponentNode> templates;
+    std::string textPath;
+    std::vector<ComponentBinding> bindings;
 };
 
 struct Option {
@@ -79,6 +108,8 @@ struct Control {
 
     // 仅下拉使用，读写的值是这里的下标
     std::vector<Option> options;
+
+    ComponentNode component;
 };
 
 struct Section {
