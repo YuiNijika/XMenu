@@ -4,6 +4,7 @@
 #include <string>
 
 #include "Json.h"
+#include "WebView.h"
 
 namespace XBase::WebBridge {
 
@@ -14,10 +15,13 @@ void UnregisterMethod(const std::string& method);
 
 // 网页通过 window.xbase.call 调用 XBase 公共 API，能力不足的方法返回错误
 void Install();
+void Install(WebView::WebViewId id);
 void Shutdown();
+void Shutdown(WebView::WebViewId id);
 bool IsInstalled();
 
 // 原生向网页推事件，网页用 window.xbase.on 订阅
 bool Emit(const std::string& event, const Json::Value& payload);
+bool Emit(WebView::WebViewId id, const std::string& event, const Json::Value& payload);
 
 } // namespace XBase::WebBridge

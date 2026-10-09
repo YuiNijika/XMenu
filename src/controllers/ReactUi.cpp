@@ -28,8 +28,12 @@
 #include <XBase/Visual.h>
 #include <XBase/WebBridge.h>
 #include <XBase/WebView.h>
+#include <XBase/Targeting.h>
+#include "controllers/Targeting.h"
+#include "controllers/Mods.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <cstdlib>
 #include <string>
 
@@ -37,6 +41,7 @@ namespace {
 
 bool s_active = false;
 bool s_installed = false;
+XBase::WebView::WebViewId s_webViewId = XBase::WebView::DefaultInstance;
 
 // 网页消息回调里不能直接隐藏或销毁控制器，动作挂起到游戏线程执行
 enum class PendingAction {
@@ -100,13 +105,13 @@ void ApplyPanelSize(float width, float height) {
     const XBase::Vec2 size = ClampPanelSize(width, height);
     s_panelWidth = size.x;
     s_panelHeight = size.y;
-    XBase::WebView::SetBounds(PanelRect());
+    XBase::WebView::SetBounds(s_webViewId, PanelRect());
 }
 
 void ApplyPanelPosition(float x, float y) {
     s_panelX = x;
     s_panelY = y;
-    XBase::WebView::SetBounds(PanelRect());
+    XBase::WebView::SetBounds(s_webViewId, PanelRect());
 }
 
 constexpr const char* PanelHost = "xmenu.local";
@@ -124,11 +129,12 @@ std::string AppUrl() {
 XBase::Json::Value InfoValue() {
     XBase::Json::Value info;
     info.Set("version", XBase::Json::Value(ModIdentity::Version));
-    info.Set("xbaseVersion", XBase::Json::Value(XBase::kVersionString));
+    info.Set("xbaseVersion", XBase::Json::Value(XBase::GetVersionString()));
     info.Set("author", XBase::Json::Value(ModIdentity::Author));
     info.Set("url", XBase::Json::Value(ModIdentity::Url));
     info.Set("ui", XBase::Json::Value(s_active ? "react" : "imgui"));
     info.Set("lang", XBase::Json::Value(I18n::GetCurrentLanguageCode()));
+    info.Set("fallbackLanguage", XBase::Json::Value(I18n::GetFallbackLanguageCode()));
     return info;
 }
 
@@ -142,7 +148,7 @@ void LeaveReactUi(const char* reason) {
     ReportFallback(reason);
     s_active = false;
     MenuState::ReactUi = false;
-    XBase::WebView::SetVisible(false);
+    XBase::WebView::SetVisible(s_webViewId, false);
 }
 
 } // namespace
@@ -154,6 +160,9 @@ namespace Controllers::ReactUi {
 void Install() {
     if (s_installed) {
         return;
+    }
+    if (s_webViewId == XBase::WebView::DefaultInstance) {
+        s_webViewId = XBase::WebView::Create();
     }
 
     XBase::WebBridge::RegisterMethod("i18n.dictionary", [](const XBase::Json::Value&) {
@@ -173,6 +182,24 @@ void Install() {
 
     XBase::WebBridge::RegisterMethod("menu.info", [](const XBase::Json::Value&) {
         return InfoValue();
+    });
+
+    XBase::WebBridge::RegisterMethod("mods.snapshot", [](const XBase::Json::Value&) {
+        return Controllers::Mods::Snapshot();
+    });
+    XBase::WebBridge::RegisterMethod("mods.request", [](const XBase::Json::Value& params) {
+        Controllers::Mods::Request(params["page"].AsInt(1), params["limit"].AsInt(12), params["type"].AsString());
+        return Controllers::Mods::Snapshot();
+    });
+    XBase::WebBridge::RegisterMethod("mods.open", [](const XBase::Json::Value& params) {
+        XBase::Json::Value result;
+        result.Set("ok", XBase::Json::Value(Controllers::Mods::Open(params["id"].AsString())));
+        return result;
+    });
+    XBase::WebBridge::RegisterMethod("mods.game", [](const XBase::Json::Value&) {
+        XBase::Json::Value result;
+        result.Set("ok", XBase::Json::Value(Controllers::Mods::OpenGame()));
+        return result;
     });
 
     // 注册表里的控件不再各自占一个桥接方法，统一走这三个入口：
@@ -444,6 +471,7 @@ void Install() {
         const std::string code = params["code"].AsString();
         if (!code.empty()) {
             I18n::SetLanguage(code);
+            AppConfig::Save();
         }
         XBase::Json::Value result;
         result.Set("language", XBase::Json::Value(I18n::GetCurrentLanguageCode()));
@@ -578,6 +606,44 @@ void Install() {
         }
         XBase::Json::Value result;
         result.Set("ok", XBase::Json::Value(Controllers::Scene::PlayPlayerAnimation()));
+        return result;
+    });
+
+    XBase::WebBridge::RegisterMethod("targeting.config", [](const XBase::Json::Value& params) {
+        Controllers::Targeting::ApplyConfig(params);
+        AppConfig::Save();
+        return Controllers::Targeting::ConfigPayload();
+    });
+
+    XBase::WebBridge::RegisterMethod("targeting.actions", [](const XBase::Json::Value&) {
+        return Controllers::Targeting::ActionsPayload();
+    });
+
+    XBase::WebBridge::RegisterMethod("targeting.snapshot", [](const XBase::Json::Value&) {
+        XBase::Json::Value items;
+        for (const XBase::Targeting::Target& target : XBase::Targeting::GetTargets()) {
+            XBase::Json::Value item;
+            item.Set("kind", XBase::Json::Value(target.kind == XBase::Targeting::Kind::Vehicle ? "vehicle" : "ped"));
+            item.Set("id", XBase::Json::Value(static_cast<int>(target.id.value)));
+            item.Set("modelId", XBase::Json::Value(static_cast<int>(target.modelId)));
+            item.Set("distance", XBase::Json::Value(static_cast<double>(target.distance)));
+            item.Set("health", XBase::Json::Value(static_cast<double>(target.health)));
+            item.Set("selected", XBase::Json::Value(target.selected));
+            items.Push(item);
+        }
+        XBase::Json::Value result = Controllers::Targeting::ConfigPayload();
+        result.Set("items", items);
+        XBase::Targeting::Target selected;
+        if (XBase::Targeting::GetSelected(selected)) {
+            XBase::Json::Value selectedValue;
+            selectedValue.Set("kind", XBase::Json::Value(
+                selected.kind == XBase::Targeting::Kind::Vehicle ? "vehicle" : "ped"));
+            selectedValue.Set("id", XBase::Json::Value(static_cast<int>(selected.id.value)));
+            selectedValue.Set("modelId", XBase::Json::Value(static_cast<int>(selected.modelId)));
+            selectedValue.Set("distance", XBase::Json::Value(static_cast<double>(selected.distance)));
+            selectedValue.Set("health", XBase::Json::Value(static_cast<double>(selected.health)));
+            result.Set("selected", selectedValue);
+        }
         return result;
     });
 
@@ -858,7 +924,7 @@ bool IsAvailable(std::string& reason) {
         reason = I18n::T("react.fallback.webviewUnsupported");
         return false;
     }
-    if (!XBase::WebView::IsRuntimeAvailable()) {
+    if (!XBase::WebView::IsRuntimeAvailable(s_webViewId)) {
         reason = I18n::T("react.fallback.runtimeMissing");
         return false;
     }
@@ -878,7 +944,7 @@ bool Enable(bool enable) {
     if (!enable) {
         s_active = false;
         MenuState::ReactUi = false;
-        XBase::WebView::SetVisible(false);
+        XBase::WebView::SetVisible(s_webViewId, false);
         Log::Info("React 界面已关闭");
         return true;
     }
@@ -887,7 +953,7 @@ bool Enable(bool enable) {
         ReportFallback(I18n::T("react.fallback.webviewUnsupported"));
         return false;
     }
-    if (!XBase::WebView::IsRuntimeAvailable()) {
+    if (!XBase::WebView::IsRuntimeAvailable(s_webViewId)) {
         ReportFallback(I18n::T("react.fallback.runtimeMissing"));
         return false;
     }
@@ -897,7 +963,7 @@ bool Enable(bool enable) {
     }
 
     // 独占全屏下浏览器会走抓帧回显，仍然照常切换，由页面顶部提示引导改窗口模式
-    if (XBase::WebView::UsesCaptureMode()) {
+    if (XBase::WebView::UsesCaptureMode(s_webViewId)) {
         Log::Info("React 界面在独占全屏下启用，将以抓帧方式回显");
     }
 
@@ -915,11 +981,12 @@ void StartPendingEnable() {
     }
     s_enablePending = false;
 
-    XBase::WebView::Init();
-    XBase::WebView::MapFolder(PanelHost, XBase::Platform::ModDirectory("XMenu"));
-    XBase::WebView::SetBounds(PanelRect());
-    XBase::WebView::Navigate(AppUrl());
-    XBase::WebView::SetVisible(true);
+    XBase::WebBridge::Install(s_webViewId);
+    XBase::WebView::Init(s_webViewId);
+    XBase::WebView::MapFolder(s_webViewId, PanelHost, XBase::Platform::ModDirectory("XMenu"));
+    XBase::WebView::SetBounds(s_webViewId, PanelRect());
+    XBase::WebView::Navigate(s_webViewId, AppUrl());
+    XBase::WebView::SetVisible(s_webViewId, true);
     Log::Info("React 界面已启用，页面来自 XMenu/ui.html");
 }
 
@@ -934,14 +1001,14 @@ void Process() {
         s_pendingAction = PendingAction::None;
         // 隐藏只收起菜单与面板，浏览器留着，再次打开菜单时复用
         XBase::Hooks::SetMenuVisible(false);
-        XBase::WebView::SetVisible(false);
+        XBase::WebView::SetVisible(s_webViewId, false);
         return;
     case PendingAction::Close:
         s_pendingAction = PendingAction::None;
         XBase::Hooks::SetMenuVisible(false);
         s_enablePending = false;
         Enable(false);
-        XBase::WebView::Close();
+        XBase::WebView::Close(s_webViewId);
         return;
     case PendingAction::SwitchUi:
         s_pendingAction = PendingAction::None;
@@ -974,26 +1041,26 @@ void Process() {
     StartPendingEnable();
 
     // 运行环境变化时退回 ImGui，避免留下一块无法交互的空白面板
-    if (!XBase::WebView::IsRuntimeAvailable()) {
+    if (!XBase::WebView::IsRuntimeAvailable(s_webViewId)) {
         LeaveReactUi(I18n::T("react.fallback.runtimeGone"));
         return;
     }
 
     // 页面缺失或加载失败时退回 ImGui，抓帧模式下收起再展开会带出临时错误，不能当成加载失败
-    if (!XBase::WebView::UsesCaptureMode()) {
-        const XBase::WebView::State state = XBase::WebView::GetState();
+    if (!XBase::WebView::UsesCaptureMode(s_webViewId)) {
+        const XBase::WebView::State state = XBase::WebView::GetState(s_webViewId);
         if (state.initialized && state.lastError != 0) {
             LeaveReactUi(I18n::T("react.fallback.loadFailed"));
             return;
         }
     }
 
-    XBase::WebView::SetBounds(PanelRect());
-    if (XBase::Hooks::IsMenuVisible() && !XBase::WebView::IsVisible()) {
-        XBase::WebView::SetVisible(true);
+    XBase::WebView::SetBounds(s_webViewId, PanelRect());
+    if (XBase::Hooks::IsMenuVisible() && !XBase::WebView::IsVisible(s_webViewId)) {
+        XBase::WebView::SetVisible(s_webViewId, true);
     }
-    if (!XBase::Hooks::IsMenuVisible() && XBase::WebView::IsVisible()) {
-        XBase::WebView::SetVisible(false);
+    if (!XBase::Hooks::IsMenuVisible() && XBase::WebView::IsVisible(s_webViewId)) {
+        XBase::WebView::SetVisible(s_webViewId, false);
     }
 }
 

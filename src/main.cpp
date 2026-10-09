@@ -29,12 +29,15 @@
 #include <XBase/WebBridge.h>
 #include <XBase/Host.h>
 #include <XBase/Input.h>
+#include <XBase/Targeting.h>
+#include "controllers/Targeting.h"
+#include "controllers/Mods.h"
 
 extern const bool XMENU_DEBUG_MODE = false;
 // 名称版本作者统一来自 package.json，由 ModIdentity::Load 覆盖
 const char* XMENU_GITHUB = "https://github.com/YuiNijika/XMenu";
+const char* XMENU_BILIBILI = "https://space.bilibili.com/435502585";
 const char* XMENU_GITHUB_API = "https://api.github.com/repos/YuiNijika/XMenu/releases/latest";
-const char* XMENU_QQ_GROUP = "https://gtamodx.com/qqun";
 const char* XMENU_TECH_STACK = "C++ / XBase Runtime API";
 const char* XMENU_OPEN_SOURCE_LIBS = "XBase";
 
@@ -78,6 +81,7 @@ void AdvanceBootstrap() {
     if (bootstrapStage == 2) {
         Log::Info("分帧初始化[2]: XBase 渲染后端");
         xMenuDrawCallbackId = XBase::Hooks::RegisterDrawCallback([]() {
+            XBase::Targeting::Draw();
             Menu::Draw();
         });
         const bool hookReady = static_cast<bool>(xMenuDrawCallbackId) && XBase::Hooks::Init();
@@ -120,6 +124,7 @@ void AdvanceBootstrap() {
 }
 
 void OnGameInit() {
+    XBase::Targeting::NotifyGameInit();
     Log::Info("游戏初始化事件触发（轻量阶段）");
     XBaseBridge::NotifyGameInit();
     bootstrapStage = 0;
@@ -138,6 +143,8 @@ void OnProcess() {
 
     Menu::Process();
     XBaseBridge::Process();
+    Controllers::Targeting::UpdateLabels();
+    XBase::Targeting::Process();
     XBase::Hooks::MaintainInputState();
 
     if (!xMenuActive) {
@@ -153,6 +160,9 @@ void OnProcess() {
     if (XBase::Input::WasPressed(AppConfig::GetMenuHotkey())) {
         XBase::Hooks::SetMenuVisible(!XBase::Hooks::IsMenuVisible());
     }
+
+    // 目标链路只申请后台渲染，不接管全局输入。
+    // 关闭菜单后仍由游戏处理镜头与鼠标，按鼠标中键进入看门狗式锁定。
 }
 
 bool InitXMenu() {
@@ -187,6 +197,7 @@ extern "C" __declspec(dllexport) void XBasePayloadAttach() {
 }
 
 extern "C" __declspec(dllexport) void XBasePayloadDetach() {
+    Controllers::Mods::Shutdown();
     Controllers::BulletAssist::Shutdown();
     XBase::Host::Shutdown();
     XBaseBridge::Shutdown();
@@ -194,6 +205,7 @@ extern "C" __declspec(dllexport) void XBasePayloadDetach() {
         XBase::Hooks::UnregisterDrawCallback(xMenuDrawCallbackId);
         xMenuDrawCallbackId = {};
     }
+    XBase::Targeting::Shutdown();
     XBase::WebBridge::Shutdown();
     XBase::Hooks::Shutdown();
     Log::Shutdown();

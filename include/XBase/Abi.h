@@ -7,7 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#define XBASE_ABI_VERSION 3u
+#define XBASE_ABI_VERSION 4u
 #define XBASE_GET_RUNTIME_NAME "xbaseGetRuntime"
 
 // 面板段的起点。共享库可能比 mod 的头文件旧，调用方拿这个偏移判断表里有没有这一段，
@@ -118,6 +118,10 @@ struct XBaseRuntime {
     void (*panelHide)();
     int (*panelIsVisible)();
     void (*panelSetHotkey)(int key, unsigned int modifiers);
+
+    // v4 追加。文本控件使用调用方缓冲区协议，避免跨 /MT DLL 传递 STL 字符串。
+    int (*panelBindText)(const char* controlId, int (*read)(char*, std::uint32_t, void*), void (*write)(const char*, void*), void* userData);
+    void (*panelNotifyTextChanged)(const char* controlId, const char* value);
 };
 
 } // extern "C"

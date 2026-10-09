@@ -48,6 +48,8 @@ float ConsumeWheelDelta();
 // not forwarded to the game window, so the host can own wheel driven actions.
 void SetWheelInputSuppressed(bool suppressed);
 bool IsWheelInputSuppressed();
+void SetMiddleInputSuppressed(bool suppressed);
+bool IsMiddleInputSuppressed();
 
 // True when the game window has no caption and covers its whole monitor, which
 // means DWM composition is bypassed and HWND overlays cannot appear on screen.

@@ -61,14 +61,14 @@ export function ScenePage({ report }: PageProps) {
         </TabsList>
 
         <TabsContent value="animation">
-          <div className={schema ? 'grid gap-5 md:grid-cols-2' : 'flex flex-col gap-5'}>
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('scene.animation')}</CardTitle>
-                <CardDescription>{t('scene.animationListHint')}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <div className="grid grid-cols-2 gap-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('scene.animation')}</CardTitle>
+              <CardDescription>{t('scene.animationListHint')}</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
+              <section className="flex min-w-0 flex-col gap-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <div className="mb-2 text-xs text-muted-foreground">{t('scene.animGroup')}</div>
                     <Input value={animGroup} onChange={(event) => setAnimGroup(event.target.value)} />
@@ -78,7 +78,6 @@ export function ScenePage({ report }: PageProps) {
                     <Input value={animName} onChange={(event) => setAnimName(event.target.value)} />
                   </div>
                 </div>
-                {/* 循环等三个开关改由注册表绘制，播放时宿主从 MenuState 读，这里不再传 */}
                 <KeyBrowser
                   prefix="scene.animation"
                   game={report?.game}
@@ -88,7 +87,7 @@ export function ScenePage({ report }: PageProps) {
                     setAnimName(segments[4] ?? '')
                   }}
                 />
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     disabled={!isUsable(report, 'scene.animation')}
                     onClick={() =>
@@ -105,21 +104,16 @@ export function ScenePage({ report }: PageProps) {
                     {t('scene.stopAnim')}
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </section>
 
-            {schema ? (
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle>{t('scene.animation')}</CardTitle>
-                  <CardDescription>{t('react.uiHint')}</CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-4">
+              {schema ? (
+                <section className="min-w-0 border-t border-border/60 pt-5 xl:border-t-0 xl:border-l xl:pl-6 xl:pt-0">
+                  <div className="mb-3 text-sm font-medium">{t('react.uiHint')}</div>
                   <SchemaSection payload={schema} report={report} tabId="scene" pageId="sceneMain" sectionId="animation" />
-                </CardContent>
-              </Card>
-            ) : null}
-          </div>
+                </section>
+              ) : null}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="styles">

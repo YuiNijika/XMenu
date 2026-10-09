@@ -5,13 +5,16 @@ import { Toaster, toast } from '@/components/ui/toast'
 import { call } from '@/lib/bridge'
 import { runAction } from '@/lib/actions'
 import { useI18n } from '@/lib/i18n'
+import { LanguageMenu } from '@/components/language-menu'
 import {
   Car,
   Clapperboard,
   Crosshair,
+  Download,
   EyeOffIcon,
   Globe2,
   Info,
+  LocateFixed,
   MapPin,
   Monitor,
   MoonStar,
@@ -51,6 +54,8 @@ const PAGE_ICONS: Record<string, LucideIcon> = {
   world: Globe2,
   visual: EyeOffIcon,
   scene: Clapperboard,
+  targeting: LocateFixed,
+  mods: Download,
   teleport: MapPin,
   about: Info,
   settings: Settings2,
@@ -319,10 +324,10 @@ export function Shell({ pages, activePage, onSelect, title, subtitle, game, vers
               </Button>
             </div>
           ) : null}
-          <header className="flex items-center justify-between border-b border-border/60 px-7 py-5">
+          <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 px-7 py-5">
             <div
               className={cn(
-                'min-w-0 flex-1 select-none',
+                'min-w-0 flex-1 basis-52 select-none',
                 moving ? 'cursor-grabbing' : 'cursor-move',
               )}
               title={t('react.moveHint')}
@@ -331,12 +336,13 @@ export function Shell({ pages, activePage, onSelect, title, subtitle, game, vers
               onPointerUp={endMove}
               onPointerCancel={endMove}
             >
-              <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+              <h1 className="text-xl font-semibold">{title}</h1>
               <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex shrink-0 items-center gap-1.5">
               {game ? <Badge variant="secondary">{game}</Badge> : null}
               <PaletteMenu />
+              <LanguageMenu />
               <Button
                 variant="outline"
                 size="icon"
@@ -503,4 +509,3 @@ function GitHubMark({ className }: { className?: string }) {
     </svg>
   )
 }
-

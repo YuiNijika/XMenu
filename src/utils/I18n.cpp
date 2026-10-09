@@ -1,5 +1,6 @@
 #include "I18n.h"
 
+#include "resources/I18nResources.h"
 #include <XBase/Json.h>
 #include <XBase/WebBridge.h>
 #include "utils/JsonLoader.h"
@@ -8,6 +9,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -239,7 +241,9 @@ namespace {
         const auto dictionary = dictionaries.find(languageCode);
         if (dictionary != dictionaries.end()) {
             const auto translated = dictionary->second.find(key);
-            if (translated != dictionary->second.end()) return translated->second.c_str();
+            if (translated != dictionary->second.end()
+                && translated->second.find_first_not_of(" \t\r\n") != std::string::npos
+                && translated->second != key) return translated->second.c_str();
         }
 
         if (!fallbackLanguageCode.empty() && fallbackLanguageCode != languageCode) {
@@ -266,6 +270,27 @@ namespace I18n {
         dictionaries.clear();
         fallbacks.clear();
         availableLanguages.clear();
+
+        // Embedded defaults keep new keys available when an external pack is older
+        struct EmbeddedLanguage {
+            const char* code;
+            const char* name;
+            int resourceId;
+        };
+        const EmbeddedLanguage embeddedLanguages[] = {
+            {"zh", (const char*)u8"简体中文", IDR_I18N_ZH},
+            {"en", "English", IDR_I18N_EN},
+            {"jp", (const char*)u8"日本語", IDR_I18N_JP},
+            {"ru", (const char*)u8"Русский", IDR_I18N_RU},
+        };
+        for (const EmbeddedLanguage& language : embeddedLanguages) {
+            std::string content;
+            if (XBase::Platform::ReadModuleResource(language.resourceId, content)) {
+                ParseFlatJson(content, dictionaries[language.code]);
+                UpsertLanguageInfo(language.code, language.name,
+                    std::string_view(language.code) == "zh" ? "" : "zh");
+            }
+        }
 
         // 语言包随载荷放在 XBase 目录下 XMenu 子目录的 data 里的 i18n，asi 同级目录仅作兼容
         const std::string modDir = XBase::Platform::ModDirectory("XMenu");
@@ -298,8 +323,15 @@ namespace I18n {
     }
 
     std::unordered_map<std::string, std::string> GetDictionary() {
-        const Dictionary& source = dictionaries[currentLanguageCode];
-        return std::unordered_map<std::string, std::string>(source.begin(), source.end());
+        std::unordered_map<std::string, std::string> result;
+        for (const auto& [code, dictionary] : dictionaries) {
+            for (const auto& [key, value] : dictionary) {
+                if (const char* translated = Lookup(currentLanguageCode, key.c_str())) {
+                    result.emplace(key, translated);
+                }
+            }
+        }
+        return result;
     }
 
     void SetLanguage(const std::string& code) {
@@ -322,6 +354,11 @@ namespace I18n {
             return;
         }
         fallbackLanguageCode = code;
+        if (XBase::WebBridge::IsInstalled()) {
+            XBase::Json::Value payload;
+            payload.Set("lang", XBase::Json::Value(currentLanguageCode));
+            XBase::WebBridge::Emit("i18n.changed", payload);
+        }
         Log::Info(std::string("缺失翻译回退语言已切换为: ") + GetLanguageName(code));
     }
 

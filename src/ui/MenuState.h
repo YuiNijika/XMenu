@@ -70,8 +70,6 @@ namespace MenuState {
     inline char WebViewUrl[512] = "https://gtamodx.com/";
     inline bool WebViewVisible = false;
     inline float WebViewZoom = 1.0f;
-    inline bool WebTabActive = false;   // 当前是否停在网页页
-    inline bool WebTabEntered = false;  // 本帧刚切到网页页
     inline bool ReactUi = false;
     inline std::string ReactUiFallbackReason;
     inline int WindowMode = 0; // 0 独占全屏 1 窗口 2 无边框

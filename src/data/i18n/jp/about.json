@@ -1,4 +1,5 @@
 {
+  "about.description": "XMenu v0.1.0 以降は XBase ライブラリを基盤に開発しています。問題がある場合は作者の鼠子（YuiNijika）までご連絡ください。",
   "about.version": "バージョン：%s",
   "about.author": "作者：%s",
   "about.techStack": "技術スタック：%s",
@@ -6,5 +7,7 @@
   "about.notice1": "1. 永久無料。転売および商用利用は禁止です。",
   "about.notice2": "2. 問題がある場合はグループに参加するか、プロジェクトページで報告してください。",
   "about.joinGroup": "グループ参加",
-  "about.projectPage": "プロジェクトページ"
+  "about.projectPage": "プロジェクトページ",
+  "about.bilibili": "Bilibili",
+  "about.github": "GitHub"
 }

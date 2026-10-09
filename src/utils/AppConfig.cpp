@@ -9,6 +9,7 @@
 #include "utils/JsonLoader.h"
 #include "utils/Log.h"
 #include "utils/I18n.h"
+#include "controllers/Targeting.h"
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
@@ -982,6 +983,12 @@ const char* DefaultUiMode() {
         LoadWeaponConfig(gameConfig);
         LoadWorldConfig(gameConfig);
         LoadGuiConfig(gameConfig);
+        const JsonLoader::JsonValue& targeting = ObjectOrNull(gameConfig, "targeting");
+        if (targeting.type == JsonLoader::JsonValue::OBJECT) {
+            std::ostringstream serialized;
+            WriteJsonValue(serialized, targeting);
+            Controllers::Targeting::ApplyConfig(XBase::Json::Value::Parse(serialized.str()));
+        }
 
         const JsonLoader::JsonValue& menu = ObjectOrNull(gameConfig, "menu");
         const JsonLoader::JsonValue& toggleKey = ObjectOrNull(menu, "toggleKey");
@@ -1050,6 +1057,7 @@ const char* DefaultUiMode() {
                 WriteTeleportConfig(file, "      ", true);
                 WriteWeaponConfig(file, "      ", true);
                 WriteWorldConfig(file, "      ", true);
+                file << "      \"targeting\": " << Controllers::Targeting::ConfigPayload().Serialize(false) << ",\n";
                 WriteActionHotkeys(file, "      ", true);
                 WritePersistentState(file, "      ", true);
                 WriteLocationArray(file, "      ", "customLocations", customLocations, false);

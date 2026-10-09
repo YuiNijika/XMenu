@@ -15,6 +15,7 @@
 #include "Scene.h"
 #include "Visual.h"
 #include "BulletAssist.h"
+#include "Targeting.h"
 #include "Camera.h"
 #include "Cheats.h"
 #include "Log.h"

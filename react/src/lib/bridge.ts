@@ -83,6 +83,56 @@ export type VehicleSnapshot = {
   locked: boolean
 }
 
+export type TargetSnapshot = {
+  kind: 'ped' | 'vehicle'
+  id: number
+  modelId: number
+  distance: number
+  health: number
+  selected: boolean
+}
+
+export type TargetSnapshotPayload = {
+  // 兼容旧版 XBase 或桥接异常返回的 null/缺省字段
+  items?: TargetSnapshot[] | null
+  enabled?: boolean
+  drawLinks?: boolean
+  includePeds?: boolean
+  includeVehicles?: boolean
+  mouseSelect?: boolean
+  radius?: number
+  hitRadius?: number
+  maxTargets?: number
+  pedMenu?: TargetBinding[]
+  vehicleMenu?: TargetBinding[]
+  selected?: TargetSnapshot
+}
+
+export interface TargetBinding {
+  action: number
+  value: number
+  secondary: number
+  tertiary: number
+  quaternary: number
+  enabled: boolean
+}
+
+export interface TargetActionInfo {
+  action: number
+  labelKey: string
+  parameter: number
+  min: number
+  max: number
+  defaultValue: number
+  supported: boolean
+}
+
+export interface TargetActionsPayload {
+  ped: TargetActionInfo[]
+  vehicle: TargetActionInfo[]
+  colorChannels: number
+}
+
 export type WorldTime = {
   hour: number
   minute: number

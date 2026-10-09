@@ -1,4 +1,5 @@
 {
+  "about.description": "С версии XMenu v0.1.0 проект развивается на библиотеке XBase. При возникновении проблем свяжитесь с автором 鼠子 (YuiNijika).",
   "about.version": "Версия: %s",
   "about.author": "Автор: %s",
   "about.techStack": "Технологии: %s",
@@ -6,5 +7,7 @@
   "about.notice1": "1. Всегда бесплатно. Перепродажа и коммерческое использование запрещены.",
   "about.notice2": "2. При проблемах вступите в группу или сообщите на странице проекта.",
   "about.joinGroup": "Вступить в группу",
-  "about.projectPage": "Страница проекта"
+  "about.projectPage": "Страница проекта",
+  "about.bilibili": "Bilibili",
+  "about.github": "GitHub"
 }

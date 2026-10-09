@@ -56,7 +56,7 @@ export function PedPage({ report }: PageProps) {
 
         <TabsContent value="toggles">
           {schema ? (
-            <Card>
+            <Card className="md:col-span-2">
               <CardHeader>
                 <CardTitle>{t('common.toggles')}</CardTitle>
                 <CardDescription>{t('ped.hint')}</CardDescription>
@@ -73,7 +73,7 @@ export function PedPage({ report }: PageProps) {
 
         <TabsContent value="spawnPed">
           <div className="grid gap-5 md:grid-cols-2">
-            <Card>
+            <Card className="md:col-span-2">
               <CardHeader>
                 <CardTitle>{t('ped.spawnPed')}</CardTitle>
                 <CardDescription>{t('ped.hint')}</CardDescription>

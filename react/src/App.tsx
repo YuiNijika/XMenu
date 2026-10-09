@@ -11,6 +11,8 @@ import { VehiclePage } from '@/pages/vehicle'
 import { VisualPage } from '@/pages/visual'
 import { WeaponPage } from '@/pages/weapon'
 import { WorldPage } from '@/pages/world'
+import { TargetingPage } from '@/pages/targeting'
+import { ModCatalog } from '@/components/mod-catalog'
 import { Button } from '@/components/ui/button'
 import { call, isBridgeAvailable, rawCall, type CapabilityReport } from '@/lib/bridge'
 import { I18nProvider, useI18n } from '@/lib/i18n'
@@ -21,12 +23,14 @@ import './App.css'
 const Pages: (MenuPage & { titleKey: string; subtitleKey: string })[] = [
   { id: 'player', label: 'tab.player', titleKey: 'tab.player', subtitleKey: 'player.health' },
   { id: 'vehicle', label: 'tab.vehicle', titleKey: 'tab.vehicle', subtitleKey: 'vehicle.health' },
+  { id: 'targeting', label: 'tab.targeting', titleKey: 'tab.targeting', subtitleKey: 'targeting.hint' },
   { id: 'ped', label: 'tab.ped', titleKey: 'tab.ped', subtitleKey: 'ped.hint' },
   { id: 'weapon', label: 'tab.weapon', titleKey: 'tab.weapon', subtitleKey: 'react.weaponHint' },
   { id: 'world', label: 'tab.world', titleKey: 'tab.world', subtitleKey: 'world.time' },
   { id: 'visual', label: 'tab.visual', titleKey: 'tab.visual', subtitleKey: 'visual.filterHint' },
   { id: 'scene', label: 'tab.scene', titleKey: 'tab.scene', subtitleKey: 'scene.animationListHint' },
   { id: 'teleport', label: 'tab.teleport', titleKey: 'tab.teleport', subtitleKey: 'teleport.coordinates' },
+  { id: 'mods', label: 'tab.mods', titleKey: 'mods.downloadTitle', subtitleKey: 'mods.title' },
   { id: 'about', label: 'tab.about', titleKey: 'tab.about', subtitleKey: 'react.aboutHint' },
   { id: 'settings', label: 'tab.settings', titleKey: 'tab.settings', subtitleKey: 'settings.language' },
 ]
@@ -121,8 +125,12 @@ function BridgeHero() {
 
 function renderPage(id: string, report: CapabilityReport | null, info: MenuInfo | null) {
   switch (id) {
+    case 'mods':
+      return <ModCatalog />
     case 'vehicle':
       return <VehiclePage report={report} />
+    case 'targeting':
+      return <TargetingPage />
     case 'ped':
       return <PedPage report={report} />
     case 'world':

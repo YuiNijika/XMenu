@@ -16,6 +16,7 @@
 #include <XBase/Platform.h>
 #include <XBase/UI.h>
 #include <XBase/WebView.h>
+#include <XBase/Targeting.h>
 #include "utils/I18n.h"
 #include "utils/UpdateChecker.h"
 #include "utils/AppConfig.h"
@@ -28,12 +29,13 @@
 #include "ui/pages/Player.h"
 #include "ui/pages/Vehicle.h"
 #include "ui/pages/Teleport.h"
+#include "ui/pages/Targeting.h"
+#include "ui/pages/Mods.h"
 #include "ui/pages/Weapon.h"
 #include "ui/pages/World.h"
 #include "ui/pages/Ped.h"
 #include "ui/pages/Scene.h"
 #include "ui/pages/Visual.h"
-#include "ui/pages/Web.h"
 #include "controllers/Hotkeys.h"
 #include "controllers/Overlay.h"
 #include "controllers/Command.h"
@@ -46,7 +48,7 @@
 
 extern const bool XMENU_DEBUG_MODE;
 extern const char* XMENU_GITHUB;
-extern const char* XMENU_QQ_GROUP;
+extern const char* XMENU_BILIBILI;
 extern const char* XMENU_TECH_STACK;
 extern const char* XMENU_OPEN_SOURCE_LIBS;
 
@@ -54,20 +56,6 @@ namespace {
     const char* T(const char* key) {
         return I18n::T(key);
     }
-
-    enum class Page {
-        Player,
-        Vehicle,
-        Ped,
-        Weapon,
-        World,
-        Scene,
-        Visual,
-        Teleport,
-        Web,
-        Settings,
-        About
-    };
 
 }
 
@@ -126,9 +114,10 @@ namespace Menu {
         {Page::Scene, "tab.scene", "scene"},
         {Page::Visual, "tab.visual", "visual"},
         {Page::Teleport, "tab.teleport", "teleport"},
+        {Page::Targeting, "tab.targeting", "targeting"},
+        {Page::Mods, "tab.mods", "mods"},
         {Page::Settings, "tab.settings", "settings"},
-        {Page::About, "tab.about", "about"},
-        {Page::Web, "tab.web", "web"}
+        {Page::About, "tab.about", "about"}
     };
 
     bool IsSaRuntime() {
@@ -261,12 +250,6 @@ namespace Menu {
     }
 
     void DrawActivePage() {
-        // 离开网页页时隐藏网页面板，避免覆盖其他页面内容
-        if (activePage != Page::Web && MenuState::WebViewVisible) {
-            XBase::WebView::SetVisible(false);
-            MenuState::WebViewVisible = false;
-        }
-
         const char* titleKey = "tab.player";
         switch (activePage) {
             case Page::Player: titleKey = "tab.player"; break;
@@ -277,7 +260,8 @@ namespace Menu {
             case Page::Scene: titleKey = "tab.scene"; break;
             case Page::Visual: titleKey = "tab.visual"; break;
             case Page::Teleport: titleKey = "tab.teleport"; break;
-            case Page::Web: titleKey = "tab.web"; break;
+            case Page::Targeting: titleKey = "tab.targeting"; break;
+            case Page::Mods: titleKey = "mods.downloadTitle"; break;
             case Page::Settings: titleKey = "tab.settings"; break;
             case Page::About: titleKey = "tab.about"; break;
         }
@@ -295,7 +279,8 @@ namespace Menu {
             case Page::Scene: Pages::Scene::Draw(); break;
             case Page::Visual: Pages::Visual::Draw(); break;
             case Page::Teleport: Pages::Teleport::Draw(); break;
-            case Page::Web: Pages::Web::Draw(); break;
+            case Page::Targeting: Pages::Targeting::Draw(); break;
+            case Page::Mods: Pages::Mods::Draw(); break;
             case Page::Settings: DrawSettings(); break;
             case Page::About: DrawAbout(); break;
         }
@@ -965,6 +950,7 @@ namespace Menu {
 
     void DrawAbout() {
         XBase::UI::CenterText(ModIdentity::Name.c_str());
+        XBase::UI::TextWrapped(T("about.description"));
         XBase::UI::TextWrapped(T("about.version"), ModIdentity::Version.c_str());
         XBase::UI::TextWrapped(T("about.author"), ModIdentity::Author.c_str());
         XBase::UI::TextWrapped(T("about.techStack"), XMENU_TECH_STACK);
@@ -973,9 +959,9 @@ namespace Menu {
         XBase::UI::TextWrapped(T("about.notice1"));
         XBase::UI::TextWrapped(T("about.notice2"));
         XBase::UI::Spacing();
-        if (XBase::UI::Button(T("about.joinGroup"), {130.0f, 0.0f})) XBase::Platform::OpenExternal(XMENU_QQ_GROUP);
+        if (XBase::UI::Button(T("about.bilibili"), {130.0f, 0.0f})) XBase::Platform::OpenExternal(XMENU_BILIBILI);
         XBase::UI::SameLine();
-        if (XBase::UI::Button(T("about.projectPage"), {130.0f, 0.0f})) XBase::Platform::OpenExternal(XMENU_GITHUB);
+        if (XBase::UI::Button(T("about.github"), {130.0f, 0.0f})) XBase::Platform::OpenExternal(XMENU_GITHUB);
     }
 
     void DrawUpdateDialog() {
@@ -1047,9 +1033,6 @@ void Menu::Process() {
     Pages::Vehicle::Process();
     Pages::Weapon::Process();
     Pages::Visual::Process();
-    MenuState::WebTabEntered = activePage == Page::Web && !MenuState::WebTabActive;
-    MenuState::WebTabActive = activePage == Page::Web;
-    Pages::Web::Process();
     Controllers::Ped::Process();
     Controllers::Teleport::ProcessHost();
     Controllers::Command::Process();
@@ -1064,7 +1047,8 @@ void Menu::Process() {
         || MenuState::WeaponPedSkeleton
         || MenuState::WeaponVehicleEsp
         || MenuState::WeaponVehicleColEsp
-        || MenuState::WeaponBulletTrack);
+        || MenuState::WeaponBulletTrack
+        || XBase::Targeting::GetConfig().enabled);
 }
 
 void Menu::NotifySurfaceChanged() {
@@ -1137,6 +1121,8 @@ void Menu::Draw() {
                     case Page::Scene: subtitle = T("tab.scene"); break;
                     case Page::Visual: subtitle = T("tab.visual"); break;
                     case Page::Teleport: subtitle = T("tab.teleport"); break;
+                    case Page::Targeting: subtitle = T("tab.targeting"); break;
+                    case Page::Mods: subtitle = T("tab.mods"); break;
                     case Page::Settings: subtitle = T("tab.settings"); break;
                     case Page::About: subtitle = T("tab.about"); break;
                     default: subtitle = "OPTIONS"; break;

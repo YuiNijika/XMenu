@@ -7,7 +7,7 @@ namespace XBase {
 
 // XBase 自身版本，发布安装包与线上文档都以它为准。
 // mod 判断最低运行环境用 AtLeast 或 kVersionNumber，字符串只用于展示
-inline constexpr const char* kVersionString = "v0.1.0-alpha1";
+inline constexpr const char* kVersionString = "v0.1.0-rc";
 
 struct VersionTriple {
     int major;

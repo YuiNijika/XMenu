@@ -21,7 +21,7 @@ export function AboutPage({ info }: PageProps) {
           <div>
             <div className="text-xs font-semibold tracking-[0.3em] text-muted-foreground uppercase">XMenu</div>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">{t('tab.about')}</h1>
-            <p className="mt-2 max-w-prose text-sm text-muted-foreground">{t('react.aboutHint')}</p>
+            <p className="mt-2 max-w-prose text-sm text-muted-foreground">{t('about.description')}</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -35,14 +35,14 @@ export function AboutPage({ info }: PageProps) {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => void call('update.open', { url: info?.url })}>
-              {t('about.projectPage')}
+            <Button variant="outline" onClick={() => void call('update.open', { url: 'https://space.bilibili.com/435502585' })}>
+              {t('about.bilibili')}
             </Button>
             <Button
               variant="outline"
               onClick={() => void call('update.open', { url: 'https://github.com/YuiNijika/XMenu' })}
             >
-              {t('update.openGitHub')}
+              {t('about.github')}
             </Button>
           </div>
 
