@@ -108,8 +108,9 @@ XMenu 是一个面向 GTA III、GTA Vice City、GTA San Andreas 的 ASI 菜单�
 1. 准备好游戏本体。
 2. 运行 `XMenuInstaller.exe`，按向导选择目录与组件。
 3. 可附带部署 ASI Loader、SilentPatch、D3D8to9，也可只装 XMenu。
-4. 版本信息优先读 GTAMODX，安装包来自 GitHub Release。
-5. 启动游戏，按 `M` 打开菜单。
+4. 安装器会先校验发布包中的 `XBase\Mods\XMenu\package.json`、`engines.xbase`、共享运行时、Panel 和 WebUI，符合当前 XBase 约束后才允许写入。
+5. 版本信息优先读 GTAMODX，安装包来自 GitHub Release。
+6. 启动游戏，按 `M` 打开菜单。
 
 ### 方式 B：手动复制
 

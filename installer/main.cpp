@@ -10,11 +10,13 @@
 #include <cstdio>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include <ctime>
 #include <stdexcept>
@@ -105,6 +107,20 @@ namespace {
         std::string assetName;
         std::string body;
         std::string versionSource;    // GTAMODX | GitHub
+    };
+
+    struct PackageManifest {
+        bool valid = false;
+        std::string name;
+        std::string version;
+        std::string xbaseRequirement;
+        std::vector<std::pair<std::string, std::string>> dependencies;
+    };
+
+    struct PackageValidation {
+        bool ok = false;
+        std::string report;
+        PackageManifest manifest;
     };
 
     struct InstalledFile {
@@ -289,6 +305,128 @@ namespace {
         return value;
     }
 
+    bool ParseInstallerVersion(const std::string& text, unsigned int& major, unsigned int& minor, unsigned int& patch) {
+        std::string value = text;
+        while (!value.empty() && (value.front() == 'v' || value.front() == 'V')) {
+            value.erase(value.begin());
+        }
+        const std::size_t firstDot = value.find('.');
+        const std::size_t secondDot = firstDot == std::string::npos ? std::string::npos : value.find('.', firstDot + 1);
+        if (firstDot == std::string::npos || secondDot == std::string::npos) {
+            return false;
+        }
+        try {
+            major = static_cast<unsigned int>(std::stoul(value.substr(0, firstDot)));
+            minor = static_cast<unsigned int>(std::stoul(value.substr(firstDot + 1, secondDot - firstDot - 1)));
+            std::size_t end = secondDot + 1;
+            while (end < value.size() && std::isdigit(static_cast<unsigned char>(value[end]))) {
+                ++end;
+            }
+            patch = static_cast<unsigned int>(std::stoul(value.substr(secondDot + 1, end - secondDot - 1)));
+            return true;
+        } catch (...) {
+            return false;
+        }
+    }
+
+    std::string InstallerVersionChannel(const std::string& text) {
+        std::string value = text;
+        while (!value.empty() && (value.front() == 'v' || value.front() == 'V')) {
+            value.erase(value.begin());
+        }
+        const std::size_t dash = value.find('-');
+        if (dash == std::string::npos || dash + 1 >= value.size()) {
+            return "stable";
+        }
+        std::string channel = value.substr(dash + 1);
+        const std::size_t separator = channel.find_first_of(".+");
+        if (separator != std::string::npos) {
+            channel.resize(separator);
+        }
+        for (char& character : channel) {
+            character = static_cast<char>(std::tolower(static_cast<unsigned char>(character)));
+        }
+        if (channel == "alpha" || channel == "a") return "alpha";
+        if (channel == "beta" || channel == "b") return "beta";
+        if (channel == "rc") return "rc";
+        return channel.empty() ? "stable" : channel;
+    }
+
+    int InstallerChannelRank(const std::string& channel) {
+        if (channel == "alpha") return 0;
+        if (channel == "beta") return 1;
+        if (channel == "rc") return 2;
+        if (channel == "stable") return 3;
+        return 2;
+    }
+
+    int CompareInstallerVersion(const std::string& left, const std::string& right) {
+        unsigned int leftMajor = 0, leftMinor = 0, leftPatch = 0;
+        unsigned int rightMajor = 0, rightMinor = 0, rightPatch = 0;
+        if (!ParseInstallerVersion(left, leftMajor, leftMinor, leftPatch)
+            || !ParseInstallerVersion(right, rightMajor, rightMinor, rightPatch)) {
+            return 0;
+        }
+        if (leftMajor != rightMajor) return leftMajor < rightMajor ? -1 : 1;
+        if (leftMinor != rightMinor) return leftMinor < rightMinor ? -1 : 1;
+        if (leftPatch != rightPatch) return leftPatch < rightPatch ? -1 : 1;
+        const int leftChannel = InstallerChannelRank(InstallerVersionChannel(left));
+        const int rightChannel = InstallerChannelRank(InstallerVersionChannel(right));
+        if (leftChannel != rightChannel) return leftChannel < rightChannel ? -1 : 1;
+        return 0;
+    }
+
+    bool IsAlphaToRcTransition(const std::string& localVersion, const std::string& cloudVersion) {
+        return InstallerVersionChannel(localVersion) == "alpha"
+            && InstallerVersionChannel(cloudVersion) == "rc";
+    }
+
+    bool InstallerSatisfiesRequirement(const std::string& requirement, const std::string& runtimeVersion) {
+        std::string normalized = requirement;
+        if (normalized.empty() || normalized == "*") return true;
+        std::size_t groupStart = 0;
+        while (groupStart <= normalized.size()) {
+            const std::size_t separator = normalized.find("||", groupStart);
+            std::string group = normalized.substr(groupStart, separator == std::string::npos
+                ? std::string::npos
+                : separator - groupStart);
+            while (!group.empty() && std::isspace(static_cast<unsigned char>(group.front()))) group.erase(group.begin());
+            while (!group.empty() && std::isspace(static_cast<unsigned char>(group.back()))) group.pop_back();
+
+            bool groupOk = true;
+            std::size_t clauseStart = 0;
+            while (clauseStart < group.size()) {
+                while (clauseStart < group.size() && std::isspace(static_cast<unsigned char>(group[clauseStart]))) ++clauseStart;
+                if (clauseStart >= group.size()) break;
+                std::size_t clauseEnd = clauseStart;
+                while (clauseEnd < group.size() && !std::isspace(static_cast<unsigned char>(group[clauseEnd]))) ++clauseEnd;
+                std::string clause = group.substr(clauseStart, clauseEnd - clauseStart);
+                std::string op;
+                for (const char* candidate : {">=", "<=", "==", ">", "<", "=", "^", "~"}) {
+                    if (clause.rfind(candidate, 0) == 0) {
+                        op = candidate;
+                        clause.erase(0, std::string(candidate).size());
+                        break;
+                    }
+                }
+                if (op.empty()) op = "==";
+                const int comparison = CompareInstallerVersion(runtimeVersion, clause);
+                if (op == ">=" && comparison < 0) groupOk = false;
+                else if (op == ">" && comparison <= 0) groupOk = false;
+                else if (op == "<=" && comparison > 0) groupOk = false;
+                else if (op == "<" && comparison >= 0) groupOk = false;
+                else if ((op == "=" || op == "==") && comparison != 0) groupOk = false;
+                else if ((op == "^" || op == "~") && comparison < 0) groupOk = false;
+                clauseStart = clauseEnd;
+                if (!groupOk) break;
+            }
+            if (groupOk) return true;
+            if (separator == std::string::npos) break;
+            groupStart = separator + 2;
+        }
+        return false;
+    }
+
     bool EndsWithInsensitive(const std::string& value, const std::string& suffix) {
         if (value.size() < suffix.size()) {
             return false;
@@ -322,6 +460,44 @@ namespace {
             }
         }
         return false;
+    }
+
+    bool DetectLegacyScriptsXMenu(const std::string& gameRoot, std::string& report) {
+        report.clear();
+        const std::string scriptsDir = JoinPath(gameRoot, "scripts");
+        if (!IsDirectory(scriptsDir)) {
+            return false;
+        }
+
+        WIN32_FIND_DATAA data{};
+        HANDLE find = FindFirstFileA(JoinPath(scriptsDir, "*").c_str(), &data);
+        if (find == INVALID_HANDLE_VALUE) {
+            return false;
+        }
+
+        std::vector<std::string> matches;
+        do {
+            const std::string name = data.cFileName;
+            if (name == "." || name == "..") continue;
+            const bool isDirectory = (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+            const bool looksLikeXMenu = ContainsInsensitive(name, "xmenu");
+            const bool isLegacyAsi = !isDirectory && EndsWithInsensitive(name, ".asi") && looksLikeXMenu;
+            const bool isLegacyFolder = isDirectory && looksLikeXMenu;
+            if (isLegacyAsi || isLegacyFolder) {
+                matches.push_back(name + (isDirectory ? "\\" : ""));
+            }
+        } while (FindNextFileA(find, &data));
+        FindClose(find);
+
+        if (matches.empty()) return false;
+        std::ostringstream message;
+        message << "检测到 scripts 目录中的旧版 XMenu：\r\n";
+        for (const std::string& match : matches) {
+            message << "  scripts\\" << match << "\r\n";
+        }
+        message << "\r\n请先卸载旧版 XMenu 后再使用当前安装器。";
+        report = message.str();
+        return true;
     }
 
     std::string ExtractGtamodxVersion(const std::string& json) {
@@ -601,6 +777,15 @@ namespace {
         return "";
     }
 
+    std::string FindXMenuPackageRoot(const std::string& extractedRoot) {
+        const std::string packagePath = FindFirstFileByName(extractedRoot, "package.json");
+        if (packagePath.empty()) return extractedRoot;
+        const std::string modDir = ParentDirectory(packagePath);
+        const std::string modsDir = ParentDirectory(modDir);
+        const std::string xbaseDir = ParentDirectory(modsDir);
+        return ParentDirectory(xbaseDir);
+    }
+
     std::vector<std::string> FindAllFilesByName(const std::string& root, const std::string& fileName) {
         std::vector<std::string> result;
         std::vector<std::string> files;
@@ -750,6 +935,11 @@ namespace {
     }
 
     std::string ReadInstalledVersion(const std::string& gameRoot) {
+        const std::string package = ReadTextFile(JoinPath(gameRoot, "XBase\\Mods\\XMenu\\package.json"));
+        const std::string packageVersion = JsonStringValue(package, "version");
+        if (!packageVersion.empty()) {
+            return packageVersion;
+        }
         const std::string configPath = JoinPath(gameRoot, "XBase\\Mods\\XMenu\\config.json");
         const std::string config = ReadTextFile(configPath);
         const std::string xmenuSection = "\"XMenu\"";
@@ -914,6 +1104,60 @@ namespace {
         return summary.str();
     }
 
+    PackageValidation ValidateReleasePackage(const std::string& extractedRoot) {
+        PackageValidation result;
+        const std::string packagePath = FindFirstFileByName(extractedRoot, "package.json");
+        if (packagePath.empty()) {
+            result.report = "缺少 XBase\\Mods\\XMenu\\package.json";
+            return result;
+        }
+
+        const std::string json = ReadTextFile(packagePath);
+        result.manifest.name = JsonStringValue(json, "name");
+        result.manifest.version = JsonStringValue(json, "version");
+        const std::size_t enginesPos = json.find("\"engines\"");
+        if (enginesPos != std::string::npos) {
+            result.manifest.xbaseRequirement = JsonStringValue(json, "xbase", enginesPos);
+        }
+        result.manifest.valid = !result.manifest.name.empty() && !result.manifest.version.empty();
+        if (!result.manifest.valid) {
+            result.report = "XMenu package.json 缺少 name 或 version";
+            return result;
+        }
+        if (_stricmp(result.manifest.name.c_str(), "XMenu") != 0) {
+            result.report = "发布包清单名称不是 XMenu：" + result.manifest.name;
+            return result;
+        }
+
+        constexpr const char* InstallerRuntimeVersion = "v0.1.0-rc";
+        if (!InstallerSatisfiesRequirement(result.manifest.xbaseRequirement, InstallerRuntimeVersion)) {
+            result.report = "发布包要求 XBase " + result.manifest.xbaseRequirement
+                + "，安装器内置运行时为 " + InstallerRuntimeVersion;
+            return result;
+        }
+
+        const std::string packageRoot = FindXMenuPackageRoot(extractedRoot);
+        const char* requiredFiles[] = {
+            "XBase\\Library\\XBaseSA.dll",
+            "XBase\\Library\\XBaseVC.dll",
+            "XBase\\Library\\XBaseIII.dll",
+            "XBase\\Library\\panel\\index.html",
+            "XBase\\Mods\\XMenu\\package.json",
+            "XBase\\Mods\\XMenu\\ui.html"
+        };
+        for (const char* relative : requiredFiles) {
+            if (!PathExists(JoinPath(packageRoot, relative))) {
+                result.report = std::string("发布包缺少必需文件：") + relative;
+                return result;
+            }
+        }
+        result.ok = true;
+        result.report = "XMenu package.json 与 XBase 运行时约束校验通过（XBase "
+            + result.manifest.version + " / engines.xbase="
+            + (result.manifest.xbaseRequirement.empty() ? "*" : result.manifest.xbaseRequirement) + "）";
+        return result;
+    }
+
     bool ConfirmInstallPlan(const std::string& gameRoot, const std::string& installedVersion, const std::string& githubVersion, const std::string& assetName, const std::string& integrityReport, const std::string& componentSummary) {
         const bool isUpdate = !installedVersion.empty();
         std::wstring message;
@@ -958,20 +1202,31 @@ namespace {
 
     bool InstallRelease(const std::string& extractedRoot, const std::string& gameRoot, const std::string& version, const InstallOptions& options) {
         const std::string pluginsDir = JoinPath(gameRoot, "plugins");
-        // 载荷与数据放在 XBase 目录下以 XMenu 命名的子目录，asi 仍留在 plugins
-    const std::string xmenuDir = JoinPath(gameRoot, "XBase\\Mods\\XMenu");
+        const std::string xbaseDir = JoinPath(gameRoot, "XBase");
+        const std::string xmenuDir = JoinPath(xbaseDir, "Mods\\XMenu");
         EnsureDirectory(pluginsDir);
         EnsureDirectory(xmenuDir);
 
         std::vector<InstalledFile> manifestFiles;
         ExtractNestedArchivesForDependencies(extractedRoot, gameRoot);
 
-        const char* modAsiNames[] = { "XMenuSA.asi", "XMenuVC.asi", "XMenuIII.asi" };
+        const struct SelectedModule {
+            const char* fileName;
+            bool selected;
+        } modules[] = {
+            { "XMenuSA.asi", options.installXMenuSA },
+            { "XMenuVC.asi", options.installXMenuVC },
+            { "XMenuIII.asi", options.installXMenuIII }
+        };
         bool copiedAnyAsi = false;
-        for (const char* asiName : modAsiNames) {
+        for (const SelectedModule& module : modules) {
+            if (!module.selected) continue;
+            const std::string asiName = module.fileName;
             const std::string asi = FindFirstFileByName(extractedRoot, asiName);
             if (asi.empty()) {
-                continue;
+                AppendInstallLog(gameRoot, "ERROR missing selected module: " + asiName);
+                AskInstallerDialog(InstallerTitle, (L"安装失败：发布包中缺少 " + WideFromAnsi(asiName) + L"。").c_str(), MB_ICONERROR | MB_OK);
+                return false;
             }
             if (!CopyFileEnsureDirectory(asi, JoinPath(pluginsDir, asiName), true)) {
                 AppendInstallLog(gameRoot, std::string("ERROR failed to copy plugins\\") + asiName);
@@ -988,66 +1243,22 @@ namespace {
             return false;
         }
 
-        // 网页视图加载器属于公用库，放 XBase 目录下的 Library 子目录，不进模组目录
-        const std::string libraryDir = JoinPath(gameRoot, "XBase\\Library");
-        const std::string webViewLoader = FindFirstFileByName(extractedRoot, "WebView2Loader.dll");
-        if (!webViewLoader.empty()) {
-            CopyFileEnsureDirectory(webViewLoader, JoinPath(libraryDir, "WebView2Loader.dll"), true);
-            AddManifestRecord(manifestFiles, gameRoot, "XBase\\Library\\WebView2Loader.dll");
-            AppendInstallLog(gameRoot, "Installed XBase\\Library\\WebView2Loader.dll");
-        } else {
-            AppendInstallLog(gameRoot, "WebView2Loader.dll not found in release asset");
-        }
-
-        const std::string dataDir = FindDirectoryContaining(extractedRoot, "maps.json");
-        if (!dataDir.empty()) {
-            std::string rootDataDir = dataDir;
-            for (int i = 0; i < 2; ++i) {
-                const std::string parent = ParentDirectory(rootDataDir);
-                if (parent.empty()) {
-                    break;
-                }
-                if (EndsWithInsensitive(FileNameOf(rootDataDir), "sa") || EndsWithInsensitive(FileNameOf(rootDataDir), "vc") || EndsWithInsensitive(FileNameOf(rootDataDir), "iii")) {
-                    rootDataDir = parent;
-                    break;
-                }
-                rootDataDir = parent;
-            }
-            InstallDirectoryContents(rootDataDir, JoinPath(xmenuDir, "data"), "XBase\\Mods\\XMenu\\data", gameRoot, manifestFiles);
-            AppendInstallLog(gameRoot, "Installed plugins\\XMenu\\data");
-        }
-
-        // React 界面的入口页放在载荷目录旁的 ui.html，脚本与样式随 data 目录一起安装
-        // 网页视图加载器属于公用库放 Library 子目录，XBase 自身数据放在游戏根目录的 XBase 下
-        {
-            const std::string loaderDir = FindDirectoryContaining(extractedRoot, "WebView2Loader.dll");
-            if (!loaderDir.empty()) {
-                InstallDirectoryContents(
-                    loaderDir,
-                    JoinPath(gameRoot, "XBase"),
-                    "XBase",
-                    gameRoot,
-                    manifestFiles);
-                AppendInstallLog(gameRoot, "Installed XBase shared files");
-            }
-        }
-
-        std::string payloadDir = FindDirectoryContaining(extractedRoot, "XMenuSA.asi");
-        if (payloadDir.empty()) {
-            payloadDir = FindDirectoryContaining(extractedRoot, "XMenuVC.asi");
-        }
-        if (payloadDir.empty()) {
-            payloadDir = FindDirectoryContaining(extractedRoot, "XMenuIII.asi");
-        }
-        if (!payloadDir.empty()) {
-            const std::string uiPage = JoinPath(payloadDir, "XBase\\Mods\\XMenu\\ui.html");
-            if (PathExists(uiPage) && CopyFileEnsureDirectory(uiPage, JoinPath(xmenuDir, "ui.html"), true)) {
-                AddManifestRecord(manifestFiles, gameRoot, "XBase\\Mods\\XMenu\\ui.html");
-                AppendInstallLog(gameRoot, "Installed plugins\\XMenu\\ui.html");
-            } else {
-                AppendInstallLog(gameRoot, "React UI page not found in release asset");
-            }
-        }
+        const std::string packageRoot = FindXMenuPackageRoot(extractedRoot);
+        const std::string packageXbaseDir = JoinPath(packageRoot, "XBase");
+        const std::string packageModDir = JoinPath(packageXbaseDir, "Mods\\XMenu");
+        InstallDirectoryContents(
+            packageXbaseDir,
+            xbaseDir,
+            "XBase",
+            gameRoot,
+            manifestFiles);
+        InstallDirectoryContents(
+            packageModDir,
+            xmenuDir,
+            "XBase\\Mods\\XMenu",
+            gameRoot,
+            manifestFiles);
+        AppendInstallLog(gameRoot, "Installed XBase\\Library and XBase\\Mods\\XMenu using package layout");
 
 
         const std::vector<std::string> silentPatchFiles = CollectInstallableSilentPatchFiles(extractedRoot);

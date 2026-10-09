@@ -207,6 +207,15 @@ for %%D in (SA VC III) do (
         goto fail
     )
 )
+if exist "lib\WebView2Loader.dll" (
+    copy /Y "lib\WebView2Loader.dll" "build\bin\XBase\Library\WebView2Loader.dll" >nul
+    if errorlevel 1 (
+        echo [Error] Failed to stage WebView2Loader.dll
+        goto fail
+    )
+) else (
+    echo [Warning] Staged XBase SDK has no WebView2Loader.dll; WebUI installation may be unavailable.
+)
 
 rem 通用面板随 XBase 一起分发，各模组挂进来就行，不必自带前端
 set "XBASE_PANEL_DIR=..\XBase\build\bin\Release\XBase\Library\panel"

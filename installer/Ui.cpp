@@ -425,7 +425,44 @@
 
     void ShowControl(HWND hwnd, bool show) {
         if (hwnd) {
-            ShowWindow(hwnd, show ? SW_SHOW : SW_HIDE);
+            ShowWindow(hwnd, show ? SW_SHOWNA : SW_HIDE);
+        }
+    }
+
+    void SetPageControlsVisible(WizardStep step) {
+        const bool isVersion = step == WizardStep::Version;
+        const bool isPath = step == WizardStep::Path;
+        const bool isComponents = step == WizardStep::Components;
+        const bool isInstall = step == WizardStep::Install;
+
+        const struct PageControl {
+            HWND hwnd;
+            bool visible;
+        } controls[] = {
+            { gUi.versionSourceText, isVersion },
+            { gUi.releaseVersionText, isVersion },
+            { gUi.packageVersionText, isVersion },
+            { gUi.releaseNotesEdit, isVersion },
+            { gUi.refreshButton, isVersion },
+            { gUi.openGtamodxButton, isVersion },
+            { gUi.openGithubButton, isVersion },
+            { gUi.notesCaption, isVersion },
+            { gUi.pathEdit, isPath },
+            { gUi.browseButton, isPath },
+            { gUi.gameTypeText, isPath },
+            { gUi.localVersionText, isPath },
+            { gUi.moduleIII, isComponents },
+            { gUi.moduleVC, isComponents },
+            { gUi.moduleSA, isComponents },
+            { gUi.rootDependencies, isComponents },
+            { gUi.downloadSource, isComponents },
+            { gUi.summaryEdit, isInstall },
+            { gUi.installButton, isInstall },
+            { gUi.progressBar, isInstall },
+            { gUi.logBox, isInstall },
+        };
+        for (const PageControl& control : controls) {
+            ShowControl(control.hwnd, control.visible);
         }
     }
 
@@ -565,8 +602,15 @@
         return found != gUi.buttonHover.end() && found->second;
     }
 
+    constexpr const wchar_t* CheckboxStateProperty = L"XMenuInstaller.CheckboxChecked";
+
     LRESULT CALLBACK ButtonSubclassProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR) {
         switch (message) {
+        case WM_NCDESTROY:
+            RemovePropW(hwnd, CheckboxStateProperty);
+            gUi.buttonHover.erase(hwnd);
+            RemoveWindowSubclass(hwnd, ButtonSubclassProc, 1);
+            break;
         case WM_MOUSEMOVE:
             if (!IsButtonHovered(hwnd)) {
                 gUi.buttonHover[hwnd] = true;
@@ -648,9 +692,25 @@
         SelectObject(item.hDC, oldFont);
     }
 
+    void SetCheckbox(HWND hwnd, bool checked) {
+        if (!hwnd) {
+            return;
+        }
+        if (checked) {
+            SetPropW(hwnd, CheckboxStateProperty, reinterpret_cast<HANDLE>(static_cast<INT_PTR>(BST_CHECKED)));
+        } else {
+            RemovePropW(hwnd, CheckboxStateProperty);
+        }
+        InvalidateRect(hwnd, nullptr, FALSE);
+    }
+
+    bool IsCheckboxChecked(HWND hwnd) {
+        return hwnd && GetPropW(hwnd, CheckboxStateProperty) != nullptr;
+    }
+
     // 勾选框自绘，系统样式在深色下会留白底
     void DrawCheckboxControl(const DRAWITEMSTRUCT& item) {
-        const bool checked = SendMessageW(item.hwndItem, BM_GETCHECK, 0, 0) == BST_CHECKED;
+        const bool checked = IsCheckboxChecked(item.hwndItem);
         const bool disabled = (item.itemState & ODS_DISABLED) != 0;
         const bool hovered = IsButtonHovered(item.hwndItem);
 
@@ -828,16 +888,6 @@
         }
     }
 
-    void SetCheckbox(HWND hwnd, bool checked) {
-        if (hwnd) {
-            SendMessageW(hwnd, BM_SETCHECK, checked ? BST_CHECKED : BST_UNCHECKED, 0);
-        }
-    }
-
-    bool IsCheckboxChecked(HWND hwnd) {
-        return hwnd && SendMessageW(hwnd, BM_GETCHECK, 0, 0) == BST_CHECKED;
-    }
-
     InstallOptions ReadOptionsFromUi() {
         InstallOptions options;
         options.installXMenuIII = IsCheckboxChecked(gUi.moduleIII);
@@ -931,37 +981,8 @@
 
     void ApplyWizardStep(WizardStep step) {
         gUi.step = step;
-        SendMessageW(gUi.window, WM_SETREDRAW, FALSE, 0);
-
-        const bool isVersion = step == WizardStep::Version;
-        const bool isPath = step == WizardStep::Path;
-        const bool isComponents = step == WizardStep::Components;
         const bool isInstall = step == WizardStep::Install;
-
-        ShowControl(gUi.versionSourceText, isVersion);
-        ShowControl(gUi.releaseVersionText, isVersion);
-        ShowControl(gUi.packageVersionText, isVersion);
-        ShowControl(gUi.releaseNotesEdit, isVersion);
-        ShowControl(gUi.refreshButton, isVersion);
-        ShowControl(gUi.openGtamodxButton, isVersion);
-        ShowControl(gUi.openGithubButton, isVersion);
-        ShowControl(gUi.notesCaption, isVersion);
-
-        ShowControl(gUi.pathEdit, isPath);
-        ShowControl(gUi.browseButton, isPath);
-        ShowControl(gUi.gameTypeText, isPath);
-        ShowControl(gUi.localVersionText, isPath);
-
-        ShowControl(gUi.moduleIII, isComponents);
-        ShowControl(gUi.moduleVC, isComponents);
-        ShowControl(gUi.moduleSA, isComponents);
-        ShowControl(gUi.rootDependencies, isComponents);
-        ShowControl(gUi.downloadSource, isComponents);
-
-        ShowControl(gUi.summaryEdit, isInstall);
-        ShowControl(gUi.installButton, isInstall);
-        ShowControl(gUi.progressBar, isInstall);
-        ShowControl(gUi.logBox, isInstall);
+        SetPageControlsVisible(step);
 
         for (HWND stepButton : gUi.stepButtons) {
             InvalidateRect(stepButton, nullptr, FALSE);
@@ -989,8 +1010,14 @@
         EnableWindow(gUi.backButton, !gUi.busy && step != WizardStep::Version);
         SetControlText(gUi.nextButton, step == WizardStep::Install ? L"完成" : L"下一步");
 
-        SendMessageW(gUi.window, WM_SETREDRAW, TRUE, 0);
-        RedrawWindow(gUi.window, nullptr, nullptr, RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_UPDATENOW);
+        RECT client{};
+        GetClientRect(gUi.window, &client);
+        LayoutControls(client.right, client.bottom);
+        RedrawWindow(
+            gUi.window,
+            nullptr,
+            nullptr,
+            RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_UPDATENOW);
     }
 
     bool CanLeaveStep(WizardStep step) {
@@ -1004,6 +1031,15 @@
         if (step == WizardStep::Path) {
             if (gUi.gameRoot.empty()) {
                 MessageBoxW(gUi.window, L"请先选择游戏目录。", InstallerTitle, MB_ICONWARNING);
+                return false;
+            }
+            std::string legacyReport;
+            if (DetectLegacyScriptsXMenu(gUi.gameRoot, legacyReport)) {
+                MessageBoxW(
+                    gUi.window,
+                    (L"发现旧版 XMenu，当前安装已停止：\n\n" + WideFromAnsi(legacyReport)).c_str(),
+                    InstallerTitle,
+                    MB_ICONERROR | MB_OK);
                 return false;
             }
             if (gUi.gameType == GameType::Unknown) {
@@ -1194,6 +1230,15 @@
             ApplyWizardStep(WizardStep::Path);
             return;
         }
+        std::string legacyReport;
+        if (DetectLegacyScriptsXMenu(gUi.gameRoot, legacyReport)) {
+            MessageBoxW(
+                gUi.window,
+                (L"发现旧版 XMenu，当前安装已停止：\n\n" + WideFromAnsi(legacyReport)).c_str(),
+                InstallerTitle,
+                MB_ICONERROR | MB_OK);
+            return;
+        }
 
         const InstallOptions options = ReadOptionsFromUi();
         if (!HasSelectedGameModule(options)) {
@@ -1208,9 +1253,36 @@
         const DownloadSource downloadSource = SelectedDownloadSource();
         const std::string downloadUrl = BuildDownloadUrl(release.assetUrl, downloadSourceIndex);
         const std::string downloadSourceName = AnsiFromWide(downloadSource.label);
-        const std::string installVersion = release.packageVersion.empty() ? release.tagName : release.packageVersion;
+        const std::string requestedVersion = release.packageVersion.empty() ? release.tagName : release.packageVersion;
         const std::string zipName = release.assetName.empty() ? "release.zip" : release.assetName;
         const std::string zipPath = TempPathFor(zipName);
+
+        if (!installedVersion.empty()) {
+            const int versionOrder = CompareInstallerVersion(installedVersion, requestedVersion);
+            const bool localIsNewer = versionOrder > 0;
+            const bool alphaToRc = IsAlphaToRcTransition(installedVersion, requestedVersion);
+            if (localIsNewer || alphaToRc) {
+                std::wstring overwriteMessage;
+                if (localIsNewer) {
+                    overwriteMessage = L"检测到本地版本高于云端版本。\n\n";
+                } else {
+                    overwriteMessage = L"检测到本地 Alpha 版本，云端为 RC 版本。\n\n";
+                }
+                overwriteMessage += L"本地版本：" + WideFromUtf8(installedVersion)
+                    + L"\n云端版本：" + WideFromUtf8(requestedVersion)
+                    + L"\n\n仍要覆盖安装吗？";
+                if (MessageBoxW(
+                        gUi.window,
+                        overwriteMessage.c_str(),
+                        InstallerTitle,
+                        MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2) != IDYES) {
+                    AppendUiLog(L"用户取消覆盖安装。");
+                    AppendInstallLog(gUi.gameRoot, "User cancelled overwrite confirmation: local="
+                        + installedVersion + ", cloud=" + requestedVersion);
+                    return;
+                }
+            }
+        }
 
         std::wstring confirm;
         confirm += installedVersion.empty() ? L"将执行安装：\n\n" : L"将执行更新：\n\n";
@@ -1218,7 +1290,7 @@
         confirm += L"本地版本：" + WideFromUtf8(installedVersion.empty() ? "未安装" : installedVersion) + L"\n";
         confirm += L"检测源：" + WideFromUtf8(release.versionSource) + L"\n";
         confirm += L"最新版本：" + WideFromUtf8(release.tagName) + L"\n";
-        confirm += L"安装包版本：" + WideFromUtf8(installVersion) + L"\n";
+        confirm += L"安装包版本：" + WideFromUtf8(requestedVersion) + L"\n";
         confirm += L"Release 包：" + WideFromUtf8(release.assetName) + L"\n";
         confirm += L"下载源：" + WideFromUtf8(downloadSourceName) + L"\n";
         confirm += L"安装前将自动校验现有文件完整性。\n\n";
@@ -1239,7 +1311,7 @@
         SetStatus(L"状态：准备下载安装包...");
         AppendUiLog(L"开始下载安装包，下载源：" + WideFromUtf8(downloadSourceName));
 
-        gUi.worker = std::thread([options, release, downloadSourceName, downloadUrl, installVersion,
+        gUi.worker = std::thread([options, release, downloadSourceName, downloadUrl, requestedVersion,
                                   zipPath, attachedRoot = gUi.gameRoot] {
             InstallResult* result = new InstallResult();
             const DWORD startedTick = GetTickCount();
@@ -1250,7 +1322,7 @@
             AppendInstallLog(attachedRoot, "Selected components:\r\n" + BuildSelectedComponentSummary(options));
             AppendInstallLog(attachedRoot, "Version source: " + release.versionSource);
             AppendInstallLog(attachedRoot, "Release version: " + release.tagName);
-            AppendInstallLog(attachedRoot, "Package version: " + installVersion);
+            AppendInstallLog(attachedRoot, "Release package version: " + requestedVersion);
             AppendInstallLog(attachedRoot, "Selected asset: " + release.assetName);
             AppendInstallLog(attachedRoot, "Asset official URL: " + release.assetUrl);
             AppendInstallLog(attachedRoot, "Download source: " + downloadSourceName);
@@ -1298,6 +1370,18 @@
                 PostInstallDone(result);
                 return;
             }
+
+            const PackageValidation package = ValidateReleasePackage(extractDir);
+            PostLog(L"发布包校验：" + WideFromUtf8(package.report));
+            AppendInstallLog(attachedRoot, "Package validation: " + package.report);
+            if (!package.ok) {
+                result->error = L"安装包不符合当前 XBase 约束：\n\n" + WideFromUtf8(package.report);
+                PostInstallDone(result);
+                return;
+            }
+            const std::string installVersion = package.manifest.version.empty()
+                ? requestedVersion
+                : package.manifest.version;
 
             if (gUi.cancelRequested.load()) {
                 result->cancelled = true;
@@ -1367,7 +1451,7 @@
     }
 
     HWND CreateCheckbox(HWND parent, const wchar_t* text, int id, int x, int y, int w, int h) {
-        HWND hwnd = CreateWindowExW(0, L"BUTTON", text, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX | BS_OWNERDRAW, Scale(x), Scale(y), Scale(w), Scale(h), parent, reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)), gUi.instance, nullptr);
+        HWND hwnd = CreateWindowExW(0, L"BUTTON", text, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_OWNERDRAW, Scale(x), Scale(y), Scale(w), Scale(h), parent, reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)), gUi.instance, nullptr);
         ApplyFont(hwnd, gUi.normalFont);
         SetWindowSubclass(hwnd, ButtonSubclassProc, 1, 0);
         return hwnd;
@@ -1643,9 +1727,17 @@
         case WM_SIZE:
             if (wParam != SIZE_MINIMIZED) {
                 LayoutControls(LOWORD(lParam), HIWORD(lParam));
-                InvalidateRect(window, nullptr, FALSE);
+                InvalidateRect(window, nullptr, TRUE);
             }
             return 0;
+
+        case WM_PAINT: {
+            PAINTSTRUCT paint{};
+            HDC dc = BeginPaint(window, &paint);
+            PaintWindowBackground(window, dc);
+            EndPaint(window, &paint);
+            return 0;
+        }
 
         case WM_GETMINMAXINFO: {
             auto* info = reinterpret_cast<MINMAXINFO*>(lParam);
@@ -1681,6 +1773,16 @@
             case ControlBrowse: {
                 const std::string gameRoot = PickGameRoot();
                 if (!gameRoot.empty()) {
+                    std::string legacyReport;
+                    if (DetectLegacyScriptsXMenu(gameRoot, legacyReport)) {
+                        MessageBoxW(
+                            gUi.window,
+                            (L"检测到旧版 XMenu，无法继续安装：\n\n" + WideFromAnsi(legacyReport)).c_str(),
+                            InstallerTitle,
+                            MB_ICONERROR | MB_OK);
+                        AppendUiLog(L"拒绝安装：发现 scripts 目录中的旧版 XMenu。");
+                        return 0;
+                    }
                     ApplySelectedGameRoot(gameRoot);
                 }
                 return 0;
@@ -1752,7 +1854,6 @@
                 HWND control = reinterpret_cast<HWND>(lParam);
                 if (control && HIWORD(wParam) == BN_CLICKED) {
                     SetCheckbox(control, !IsCheckboxChecked(control));
-                    InvalidateRect(control, nullptr, FALSE);
                 }
                 return 0;
             }
@@ -1826,7 +1927,6 @@
         }
 
         case WM_ERASEBKGND:
-            PaintWindowBackground(window, reinterpret_cast<HDC>(wParam));
             return 1;
 
         case WM_TIMER:
@@ -1981,8 +2081,9 @@
         const int posY = (screenH - windowHeight) / 2;
 
         HWND window = CreateWindowExW(
-            WS_EX_COMPOSITED, windowClass.lpszClassName, InstallerTitle,
-            WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CLIPCHILDREN,
+            0, windowClass.lpszClassName, InstallerTitle,
+            WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX
+                | WS_MAXIMIZEBOX | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
             posX, posY, windowWidth, windowHeight,
             nullptr, nullptr, instance, nullptr
         );

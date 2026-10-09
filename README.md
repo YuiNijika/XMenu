@@ -108,8 +108,9 @@ Neon, freecam, top-down camera, random cheats, and many scene tools are SA-orien
 1. Prepare the game install.
 2. Run `XMenuInstaller.exe` and follow the wizard.
 3. Optional components: ASI Loader, SilentPatch, D3D8to9, or XMenu only.
-4. Version info prefers GTAMODX; packages come from GitHub Releases.
-5. Start the game and press `M`.
+4. Before writing files, the installer validates `XBase\Mods\XMenu\package.json`, `engines.xbase`, the shared runtimes, the Panel bundle, and the WebUI against the current XBase layout.
+5. Version info prefers GTAMODX; packages come from GitHub Releases.
+6. Start the game and press `M`.
 
 ### Option B: Manual copy
 
